@@ -32,11 +32,14 @@ export type NewsItem = {
   category: NewsCategory
   title: string
   summary: string
-  /** 마크다운 본문. */
+  /** `contentFormat` 에 따라 마크다운 원문이거나 정제를 마친 HTML 이다. */
   body: string
+  contentFormat: ContentFormat
   views: number
   /** ISO 8601 문자열. 표시 직전에 `formatDateIso` 로 변환한다. */
   publishedAt: string
+  /** 작성자가 본문을 실제로 고친 시각. 한 번도 고치지 않았으면 null 이다. */
+  editedAt: string | null
   /** 없으면 목록의 "자세히" 뷰에서 회색 플레이스홀더를 그린다. */
   thumbnail?: string
 }

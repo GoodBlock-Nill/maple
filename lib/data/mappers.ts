@@ -18,6 +18,7 @@ import type {
   AdjacentNewsItem,
   Comment,
   CommunityCategory,
+  ContentFormat,
   FaqItem,
   GachaGrade,
   GachaItem,
@@ -53,9 +54,11 @@ export type NewsSource = Pick<
   | 'title'
   | 'summary'
   | 'content'
+  | 'content_format'
   | 'thumbnail_url'
   | 'view_count'
   | 'published_at'
+  | 'edited_at'
 >
 
 /** 이전/다음 글 조회는 목록 컬럼의 부분집합만 읽는다. */
@@ -90,6 +93,15 @@ function toCommunityCategory(key: string): CommunityCategory {
   return COMMUNITY_CATEGORY_VALUES.find((value) => value === key) ?? DEFAULT_COMMUNITY_CATEGORY
 }
 
+/**
+ * 새 에디터 도입 전 글은 `content_format` 이 없던 시절의 데이터라 `markdown` 으로
+ * 본다. DB 컬럼은 NOT NULL 이라 실제로는 항상 값이 들어오지만, 카테고리와 같은
+ * 이유(값이 넓어질 수 있는 지점을 매퍼에서 한 번 더 좁힌다)로 방어적으로 다룬다.
+ */
+function toContentFormat(format: string): ContentFormat {
+  return format === 'html' ? 'html' : 'markdown'
+}
+
 export function toNewsItem(row: NewsSource): NewsItem {
   return {
     id: row.id,
@@ -97,8 +109,10 @@ export function toNewsItem(row: NewsSource): NewsItem {
     title: row.title,
     summary: row.summary ?? '',
     body: row.content,
+    contentFormat: toContentFormat(row.content_format),
     views: row.view_count,
     publishedAt: row.published_at,
+    editedAt: row.edited_at,
     ...(row.thumbnail_url === null ? {} : { thumbnail: row.thumbnail_url }),
   }
 }

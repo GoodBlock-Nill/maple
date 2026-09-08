@@ -4,8 +4,8 @@ import { AdjacentPostNav } from '@/components/board/AdjacentPostNav'
 import { ArticleCard } from '@/components/board/ArticleCard'
 import { BackToListLink } from '@/components/board/BackToListLink'
 import { ListSheet } from '@/components/board/ListSheet'
-import { Markdown } from '@/components/board/Markdown'
 import { NewsBanner } from '@/components/board/NewsBanner'
+import { PostBody } from '@/components/board/PostBody'
 import { ShareButton } from '@/components/board/ShareButton'
 import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
@@ -13,6 +13,7 @@ import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
 import { getNewsBanner } from '@/lib/constants/news-banners'
 import { getAdjacentNews, getNewsById } from '@/lib/data/news'
 import { absoluteUrl } from '@/lib/utils/absolute-url'
+import { isEdited } from '@/lib/utils/authorship'
 import { newsShareUrl } from '@/lib/utils/share'
 
 import type { Metadata } from 'next'
@@ -83,8 +84,13 @@ export default async function NewsDetailPage(props: PageProps<'/news/[id]'>) {
           metaAside={
             <ShareButton title={item.title} text={item.summary} url={newsShareUrl(item.id)} />
           }
+          note={
+            isEdited(item.editedAt) ? (
+              <span className="text-ink-muted text-[14px] font-medium">수정됨</span>
+            ) : null
+          }
         >
-          <Markdown>{item.body}</Markdown>
+          <PostBody format={item.contentFormat} body={item.body} />
         </ArticleCard>
       </ListSheet>
 

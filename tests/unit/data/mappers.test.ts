@@ -23,9 +23,11 @@ const newsRow: NewsSource = {
   title: '서버 불안정 안내',
   summary: '접속 지연 현상을 확인하고 있습니다.',
   content: '# 본문',
+  content_format: 'markdown',
   thumbnail_url: null,
   view_count: 160745,
   published_at: '2026-05-19T10:00:00.000Z',
+  edited_at: null,
 }
 
 const postRow: PostSource = {
@@ -55,9 +57,37 @@ describe('toNewsItem', () => {
       title: newsRow.title,
       summary: newsRow.summary,
       body: newsRow.content,
+      contentFormat: 'markdown',
       views: 160745,
       publishedAt: newsRow.published_at,
+      editedAt: null,
     })
+  })
+
+  it('should map the html content format when the editor saved it that way', () => {
+    // Arrange & Act
+    const result = toNewsItem({ ...newsRow, content_format: 'html', content: '<p>본문</p>' })
+
+    // Assert
+    expect(result.contentFormat).toBe('html')
+    expect(result.body).toBe('<p>본문</p>')
+  })
+
+  it('should default legacy rows with an unexpected format value to markdown', () => {
+    // Arrange & Act — DB 컬럼은 NOT NULL 이지만, gen types 를 벗어난 값이 와도
+    // 화면이 빈 렌더러로 죽지 않도록 방어적으로 markdown 을 기본값으로 삼는다.
+    const result = toNewsItem({ ...newsRow, content_format: 'plaintext' as never })
+
+    // Assert
+    expect(result.contentFormat).toBe('markdown')
+  })
+
+  it('should carry the edited timestamp so the detail view can show a "수정됨" marker', () => {
+    // Arrange & Act
+    const result = toNewsItem({ ...newsRow, edited_at: '2026-05-20T09:00:00.000Z' })
+
+    // Assert
+    expect(result.editedAt).toBe('2026-05-20T09:00:00.000Z')
   })
 
   it('should omit the thumbnail key when the column is null', () => {

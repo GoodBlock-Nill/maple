@@ -25,7 +25,7 @@ import type {
  */
 
 const NEWS_COLUMNS =
-  'id, category_key, title, summary, content, thumbnail_url, view_count, published_at'
+  'id, category_key, title, summary, content, content_format, thumbnail_url, view_count, published_at, edited_at'
 
 export async function getNewsList({
   category = null,
