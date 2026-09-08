@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import { PAGE_HERO } from '@/components/layout/page-hero'
+import { heroMascotOffset, PAGE_HERO } from '@/components/layout/page-hero'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { filterExistingAssets, hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
@@ -91,10 +91,12 @@ function PageHeroBackdrop({ hero }: PageHeroBackdropProps) {
         <div className="to-page-sub absolute inset-x-0 bottom-0 h-[100px] bg-gradient-to-b from-transparent" />
       </div>
 
-      {/* 마스코트는 밴드 밖으로 삐져나오므로 클리핑되지 않는 별도 레이어에 둔다. */}
+      {/* 마스코트는 밴드 밖으로 삐져나오므로 클리핑되지 않는 별도 레이어에 둔다.
+          레이어 폭은 1440 을 넘지 않고 좁은 화면에서는 뷰포트 폭을 따르며,
+          장식은 가까운 쪽 모서리에 붙어 잘리지 않는다. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-0 left-1/2 -z-10 hidden h-0 w-[1440px] -translate-x-1/2 lg:block"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto hidden h-0 w-full max-w-[1440px] lg:block"
       >
         {/* TODO(asset): 아직 내려받지 못한 장식은 조용히 건너뛴다. */}
         {filterExistingAssets(hero.mascots).map((mascot) => (
@@ -106,7 +108,7 @@ function PageHeroBackdrop({ hero }: PageHeroBackdropProps) {
             height={mascot.height}
             unoptimized={mascot.animated}
             priority
-            style={{ left: mascot.left, top: mascot.top, width: mascot.width }}
+            style={{ ...heroMascotOffset(mascot), top: mascot.top, width: mascot.width }}
             className="absolute max-w-none"
           />
         ))}

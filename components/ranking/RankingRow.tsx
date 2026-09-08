@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import { CharacterSilhouette, GuildEmblem } from '@/components/ranking/ranking-icons'
+import { GuildEmblem, RowAvatar } from '@/components/ranking/ranking-icons'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
 import { maskNickname } from '@/lib/utils/mask'
@@ -33,7 +33,7 @@ export function RankingRow({ entry }: RankingRowProps) {
     entry.character !== undefined && hasPublicAsset(entry.character) ? entry.character : null
 
   return (
-    <li className="rounded-panel border-line-soft shadow-chip flex flex-col gap-3 border bg-white px-4 py-4 sm:px-6 lg:min-h-24 lg:justify-center lg:gap-0 lg:px-0 lg:pr-4 lg:py-6">
+    <li className="rounded-panel border-line-soft shadow-chip flex flex-col gap-3 border bg-white px-4 py-4 sm:px-6 lg:min-h-24 lg:justify-center lg:gap-0 lg:px-0 lg:py-6 lg:pr-4">
       <div className={RANKING_GRID_CLASS}>
         <p className={cn(VALUE_CLASS, 'shrink-0 lg:text-center')}>
           <span className="sr-only">순위 </span>
@@ -43,8 +43,8 @@ export function RankingRow({ entry }: RankingRowProps) {
         <div className="flex min-w-0 items-center gap-4 lg:justify-center">
           <span className="flex size-14 shrink-0 items-center justify-center rounded-[15px] p-[3px] drop-shadow-[0_2px_3.5px_rgba(0,0,0,0.25)] lg:size-20">
             {character === null ? (
-              /* TODO(asset): 캐릭터 썸네일 자산 도착 전까지 실루엣을 쓴다. */
-              <CharacterSilhouette className="text-ink size-full" />
+              /* 캐릭터별 썸네일이 없으면 공통 아바타를 쓴다. */
+              <RowAvatar className="size-full object-contain" />
             ) : (
               <Image
                 src={character}
@@ -76,7 +76,7 @@ export function RankingRow({ entry }: RankingRowProps) {
             '-'
           ) : (
             <>
-              <GuildEmblem className="size-10 shrink-0" />
+              <GuildEmblem className="h-[35px] w-8 shrink-0" />
               <span className="truncate">{entry.guild}</span>
             </>
           )}

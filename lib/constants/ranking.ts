@@ -30,15 +30,45 @@ export const DEFAULT_RANKING_TYPE: RankingType = 'total'
 /** 직업 칩 맨 앞의 "전체" 항목 라벨. */
 export const ALL_JOB_LABEL = '전체 직업'
 
+/**
+ * TOP3 캐릭터 크롭의 원본 크기(시안 실측).
+ * 카드 패널(244) 높이에 억지로 맞추면 2위 캐릭터가 시안보다 커진다.
+ */
+export const TOP_CHARACTER_SIZE: Record<string, { width: number; height: number }> = {
+  '/images/ranking/top3-char-1.png': { width: 332, height: 243 },
+  '/images/ranking/top3-char-2.png': { width: 234, height: 205 },
+  '/images/ranking/top3-char-3.png': { width: 363, height: 243 },
+}
+
+/** 크기를 모르는 캐릭터 이미지의 기본값. */
+export const TOP_CHARACTER_FALLBACK_SIZE = { width: 332, height: 243 } as const
+
 /** TOP3 카드 배경 패널 색(1위는 불투명, 2·3위는 50%). */
 export const TOP_PANEL_CLASS: readonly string[] = ['bg-top1', 'bg-top2/50', 'bg-top3/50']
 
-/** 메달 리본 색(inline SVG 채우기용). 금 · 은 · 동. */
-export const MEDAL_COLORS: readonly { ribbon: string; disc: string; edge: string }[] = [
-  { ribbon: '#f2a93b', disc: '#ffd75e', edge: '#e08a1e' },
-  { ribbon: '#8f9bb3', disc: '#d7dee9', edge: '#7683a0' },
-  { ribbon: '#b9713c', disc: '#e6a874', edge: '#a05c2c' },
-]
+export type MedalPalette = {
+  /** 리본 꼬리. */
+  tail: string
+  /** 원판 테두리. */
+  rim: string
+  /** 원판 안쪽. */
+  disc: string
+  /** 숫자. */
+  digit: string
+}
+
+/**
+ * 2·3위 메달 색.
+ *
+ * 자산 `ranking/medal-ribbon.png` 은 숫자 "1" 이 그려진 금메달 한 장뿐이라
+ * CSS 필터로는 2·3위를 만들 수 없다(숫자가 그대로 남는다). 1위는 자산을 쓰고
+ * 2·3위만 같은 형태의 인라인 SVG 로 그린다.
+ * TODO(asset): 은·동 리본 자산이 오면 SVG 분기를 지운다.
+ */
+export const MEDAL_PALETTE: Record<number, MedalPalette> = {
+  2: { tail: '#8b95a5', rim: '#9aa3b0', disc: '#e2e8f0', digit: '#69727f' },
+  3: { tail: '#a4642f', rim: '#b1723c', disc: '#e8b183', digit: '#7f4a20' },
+}
 
 /** 표 헤더 5열의 폭 비율(시안 120/400/200/220/236 = 1176 기준). */
 export const RANKING_COLUMNS = [

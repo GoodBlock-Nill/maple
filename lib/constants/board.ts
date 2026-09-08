@@ -43,6 +43,14 @@ export const COMMUNITY_SORTS = [
 
 export const DEFAULT_COMMUNITY_SORT: CommunitySort = 'latest'
 
+/**
+ * DB 의 `posts.category_key` 는 FK 로만 강제되고 타입 생성 결과는 평범한 text 다.
+ * 매퍼가 알 수 없는 말머리를 만났을 때 떨어뜨릴 자리로 첫 카테고리를 쓴다.
+ */
+export const DEFAULT_NEWS_CATEGORY: NewsCategory = 'notice'
+
+export const DEFAULT_COMMUNITY_CATEGORY: CommunityCategory = 'chat'
+
 export const NEWS_CATEGORY_VALUES = NEWS_CATEGORIES.map((item) => item.value)
 
 export const COMMUNITY_CATEGORY_VALUES = COMMUNITY_CATEGORIES.map((item) => item.value)

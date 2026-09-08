@@ -1,8 +1,9 @@
+import { LogoutButton } from '@/components/auth/LogoutButton'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils/cn'
 
 type AuthMenuProps = {
-  /** 세션 연동 전까지는 항상 null. 로그인 붙일 때 서버에서 주입한다. */
+  /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
   user?: { nickname: string } | null
   id?: string
   className?: string
@@ -15,9 +16,7 @@ export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
         <span className="text-ink-muted hidden text-[15px] sm:inline">
           <strong className="text-ink font-semibold">{user.nickname}</strong>님
         </span>
-        <Button href="/mypage" variant="light" size="sm">
-          내 정보
-        </Button>
+        <LogoutButton />
       </div>
     )
   }

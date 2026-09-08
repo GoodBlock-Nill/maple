@@ -1,6 +1,7 @@
 import localFont from 'next/font/local'
 
 import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/constants/site'
+import { getSiteSettings } from '@/lib/data/site'
 
 import './globals.css'
 
@@ -15,34 +16,44 @@ const pretendard = localFont({
 })
 
 /**
- * Maplestory 서체 — 소개 페이지의 크리에이터 이름/슬로건 전용.
- * `--font-maple` 은 globals.css 의 `--font-display` 체인 맨 앞에 놓이므로
- * `font-display` 유틸리티를 쓰는 곳에서만 적용된다(본문은 계속 Pretendard).
- * TODO: 상용 라이선스 확인 전까지는 소개 페이지 표제에만 제한적으로 사용한다.
+ * Maplestory 서체 — 전 화면 기본 서체.
+ *
+ * OTF 두 벌(Light 300 · Bold 700)만 있으므로 400~600 요청은 브라우저가
+ * 가까운 굵기로 대체한다. 가짜 볼드/이탤릭 합성은 `font-synthesis: none`
+ * (globals.css) 으로 막는다. 한글·라틴 모두 이 서체가 받고, 글리프가 없는
+ * 문자만 Pretendard 로 폴백한다.
  */
 const maplestory = localFont({
   src: [
-    { path: './fonts/MaplestoryLight.ttf', weight: '400', style: 'normal' },
-    { path: './fonts/MaplestoryBold.ttf', weight: '700', style: 'normal' },
+    { path: './fonts/MaplestoryOTFLight.otf', weight: '300', style: 'normal' },
+    { path: './fonts/MaplestoryOTFBold.otf', weight: '700', style: 'normal' },
   ],
   display: 'swap',
   variable: '--font-maple',
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: `${SITE_NAME} 공식 홈페이지`,
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME,
-  openGraph: {
-    type: 'website',
-    locale: 'ko_KR',
-    siteName: SITE_NAME,
-    title: `${SITE_NAME} 공식 홈페이지`,
+/**
+ * 사이트 이름은 `site_settings.game_name` 이 단일 출처다. 설정 행을 못 읽어도
+ * 메타데이터가 비지 않도록 `lib/constants/site.ts` 의 플레이스홀더로 폴백한다.
+ * 조회는 `unstable_cache`(300초)를 거치므로 요청마다 DB 를 때리지 않는다.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings()
+  const name = settings?.gameName ?? SITE_NAME
+  const title = `${name} 공식 홈페이지`
+
+  return {
+    title: { default: title, template: `%s | ${name}` },
     description: SITE_DESCRIPTION,
-  },
+    applicationName: name,
+    openGraph: {
+      type: 'website',
+      locale: 'ko_KR',
+      siteName: name,
+      title,
+      description: SITE_DESCRIPTION,
+    },
+  }
 }
 
 export const viewport: Viewport = {

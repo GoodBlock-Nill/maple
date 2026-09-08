@@ -6,3 +6,13 @@
    explicitly so utilities used only in components/ and lib/ are never purged. */
 @source '../components';
 @source '../lib';
+
+/* Maplestory OTF 는 Light(300)·Bold(700) 두 벌뿐이다. 400~600 을 요청했을 때
+   브라우저가 가짜 볼드를 합성하면 시안보다 글자가 두꺼워지고 폭이 늘어나므로
+   합성을 끈다(가장 가까운 실제 굵기로 대체된다). */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-synthesis: none;
+  }
+}

@@ -1,20 +1,18 @@
-import { Button } from '@/components/ui/Button'
-import { Textarea } from '@/components/ui/Textarea'
-import { LOGIN_REQUIRED_NOTICE } from '@/lib/constants/board'
+import { CommentForm } from '@/components/board/CommentForm'
 import { formatDateLong } from '@/lib/utils/format-date'
 import { maskNickname } from '@/lib/utils/mask'
 
 import type { Comment } from '@/types/domain'
 
-const COMMENT_FIELD_CLASS =
-  'rounded-[10px] border-line-soft text-[17px] placeholder:text-[#9a9a9a] disabled:bg-sheet'
-
 type CommentSectionProps = {
+  postId: string
   comments: readonly Comment[]
+  /** 로그인 상태에 따라 작성 폼과 로그인 유도 중 하나를 그린다. */
+  isAuthenticated: boolean
 }
 
-/** 댓글 목록 + 작성 폼(UI 전용). 백엔드 연동 전까지 제출은 비활성 상태다. */
-export function CommentSection({ comments }: CommentSectionProps) {
+/** 댓글 목록 + 작성 폼. */
+export function CommentSection({ postId, comments, isAuthenticated }: CommentSectionProps) {
   return (
     <section aria-labelledby="comments-heading" className="border-line mt-10 border-t pt-8">
       <h3 id="comments-heading" className="text-ink text-[20px] font-semibold">
@@ -41,19 +39,7 @@ export function CommentSection({ comments }: CommentSectionProps) {
         </ul>
       )}
 
-      <form className="mt-8 flex flex-col gap-3">
-        <Textarea
-          label="댓글 작성"
-          hint={LOGIN_REQUIRED_NOTICE}
-          placeholder="댓글을 입력해주세요"
-          rows={4}
-          disabled
-          className={COMMENT_FIELD_CLASS}
-        />
-        <Button type="submit" disabled className="self-end">
-          등록
-        </Button>
-      </form>
+      <CommentForm postId={postId} isAuthenticated={isAuthenticated} />
     </section>
   )
 }

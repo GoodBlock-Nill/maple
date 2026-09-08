@@ -63,19 +63,13 @@
 }
 
 @theme inline {
+  /* 전 화면 기본 서체는 Maplestory OTF. 글리프가 없는 문자만 Pretendard 가
+     받는다(폴백 체인). 세 토큰이 같은 체인을 쓰므로 본문·제목이 함께 바뀐다. */
   --font-body:
-    var(--font-pretendard), 'Pretendard Variable', -apple-system, BlinkMacSystemFont,
-    'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  /* 시안은 Switzer(라틴)+시스템 한글이지만 프로젝트는 Pretendard 단일 사용.
-     로고는 이미지이므로 별도 디스플레이 서체가 필요 없다. */
-  /* 소개 페이지의 크리에이터 이름/슬로건 전용. Maplestory 서체가 앞에 오고
-     한글 폴백은 Pretendard 가 받는다(app/layout.tsx 의 `--font-maple`). */
-  --font-display:
     var(--font-maple), var(--font-pretendard), 'Pretendard Variable', -apple-system,
-    BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
-  --font-sans:
-    var(--font-pretendard), 'Pretendard Variable', -apple-system, BlinkMacSystemFont,
-    'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-display: var(--font-body);
+  --font-sans: var(--font-body);
 }
 
 /* ---------------------------------------------------------------------------
@@ -118,6 +112,15 @@
    `고객지원` / `유튜버 소개` 실측값.
    docs/reference/figma/guide-ranking-support-about-spec.md 참고.
 --------------------------------------------------------------------------- */
+@theme {
+  /* 시안 프레임 폭. 1440 좌표계를 그대로 쓰는 절대 배치(홈 카드 덱 등)는
+     이 폭 이상에서만 켠다 — 그보다 좁으면 우측 요소가 잘린다.
+     기본 브레이크포인트가 rem 이라 이 값도 rem 이어야 sm/md/lg/xl 뒤에
+     정렬된다(px 로 두면 정렬 비교가 안 돼 sm: 규칙보다 앞서 출력된다).
+     90rem = 1440px. */
+  --breakpoint-frame: 90rem;
+}
+
 @theme {
   /* 고객지원 폼 필드 표면(시안: bg #fafafa · border #d5d9df) */
   --color-field: #fafafa;

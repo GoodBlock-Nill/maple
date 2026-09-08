@@ -11,6 +11,8 @@ export type FooterMascot = {
   top: number
   /** <xl 에서의 축소 폭. */
   mobileWidth: number
+  /** 시안에서 좌우가 뒤집혀 있는 마스코트. */
+  isFlipped?: boolean
 }
 
 export type FooterConfig = {
@@ -141,22 +143,23 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
   },
   about: {
     background: '/images/about/footer-bg.png',
-    /* 소개 푸터 배경이 도착하기 전까지는 홈 푸터의 잔디 사진을 빌려 쓴다.
-       단색 하늘색보다 시안(풀숲 위 글래스 패널)의 인상에 훨씬 가깝다. */
-    backgroundFallback: '/images/footer/home-bg.jpg',
-    /* 앞 섹션(보라→시안 밴드)의 끝 색. 두 배경 모두 없을 때의 마지막 폴백. */
-    backgroundColor: '#7fd8f2',
+    /* 앞 섹션(보라→시안 밴드)의 끝 색. 배경이 없을 때의 마지막 폴백. */
+    backgroundColor: '#8dd5ff',
     needsGrassPatch: false,
     height: 703,
     panelTop: subPanelTop(703),
-    panelClass: 'glass-panel-sub',
+    /* 소개만 배경이 어두워서 밝은 회색(`-sub`)을 얹으면 시안보다 20 정도
+       밝아진다. 홈과 같은 어두운 글래스 값이 시안 실측과 맞는다. */
+    panelClass: 'glass-panel',
     mascot: {
+      /* 시안의 마스코트는 애니메이션 GIF 이고 좌우가 뒤집혀 있다. */
       src: '/images/about/mascot-footer.gif',
       width: 214,
       height: 169,
       left: 1202,
-      top: 339,
+      top: 338,
       mobileWidth: 140,
+      isFlipped: true,
     },
   },
 }

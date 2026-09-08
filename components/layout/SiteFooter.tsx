@@ -6,7 +6,6 @@ import { Logo } from '@/components/layout/Logo'
 import {
   CONTACT_EMAIL,
   FOOTER_MENU_LINKS,
-  IP_NOTICE,
   POLICY_LINKS,
   SITE_NAME,
   SITE_TAGLINE,
@@ -18,6 +17,9 @@ import { cn } from '@/lib/utils/cn'
 import type { FooterVariant } from '@/components/layout/footer-variants'
 import type { NavItem } from '@/lib/constants/site'
 import type { CSSProperties } from 'react'
+
+/** 마스코트 좌표가 기준으로 삼는 시안 폭. */
+const FOOTER_WIDTH = 1440
 
 type SiteFooterProps = {
   /** 페이지별 배경 일러스트·마스코트·패널 위치만 바뀐다. 내용은 동일. */
@@ -35,10 +37,12 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
   const background = hasPublicAsset(config.background)
     ? config.background
     : (config.backgroundFallback ?? null)
+  /* 마스코트는 1440 기준 좌표를 오른쪽 여백으로 바꿔 붙인다. 컨테이너가
+     1440 보다 좁아져도(1280~1439) 화면 밖으로 밀려 잘리지 않는다. */
   const style = {
     '--footer-height': `${config.height}px`,
     '--footer-panel-top': `${config.panelTop}px`,
-    '--mascot-left': `${mascot.left}px`,
+    '--mascot-right': `${FOOTER_WIDTH - mascot.left - mascot.width}px`,
     '--mascot-top': `${mascot.top}px`,
     '--mascot-width': `${mascot.width}px`,
     '--mascot-mobile-width': `${mascot.mobileWidth}px`,
@@ -62,11 +66,13 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
         />
       ) : null}
       {config.needsGrassPatch ? (
-        /* 배경 JPG 상단 ~150px 는 원본 PNG의 투명 영역이 흰색으로 구워진 자리다.
-           초원색을 곱연산해 잔디 실루엣만 남기고 앞 섹션의 숲과 자연스럽게 잇는다. */
+        /* 배경 JPG 상단 ~160px 는 원본 PNG의 투명 영역이 흰색으로 구워진 자리다.
+           시안(home.png)의 같은 행 평균색 ÷ JPG 의 같은 행 평균색으로 구한
+           곱연산 램프를 얹어 흰 기운을 지우고 앞 섹션의 숲과 잇는다.
+           TODO(asset): 상단이 투명한 원본 PNG 가 오면 이 보정 레이어는 지운다. */
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[190px] bg-[linear-gradient(180deg,#7cc45f_0px,#7cc45f_80px,#5fb44b_140px,#ffffff_190px)] mix-blend-multiply"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[170px] bg-[linear-gradient(180deg,#45987a_0px,#46a873_20px,#43b46a_40px,#51c26b_60px,#6fd45d_85px,#73d166_105px,#70d76c_122px,#84e28a_132px,#a9f2ac_142px,#d9f4cd_151px,#ffffff_163px)] mix-blend-multiply"
         />
       ) : null}
 
@@ -79,7 +85,8 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
             height={mascot.height}
             unoptimized
             aria-hidden
-            className="drop-shadow-mascot relative z-20 -mb-8 ml-auto block w-[var(--mascot-mobile-width)] xl:absolute xl:top-[var(--mascot-top)] xl:left-[var(--mascot-left)] xl:mb-0 xl:w-[var(--mascot-width)]"
+            style={mascot.isFlipped === true ? { transform: 'scaleX(-1)' } : undefined}
+            className="drop-shadow-mascot relative z-20 -mb-8 ml-auto block w-[var(--mascot-mobile-width)] xl:absolute xl:top-[var(--mascot-top)] xl:right-[var(--mascot-right)] xl:mb-0 xl:w-[var(--mascot-width)]"
           />
         ) : null}
 
@@ -87,13 +94,13 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           className={cn(
             config.panelClass,
             'footer-ink rounded-panel mx-auto w-full max-w-[1300px] px-6 py-8 sm:px-10',
-            'xl:min-h-[353px] xl:px-[150px] xl:py-10',
+            'xl:h-[353px] xl:px-[150px] xl:pt-[38px] xl:pb-10',
           )}
         >
           <div className="flex flex-col gap-10 lg:flex-row lg:gap-[100px]">
             <div className="flex w-full max-w-[309px] flex-col items-start">
               <Logo width={109} height={40} />
-              <p className="mt-[13px] text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
+              <p className="mt-[15px] text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-[18px] leading-6 font-semibold transition-colors"
@@ -102,24 +109,25 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
               </a>
             </div>
 
-            <FooterColumn title="Menu" links={FOOTER_MENU_LINKS} />
+            {/* 시안의 Legal 열은 x 789 에서 시작한다. Menu 열 폭은 최장 링크
+                "커뮤니티" 의 글자 폭으로 정해지는데 Figma 쪽 한글 서체가
+                Pretendard 보다 2px 넓다 → 시안 실측 폭을 최소값으로 고정한다. */}
+            <FooterColumn title="Menu" links={FOOTER_MENU_LINKS} className="lg:min-w-[58px]" />
             <FooterColumn title="Legal" links={POLICY_LINKS} />
           </div>
 
-          <hr className="mx-auto mt-6 w-full max-w-[992px] border-0 border-t border-white/40" />
+          {/* 시안의 구분선은 패널 안쪽 폭(998) 이 아니라 992 이고, 가운데가 아니라
+              콘텐츠 왼쪽 끝에 붙는다(실측 x 220~1211). */}
+          <hr className="mt-6 w-full max-w-[992px] border-0 border-t border-white/40" />
 
-          <div className="mx-auto mt-4 flex w-full max-w-[992px] flex-col items-center gap-5 sm:flex-row sm:justify-between">
+          {/* 시안 푸터에는 IP 고지 문단이 없다. 넣으면 패널이 353px 을 넘겨
+              모든 행이 밀리므로 `/policy/privacy` 로 옮겼다. */}
+          <div className="mt-[23px] flex w-full flex-col items-center gap-5 sm:flex-row sm:justify-between">
             <p className="text-ink-soft text-[16px] font-medium">
               Copyright © {SITE_NAME}. All rights reserved.
             </p>
             <SnsList />
           </div>
-
-          {/* IP 고지는 Legal 열(280px)에서 넘쳐 읽기 어려웠다. 저작권 줄 아래
-              전폭 12px 한 줄로 내리고 패널은 min-h 로 늘어나게 둔다. */}
-          <p className="text-ink-soft mx-auto mt-4 w-full max-w-[992px] text-[12px] leading-[1.6]">
-            {IP_NOTICE}
-          </p>
         </div>
       </div>
     </footer>
@@ -129,15 +137,16 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
 type FooterColumnProps = {
   title: string
   links: readonly NavItem[]
+  className?: string
 }
 
-function FooterColumn({ title, links }: FooterColumnProps) {
+function FooterColumn({ title, links, className }: FooterColumnProps) {
   return (
-    <nav aria-label={title}>
+    <nav aria-label={title} className={className}>
       <p className="text-[20px] leading-none font-medium text-white">{title}</p>
       {/* 링크 줄 간격은 시안 기준 28px(글자 16 + 간격 12). `leading-none` 은
           인라인 <a> 가 아니라 <li> 스트럿에 걸려야 실제 높이가 줄어든다. */}
-      <ul className="mt-3 flex flex-col gap-3 leading-none">
+      <ul className="mt-[14px] flex flex-col gap-3 leading-none">
         {links.map((link) => (
           <li key={link.href}>
             <Link

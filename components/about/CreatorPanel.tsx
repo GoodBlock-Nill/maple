@@ -1,38 +1,40 @@
 import Image from 'next/image'
 
+import { PANEL_LAYERS } from '@/components/about/panel-layers'
 import { CREATOR_INTRO, CREATOR_NAME, CREATOR_SLOGAN } from '@/lib/mock/site'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
 
-const PANEL_SRC = '/images/about/creator-panel.png'
-const AVATAR_SRC = '/images/about/avatar-dot.png'
+const PHOTO_SRC = '/images/about/panel-photo.png'
+const AVATAR_SRC = '/images/about/avatar-dot.gif'
 
-/** 양피지 배경 PNG 가 없을 때 텍스트가 놓이는 종이색. */
+/** 양피지 레이어가 하나도 없을 때 텍스트가 놓이는 종이색. */
 const PARCHMENT_CLASS = 'bg-[#f7edd7]'
 
 /**
  * 양피지 패널(시안 1341×739).
  *
- * 데스크톱은 지도 프레임·질감·사진 타원이 모두 합성된 배경 PNG 위에 텍스트를
- * 절대 배치한다. 모바일에서는 같은 PNG 를 늘리면 사진이 본문 뒤로 깔려
- * 읽기 어려우므로, 사진 영역만 잘라 상단 이미지로 쓰고 본문은 종이색 카드에
- * 세로로 쌓는다(시안의 "사진 → 이름 → 본문" 스택).
+ * 데스크톱은 시안 레이어(지도 프레임 · 사진 · 덩굴 · 파란 젤리 GIF)를 각각
+ * 절대 배치한다. 합성 PNG 한 장으로 구우면 젤리 캐릭터의 애니메이션이 죽고
+ * 위치도 시안과 어긋나서(사용자 지적) 분해본을 쓴다.
+ * 모바일에서는 사진만 상단에 얹고 본문을 종이색 카드에 세로로 쌓는다.
  */
 export function CreatorPanel() {
-  const hasPanel = hasPublicAsset(PANEL_SRC)
+  const hasPhoto = hasPublicAsset(PHOTO_SRC)
 
   return (
     <div className="mx-auto w-full max-w-[1341px]">
       <div className="lg:hidden">
-        {hasPanel ? (
-          <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-[12px]">
+        {hasPhoto ? (
+          <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-[12px] bg-[#f7edd7]">
             <Image
-              src={PANEL_SRC}
+              src={PHOTO_SRC}
               alt=""
               fill
-              sizes="100vw"
+              /* 원본이 462px 이라 그 이상 요청하면 최적화 이득이 없다. */
+              sizes="480px"
               aria-hidden
-              className="object-cover object-[24%_50%]"
+              className="object-contain object-center"
             />
           </div>
         ) : null}
@@ -40,7 +42,7 @@ export function CreatorPanel() {
           className={cn(
             PARCHMENT_CLASS,
             'flex flex-col gap-6 px-6 py-8 sm:px-8',
-            hasPanel ? 'rounded-b-[12px]' : 'rounded-[12px]',
+            hasPhoto ? 'rounded-b-[12px]' : 'rounded-[12px]',
           )}
         >
           <CreatorText />
@@ -48,18 +50,28 @@ export function CreatorPanel() {
       </div>
 
       <div className="relative hidden aspect-[1341/739] w-full lg:block">
-        {hasPanel ? (
+        <div className={cn(PARCHMENT_CLASS, 'absolute inset-[8%_4%] rounded-[12px]')} />
+
+        {PANEL_LAYERS.filter((layer) => hasPublicAsset(layer.src)).map((layer) => (
           <Image
-            src={PANEL_SRC}
+            key={layer.src}
+            src={layer.src}
             alt=""
-            fill
-            sizes="(min-width: 1400px) 1341px, 100vw"
+            width={layer.naturalWidth}
+            height={layer.naturalHeight}
+            unoptimized={layer.isAnimated}
+            priority={!layer.isAnimated}
             aria-hidden
-            className="rounded-[12px] object-cover object-center"
+            style={{
+              left: layer.left,
+              top: layer.top,
+              width: layer.width,
+              height: layer.height,
+              transform: layer.isFlipped ? 'scaleX(-1)' : undefined,
+            }}
+            className="pointer-events-none absolute max-w-none"
           />
-        ) : (
-          <div className={cn(PARCHMENT_CLASS, 'absolute inset-0 rounded-[12px]')} />
-        )}
+        ))}
 
         {/* 시안의 텍스트 블록은 패널 세로 중앙이 아니라 그보다 35px 아래에 있다
             (사진 타원·덩굴 장식을 피한 위치). 739 기준 54.7%. */}
@@ -67,15 +79,16 @@ export function CreatorPanel() {
           <CreatorText />
         </div>
 
-        {/* TODO(asset): avatar-dot.png 가 없으면 픽셀 아바타는 생략된다. */}
         {hasPublicAsset(AVATAR_SRC) ? (
           <Image
             src={AVATAR_SRC}
             alt=""
             width={206}
             height={285}
+            unoptimized
             aria-hidden
-            className="pointer-events-none absolute top-[48.3%] left-[85.8%] w-[15.4%] max-w-none drop-shadow-[0_8px_10px_rgba(0,0,0,0.35)]"
+            /* 시안: 패널 기준 (1150.58, 356.65) 205.83×285 → 1341×739 대비 %. */
+            className="pointer-events-none absolute top-[48.2612%] left-[85.7999%] w-[15.3490%] max-w-none drop-shadow-[0_8px_10px_rgba(0,0,0,0.35)]"
           />
         ) : null}
       </div>
@@ -87,14 +100,26 @@ export function CreatorPanel() {
 function CreatorText() {
   return (
     <>
-      {/* 시안: 그라데이션 글자 위에 두꺼운 고동색 외곽선(메이플 로고 스타일).
-          `background-clip:text` 배경이 먼저 칠해지고 그 위에 스트로크가 얹히므로
-          선 두께의 절반이 글자 안쪽을 덮는다 — 시안의 두께감이 그렇게 나온다. */}
-      <h2 className="font-display bg-gradient-to-b from-[#ffd200] to-[#ff6c00] bg-clip-text text-[clamp(56px,8vw,100px)] leading-none font-bold text-transparent [-webkit-text-stroke:6px_#382a20] lg:[-webkit-text-stroke:8px_#382a20]">
-        {CREATOR_NAME}
+      {/* 시안(509:3002): #ffd200→#ff6c00 세로 그라데이션 글자 + 글자 **바깥**
+          고동색 외곽선. `-webkit-text-stroke` 는 획 중앙 정렬이라 그대로 쓰면
+          두께의 절반이 글자를 덮어 노란 면이 8px 얇아진다(시안 실측 89px →
+          81px). 그래서 같은 글자를 스트로크만 있는 레이어로 한 벌 더 깔고
+          그 위에 그라데이션 글자를 얹는다 — 획이 전부 글자 밖에 남는다.
+          (`paint-order: stroke fill` 은 `background-clip:text` 와 함께 쓰면
+          Chromium 이 그라데이션을 획까지 클리핑해 외곽선이 사라진다.) */}
+      <h2 className="font-display relative z-10 text-[clamp(56px,8vw,100px)] leading-none font-bold lg:-top-1">
+        <span
+          aria-hidden
+          className="absolute inset-0 text-[#3a2b20] drop-shadow-[0_4px_6px_rgba(58,43,32,0.35)] [-webkit-text-stroke:12px_#3a2b20] lg:[-webkit-text-stroke:16px_#3a2b20]"
+        >
+          {CREATOR_NAME}
+        </span>
+        <span className="relative bg-gradient-to-b from-[#ffd200] to-[#ff6c00] bg-clip-text text-transparent">
+          {CREATOR_NAME}
+        </span>
       </h2>
 
-      <div className="flex flex-col gap-6 lg:gap-[10px]">
+      <div className="relative z-10 flex flex-col gap-6 lg:gap-[10px]">
         <p className="font-display text-[clamp(18px,2.2vw,25px)] leading-snug font-bold text-[#f7601b]">
           {CREATOR_SLOGAN}
         </p>

@@ -6,7 +6,9 @@ import { BackToListLink } from '@/components/board/BackToListLink'
 import { CommentSection } from '@/components/board/CommentSection'
 import { ListSheet } from '@/components/board/ListSheet'
 import { Markdown } from '@/components/board/Markdown'
+import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
+import { getCurrentUser } from '@/lib/auth/current-user'
 import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
 import { getPostById } from '@/lib/data/community'
 import { maskNickname } from '@/lib/utils/mask'
@@ -34,7 +36,7 @@ export async function generateMetadata(props: PageProps<'/community/[id]'>): Pro
 
 export default async function CommunityDetailPage(props: PageProps<'/community/[id]'>) {
   const { id } = await props.params
-  const post = await getPostById(id)
+  const [post, user] = await Promise.all([getPostById(id), getCurrentUser()])
 
   if (post === null) {
     notFound()
@@ -74,9 +76,16 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
             </p>
           </div>
 
-          <CommentSection comments={post.comments} />
+          <CommentSection
+            postId={post.id}
+            comments={post.comments}
+            isAuthenticated={user !== null}
+          />
         </ArticleCard>
       </ListSheet>
+
+      {/* 렌더 중에는 쿠키를 쓸 수 없어 마운트 후 서버 액션으로 집계한다. */}
+      <ViewCounter postId={post.id} />
 
       <BackToListLink href={COMMUNITY_PATH} />
     </PageShell>

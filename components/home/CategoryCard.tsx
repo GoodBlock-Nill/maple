@@ -15,7 +15,7 @@ export function CategoryCard({ card }: CategoryCardProps) {
     <Link
       href={card.href}
       className={cn(
-        'card-sheet category-card rounded-card relative block aspect-[333/482] w-full max-w-[333px] shrink-0 overflow-hidden',
+        'card-sheet category-card rounded-card relative mx-auto block aspect-[333/482] w-full max-w-[333px] shrink-0 overflow-hidden',
         'sm:aspect-auto sm:h-[482px] sm:w-[333px] sm:max-w-none',
         'transition-[transform,filter] duration-200 ease-out will-change-transform motion-reduce:transition-none',
         'hover:-translate-y-1.5 hover:rotate-0 focus-visible:-translate-y-1.5 focus-visible:rotate-0',
@@ -31,9 +31,7 @@ export function CategoryCard({ card }: CategoryCardProps) {
         )}
       >
         <h3 className="text-[35px] leading-none font-semibold tracking-[-0.02em]">{card.title}</h3>
-        <p className="mt-[8px] text-[25px] leading-none font-semibold opacity-50">
-          {card.english}
-        </p>
+        <p className="mt-[8px] text-[25px] leading-none font-semibold opacity-50">{card.english}</p>
         <span className="mt-auto flex items-center gap-[10px] text-[20px] font-semibold">
           <Image
             src="/images/brand/arrow-card.svg"

@@ -4,6 +4,7 @@ import { ArticleCard } from '@/components/board/ArticleCard'
 import { BackToListLink } from '@/components/board/BackToListLink'
 import { ListSheet } from '@/components/board/ListSheet'
 import { Markdown } from '@/components/board/Markdown'
+import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
 import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
 import { getNewsById } from '@/lib/data/news'
@@ -50,6 +51,9 @@ export default async function NewsDetailPage(props: PageProps<'/news/[id]'>) {
           <Markdown>{item.body}</Markdown>
         </ArticleCard>
       </ListSheet>
+
+      {/* 렌더 중에는 쿠키를 쓸 수 없어 마운트 후 서버 액션으로 집계한다. */}
+      <ViewCounter postId={item.id} />
 
       <BackToListLink href={NEWS_PATH} />
     </PageShell>

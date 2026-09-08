@@ -1,48 +1,57 @@
-import { MEDAL_COLORS } from '@/lib/constants/ranking'
+import Image from 'next/image'
 
-import type { SVGProps } from 'react'
-
-type IconProps = SVGProps<SVGSVGElement>
+import { MEDAL_PALETTE } from '@/lib/constants/ranking'
 
 type MedalRibbonProps = {
-  /** 1 | 2 | 3. 색은 금·은·동 순서다. */
+  /** 1 | 2 | 3. */
   rank: number
   className?: string
 }
 
+const MEDAL_WIDTH = 60
+const MEDAL_HEIGHT = 80
+
 /**
  * TOP3 카드 좌상단에 걸리는 메달 리본 60×80.
- * PNG 자산(`ranking/top3-medal-*.png`)이 아직 없어 인라인 SVG로 그린다.
+ * 1위는 시안 자산, 2·3위는 숫자만 바뀐 같은 형태의 SVG 로 그린다.
  */
 export function MedalRibbon({ rank, className }: MedalRibbonProps) {
-  const color = MEDAL_COLORS[rank - 1] ?? MEDAL_COLORS[0]
+  const palette = MEDAL_PALETTE[rank]
 
-  if (color === undefined) {
-    return null
+  if (palette === undefined) {
+    return (
+      <Image
+        src="/images/ranking/medal-ribbon.png"
+        alt={`${rank}위`}
+        width={MEDAL_WIDTH}
+        height={MEDAL_HEIGHT}
+        className={className}
+      />
+    )
   }
 
   return (
     <svg
-      viewBox="0 0 60 80"
-      width={60}
-      height={80}
+      viewBox={`0 0 ${MEDAL_WIDTH} ${MEDAL_HEIGHT}`}
+      width={MEDAL_WIDTH}
+      height={MEDAL_HEIGHT}
       role="img"
       aria-label={`${rank}위`}
       className={className}
     >
-      {/* 시안: 원판이 카드 상단 모서리에 걸치고 리본 꼬리가 아래로 흐른다. */}
-      <path d="M12 22h36v54L30 63 12 76Z" fill={color.ribbon} />
-      <path d="M12 22h36v8H12Z" fill={color.edge} opacity="0.35" />
-      <circle cx="30" cy="30" r="25" fill={color.edge} />
-      <circle cx="30" cy="30" r="22" fill={color.disc} />
+      <path d="M16 40h13v36l-6.5-8L16 76Z" fill={palette.tail} />
+      <path d="M31 40h13v36l-6.5-8L31 76Z" fill={palette.tail} />
+      <circle cx="30" cy="29" r="27" fill={palette.rim} />
+      <circle cx="30" cy="29" r="22" fill={palette.disc} />
+      <circle cx="30" cy="29" r="18" fill="none" stroke={palette.rim} strokeWidth="2" />
       <text
         x="30"
         y="30"
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize="20"
+        fontSize="22"
         fontWeight="700"
-        fill={color.edge}
+        fill={palette.digit}
       >
         {rank}
       </text>
@@ -50,52 +59,51 @@ export function MedalRibbon({ rank, className }: MedalRibbonProps) {
   )
 }
 
-/** 1위 이름 앞의 왕관 31×30. 이모지 대신 인라인 SVG로 그린다. */
+type IconProps = {
+  className?: string
+}
+
+/** 1위 이름 앞의 왕관 31×30. */
 export function CrownIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 31 30" width={31} height={30} aria-hidden className={className}>
-      <path
-        d="M3 22 1.5 8.5l7.8 5.2L15.5 4l6.2 9.7 7.8-5.2L28 22Z"
-        fill="#ffd75e"
-        stroke="#e0a01c"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path d="M3.6 24.6h23.8v3.2H3.6Z" fill="#f2a93b" />
-    </svg>
+    <Image
+      src="/images/ranking/crown.png"
+      alt=""
+      width={31}
+      height={30}
+      aria-hidden
+      className={className}
+    />
   )
 }
 
-/**
- * 캐릭터 일러스트가 없을 때 카드 가운데에 놓이는 실루엣.
- * TODO(asset): `ranking/top3-char-*.png` 가 도착하면 이 폴백은 표시되지 않는다.
- */
-export function CharacterSilhouette({ className }: IconProps) {
+/** 캐릭터 썸네일 80×80. 개별 이미지가 없을 때 쓰는 기본 아바타. */
+export function RowAvatar({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 120 140" aria-hidden className={className}>
-      <g fill="currentColor" opacity="0.28">
-        <circle cx="60" cy="36" r="26" />
-        <path d="M60 68c22 0 38 16 40 38 .6 6.6-3 10-8 10H28c-5 0-8.6-3.4-8-10 2-22 18-38 40-38Z" />
-      </g>
-    </svg>
+    <Image
+      src="/images/ranking/row-avatar.png"
+      alt=""
+      width={80}
+      height={80}
+      aria-hidden
+      className={className}
+    />
   )
 }
 
 /**
- * 길드 엠블럼 자리. 실제 엠블럼 업로드 전까지 방패 실루엣을 쓴다.
- * TODO(asset): 길드 엠블럼은 관리자 업로드(Phase 4) 대상이다.
+ * 길드 엠블럼 자리 32×35.
+ * TODO(asset): 길드별 엠블럼은 관리자 업로드(Phase 4) 대상이라 공통 아이콘을 쓴다.
  */
 export function GuildEmblem({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 40 41" aria-hidden className={className}>
-      <path
-        d="M20 2 36 7v16c0 9-7 15.6-16 18-9-2.4-16-9-16-18V7Z"
-        fill="#ffd75e"
-        stroke="#c98a12"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path d="m20 12 3 6.4 6.6.9-4.8 4.9 1.2 7-6-3.4-6 3.4 1.2-7-4.8-4.9 6.6-.9Z" fill="#c98a12" />
-    </svg>
+    <Image
+      src="/images/ranking/guild-icon.png"
+      alt=""
+      width={32}
+      height={35}
+      aria-hidden
+      className={className}
+    />
   )
 }

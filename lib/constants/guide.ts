@@ -44,5 +44,27 @@ export const GACHA_TABLE_COLUMNS = [
   { key: 'note', label: '비고', width: '23.87%' },
 ] as const
 
+/**
+ * 시안(`guide-detail-1.png`)이 실제로 쓰는 상세 아이콘.
+ *
+ * 시드 데이터(`supabase/seed.sql`)에는 목록 카드용 자리표시 아이콘만 있어
+ * 상세 표에서 흐릿하게 확대된다. 이름이 일치하는 항목만 시안 아이콘으로
+ * 바꾸고 나머지는 데이터 값을 그대로 쓴다.
+ * TODO(data): 아이템별 아이콘이 DB 에 들어오면 이 표는 지운다.
+ */
+const GACHA_ICON_BY_NAME: Record<string, string> = {
+  '[캐시] 전설의 펫 랜덤 상자': '/images/guide/detail-icon-box.png',
+  '핑크빈 펫(영구)': '/images/guide/detail-icon-pinkbean.png',
+  '슬라임 펫(90일)': '/images/guide/detail-icon-slime.png',
+  '펫 먹이 10개 세트': '/images/guide/detail-icon-food.png',
+}
+
+/** 목업 이름 뒤에 붙는 회차 표기("… 2차")를 떼어 낸다. */
+const ROUND_SUFFIX = / \d+차$/
+
+export function gachaDetailIcon(name: string, fallback: string): string {
+  return GACHA_ICON_BY_NAME[name.replace(ROUND_SUFFIX, '')] ?? fallback
+}
+
 /** 상세 모달을 여닫는 URL 파라미터 이름. */
 export const GACHA_ITEM_PARAM = 'item'

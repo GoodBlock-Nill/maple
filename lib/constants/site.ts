@@ -24,18 +24,23 @@ export const PLAY_URL = '/play'
 
 export const DISCORD_URL = '/discord'
 
+/**
+ * 헤더 GNB. 시안(home.png)은 5개지만 `/ranking` 진입점이 필요해
+ * 가이드와 고객지원 사이에 랭킹을 넣었다(사용자 요청).
+ */
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: '소개', href: '/about' },
   { label: '뉴스', href: '/news' },
   { label: '커뮤니티', href: '/community' },
   { label: '가이드', href: '/guide' },
+  { label: '랭킹', href: '/ranking' },
   { label: '고객지원', href: '/support' },
 ]
 
 /**
- * 푸터 Menu 열. 시안(home.png)은 GNB 와 똑같이 5개만 노출한다.
- * TODO: 시안에 `/ranking` 진입점이 없다. 노출 위치가 정해지면 여기나 GNB 에
- * 추가한다(임의로 넣으면 푸터 패널 높이가 시안과 어긋난다).
+ * 푸터 Menu 열. GNB 와 같은 6개를 노출한다(사용자 요청).
+ * 링크가 6줄(16px + 간격 12px = 28px 피치)이 돼도 열 높이 190px 은 좌측
+ * 열(193px)보다 낮아 글래스 패널 353px 과 구분선 위치는 그대로다.
  */
 export const FOOTER_MENU_LINKS: readonly NavItem[] = NAV_ITEMS
 
@@ -82,6 +87,10 @@ export const SNS_LINKS: readonly SnsLink[] = [
 
 /**
  * IP 고지 문구.
+ *
+ * 시안 푸터(home.png)에는 이 문단이 없고, 넣으면 글래스 패널이 353px 을
+ * 넘겨 아래 행 위치가 전부 밀린다. 그래서 푸터에서는 빼고 개인정보처리방침
+ * 페이지(`/policy/privacy`)에서만 노출한다.
  * TODO: 최종 문구는 사용자 확정 후 교체 예정(플랫폼 고지 요건 검토 중).
  */
 export const IP_NOTICE = `본 사이트는 넥슨(주)의 메이플스토리 월드 플랫폼에서 서비스되는 ${SITE_NAME} 월드의 공식 홈페이지입니다. 'MapleStory' 및 관련 지식재산권은 NEXON Korea Corp.에 있습니다. 'MapleStory Worlds' 및 관련 지식재산권은 Toben Studio Inc.에 있습니다.`

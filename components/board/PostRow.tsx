@@ -29,7 +29,7 @@ export function PostRow({ post }: PostRowProps) {
         <div className="flex min-w-0 items-baseline gap-2.5">
           <h3 className={BOARD_TITLE_CLASS}>{post.title}</h3>
           <span className="text-ink-muted shrink-0 text-[clamp(15px,2vw,27px)] font-medium">
-            ({post.comments.length})
+            ({post.commentCount})
           </span>
         </div>
       </div>

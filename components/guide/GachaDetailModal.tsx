@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 import { GachaGradeTable } from '@/components/guide/GachaGradeTable'
 import { GachaModalShell } from '@/components/guide/GachaModalShell'
+import { gachaDetailIcon } from '@/lib/constants/guide'
 import { formatDateIso } from '@/lib/utils/format-date'
 
 import type { GachaItem } from '@/types/domain'
@@ -25,7 +26,7 @@ export function GachaDetailModal({ item, closeHref }: GachaDetailModalProps) {
           <div className="flex items-start justify-between gap-4 pr-10">
             <span className="border-line-soft flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border bg-white p-[5px]">
               <Image
-                src={item.icon}
+                src={gachaDetailIcon(item.name, item.icon)}
                 alt=""
                 width={52}
                 height={48}

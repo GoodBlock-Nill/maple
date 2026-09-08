@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import { GACHA_GRADE_CLASS, GACHA_TABLE_COLUMNS } from '@/lib/constants/guide'
+import { gachaDetailIcon, GACHA_GRADE_CLASS, GACHA_TABLE_COLUMNS } from '@/lib/constants/guide'
 import { cn } from '@/lib/utils/cn'
 
 import type { GachaRow } from '@/types/domain'
@@ -50,7 +50,7 @@ export function GachaGradeTable({ rows, caption }: GachaGradeTableProps) {
               <td className="px-3">
                 <span className="inline-flex items-center gap-[5px]">
                   <Image
-                    src={row.itemIcon}
+                    src={gachaDetailIcon(row.itemName, row.itemIcon)}
                     alt=""
                     width={32}
                     height={32}

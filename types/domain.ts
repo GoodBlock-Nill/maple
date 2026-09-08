@@ -46,6 +46,12 @@ export type Post = {
   views: number
   likes: number
   createdAt: string
+  /**
+   * `posts.comment_count` 스냅샷. 목록에서 댓글을 조인하지 않고도 개수를 표시하려고
+   * 트리거가 동기화해 주는 값을 그대로 쓴다.
+   */
+  commentCount: number
+  /** 상세에서만 채워진다. 목록 응답에서는 항상 빈 배열이다. */
   comments: readonly Comment[]
 }
 
@@ -175,4 +181,23 @@ export type FaqGroup = {
   category: FaqCategory
   label: string
   items: readonly FaqItem[]
+}
+
+/* -------------------------------------------------------------------------
+ * 사이트 전역 설정 (`site_settings` 단일 행)
+ * ---------------------------------------------------------------------- */
+
+export type SiteSettings = {
+  gameName: string
+  worldId: string | null
+  discordUrl: string | null
+  youtubeUrl: string | null
+  contactEmail: string | null
+  ipNotice: string | null
+  copyright: string | null
+  creatorName: string | null
+  creatorSlogan: string | null
+  /** 마크다운. 문단 구분은 빈 줄 두 개. */
+  creatorIntro: string | null
+  creatorPhotoUrl: string | null
 }

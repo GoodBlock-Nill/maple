@@ -10,12 +10,29 @@ export type HeroMascot = {
   /** 렌더 크기(1440 기준). 원본 GIF/PNG 는 저해상도라 업스케일된다. */
   width: number
   height: number
-  /** 페이지 최상단 기준 절대 좌표. */
+  /** 페이지 최상단·1440 좌표계 기준 절대 좌표. */
   left: number
   top: number
   /** 애니메이션 GIF 는 최적화를 건너뛰어야 움직임이 유지된다. */
   animated: boolean
 }
+
+/**
+ * 1440 좌표를 좌·우 중 가까운 쪽 기준 오프셋으로 바꾼다.
+ *
+ * 장식 레이어는 1440 폭을 넘지 않고(`max-w-[1440px]`) 뷰포트가 좁아지면
+ * 함께 줄어든다. 이때 1440 기준 `left` 를 그대로 쓰면 오른쪽 장식이 화면
+ * 밖으로 밀려 잘린다. 오른쪽에 가까운 장식은 `right` 로 붙여 어떤 폭에서도
+ * 잘리지 않게 한다(1440 에서는 결과가 동일하다).
+ */
+export function heroMascotOffset(mascot: HeroMascot): { left?: number; right?: number } {
+  const right = HERO_LAYER_WIDTH - mascot.left - mascot.width
+
+  return right < mascot.left ? { right } : { left: mascot.left }
+}
+
+/** 장식 좌표계 폭. */
+const HERO_LAYER_WIDTH = 1440
 
 export type HeroBand = {
   /** 헤더 뒤까지 올라오는 상단 배경 밴드. */
@@ -91,10 +108,19 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
     ],
   },
   guide: {
-    /* 단풍 배경은 잎 뒤에 흰 사각형이 구워져 있어 곱연산으로 얹는다. */
-    band: { src: '/images/guide/top-bg.png', height: 420, blend: true },
+    /* `top-bg.png` 은 잎 뒤에 흰 사각형이 구워져 있어 곱연산 보정이 필요했다.
+       `top-bg-clean.png` 은 투명 배경이라 그대로 얹는다. */
+    band: { src: '/images/guide/top-bg-clean.png', height: 505 },
     contentTop: 228,
     mascots: [
+      {
+        src: '/images/guide/fallen-leaves.png',
+        width: 416,
+        height: 149,
+        left: 351,
+        top: 122,
+        animated: false,
+      },
       {
         src: '/images/guide/mascot-top.png',
         width: 170,
@@ -109,7 +135,6 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
     band: { src: '/images/ranking/top-bg.png', height: 296 },
     contentTop: 334,
     mascots: [
-      // TODO(asset): deco-left / mascot-panda / deco-right 는 아직 내려받는 중이다.
       {
         src: '/images/ranking/deco-left.png',
         width: 108,
@@ -146,11 +171,43 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
     contentTop: 334,
     mascots: [
       {
+        src: '/images/support/deco-484.png',
+        width: 60,
+        height: 84,
+        left: 161,
+        top: 268,
+        animated: false,
+      },
+      {
+        src: '/images/support/deco-508.png',
+        width: 162,
+        height: 77,
+        left: 273,
+        top: 298,
+        animated: false,
+      },
+      {
         src: '/images/support/mascot-snowmen.png',
         width: 271,
         height: 198,
         left: 980,
         top: 265,
+        animated: false,
+      },
+      {
+        src: '/images/support/deco-485.png',
+        width: 60,
+        height: 64,
+        left: 1261,
+        top: 275,
+        animated: false,
+      },
+      {
+        src: '/images/support/deco-479.png',
+        width: 124,
+        height: 60,
+        left: 1271,
+        top: 287,
         animated: false,
       },
     ],

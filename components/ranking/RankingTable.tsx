@@ -19,7 +19,10 @@ export function RankingTable({ rows }: RankingTableProps) {
     <ListSheet className="mt-10 xl:mt-[53px]">
       <div
         aria-hidden
-        className={cn(RANKING_GRID_CLASS, 'hidden h-[45px] items-center px-4 sm:px-6 lg:grid lg:px-0 lg:pr-4')}
+        className={cn(
+          RANKING_GRID_CLASS,
+          'hidden h-[45px] items-center px-4 sm:px-6 lg:grid lg:px-0 lg:pr-4',
+        )}
       >
         {RANKING_COLUMNS.map((column) => (
           <p

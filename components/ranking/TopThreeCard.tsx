@@ -1,12 +1,11 @@
 import Image from 'next/image'
 
+import { CrownIcon, GuildEmblem, MedalRibbon } from '@/components/ranking/ranking-icons'
 import {
-  CharacterSilhouette,
-  CrownIcon,
-  GuildEmblem,
-  MedalRibbon,
-} from '@/components/ranking/ranking-icons'
-import { TOP_PANEL_CLASS } from '@/lib/constants/ranking'
+  TOP_CHARACTER_FALLBACK_SIZE,
+  TOP_CHARACTER_SIZE,
+  TOP_PANEL_CLASS,
+} from '@/lib/constants/ranking'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
 
@@ -25,6 +24,10 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
   const stats = [`Lv. ${entry.level}`, entry.job, entry.exp]
   const character =
     entry.character !== undefined && hasPublicAsset(entry.character) ? entry.character : null
+  const characterSize =
+    character === null
+      ? TOP_CHARACTER_FALLBACK_SIZE
+      : (TOP_CHARACTER_SIZE[character] ?? TOP_CHARACTER_FALLBACK_SIZE)
 
   return (
     <article
@@ -41,17 +44,15 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
           panelClass,
         )}
       >
-        {character === null ? (
-          /* TODO(asset): top3-char-*.png 미도착 시 실루엣 폴백. */
-          <CharacterSilhouette className="text-ink h-[200px] w-auto" />
-        ) : (
+        {character === null ? null : (
           <Image
             src={character}
             alt=""
-            width={332}
-            height={243}
+            width={characterSize.width}
+            height={characterSize.height}
             aria-hidden
-            className="h-full w-auto max-w-full object-contain"
+            /* 시안은 크롭 원본 크기 그대로 바닥에 붙인다(패널 높이로 늘리지 않는다). */
+            className="h-auto max-h-full w-auto max-w-full object-contain"
           />
         )}
       </div>
@@ -61,14 +62,14 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
             244(패널) + 15 + 35 + 24 + 17 + 24 + 17 + 15. */}
         <div className="flex min-h-[35px] items-center justify-between gap-3">
           <h3 className="text-ink flex min-w-0 items-center gap-1.5 text-[clamp(20px,2.2vw,27px)] leading-tight font-medium">
-            {entry.rank === 1 ? <CrownIcon className="size-[26px] shrink-0" /> : null}
+            {entry.rank === 1 ? <CrownIcon className="h-[30px] w-[31px] shrink-0" /> : null}
             <span className="truncate">{entry.nickname}</span>
           </h3>
           {entry.guild === null ? (
             <span className="text-table-body text-[16px]">-</span>
           ) : (
             <span className="text-table-body flex shrink-0 items-center gap-1 text-[16px]">
-              <GuildEmblem className="size-8" />
+              <GuildEmblem className="h-[35px] w-8 shrink-0" />
               {entry.guild}
             </span>
           )}
