@@ -148,14 +148,15 @@ function FooterColumn({ title, links, className }: FooterColumnProps) {
   return (
     <nav aria-label={title} className={className}>
       <p className="text-[20px] leading-none font-medium text-white">{title}</p>
-      {/* 링크 줄 간격은 시안 기준 28px(글자 16 + 간격 12). `leading-none` 은
+      {/* 링크 줄 간격은 시안 기준 28px(글자 16 + 간격 12, lg 이상). 폰에서는 tap-area
+          확장(±14px)이 이웃 링크와 겹치지 않도록 28px 로 벌린다(행 44px). `leading-none` 은
           인라인 <a> 가 아니라 <li> 스트럿에 걸려야 실제 높이가 줄어든다. */}
-      <ul className="mt-[14px] flex flex-col gap-3 leading-none">
+      <ul className="mt-[14px] flex flex-col gap-7 leading-none lg:gap-3">
         {links.map((link) => (
           <li key={link.href}>
             <Link
               href={link.href}
-              className="rounded-pill text-ink-soft text-[16px] whitespace-nowrap transition-colors hover:text-white"
+              className="tap-area rounded-pill text-ink-soft text-[16px] whitespace-nowrap transition-colors hover:text-white"
             >
               {link.label}
             </Link>
@@ -175,7 +176,7 @@ function SnsList() {
             href={sns.href}
             prefetch={false}
             aria-label={sns.label}
-            className="flex size-8 items-center justify-center overflow-hidden rounded-[7px] bg-[#edf1f4] transition-opacity hover:opacity-80"
+            className="tap-area flex size-8 items-center justify-center rounded-[7px] bg-[#edf1f4] transition-opacity hover:opacity-80"
           >
             <Image
               src={sns.icon}
@@ -183,7 +184,7 @@ function SnsList() {
               width={Math.round(sns.width)}
               height={Math.round(sns.height)}
               style={{ width: sns.width, height: sns.height }}
-              className={sns.hasOwnPlate ? 'size-8' : undefined}
+              className={sns.hasOwnPlate ? 'size-8 rounded-[7px]' : undefined}
             />
           </Link>
         </li>

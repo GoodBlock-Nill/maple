@@ -96,7 +96,7 @@ export function InquiryForm({
             </label>
             <Link
               href={PRIVACY_POLICY_PATH}
-              className="text-[17px] text-[#0067ff] underline underline-offset-2"
+              className="tap-area text-[17px] text-[#0067ff] underline underline-offset-2"
             >
               {PRIVACY_CONSENT_LINK_LABEL}
             </Link>
@@ -114,7 +114,7 @@ export function InquiryForm({
         />
         {isAuthenticated ? null : (
           <p id={SUBMIT_NOTICE_ID} className="text-ink-muted text-center text-[15px]">
-            <Link href={LOGIN_HREF} className="underline underline-offset-4">
+            <Link href={LOGIN_HREF} className="tap-area underline underline-offset-4">
               {LOGIN_REQUIRED_INQUIRY_NOTICE}
             </Link>
           </p>

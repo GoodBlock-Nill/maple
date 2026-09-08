@@ -9,7 +9,7 @@ export const AUTH_FIELD_CLASS =
 export const AUTH_CARD_CLASS = 'glass rounded-panel w-full px-6 py-8 sm:px-10 sm:py-10'
 
 export const AUTH_LINK_CLASS =
-  'text-ink underline underline-offset-4 transition-opacity hover:opacity-70'
+  'tap-area text-ink underline underline-offset-4 transition-opacity hover:opacity-70'
 
 /**
  * 인증 라우트 핸들러가 실패를 알릴 때 붙이는 `?error=` 값.

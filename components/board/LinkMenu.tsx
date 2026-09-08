@@ -34,7 +34,7 @@ function CheckIcon({ className }: { className?: string }) {
 }
 
 const TRIGGER_CLASS =
-  'group inline-flex items-center gap-1 rounded-md outline-none transition-opacity duration-150 motion-reduce:transition-none hover:text-ink focus-visible:ring-focus/60 focus-visible:ring-2 focus-visible:ring-offset-2 data-[pending]:cursor-wait data-[pending]:opacity-60'
+  'tap-area group inline-flex items-center gap-1 rounded-md outline-none transition-opacity duration-150 motion-reduce:transition-none hover:text-ink focus-visible:ring-focus/60 focus-visible:ring-2 focus-visible:ring-offset-2 data-[pending]:cursor-wait data-[pending]:opacity-60'
 
 const MENU_CLASS =
   'shadow-menu absolute top-[calc(100%+8px)] right-0 z-30 min-w-[140px] max-w-[calc(100vw-1.5rem)] flex origin-top-left flex-col gap-0.5 rounded-[12px] border border-line-soft bg-white p-2 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0'

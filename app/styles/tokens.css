@@ -185,3 +185,18 @@
   --shadow-top3:
     0 0.33px 0.73px rgb(0 0 0 / 0.12), 0 1.5px 2.9px rgb(0 0 0 / 0.07), 0 4px 9px rgb(0 0 0 / 0.05);
 }
+
+/*
+ * `tap-area`: 시각 크기는 그대로 두고 터치 히트 영역만 44px 근처로 넓힌다.
+ * 푸터 링크·정렬 트리거·본문 인라인 링크처럼 글자 높이(16~26px)가 그대로 탭 대상인
+ * 요소에 쓴다(16~20px 글자 → 44~48px). 세로로 이웃한 대상은 폰에서 간격을 24px 이상
+ * 벌려(푸터 링크 등) 확장 영역이 서로 덮지 않게 한다.
+ */
+@utility tap-area {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -14px -8px;
+  }
+}

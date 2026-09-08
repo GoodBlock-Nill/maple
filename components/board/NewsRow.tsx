@@ -1,6 +1,11 @@
 import Link from 'next/link'
 
-import { BOARD_ROW_CLASS, BOARD_ROW_TITLE_CLASS } from '@/components/board/board-styles'
+import {
+  BOARD_ROW_CLASS,
+  BOARD_ROW_HEAD_CLASS,
+  BOARD_ROW_HEAD_TITLE_SLOT_CLASS,
+  BOARD_ROW_TITLE_CLASS,
+} from '@/components/board/board-styles'
 import { MetaRow } from '@/components/board/MetaRow'
 import { Badge } from '@/components/ui/Badge'
 import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
@@ -17,9 +22,11 @@ export function NewsRow({ item }: NewsRowProps) {
 
   return (
     <Link href={`/news/${item.id}`} className={BOARD_ROW_CLASS}>
-      <div className="flex items-center gap-4">
-        <h3 className={BOARD_ROW_TITLE_CLASS + ' min-w-0 flex-1'}>{item.title}</h3>
-        <Badge size="md" color={category.badge}>
+      <div className={BOARD_ROW_HEAD_CLASS}>
+        <h3 className={BOARD_ROW_TITLE_CLASS + ' ' + BOARD_ROW_HEAD_TITLE_SLOT_CLASS}>
+          {item.title}
+        </h3>
+        <Badge size="md" color={category.badge} className="order-1 sm:order-2">
           {category.label}
         </Badge>
       </div>

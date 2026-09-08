@@ -2,6 +2,8 @@ import Link from 'next/link'
 
 import {
   BOARD_ROW_CLASS,
+  BOARD_ROW_HEAD_CLASS,
+  BOARD_ROW_HEAD_TITLE_SLOT_CLASS,
   BOARD_ROW_META_CLASS,
   BOARD_ROW_TITLE_CLASS,
 } from '@/components/board/board-styles'
@@ -27,13 +29,16 @@ export function PostRow({ post }: PostRowProps) {
 
   return (
     <Link href={`/community/${post.id}`} className={BOARD_ROW_CLASS}>
-      <div className="flex items-center gap-4">
-        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+      <div className={BOARD_ROW_HEAD_CLASS}>
+        <div className={'flex items-baseline gap-2 ' + BOARD_ROW_HEAD_TITLE_SLOT_CLASS}>
           <h3 className={BOARD_ROW_TITLE_CLASS + ' min-w-0'}>{post.title}</h3>
           <span className={BOARD_ROW_META_CLASS + ' shrink-0'}>({post.commentCount})</span>
         </div>
-        <span className={BOARD_ROW_META_CLASS + ' shrink-0'}>{maskNickname(post.author)}</span>
-        <Badge size="md" color={category.badge}>
+        {/* 폰에서는 뱃지 줄의 오른쪽 끝에 붙고(ml-auto), sm 이상에서는 뱃지 앞에 선다. */}
+        <span className={BOARD_ROW_META_CLASS + ' order-1 ml-auto shrink-0 sm:order-2 sm:ml-0'}>
+          {maskNickname(post.author)}
+        </span>
+        <Badge size="md" color={category.badge} className="order-1 sm:order-3">
           {category.label}
         </Badge>
       </div>

@@ -9,9 +9,21 @@ export const BOARD_CARD_CLASS =
  */
 export const BOARD_ROW_CLASS = BOARD_CARD_CLASS + ' flex flex-col gap-1.5 px-6 py-3'
 
-/** 목록 제목 20px medium (뉴스 실측: tracking -0.2px). 뉴스·커뮤니티 공용. */
+/**
+ * 목록 제목 20px medium (뉴스 실측: tracking -0.2px). 뉴스·커뮤니티 공용.
+ * 폰(<640px)에서는 제목이 한 줄을 통째로 쓰고 두 줄까지 보인다. 뱃지·작성자와 한 줄에
+ * 두면 320~390px 폭에서 제목이 2~3글자로 잘려 실기기 피드백이 왔다.
+ */
 export const BOARD_ROW_TITLE_CLASS =
-  'text-ink line-clamp-1 text-[20px] font-medium tracking-[-0.2px]'
+  'text-ink line-clamp-2 text-[18px] font-medium tracking-[-0.2px] sm:line-clamp-1 sm:text-[20px]'
+
+/**
+ * 행 1번째 줄 컨테이너. 폰에서는 wrap 되어 [뱃지 · 작성자] 줄 다음에 제목 줄이 오고,
+ * sm 이상에서는 시안 그대로 [제목 … 작성자 뱃지] 한 줄이다. 순서는 `order-*` 로 바꾼다.
+ */
+export const BOARD_ROW_HEAD_CLASS = 'flex flex-wrap items-center gap-x-4 gap-y-1.5 sm:flex-nowrap'
+export const BOARD_ROW_HEAD_TITLE_SLOT_CLASS =
+  'order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1'
 
 /**
  * 행 2번째 줄의 보조 텍스트(댓글수 · 마스킹된 작성자).

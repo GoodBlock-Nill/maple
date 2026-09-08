@@ -24,7 +24,7 @@ type MetaItemProps = {
 
 function MetaItem({ icon, label, value }: MetaItemProps) {
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
       <Image src={icon.src} alt="" width={icon.width} height={icon.height} aria-hidden />
       <span className="sr-only">{label}</span>
       {value}
@@ -37,7 +37,7 @@ export function MetaRow({ date, views, likes, className }: MetaRowProps) {
   return (
     <p
       className={cn(
-        'text-ink flex items-center gap-3 text-[16px] leading-[19px] font-medium',
+        'text-ink flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px] leading-[19px] font-medium',
         className,
       )}
     >
