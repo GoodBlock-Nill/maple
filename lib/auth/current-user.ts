@@ -12,6 +12,8 @@ export type CurrentUser = {
   id: string
   nickname: string
   role: UserRole
+  /** 헤더 아바타용. 지금은 스텁 로그인이 채우지 않아 대부분 null — 첫 글자 폴백으로 그린다. */
+  avatarUrl: string | null
 }
 
 /**
@@ -35,7 +37,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, role')
+    .select('nickname, role, avatar_url')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -43,5 +45,6 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: user.id,
     nickname: profile?.nickname ?? (user.email ?? '모험가').split('@')[0] ?? '모험가',
     role: profile?.role ?? 'user',
+    avatarUrl: profile?.avatar_url ?? null,
   }
 }

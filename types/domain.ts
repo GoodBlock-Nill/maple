@@ -9,6 +9,12 @@ export type NewsCategory = 'notice' | 'patch' | 'event'
 
 export type CommunityCategory = 'chat' | 'question' | 'info'
 
+/**
+ * 본문 저장 형식(`posts.content_format` enum 과 1:1).
+ * 에디터 도입 이후 새 글은 항상 `html` 이고, `markdown` 은 그 이전 글이다.
+ */
+export type ContentFormat = 'markdown' | 'html'
+
 /** 뉴스 목록 표시 방식. URL `?view=` 값과 1:1 대응한다. */
 export type NewsView = 'tile' | 'detail' | 'row'
 
@@ -52,7 +58,9 @@ export type Post = {
   id: string
   category: CommunityCategory
   title: string
+  /** `contentFormat` 에 따라 마크다운 원문이거나 정제를 마친 HTML 이다. */
   body: string
+  contentFormat: ContentFormat
   /** 원본 닉네임. 화면에는 `maskNickname` 을 거쳐 노출한다. */
   author: string
   /** 작성자 uuid. 탈퇴하면 null 이 된다. 수정·삭제 버튼 노출 판정에만 쓴다. */

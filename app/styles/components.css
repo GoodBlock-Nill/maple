@@ -212,6 +212,54 @@
     padding: 2px 6px;
     font-size: 0.9em;
   }
+
+  /* 첨부 이미지. 원본이 4000px 이어도 본문 폭을 넘지 않게 눌러 둔다. */
+  .prose-board img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  /* 영상 임베드 — 16:9 반응형. iframe 은 내재 비율이 없어 컨테이너가 비율을 잡아 준다. */
+  .video-embed {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: var(--color-ink);
+  }
+  .video-embed iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+@layer components {
+  /* -------------------------------------------------------------------------
+     본문 에디터(Tiptap). 편집 화면과 상세 화면이 같은 `.prose-board` 를 쓰므로
+     여기서는 "편집 중에만 필요한 것"(플레이스홀더·최소 높이)만 더한다.
+     ---------------------------------------------------------------------- */
+  .ProseMirror {
+    outline: none;
+  }
+  /* Placeholder 확장이 빈 문서의 첫 문단에 붙이는 클래스·속성이다. */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--color-ink-muted);
+  }
+  /* 선택된 이미지·영상 노드에 초점 링을 준다. 원자 노드는 캐럿이 안 보여 표시가 필요하다. */
+  .ProseMirror .ProseMirror-selectednode {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {

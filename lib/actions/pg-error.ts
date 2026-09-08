@@ -25,6 +25,28 @@ export function isUniqueViolation(error: unknown): boolean {
   return readCode(error) === UNIQUE_VIOLATION
 }
 
+/**
+ * unique_violation 이 어느 제약에서 났는지 이름만 뽑는다.
+ *
+ * PostgREST 오류 메시지에는 `duplicate key value violates unique constraint
+ * "profiles_nickname_key"` 처럼 제약 이름이 그대로 들어 있다. 사용자에게는
+ * 절대 원문을 보이지 않지만(스키마 노출), 한 액션이 필드 여러 개에 유니크
+ * 제약을 걸어 뒀을 때 "어떤 필드가 겹쳤는지" 분기하는 용도로만 서버 안에서 쓴다.
+ */
+export function uniqueViolationConstraint(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null) {
+    return null
+  }
+
+  const message = (error as { message?: unknown }).message
+
+  if (typeof message !== 'string') {
+    return null
+  }
+
+  return message.match(/constraint "([^"]+)"/)?.[1] ?? null
+}
+
 export function isRlsViolation(error: unknown): boolean {
   return readCode(error) === RLS_VIOLATION
 }

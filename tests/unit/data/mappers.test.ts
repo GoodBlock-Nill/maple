@@ -29,7 +29,8 @@ const postRow: PostSource = {
   id: '22222222-0000-4000-8000-000000000001',
   category_key: 'chat',
   title: '오늘 길드 사냥 같이 가실 분',
-  content: '본문',
+  content: '<p>본문</p>',
+  content_format: 'html',
   author_id: 'aaaaaaaa-0000-4000-8000-000000000001',
   author_name: 'cinnamon',
   view_count: 120,
@@ -127,6 +128,15 @@ describe('toPost', () => {
     // Assert
     expect(result.commentCount).toBe(3)
     expect(result.comments).toEqual([])
+  })
+
+  it('should carry the stored content format so the detail view can pick a renderer', () => {
+    // Arrange & Act
+    const result = toPost({ ...postRow, content: '# 옛 글', content_format: 'markdown' })
+
+    // Assert
+    expect(result.contentFormat).toBe('markdown')
+    expect(result.body).toBe('# 옛 글')
   })
 
   it('should attach comments when they are provided for the detail view', () => {

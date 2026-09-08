@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { FEATURES } from '@/lib/constants/features'
+
 /**
  * 인증 검증 스키마.
  *
@@ -70,10 +72,56 @@ export function parseSocialLoginMode(value: string | undefined): SocialLoginMode
 }
 
 /* -------------------------------------------------------------------------- */
+/* 메이플스토리 월드 계정 연동                                                 */
+/* -------------------------------------------------------------------------- */
+
+/** 클라이언트 "설정 - 계정" 화면에 보이는 숫자 UID. */
+export const MSW_UID_PATTERN = /^[0-9]{10,20}$/
+
+/** 클라이언트 "더보기 - 프로필 편집" 화면에 보이는 "#" 코드. */
+export const MSW_PROFILE_CODE_PATTERN = /^#[a-z0-9]{4,10}$/
+
+export const mswUidSchema = z.string().trim().regex(MSW_UID_PATTERN, {
+  message: 'UID는 숫자 10~20자로 입력해 주세요. (예: 20123000000000000)',
+})
+
+/**
+ * "#" 없이 붙여넣거나 대문자가 섞여도 통과하도록 검증 전에 다듬는다
+ * (트림 → 소문자 → 앞에 "#" 이 없으면 붙이기). DB 제약(CHECK)은 이미 정규화된
+ * 값만 받는다고 가정하므로, 저장 전에는 반드시 이 스키마를 거쳐야 한다.
+ */
+export const mswProfileCodeSchema = z
+  .string()
+  .trim()
+  .transform((value) => {
+    const lower = value.toLowerCase()
+    return lower.startsWith('#') ? lower : `#${lower}`
+  })
+  .refine((value) => MSW_PROFILE_CODE_PATTERN.test(value), {
+    message: '프로필 코드는 "#" 뒤에 영문 소문자·숫자 4~10자로 입력해 주세요. (예: #abcd1)',
+  })
+
+/**
+ * 온보딩/내 정보 폼에 실제로 꽂는 UID·프로필 코드 필드.
+ *
+ * `FEATURES.mswAccountFields` 가 꺼져 있으면 화면에 입력칸 자체가 없으므로
+ * FormData 에도 값이 안 실린다 — 그 상태에서 `mswUidSchema`(필수) 를 그대로
+ * 쓰면 매번 검증에서 튕긴다. 값이 있든 없든 그냥 통과시키고 서버 액션이
+ * 컬럼에 쓰지 않도록 한다(기존 값 보존).
+ */
+const mswUidField = FEATURES.mswAccountFields ? mswUidSchema : z.string().trim().optional()
+const mswProfileCodeField = FEATURES.mswAccountFields
+  ? mswProfileCodeSchema
+  : z.string().trim().optional()
+
+/* -------------------------------------------------------------------------- */
 /* 온보딩                                                                      */
 /* -------------------------------------------------------------------------- */
 
-const nickname = z
+/* 온보딩과 "내 정보" 닉네임 변경이 같은 규칙을 쓴다. 두 곳에서 재사용하도록
+   내보낸다(민감한 이름은 아니라 export 해도 되지만, 이 파일 밖에서 규칙을 다시
+   베끼는 쪽이 더 위험하다). */
+export const nicknameSchema = z
   .string()
   .trim()
   .min(NICKNAME_MIN_LENGTH, { message: `닉네임은 ${NICKNAME_MIN_LENGTH}자 이상이어야 합니다.` })
@@ -84,9 +132,13 @@ const nickname = z
 
 /* 체크박스는 체크했을 때만 FormData 에 담긴다. 액션이 boolean 으로 바꿔 넘기고
    여기서는 "반드시 true" 만 확인한다. `z.literal(true)` 로 두면 미체크(false)일 때
-   메시지를 필드별로 다르게 줄 수 없어 refine 대신 literal + 개별 message 를 쓴다. */
+   메시지를 필드별로 다르게 줄 수 없어 refine 대신 literal + 개별 message 를 쓴다.
+   메이플스토리 월드 UID·프로필 코드도 이때 함께 받는다 — 랭킹 등 연동 화면이
+   나중에 이 값을 참조하므로 첫 로그인에서 한 번에 받아 두는 편이 낫다. */
 export const onboardingSchema = z.object({
-  nickname,
+  nickname: nicknameSchema,
+  mswUid: mswUidField,
+  mswProfileCode: mswProfileCodeField,
   termsAgreed: z.literal(true, { message: '이용약관에 동의해 주세요.' }),
   privacyAgreed: z.literal(true, { message: '개인정보처리방침에 동의해 주세요.' }),
   ageConfirmed: z.literal(true, { message: '만 14세 이상만 가입할 수 있습니다.' }),
@@ -94,19 +146,40 @@ export const onboardingSchema = z.object({
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>
 
+/* -------------------------------------------------------------------------- */
+/* 내 정보 — 닉네임 · 메이플스토리 월드 계정 변경                              */
+/* -------------------------------------------------------------------------- */
+
+/** "내 정보" 화면의 경로. 로그인·온보딩 리다이렉트의 `next` 값으로도 쓴다. */
+export const ACCOUNT_PATH = '/account'
+
+export const updateAccountSchema = z.object({
+  nickname: nicknameSchema,
+  mswUid: mswUidField,
+  mswProfileCode: mswProfileCodeField,
+})
+
+export type UpdateAccountInput = z.infer<typeof updateAccountSchema>
+
 /** 온보딩 완료 여부 판단에 필요한 최소 프로필 모양. */
 export type OnboardingStatusSource = {
   nickname?: string | null
   terms_agreed_at?: string | null
   privacy_agreed_at?: string | null
   age_confirmed_at?: string | null
+  msw_uid?: string | null
+  msw_profile_code?: string | null
 }
 
 /**
  * 온보딩을 마친 프로필인지 판정한다.
  *
- * 동의 시각 세 개가 모두 남아 있어야 "글쓰기·댓글·문의"를 열어 준다.
- * 프로필 자체가 없으면(트리거 실패 등) 당연히 미완료다.
+ * 동의 시각 세 개가 모두 남아 있어야 "글쓰기·댓글·문의"를 열어 준다. 프로필
+ * 자체가 없으면(트리거 실패 등) 당연히 미완료다.
+ *
+ * `FEATURES.mswAccountFields` 가 켜져 있을 때만 메이플스토리 월드 UID·프로필
+ * 코드까지 함께 요구한다 — 꺼져 있으면 입력칸 자체가 없어 채울 방법이 없으므로
+ * 이 조건을 걸면 아무도 온보딩을 통과하지 못한다.
  */
 export function isOnboardingComplete(profile: OnboardingStatusSource | null | undefined): boolean {
   if (profile === null || profile === undefined) {
@@ -116,12 +189,17 @@ export function isOnboardingComplete(profile: OnboardingStatusSource | null | un
   const filled = (value: string | null | undefined): boolean =>
     typeof value === 'string' && value.trim() !== ''
 
-  return (
+  const hasBasics =
     filled(profile.nickname) &&
     filled(profile.terms_agreed_at) &&
     filled(profile.privacy_agreed_at) &&
     filled(profile.age_confirmed_at)
-  )
+
+  if (!FEATURES.mswAccountFields) {
+    return hasBasics
+  }
+
+  return hasBasics && filled(profile.msw_uid) && filled(profile.msw_profile_code)
 }
 
 /* -------------------------------------------------------------------------- */

@@ -1,18 +1,22 @@
 'use server'
 
+import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
-import { isUniqueViolation } from '@/lib/actions/pg-error'
+import { isUniqueViolation, uniqueViolationConstraint } from '@/lib/actions/pg-error'
+import { FEATURES } from '@/lib/constants/features'
 import { createClient } from '@/lib/supabase/server'
 import { markStubProvider, signInWithStubProvider } from '@/lib/supabase/stub-social'
 import {
+  ACCOUNT_PATH,
   isOnboardingComplete,
   isSocialProvider,
   onboardingSchema,
   ONBOARDING_PATH,
   parseSocialLoginMode,
   sanitizePostAuthPath,
+  updateAccountSchema,
 } from '@/lib/validation/auth'
 
 import type { FormState } from '@/lib/actions/form-state'
@@ -108,7 +112,9 @@ async function resolvePostAuthPath(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at')
+    .select(
+      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code',
+    )
     .eq('id', userId)
     .maybeSingle()
 
@@ -120,10 +126,51 @@ async function resolvePostAuthPath(
 }
 
 /**
+ * 메이플스토리 월드 UID·프로필 코드를 DB 업데이트 payload 에 실을지 정한다.
+ *
+ * `FEATURES.mswAccountFields` 가 꺼져 있으면 입력칸이 없어 값 자체가 신뢰할 수
+ * 없다(빈 문자열이거나 옛 값). 기존 컬럼 값을 덮어쓰지 않도록 아예 payload에서
+ * 뺀다 — 컬럼과 마이그레이션은 그대로 둔 채 "쓰지만 않는" 방식으로 비활성화한다.
+ *
+ * 스키마(`onboardingSchema`/`updateAccountSchema`)는 플래그가 켜졌을 때만
+ * `mswUidSchema`/`mswProfileCodeSchema`(필수)를 쓰므로, 이 분기 안에서는 두 값이
+ * 항상 채워져 있다 — 그 사실을 타입에 반영하기 위해 단언한다.
+ */
+function mswAccountFieldsForWrite(data: {
+  mswUid?: string
+  mswProfileCode?: string
+}): { msw_uid: string; msw_profile_code: string } | Record<string, never> {
+  if (!FEATURES.mswAccountFields) {
+    return {}
+  }
+
+  return { msw_uid: data.mswUid as string, msw_profile_code: data.mswProfileCode as string }
+}
+
+/** 닉네임/UID 유니크 충돌을 제약 이름으로 갈라 필드별 메시지를 붙인다. */
+const NICKNAME_TAKEN_MESSAGE = '이미 사용 중인 닉네임입니다.'
+const MSW_UID_TAKEN_MESSAGE = '이미 등록된 UID입니다.'
+
+function accountUniqueViolationFieldErrors(error: unknown): Record<string, string> | null {
+  const constraint = uniqueViolationConstraint(error)
+
+  if (constraint === null || constraint.includes('nickname')) {
+    return { nickname: NICKNAME_TAKEN_MESSAGE }
+  }
+
+  if (constraint.includes('msw_uid')) {
+    return { mswUid: MSW_UID_TAKEN_MESSAGE }
+  }
+
+  return null
+}
+
+/**
  * 최초 로그인 온보딩 완료.
  *
- * 닉네임을 확정하고 이용약관·개인정보처리방침 동의와 만 14세 이상 확인을 남긴다.
- * 개인정보처리방침 제11조상 만 14세 미만은 가입할 수 없으므로 세 항목 모두 필수다.
+ * 닉네임·메이플스토리 월드 UID·프로필 코드를 확정하고 이용약관·개인정보처리방침
+ * 동의와 만 14세 이상 확인을 남긴다. 개인정보처리방침 제11조상 만 14세 미만은
+ * 가입할 수 없으므로 세 동의 항목 모두 필수다.
  */
 export async function completeOnboarding(
   _prevState: FormState,
@@ -141,6 +188,8 @@ export async function completeOnboarding(
   const nextPath = sanitizePostAuthPath(readField(formData, 'next'))
   const parsed = onboardingSchema.safeParse({
     nickname: readField(formData, 'nickname'),
+    mswUid: readField(formData, 'mswUid'),
+    mswProfileCode: readField(formData, 'mswProfileCode'),
     termsAgreed: readCheckbox(formData, 'termsAgreed'),
     privacyAgreed: readCheckbox(formData, 'privacyAgreed'),
     ageConfirmed: readCheckbox(formData, 'ageConfirmed'),
@@ -155,6 +204,7 @@ export async function completeOnboarding(
     .from('profiles')
     .update({
       nickname: parsed.data.nickname,
+      ...mswAccountFieldsForWrite(parsed.data),
       terms_agreed_at: now,
       privacy_agreed_at: now,
       age_confirmed_at: now,
@@ -162,9 +212,10 @@ export async function completeOnboarding(
     .eq('id', user.id)
 
   if (error !== null) {
-    // 닉네임에는 대소문자 무시 유니크 인덱스가 걸려 있다.
-    if (isUniqueViolation(error)) {
-      return { fieldErrors: { nickname: '이미 사용 중인 닉네임입니다.' } }
+    const fieldErrors = isUniqueViolation(error) ? accountUniqueViolationFieldErrors(error) : null
+
+    if (fieldErrors !== null) {
+      return { fieldErrors }
     }
 
     return { formError: GENERIC_FAILURE_MESSAGE }
@@ -178,4 +229,59 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut()
 
   redirect('/')
+}
+
+const ACCOUNT_UPDATED_MESSAGE = '정보를 저장했습니다.'
+
+/**
+ * "내 정보" 화면에서 닉네임과 메이플스토리 월드 계정(UID·프로필 코드)을 바꾼다.
+ *
+ * 온보딩과 같은 스키마·유니크 인덱스를 쓰므로 충돌 처리도 같은 헬퍼
+ * (`accountUniqueViolationFieldErrors`)를 재사용한다. 이 액션은 `redirect()`
+ * 로 빠져나가지 않고 같은 화면에 머문다(성공 메시지를 보여줘야 한다). Next 16
+ * 문서상 액션이 `revalidatePath`/`refresh` 를 부르지 않으면 현재 라우트가 다시
+ * 렌더되지 않으므로, 헤더의 닉네임 표시도 갱신되도록 `refresh()` 로 현재
+ * 라우트의 서버 컴포넌트를 다시 그린다.
+ */
+export async function updateAccount(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user === null) {
+    redirect(`${LOGIN_PATH}?next=${encodeURIComponent(ACCOUNT_PATH)}`)
+  }
+
+  const parsed = updateAccountSchema.safeParse({
+    nickname: readField(formData, 'nickname'),
+    mswUid: readField(formData, 'mswUid'),
+    mswProfileCode: readField(formData, 'mswProfileCode'),
+  })
+
+  if (!parsed.success) {
+    return { fieldErrors: toFieldErrors(parsed.error) }
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      nickname: parsed.data.nickname,
+      ...mswAccountFieldsForWrite(parsed.data),
+    })
+    .eq('id', user.id)
+
+  if (error !== null) {
+    const fieldErrors = isUniqueViolation(error) ? accountUniqueViolationFieldErrors(error) : null
+
+    if (fieldErrors !== null) {
+      return { fieldErrors }
+    }
+
+    return { formError: GENERIC_FAILURE_MESSAGE }
+  }
+
+  refresh()
+
+  return { message: ACCOUNT_UPDATED_MESSAGE }
 }

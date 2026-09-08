@@ -1,25 +1,31 @@
-import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
 import { ArticleCard } from '@/components/board/ArticleCard'
 import { BackToListLink } from '@/components/board/BackToListLink'
 import { CommentSection } from '@/components/board/CommentSection'
+import { LikeButton } from '@/components/board/LikeButton'
 import { ListSheet } from '@/components/board/ListSheet'
-import { Markdown } from '@/components/board/Markdown'
 import { PostActions } from '@/components/board/PostActions'
+import { PostBody } from '@/components/board/PostBody'
 import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
-import { getPostById } from '@/lib/data/community'
+import { getPostById, getPostLikeState } from '@/lib/data/community'
 import { isEdited } from '@/lib/utils/authorship'
 import { maskNickname } from '@/lib/utils/mask'
+import { postHtmlText } from '@/lib/utils/post-html'
 
 import type { Metadata } from 'next'
+import type { Post } from '@/types/domain'
 
 const COMMUNITY_PATH = '/community'
 const COMMUNITY_TITLE = '자유게시판'
-const LIKE_NOTICE_ID = 'like-notice'
+
+/** 메타 설명에는 태그가 아니라 사람이 읽는 글이 들어가야 한다. */
+function postSummaryText(post: Post): string {
+  return post.contentFormat === 'html' ? postHtmlText(post.body) : post.body
+}
 
 export async function generateMetadata(props: PageProps<'/community/[id]'>): Promise<Metadata> {
   const { id } = await props.params
@@ -31,7 +37,7 @@ export async function generateMetadata(props: PageProps<'/community/[id]'>): Pro
 
   return {
     title: post.title,
-    description: post.body.slice(0, 120),
+    description: postSummaryText(post).slice(0, 120),
     openGraph: { title: post.title, type: 'article' },
   }
 }
@@ -47,6 +53,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
   const category = COMMUNITY_CATEGORY_MAP[post.category]
   const detailPath = `${COMMUNITY_PATH}/${post.id}`
   const viewerId = user?.id ?? null
+  const liked = await getPostLikeState(post.id, viewerId)
 
   return (
     <PageShell variant="community" title={COMMUNITY_TITLE}>
@@ -76,21 +83,16 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
             ) : null
           }
         >
-          <Markdown>{post.body}</Markdown>
+          <PostBody format={post.contentFormat} body={post.body} />
 
-          <div className="mt-10 flex flex-col items-center gap-2">
-            <button
-              type="button"
-              disabled
-              aria-describedby={LIKE_NOTICE_ID}
-              className="cta-light rounded-pill text-ink inline-flex h-11 items-center gap-2 px-6 text-[16px] font-medium opacity-60"
-            >
-              <Image src="/images/brand/icon-like.svg" alt="" width={11} height={12} aria-hidden />
-              좋아요 {post.likes}
-            </button>
-            <p id={LIKE_NOTICE_ID} className="text-ink-muted text-[14px]">
-              로그인 후 이용할 수 있습니다.
-            </p>
+          <div className="mt-10 flex justify-center">
+            <LikeButton
+              postId={post.id}
+              liked={liked}
+              likeCount={post.likes}
+              detailPath={detailPath}
+              isAuthenticated={user !== null}
+            />
           </div>
 
           <CommentSection

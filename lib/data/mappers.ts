@@ -67,6 +67,7 @@ export type PostSource = Pick<
   | 'category_key'
   | 'title'
   | 'content'
+  | 'content_format'
   | 'author_id'
   | 'author_name'
   | 'view_count'
@@ -127,6 +128,7 @@ export function toPost(row: PostSource, comments: readonly Comment[] = []): Post
     category: toCommunityCategory(row.category_key),
     title: row.title,
     body: row.content,
+    contentFormat: row.content_format,
     author: row.author_name,
     authorId: row.author_id,
     views: row.view_count,

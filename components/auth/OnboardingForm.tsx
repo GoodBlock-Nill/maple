@@ -9,6 +9,7 @@ import { SubmitButton } from '@/components/auth/SubmitButton'
 import { Input } from '@/components/ui/Input'
 import { completeOnboarding } from '@/lib/actions/auth-actions'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
+import { FEATURES } from '@/lib/constants/features'
 import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from '@/lib/validation/auth'
 
 import type { ReactNode } from 'react'
@@ -18,6 +19,9 @@ type OnboardingFormProps = {
   nextPath: string
   /** 제공자에서 받아 온 임시 닉네임. 사용자가 그대로 확정할 수도 있다. */
   defaultNickname: string
+  /** 재방문(입력을 마치지 못하고 이탈했다가 돌아온) 시 이미 입력해 둔 값. */
+  defaultMswUid: string
+  defaultMswProfileCode: string
 }
 
 type ConsentProps = {
@@ -62,7 +66,12 @@ function Consent({ name, error, children }: ConsentProps) {
  * 닉네임 확정과 필수 동의 세 가지를 한 화면에서 받는다. 만 14세 확인은
  * 개인정보처리방침 제11조(만 14세 미만 가입 불가) 때문에 선택이 아니라 필수다.
  */
-export function OnboardingForm({ nextPath, defaultNickname }: OnboardingFormProps) {
+export function OnboardingForm({
+  nextPath,
+  defaultNickname,
+  defaultMswUid,
+  defaultMswProfileCode,
+}: OnboardingFormProps) {
   const [state, formAction] = useActionState(completeOnboarding, EMPTY_FORM_STATE)
 
   return (
@@ -85,6 +94,41 @@ export function OnboardingForm({ nextPath, defaultNickname }: OnboardingFormProp
         error={state.fieldErrors?.nickname}
         className={AUTH_FIELD_CLASS}
       />
+
+      {/* 오너 요청: UID·프로필 코드 입력은 지우지 않고 플래그로만 숨긴다.
+          추후 재활성화 시 NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS 만 켜면 된다. */}
+      {FEATURES.mswAccountFields ? (
+        <>
+          <Input
+            label="메이플스토리 월드 계정 UID"
+            name="mswUid"
+            type="text"
+            inputMode="numeric"
+            required
+            defaultValue={defaultMswUid}
+            placeholder="예: 20123000000000000"
+            hint={
+              'UID는 "메이플스토리 월드 클라이언트 - 설정 - 계정" 에서 확인할 수 있습니다. ex) 20123000000000000'
+            }
+            error={state.fieldErrors?.mswUid}
+            className={AUTH_FIELD_CLASS}
+          />
+
+          <Input
+            label="메이플스토리 월드 프로필 코드"
+            name="mswProfileCode"
+            type="text"
+            required
+            defaultValue={defaultMswProfileCode}
+            placeholder="예: #abcd1"
+            hint={
+              '프로필 코드는 "메이플스토리 월드 클라이언트 - 더보기 - 프로필 편집" 에서 확인할 수 있습니다. ex) #abcd1'
+            }
+            error={state.fieldErrors?.mswProfileCode}
+            className={AUTH_FIELD_CLASS}
+          />
+        </>
+      ) : null}
 
       <fieldset className="flex flex-col gap-3">
         <legend className="text-ink mb-1 text-[13px] font-bold">

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
 import { createCommentSchema, createPostSchema } from '@/lib/validation/post'
 
@@ -23,6 +24,9 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
 const COMMUNITY_PATH = '/community'
 const LOGIN_MESSAGE = '로그인 후 이용할 수 있습니다.'
 const COMMUNITY_BOARD = 'community'
+
+/** 에디터로 쓴 글은 항상 HTML 로 저장한다. 마크다운은 에디터 도입 전 글에만 남는다. */
+const HTML_FORMAT = 'html' as const
 
 /** 사용자의 마지막 작성 시각. 도배 방지 판정에만 쓴다. */
 async function getLatestWriteAt(
@@ -48,10 +52,12 @@ export async function createPost(_prevState: FormState, formData: FormData): Pro
     return { formError: LOGIN_MESSAGE }
   }
 
+  /* 정제를 검증보다 **먼저** 한다. 상한(20,000자)은 실제로 저장되는 문자열을 재야
+     의미가 있고, 정제 전 길이는 공격자가 얼마든지 부풀릴 수 있기 때문이다. */
   const parsed = createPostSchema.safeParse({
     category: readField(formData, 'category'),
     title: readField(formData, 'title'),
-    content: readField(formData, 'content'),
+    content: sanitizePostHtml(readField(formData, 'content')),
   })
 
   if (!parsed.success) {
@@ -72,6 +78,7 @@ export async function createPost(_prevState: FormState, formData: FormData): Pro
       category_key: parsed.data.category,
       title: parsed.data.title,
       content: parsed.data.content,
+      content_format: HTML_FORMAT,
       author_id: user.id,
       /* 작성 시점 닉네임 스냅샷. 탈퇴해도 목록이 깨지지 않도록 비정규화해 둔다. */
       author_name: user.nickname,

@@ -4,13 +4,13 @@ import Image from 'next/image'
 import { useActionState, useMemo } from 'react'
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
+import { PostEditor } from '@/components/editor/PostEditor'
 import { Input } from '@/components/ui/Input'
-import { Textarea } from '@/components/ui/Textarea'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { createPost } from '@/lib/actions/post-actions'
 import { updatePost } from '@/lib/actions/post-edit-actions'
 import { COMMUNITY_CATEGORIES } from '@/lib/constants/board'
-import { POST_CONTENT_MAX, POST_TITLE_MAX } from '@/lib/validation/post'
+import { POST_TITLE_MAX } from '@/lib/validation/post'
 
 import type { CommunityCategory } from '@/types/domain'
 
@@ -20,6 +20,7 @@ const FIELD_CLASS = 'rounded-[10px] border-line-soft text-[17px] placeholder:tex
 type PostFormValues = {
   category: CommunityCategory
   title: string
+  /** 에디터가 읽는 본문 HTML. 레거시 마크다운 글은 수정 화면에서 미리 변환해 넘긴다. */
   content: string
 }
 
@@ -96,17 +97,12 @@ export function PostForm({ postId, defaultValues }: PostFormProps) {
         className={FIELD_CLASS}
       />
 
-      <Textarea
+      <PostEditor
         label="내용"
         name="content"
-        required
-        rows={12}
-        maxLength={POST_CONTENT_MAX}
         defaultValue={defaultValues?.content}
-        hint="마크다운 문법을 사용할 수 있습니다."
-        placeholder="내용을 입력해주세요"
+        hint="사진은 끌어다 놓거나 붙여 넣을 수 있고, 유튜브·Vimeo 주소는 영상 버튼으로 넣습니다."
         error={state.fieldErrors?.content}
-        className={FIELD_CLASS}
       />
 
       <div className="flex justify-end">

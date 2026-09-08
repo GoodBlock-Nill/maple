@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-import { LogoutButton } from '@/components/auth/LogoutButton'
 import { Logo } from '@/components/layout/Logo'
 import { matchesPath } from '@/components/layout/navigation'
 import { useFocusTrap } from '@/components/layout/use-focus-trap'
 import { Button } from '@/components/ui/Button'
 import { CloseIcon, MenuIcon } from '@/components/ui/icons'
+import { signOut } from '@/lib/actions/auth-actions'
 import { DISCORD_URL, NAV_ITEMS, PLAY_URL } from '@/lib/constants/site'
 import { cn } from '@/lib/utils/cn'
 
@@ -26,8 +26,12 @@ const ICON_BUTTON_CLASS =
 type MobileNavProps = {
   className?: string
   /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
-  user?: { nickname: string } | null
+  user?: { nickname: string; avatarUrl?: string | null } | null
 }
+
+const USER_ROW_CLASS =
+  'rounded-card text-ink-muted block px-2 py-2.5 text-left text-[15px] transition-colors ' +
+  'hover:bg-sheet hover:text-ink'
 
 export function MobileNav({ className, user = null }: MobileNavProps) {
   const pathname = usePathname()
@@ -128,6 +132,42 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
           </button>
         </div>
 
+        {/* 로그인 상태에서만 노출한다. "내 정보"·"로그아웃"은 여기 한 곳뿐이다
+            (헤더 데스크톱 드롭다운과 대응). */}
+        {user === null ? null : (
+          <div className="border-line flex flex-col gap-2 border-b px-4 py-4">
+            <div className="flex items-center gap-2.5 px-2">
+              {user.avatarUrl ? (
+                /* 임의 외부 호스트(제공자 아바타)라 next.config 의 remotePatterns
+                   화이트리스트로는 감당 못 한다. */
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.avatarUrl}
+                  alt=""
+                  className="size-8 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <span
+                  aria-hidden
+                  className="bg-ink/10 text-ink flex size-8 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold"
+                >
+                  {user.nickname.charAt(0)}
+                </span>
+              )}
+              <span className="text-ink truncate text-[17px] font-semibold">{user.nickname}</span>
+            </div>
+
+            <Link href="/account" onClick={close} className={USER_ROW_CLASS}>
+              내 정보
+            </Link>
+            <form action={signOut}>
+              <button type="submit" className={cn(USER_ROW_CLASS, 'w-full')}>
+                로그아웃
+              </button>
+            </form>
+          </div>
+        )}
+
         <nav aria-label="모바일 메뉴" className="flex-1 overflow-y-auto px-4 py-5">
           <ul className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => {
@@ -166,19 +206,13 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
           >
             디스코드 바로가기
           </Button>
-          {/* 간편로그인에는 가입/로그인 구분이 없어 버튼 하나만 둔다(제품 결정 2026-09-08). */}
+          {/* 간편로그인에는 가입/로그인 구분이 없어 버튼 하나만 둔다(제품 결정 2026-09-08).
+              로그인 상태의 "내 정보"·"로그아웃"은 드로어 상단(사용자 블록)에 이미 있다. */}
           {user === null ? (
             <Button href="/login" variant="dark" size="md" className="w-full">
               로그인
             </Button>
-          ) : (
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-ink-muted truncate text-[15px]">
-                <strong className="text-ink font-semibold">{user.nickname}</strong>님
-              </span>
-              <LogoutButton />
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

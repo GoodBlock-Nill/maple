@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { COMMUNITY_CATEGORY_VALUES } from '@/lib/constants/board'
+import { hasPostHtmlContent } from '@/lib/utils/post-html'
 
 import type { CommunityCategory } from '@/types/domain'
 
@@ -8,8 +9,15 @@ import type { CommunityCategory } from '@/types/domain'
 
 export const POST_TITLE_MIN = 2
 export const POST_TITLE_MAX = 100
-export const POST_CONTENT_MIN = 5
-export const POST_CONTENT_MAX = 10_000
+
+/**
+ * 본문 상한은 **정제를 마친 HTML** 기준이다.
+ *
+ * 에디터가 만드는 마크업(`<p>`·`<li>`·이미지 URL)이 글자 수를 부풀리므로 평문
+ * 기준으로 잡으면 평범한 글도 막힌다. 정제 후를 재는 이유는 그것만이 실제로
+ * 저장되는 문자열이기 때문이다 — 정제 전 길이는 공격자가 얼마든지 부풀릴 수 있다.
+ */
+export const POST_CONTENT_MAX = 20_000
 
 export const COMMENT_CONTENT_MIN = 1
 export const COMMENT_CONTENT_MAX = 1_000
@@ -22,6 +30,23 @@ const category = z.enum(COMMUNITY_CATEGORY_VALUES as [CommunityCategory, ...Comm
   message: '카테고리를 선택해 주세요.',
 })
 
+/**
+ * 본문(HTML) 규칙.
+ *
+ * 넘어오는 값은 **이미 `sanitizePostHtml()` 을 통과한** 문자열이어야 한다. 정제기를
+ * 여기서 부르지 않는 이유는 이 모듈을 글쓰기 폼(클라이언트 컴포넌트)이 상한값을
+ * 읽으려고 import 하기 때문이다 — 정제기를 끌어들이면 HTML 파서가 통째로
+ * 클라이언트 번들에 실린다.
+ *
+ * "글자 한 자 이상"이 아니라 "글자 또는 이미지·영상 하나 이상"으로 본다.
+ * 사진만 올리는 글은 정상적인 사용 방식이다.
+ */
+export const postContentSchema = z
+  .string()
+  .trim()
+  .max(POST_CONTENT_MAX, { message: `내용은 ${POST_CONTENT_MAX}자 이하로 입력해 주세요.` })
+  .refine(hasPostHtmlContent, { message: '내용을 입력해 주세요.' })
+
 export const createPostSchema = z.object({
   category,
   title: z
@@ -29,11 +54,7 @@ export const createPostSchema = z.object({
     .trim()
     .min(POST_TITLE_MIN, { message: `제목은 ${POST_TITLE_MIN}자 이상 입력해 주세요.` })
     .max(POST_TITLE_MAX, { message: `제목은 ${POST_TITLE_MAX}자 이하로 입력해 주세요.` }),
-  content: z
-    .string()
-    .trim()
-    .min(POST_CONTENT_MIN, { message: `내용은 ${POST_CONTENT_MIN}자 이상 입력해 주세요.` })
-    .max(POST_CONTENT_MAX, { message: `내용은 ${POST_CONTENT_MAX}자 이하로 입력해 주세요.` }),
+  content: postContentSchema,
 })
 
 export const createCommentSchema = z.object({

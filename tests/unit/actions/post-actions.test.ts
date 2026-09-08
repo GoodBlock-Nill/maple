@@ -4,6 +4,9 @@ import { createSupabaseStub } from './supabase-stub'
 
 import type { SupabaseStub } from './supabase-stub'
 
+/* 본문 정제기가 "우리 스토리지 이미지만 허용" 판정에 쓰는 공개 URL 접두사의 출처다. */
+vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://stub.supabase.co')
+
 /** `redirect()` 는 예외를 던져 렌더를 중단시킨다. 테스트에서도 같은 계약을 흉내 낸다. */
 const REDIRECT_PREFIX = 'NEXT_REDIRECT:'
 
@@ -32,7 +35,12 @@ const POST_ID = '22222222-0000-4000-8000-000000000001'
 
 function postForm(overrides: Record<string, string> = {}): FormData {
   const formData = new FormData()
-  const values = { category: 'chat', title: '제목입니다', content: '본문입니다', ...overrides }
+  const values = {
+    category: 'chat',
+    title: '제목입니다',
+    content: '<p>본문입니다</p>',
+    ...overrides,
+  }
 
   for (const [key, value] of Object.entries(values)) {
     formData.set(key, value)
@@ -137,9 +145,32 @@ describe('createPost', () => {
     expect(stub.inserts[0]).toMatchObject({
       board: 'community',
       category_key: 'chat',
+      content: '<p>본문입니다</p>',
+      content_format: 'html',
       author_id: USER.id,
       author_name: USER.nickname,
     })
+  })
+
+  it('should strip script tags before the post reaches the database', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(USER)
+    stub = createSupabaseStub([
+      { data: null, error: null },
+      { data: { id: POST_ID }, error: null },
+    ])
+
+    // Act
+    const promise = createPost(
+      EMPTY_FORM_STATE,
+      postForm({
+        content: '<p>안녕<script>alert(1)</script></p><img src="https://evil.example/x.png">',
+      }),
+    )
+
+    // Assert
+    await expect(promise).rejects.toThrow(`${REDIRECT_PREFIX}/community/${POST_ID}`)
+    expect(stub.inserts[0]).toMatchObject({ content: '<p>안녕</p>' })
   })
 })
 

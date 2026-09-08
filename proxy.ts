@@ -70,7 +70,9 @@ async function hasCompletedOnboarding(
 ): Promise<boolean> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at')
+    .select(
+      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code',
+    )
     .eq('id', userId)
     .maybeSingle()
 

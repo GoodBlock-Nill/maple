@@ -4,6 +4,9 @@ import { createSupabaseStub } from './supabase-stub'
 
 import type { SupabaseStub } from './supabase-stub'
 
+/* 본문 정제기가 "우리 스토리지 이미지만 허용" 판정에 쓰는 공개 URL 접두사의 출처다. */
+vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://stub.supabase.co')
+
 /** `redirect()` 는 예외를 던져 렌더를 중단시킨다. 테스트에서도 같은 계약을 흉내 낸다. */
 const REDIRECT_PREFIX = 'NEXT_REDIRECT:'
 
@@ -35,7 +38,12 @@ const COMMENT_ID = '33333333-0000-4000-8000-000000000001'
 
 function postForm(overrides: Record<string, string> = {}): FormData {
   const formData = new FormData()
-  const values = { category: 'info', title: '고친 제목', content: '고친 본문', ...overrides }
+  const values = {
+    category: 'info',
+    title: '고친 제목',
+    content: '<p>고친 본문</p>',
+    ...overrides,
+  }
 
   for (const [key, value] of Object.entries(values)) {
     formData.set(key, value)
@@ -144,10 +152,15 @@ describe('updatePost', () => {
     expect(stub.updates[0]).toMatchObject({
       category_key: 'info',
       title: '고친 제목',
-      content: '고친 본문',
+      content: '<p>고친 본문</p>',
     })
     /* 시각 컬럼은 보내지 않는다 — updated_at / edited_at 은 트리거가 채운다. */
-    expect(Object.keys(stub.updates[0] as object)).toEqual(['category_key', 'title', 'content'])
+    expect(Object.keys(stub.updates[0] as object)).toEqual([
+      'category_key',
+      'title',
+      'content',
+      'content_format',
+    ])
     expect(revalidatePath).toHaveBeenCalledWith(`/community/${POST_ID}`)
   })
 })

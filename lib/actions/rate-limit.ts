@@ -13,6 +13,24 @@ export const WRITE_COOLDOWN_SECONDS = 30
  */
 export const REPORT_COOLDOWN_SECONDS = 10
 
+/**
+ * 좋아요는 한 번 누르고 바로 취소하는 것이 정상 동작이라 사실상 막지 않는 값으로
+ * 둔다. 목적은 도배 차단이 아니라 더블클릭·자동 클릭이 만드는 insert/delete
+ * 왕복을 한 박자 눌러 주는 것이다.
+ */
+export const LIKE_COOLDOWN_SECONDS = 1
+
+/**
+ * 이미지 업로드는 "최소 간격"이 아니라 "창(window) 안 횟수"로 막는다.
+ *
+ * 글 여러 장을 한 번에 끌어다 놓는 것은 정상 행동인데 최소 간격을 걸면 두 번째
+ * 파일부터 막힌다. 대신 최근 60초에 20장을 넘기면 그때부터 기다리게 한다.
+ * 판정 근거는 메모리 카운터가 아니라 스토리지에 실제로 쌓인 오브젝트의 생성
+ * 시각이라, 서버 인스턴스가 늘어나도 결론이 같다.
+ */
+export const UPLOAD_WINDOW_SECONDS = 60
+export const UPLOAD_MAX_PER_WINDOW = 20
+
 const MS_PER_SECOND = 1000
 
 /** 남은 대기 시간(초). 0 이면 바로 작성할 수 있다. */
@@ -44,4 +62,8 @@ export function remainingCooldown(
 
 export function cooldownMessage(seconds: number): string {
   return `너무 빠르게 작성하고 있습니다. ${seconds}초 후에 다시 시도해 주세요.`
+}
+
+export function uploadLimitMessage(seconds: number): string {
+  return `이미지를 너무 많이 올렸습니다. ${seconds}초 후에 다시 시도해 주세요.`
 }

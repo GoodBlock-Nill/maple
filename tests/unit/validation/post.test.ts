@@ -8,7 +8,8 @@ import {
   POST_TITLE_MAX,
 } from '@/lib/validation/post'
 
-const validPost = { category: 'chat', title: '제목입니다', content: '본문입니다' }
+/** 본문은 정제를 마친 HTML 이 들어온다(서버 액션이 `sanitizePostHtml` 을 먼저 돌린다). */
+const validPost = { category: 'chat', title: '제목입니다', content: '<p>본문입니다</p>' }
 
 describe('createPostSchema', () => {
   it('should accept a valid post', () => {
@@ -46,12 +47,36 @@ describe('createPostSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('should reject content shorter than the minimum', () => {
-    // Arrange & Act
-    const result = createPostSchema.safeParse({ ...validPost, content: '짧음' })
+  it('should reject an empty document that only carries editor scaffolding', () => {
+    // Arrange & Act — 빈 에디터가 내놓는 마크업
+    const result = createPostSchema.safeParse({ ...validPost, content: '<p></p>' })
 
     // Assert
     expect(result.success).toBe(false)
+    expect(result.success || result.error.issues[0]?.message).toBe('내용을 입력해 주세요.')
+  })
+
+  it('should accept a post that carries only an image', () => {
+    // Arrange & Act — 사진만 올리는 글은 정상적인 사용 방식이다
+    const result = createPostSchema.safeParse({
+      ...validPost,
+      content:
+        '<img src="https://cdn.example/storage/v1/object/public/post-images/a/b.png" alt="" />',
+    })
+
+    // Assert
+    expect(result.success).toBe(true)
+  })
+
+  it('should accept a post that carries only a video placeholder', () => {
+    // Arrange & Act
+    const result = createPostSchema.safeParse({
+      ...validPost,
+      content: '<div data-video="youtube:dQw4w9WgXcQ"></div>',
+    })
+
+    // Assert
+    expect(result.success).toBe(true)
   })
 
   it('should reject content longer than the limit', () => {
@@ -70,12 +95,12 @@ describe('createPostSchema', () => {
     const result = createPostSchema.safeParse({
       ...validPost,
       title: '  제목  ',
-      content: '  본문입니다  ',
+      content: '  <p>본문입니다</p>  ',
     })
 
     // Assert
     expect(result.success && result.data.title).toBe('제목')
-    expect(result.success && result.data.content).toBe('본문입니다')
+    expect(result.success && result.data.content).toBe('<p>본문입니다</p>')
   })
 })
 

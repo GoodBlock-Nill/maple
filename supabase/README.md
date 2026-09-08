@@ -21,6 +21,9 @@ supabase/
 | `20260908000700_rls_policies.sql`          | 전 테이블 RLS + 정책                                                                       |
 | `20260908000800_storage_buckets.sql`       | 버킷 3종 + `storage.objects` 정책                                                          |
 | `20260908001200_social_auth_profiles.sql`  | 간편로그인 전환 — `profiles.provider`/`provider_id`/동의 시각 3종 + `handle_new_user` 개편 |
+| `20260908001300_post_content_html.sql`     | 본문 에디터 도입 — `content_format` 에 `html` 보장 + 저장 형식 계약 주석                   |
+| `20260908001400_post_likes.sql`            | `post_likes` (복합 PK) + `sync_post_like_count()` 집계 트리거                              |
+| `20260908001500_profiles_msw.sql`          | `profiles.msw_uid`/`msw_profile_code` (메이플스토리 월드 계정 연동) + CHECK/유니크 제약    |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -121,8 +124,19 @@ pnpm typecheck
 
 1. `signInAnonymously()` — 테스터마다 독립된 계정이 생긴다. **프로젝트 설정에서
    익명 로그인이 켜져 있어야 한다.**
-2. 익명 로그인이 꺼져 있으면 제공자별 데모 계정(`demo-<provider>@stub.maple.local`)을
-   서비스 롤로 만들고, 매직링크 토큰을 발급해 세션으로 바꾼다(비밀번호를 쓰지 않는다).
+2. 익명 로그인이 꺼져 있으면(**운영 환경이 지금 이 상태다**) 서비스 롤로 계정을
+   **매번 새로** 만들고(`stub-<provider>-<uuid>@stub.glzaworld.local`), 매직링크
+   토큰을 발급해 세션으로 바꾼다(비밀번호를 쓰지 않는다).
+
+> **프로덕션 버그(2026-09-08, 수정됨)**: 2번 폴백이 예전에는 제공자별 **고정**
+> 이메일(`demo-<provider>@stub.maple.local`)을 찾아서 재사용했다. 운영 환경은
+> 익명 로그인이 꺼져 있어 이 폴백이 유일한 경로였는데, 그 계정이 한 번이라도
+> 온보딩(약관 동의·닉네임·메이플스토리 월드 계정 입력)을 마치면 이후 로그인은
+> 전부 온보딩을 건너뛰었다 — "카카오로 계속하기"를 두 번 눌러도 첫 번째만
+> 온보딩으로 가고 두 번째부터는 바로 로그인됐다. 지금은 매 로그인마다 uuid 를
+> 섞은 새 계정을 만들어(`lib/supabase/stub-social.ts` 의 `freshStubEmail()`)
+> **절대 재사용하지 않는다.** 트레이드오프는 계정이 계속 쌓인다는 것 — 아래
+> "스텁 계정 정리"를 주기적으로 돌린다.
 
 전환 스위치는 환경 변수 하나다. UI 는 건드리지 않는다.
 
@@ -141,7 +155,47 @@ supabase config push        # diff 를 보여 주고 [Y/n] 로 확인한다
 ```
 
 대시보드로 하려면 Authentication → Sign In / Providers → **Anonymous sign-ins** 를 켠다.
-켜지 않아도 로그인은 데모 계정 폴백으로 동작한다(다만 제공자별로 계정을 공유한다).
+켜지 않아도 로그인은 매번 새 계정을 만드는 폴백으로 동작한다(대신 계정이 계속 쌓인다).
+
+### 스텁 계정 정리
+
+폴백 경로(익명 로그인 꺼짐)로 로그인할 때마다 `auth.users` 에 계정이 하나씩 남는다.
+전부 `@stub.glzaworld.local` 도메인이라 아래 조회로 구분할 수 있다.
+
+```sql
+-- 몇 개나 쌓였는지 먼저 확인한다.
+select count(*) from auth.users where email like '%@stub.glzaworld.local';
+```
+
+정리는 **Admin API**로 한다(서비스 롤 키 필요, `auth.users` 는 SQL 로 직접 지우면
+`profiles` 등 관련 행이 정합성 없이 남을 수 있다 — `handle_new_user()` 의 반대 방향
+정리는 트리거가 없다). Node REPL 에서:
+
+```js
+const { createClient } = require('@supabase/supabase-js')
+const admin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+)
+
+// listUsers 는 페이지네이션이다. 스텁만 걸러 지운다.
+let page = 1
+while (true) {
+  const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+  if (error || data.users.length === 0) break
+
+  for (const user of data.users) {
+    if (user.email?.endsWith('@stub.glzaworld.local')) {
+      await admin.auth.admin.deleteUser(user.id)
+    }
+  }
+
+  page += 1
+}
+```
+
+`deleteUser()` 는 `auth.users` 행을 지우고, `profiles` 는 `on delete cascade`
+(`20260908000200_profiles.sql`)로 함께 지워진다.
 
 ### 실 OAuth 로 전환할 때 운영자가 준비할 것
 
@@ -188,6 +242,7 @@ supabase config push        # diff 를 보여 주고 [Y/n] 로 확인한다
 | `gacha_items`      | 공개분 조회                      | 동일                                        | 전체 CRUD             |
 | `rankings`         | 조회                             | 조회                                        | 전체 CRUD             |
 | `reports`          | ✗ (권한 자체를 회수)             | 신고 접수 + 본인 신고 조회                  | 전체 조회 · 상태 변경 |
+| `post_likes`       | ✗ (권한 자체를 회수)             | 본인 좋아요 조회 · 등록 · 취소              | 전체 조회             |
 
 스토리지
 
@@ -197,6 +252,29 @@ supabase config push        # diff 를 보여 주고 [Y/n] 로 확인한다
 | `post-images`         | O    | 전체            | 로그인 사용자, `{uid}/…` 경로만                 |
 | `inquiry-attachments` | X    | 작성자 · 관리자 | 로그인 사용자, `{uid}/…` 경로만 (삭제는 관리자) |
 
+`post-images` 의 실제 경로는 `{uid}/{yyyy}/{uuid}.{ext}` 다(`lib/supabase/storage.ts` 의
+`buildPostImagePath()`). 정책이 보는 것은 **첫 세그먼트뿐**이라(`(storage.foldername(name))[1]`)
+연도 폴더가 끼어들어도 판정은 그대로다. 원본 파일명은 버린다 — 파일명 자체가 개인정보가
+되는 경우가 있고, 같은 이름을 두 번 올리면 덮어쓰기가 난다. 업로드는 서비스 롤이 아니라
+**쿠키를 아는 클라이언트**로 한다(`lib/actions/upload-actions.ts`). 서비스 롤을 쓰면 RLS 를
+건너뛰어 "남의 폴더에 쓰기"를 막는 유일한 장치가 사라진다.
+
+본문 저장 형식
+
+`posts.content_format` 이 `html` 이면 본문은 **정제를 마친 HTML** 이다. 정제기는
+`lib/sanitize/post-html.ts` 하나뿐이고, 서버 액션이 저장 직전에 반드시 통과시킨다.
+DB 에는 이 계약을 강제하는 제약이 없으므로(HTML 검증은 CHECK 로 표현할 수 없다) 새로
+글을 쓰는 경로를 추가한다면 그 액션에서도 같은 정제기를 불러야 한다.
+
+- 허용 태그: `p br strong em s u h2 h3 ul ol li blockquote a img div[data-video]`
+- `img` 는 `post-images` 버킷의 공개 URL 접두사로 시작하는 것만 남는다(외부 이미지 = 트래킹 픽셀).
+- `a` 는 http(s) 만, `rel="noopener noreferrer nofollow" target="_blank"` 를 강제로 덮어쓴다.
+- 영상은 **iframe 으로 저장하지 않는다.** `<div data-video="youtube:{id}">` 자리표시자만 남기고
+  실제 iframe 은 표시 시점(`lib/utils/post-html.ts` 의 `renderPostHtml()`)에 조립한다.
+  저장된 iframe 을 믿으면 정책을 바꿔도 과거 글이 옛 속성을 그대로 들고 있게 된다.
+- `markdown` 은 에디터 도입 이전 글이다. 일괄 변환하지 않는다 — 수정 화면에 들어오는 글만
+  `lib/sanitize/markdown.ts` 가 HTML 로 옮겨 적고, 저장되는 순간 `content_format` 이 바뀐다.
+
 정책만으로 막을 수 없는 두 가지는 트리거가 담당한다.
 
 - `guard_post_counters()` — 작성자가 `view_count` / `like_count` / `is_pinned` 를 직접 조작하지 못하게 되돌린다. 조회수 증가는 `increment_post_view(p_id)` RPC 로만 한다.
@@ -205,11 +283,25 @@ supabase config push        # diff 를 보여 주고 [Y/n] 로 확인한다
   사용자가 바꿀 수 있는 값은 닉네임 · 아바타 · 동의 시각뿐이다.
 - `guard_comment_columns()` — 댓글 작성자가 `post_id` / `author_id` / `author_name` 을 바꿔 사칭하거나 글을 옮기지 못하게 되돌린다. 수정 가능한 컬럼은 `content` 와 `deleted_at` 뿐이다.
 - `mark_post_edited()` — 제목·본문·요약·말머리가 **실제로** 바뀐 UPDATE 에서만 `posts.edited_at` 을 채운다. `updated_at` 은 `increment_post_view()` 의 조회수 UPDATE 로도 밀리므로 "수정됨" 표시에 쓸 수 없다.
+- `sync_post_like_count()` — `post_likes` 의 insert/delete 를 `posts.like_count` 에 +1/-1 로 반영한다(0 미만으로 내려가지 않는다). 가드가 `like_count` 를 잠가 두었으므로 `sync_post_comment_count()` 와 같이 **SECURITY DEFINER + `app.counter_bypass`** 로 통과한다.
 
 신고(`reports`)의 존재·자격 검사는 `can_report_target(target_type, target_id)` 가 맡는다.
 `posts` / `comments` 에 FK 를 걸 수 없는 다형 참조라 INSERT 정책 안에서 확인하며, **SECURITY
 INVOKER** 여야 한다(DEFINER 로 두면 비공개·삭제된 행의 존재가 신고 성공 여부로 드러난다).
 자기 글 신고도 이 함수가 거른다.
+
+좋아요(`post_likes`)는 행 하나가 곧 "이 사람이 이 글을 좋아한다"는 사실이다.
+`(post_id, user_id)` 복합 PK 가 중복 좋아요를, INSERT 정책이 "공개·미삭제 글"을 강제한다.
+SELECT 를 본인 행으로 좁힌 것은 프라이버시 결정이다 — "누가 눌렀는지" 목록은 화면 어디에도
+없고, 열어 두면 특정 사용자의 활동 이력이 그대로 수집된다. 화면이 필요로 하는 값은
+"내가 눌렀는가"(본인 행)와 "몇 명인가"(`posts.like_count`)뿐이다.
+
+집계 트리거를 SECURITY DEFINER 로 둔 이유도 적어 둔다. "SECURITY INVOKER 트리거 +
+EXECUTE 를 회수한 DEFINER 헬퍼"는 성립하지 않는다. 함수 EXECUTE 권한은 **호출 시점의
+`current_user`** 로 검사하는데, INVOKER 트리거 안에서 그 값은 `authenticated` 라 회수하는
+순간 트리거가 `permission denied` 로 죽는다. 반대로 헬퍼를 `authenticated` 에 열면 REST 로
+직접 호출 가능한 집계 조작 창구가 생긴다. 트리거 함수 자체를 DEFINER 로 두면 호출 가능한
+표면이 아예 없다(반환형이 `trigger` 라 직접 호출도, PostgREST 노출도 되지 않는다).
 
 ---
 
@@ -421,6 +513,48 @@ begin;
   select comment_count from public.posts
    where id = '22222222-0000-4000-8000-000000000001';
 rollback;
+```
+
+### 4-8. 좋아요
+
+```sql
+begin;
+  select set_config(
+    'request.jwt.claims',
+    json_build_object('sub', '<USER_UUID>', 'role', 'authenticated')::text,
+    true
+  );
+  set local role authenticated;
+
+  -- 기대: 성공. like_count 가 1 늘어 있다 (sync_post_like_count)
+  insert into public.post_likes (post_id, user_id)
+  values ('22222222-0000-4000-8000-000000000001', '<USER_UUID>');
+  select like_count from public.posts
+   where id = '22222222-0000-4000-8000-000000000001';
+
+  -- 기대: ERROR — 복합 PK 가 중복을 막는다 (23505)
+  insert into public.post_likes (post_id, user_id)
+  values ('22222222-0000-4000-8000-000000000001', '<USER_UUID>');
+
+  -- 기대: ERROR — 남의 이름으로는 누를 수 없다
+  insert into public.post_likes (post_id, user_id)
+  values ('22222222-0000-4000-8000-000000000002', '<ADMIN_UUID>');
+
+  -- 기대: 본인이 누른 것만 보인다
+  select count(*) from public.post_likes;
+
+  -- 기대: 취소하면 like_count 가 원래대로 돌아온다
+  delete from public.post_likes
+   where post_id = '22222222-0000-4000-8000-000000000001' and user_id = '<USER_UUID>';
+  select like_count from public.posts
+   where id = '22222222-0000-4000-8000-000000000001';
+rollback;
+```
+
+권한 경계와 집계 트리거는 스크립트로도 확인할 수 있다(8항목).
+
+```bash
+node --env-file=.env.local tests/manual/post-likes-rls-check.mjs
 ```
 
 ---

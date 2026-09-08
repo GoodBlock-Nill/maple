@@ -29,6 +29,8 @@ export type SupabaseStub = {
   inserts: unknown[]
   /** `update()` 에 넘어온 payload 순서. */
   updates: unknown[]
+  /** `delete()` 호출 뒤 이어진 `eq()` 필터. 삭제 대상 확인용. */
+  deletes: Record<string, unknown>[]
 }
 
 const EMPTY_RESULT: StubResult = { data: null, error: null }
@@ -37,15 +39,34 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
   const tables: string[] = []
   const inserts: unknown[] = []
   const updates: unknown[] = []
+  const deletes: Record<string, unknown>[] = []
   let cursor = 0
 
   const nextResult = (): StubResult => results[cursor++] ?? EMPTY_RESULT
 
   function createBuilder(): Record<string, unknown> {
     const builder: Record<string, unknown> = {}
+    /* `delete()` 이후의 `eq()` 만 삭제 조건이다. 그 전의 `eq()` 는 평범한 조회 필터라
+       기록하지 않는다(조회는 결과 큐로 검증한다). */
+    let deleteFilter: Record<string, unknown> | null = null
 
-    for (const method of ['select', 'eq', 'is', 'not', 'ilike', 'order', 'limit', 'range']) {
+    for (const method of ['select', 'is', 'not', 'ilike', 'order', 'limit', 'range']) {
       builder[method] = () => builder
+    }
+
+    builder.eq = (column: string, value: unknown) => {
+      if (deleteFilter !== null) {
+        deleteFilter[column] = value
+      }
+
+      return builder
+    }
+
+    builder.delete = () => {
+      deleteFilter = {}
+      deletes.push(deleteFilter)
+
+      return builder
     }
 
     builder.insert = (payload: unknown) => {
@@ -88,5 +109,6 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     tables,
     inserts,
     updates,
+    deletes,
   }
 }

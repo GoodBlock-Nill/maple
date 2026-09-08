@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 
 type SiteHeaderProps = {
   /** 세션 연동 전까지는 항상 null. */
-  user?: { nickname: string } | null
+  user?: { nickname: string; avatarUrl?: string | null } | null
 }
 
 /**

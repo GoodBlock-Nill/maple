@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
 import { isAuthor } from '@/lib/utils/authorship'
 import { commentIdSchema, postIdSchema, updatePostSchema } from '@/lib/validation/post'
@@ -117,7 +118,7 @@ export async function updatePost(
   const parsed = updatePostSchema.safeParse({
     category: readField(formData, 'category'),
     title: readField(formData, 'title'),
-    content: readField(formData, 'content'),
+    content: sanitizePostHtml(readField(formData, 'content')),
   })
 
   if (!parsed.success) {
@@ -138,6 +139,9 @@ export async function updatePost(
       category_key: parsed.data.category,
       title: parsed.data.title,
       content: parsed.data.content,
+      /* 레거시 마크다운 글도 수정 화면을 거치면 HTML 로 옮겨 적힌다
+         (수정 화면이 로드 시점에 변환해 에디터에 넣는다). */
+      content_format: 'html',
     })
     .eq('id', id)
     .eq('author_id', guard.user.id)

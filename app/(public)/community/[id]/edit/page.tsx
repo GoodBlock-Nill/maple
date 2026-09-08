@@ -6,6 +6,7 @@ import { PostForm } from '@/components/board/PostForm'
 import { PageShell } from '@/components/layout/PageShell'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getPostById } from '@/lib/data/community'
+import { markdownToPostHtml } from '@/lib/sanitize/markdown'
 import { isAuthor } from '@/lib/utils/authorship'
 
 import type { Metadata } from 'next'
@@ -43,12 +44,16 @@ export default async function CommunityEditPage(props: PageProps<'/community/[id
     redirect(detailPath)
   }
 
+  /* 에디터는 HTML 만 다룬다. 에디터 도입 전 글(마크다운)은 여기서 한 번 옮겨 적고,
+     저장되는 순간 `content_format` 도 html 로 바뀐다. 저장 전까지는 원본이 그대로다. */
+  const content = post.contentFormat === 'html' ? post.body : await markdownToPostHtml(post.body)
+
   return (
     <PageShell variant="community" title="글 수정">
       <ListSheet className="mt-6">
         <PostForm
           postId={post.id}
-          defaultValues={{ category: post.category, title: post.title, content: post.body }}
+          defaultValues={{ category: post.category, title: post.title, content }}
         />
       </ListSheet>
 

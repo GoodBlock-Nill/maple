@@ -17,7 +17,7 @@ import type { CommunityListParams, CommunitySort, ListResult, Post } from '@/typ
    열고 "수정됨"을 표시하려면 필요하다. */
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const POST_COLUMNS =
-  'id, category_key, title, content, author_id, author_name, view_count, like_count, comment_count, created_at, edited_at'
+  'id, category_key, title, content, content_format, author_id, author_name, view_count, like_count, comment_count, created_at, edited_at'
 
 const COMMENT_COLUMNS = 'id, author_id, author_name, content, created_at'
 
@@ -84,6 +84,37 @@ async function getComments(supabase: TypedSupabaseClient, postId: string) {
   }
 
   return data.map(toComment)
+}
+
+/**
+ * 뷰어가 이 글에 좋아요를 눌렀는가.
+ *
+ * `post_likes` 의 SELECT 정책이 본인 행만 열어 주므로 조회 자체가 이미 "나의"
+ * 좋아요로 한정된다. 그래도 `user_id` 를 조건에 넣는 이유는 관리자 세션 때문이다.
+ * 관리자에게는 전체 조회가 열려 있어서 조건을 빼면 남의 좋아요가 걸린다.
+ *
+ * 비로그인은 질의 없이 false 다. anon 은 이 테이블 권한 자체가 없어 요청을 보내
+ * 봤자 왕복만 낭비한다.
+ */
+export async function getPostLikeState(postId: string, userId: string | null): Promise<boolean> {
+  if (userId === null) {
+    return false
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('post_likes')
+    .select('post_id')
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error !== null) {
+    // 좋아요 여부를 못 읽었다고 글을 못 보여 줄 이유는 없다. 안 누른 것으로 그린다.
+    return false
+  }
+
+  return data !== null
 }
 
 export async function getPostById(id: string): Promise<Post | null> {

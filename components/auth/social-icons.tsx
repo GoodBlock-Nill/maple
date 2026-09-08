@@ -57,3 +57,30 @@ export function NaverMark({ className }: IconProps) {
     </svg>
   )
 }
+
+/**
+ * 봉투 마크 — 간편로그인 제공자를 알 수 없을 때(레거시 이메일 계정 등)의
+ * 폴백 표기. 브랜드 마크가 아니므로 배경색 규정 없이 `currentColor` 하나만 쓴다.
+ */
+export function EmailMark({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden focusable="false" className={className}>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 5h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
+      />
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m2.5 5.8 7.5 5 7.5-5"
+      />
+    </svg>
+  )
+}

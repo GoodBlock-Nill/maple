@@ -35,7 +35,9 @@ export default async function OnboardingPage(props: PageProps<'/auth/onboarding'
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at')
+    .select(
+      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code',
+    )
     .eq('id', user.id)
     .maybeSingle()
 
@@ -47,9 +49,14 @@ export default async function OnboardingPage(props: PageProps<'/auth/onboarding'
   return (
     <AuthCard
       title="시작하기"
-      description="커뮤니티에서 쓸 닉네임을 정하고 약관에 동의해 주세요. 한 번만 하면 됩니다."
+      description="커뮤니티에서 쓸 닉네임과 메이플스토리 월드 계정을 등록하고 약관에 동의해 주세요. 한 번만 하면 됩니다."
     >
-      <OnboardingForm nextPath={nextPath} defaultNickname={profile?.nickname ?? ''} />
+      <OnboardingForm
+        nextPath={nextPath}
+        defaultNickname={profile?.nickname ?? ''}
+        defaultMswUid={profile?.msw_uid ?? ''}
+        defaultMswProfileCode={profile?.msw_profile_code ?? ''}
+      />
     </AuthCard>
   )
 }
