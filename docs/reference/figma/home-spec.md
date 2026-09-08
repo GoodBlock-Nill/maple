@@ -34,7 +34,7 @@ Figma 파일 `3DWCpzRZFWOMhvlcTpbFlj`, 프레임 `홈` (489:2183, 1440×2217). �
 | card-notice / card-patch / card-free / card-support | `#ffaee7` / `#74b1ff` / `#33c791` / `#ffba43` | 카드 하단 패널 |
 | card sheet | `linear-gradient(180deg,#fff 0%,#f6f6f6 35%)` + `inset 0 0 15px rgba(0,0,0,.25)` | 카드 전체 배경·내부 그림자 |
 | radius | 헤더 10px · 버튼 50px(pill) · 카드 15px · 푸터 패널 20px | |
-| 서체 | 시안은 Switzer(라틴) + 시스템 한글. 프로젝트는 **Pretendard** 단일 사용. 로고는 이미지 | |
+| 서체 | 시안은 **Switzer**(라틴·숫자) + Figma 기본 한글 폴백(Apple SD Gothic Neo). 구현은 Switzer → **Pretendard**(한글) 체인. 헤더 GNB·인증 버튼만 **Inter**. 로고는 이미지 | |
 
 ## 1. 헤더 (`menu` 489:2262, 1440×110)
 

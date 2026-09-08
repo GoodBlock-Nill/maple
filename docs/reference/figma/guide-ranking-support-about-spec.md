@@ -92,9 +92,10 @@
   - 캐릭터 행 + 나무 단상 + 풀숲은 합성 오버레이 `about/hero-overlay.png` 1440×1017 (투명, 히어로 위·아래로 이어짐, pointer-events none).
 - **그라데이션 밴드** `about/band-bg.png` 1440×1328 (page y 940부터). CSS 대체: `linear-gradient(180deg,#bfb9ff 0%,#bfb9ff 50%,#76eaff 100%)` + 상단 덩굴 이미지.
 - **양피지 패널**(`유튜버 소개` 1341×739, page x 59, y 1128): 배경 합성 `about/creator-panel.png`(지도 프레임·질감·덩굴·사진 타원 포함, 텍스트 제외). 그 위 텍스트 블록(패널 기준 x 499+56, 세로 중앙, 폭 663, gap 40):
-  - 이름 "세글자" 100px **Maplestory Bold**, 그라데이션 텍스트 `#ffd200 → #ff6c00` (프로젝트에 Maplestory 폰트 파일 있음. 라이선스 확인 전까지는 `font-display`로 시도, 불가 시 Pretendard 900).
-  - 슬로건 25px Maplestory Bold `#f7601b` "메이플스토리의 역사를 함께해 온 2세대 최초 만렙 크리에이터!"
-  - 본문 22px bold `#381f1e` lh 30, 단락 4개(시안 텍스트 그대로, 뒤 2단락은 플레이스홀더).
+  - 이름 "세글자" 100px **Maplestory Bold**(`font-maple`), 그라데이션 텍스트 `#ffd200 → #ff6c00`.
+  - 슬로건 25px **Maplestory Bold**(`font-maple`) `#f7601b` "메이플스토리의 역사를 함께해 온 2세대 최초 만렙 크리에이터!"
+  - 본문 22px **Noto Sans KR Bold**(`font-intro`) `#381f1e` lh 30, 단락 4개(시안 텍스트 그대로, 뒤 2단락은 플레이스홀더).
+  - 이 세 줄이 사이트에서 Maplestory·Noto Sans KR 을 쓰는 **유일한** 자리다. 나머지는 전부 Switzer(+Pretendard 한글) 또는 Inter — `docs/reference/figma/about-gif-spec.md` 의 폰트 표 참고.
   - 우측 도트 아바타 `about/avatar-dot.png` 206×285 at 패널 (1151, 357) + 그림자 svg. 작은 나무 `about/tree-small.png` 184×127 at page (1256, 1285).
 - 모바일: 히어로 16:9, 패널은 세로 스택(사진 → 이름 → 본문), 양피지 배경은 `background-size: cover`.
 - 데이터: `site_settings.creator_*` (목업 `lib/mock/site.ts`).

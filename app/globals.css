@@ -7,9 +7,10 @@
 @source '../components';
 @source '../lib';
 
-/* Maplestory OTF 는 Light(300)·Bold(700) 두 벌뿐이다. 400~600 을 요청했을 때
-   브라우저가 가짜 볼드를 합성하면 시안보다 글자가 두꺼워지고 폭이 늘어나므로
-   합성을 끈다(가장 가까운 실제 굵기로 대체된다). */
+/* Switzer 는 400/500/600/700 실제 컷을 모두 싣고 Pretendard 는 가변 폰트라
+   중간 굵기도 진짜 값이 나온다. 굵기 합성은 필요 없고, 켜 두면 Maplestory
+   (Light/Bold 두 벌)와 Noto Sans KR 자리에서만 가짜 볼드가 생겨 시안보다
+   글자가 두꺼워지고 폭이 늘어난다. 그래서 합성은 계속 끈다. */
 @layer base {
   html {
     font-family: var(--font-sans);

@@ -119,7 +119,7 @@ function CreatorText() {
           그 위에 그라데이션 글자를 얹는다 — 획이 전부 글자 밖에 남는다.
           (`paint-order: stroke fill` 은 `background-clip:text` 와 함께 쓰면
           Chromium 이 그라데이션을 획까지 클리핑해 외곽선이 사라진다.) */}
-      <h2 className="font-display relative z-10 text-[clamp(56px,8vw,100px)] leading-none font-bold lg:-top-1">
+      <h2 className="font-maple relative z-10 text-[clamp(56px,8vw,100px)] leading-none font-bold lg:-top-1">
         <span
           aria-hidden
           className="absolute inset-0 text-[#3a2b20] drop-shadow-[0_4px_6px_rgba(58,43,32,0.35)] [-webkit-text-stroke:12px_#3a2b20] lg:[-webkit-text-stroke:16px_#3a2b20]"
@@ -132,7 +132,7 @@ function CreatorText() {
       </h2>
 
       <div className="relative z-10 flex flex-col gap-6 lg:gap-[10px]">
-        <p className="font-display text-[clamp(18px,2.2vw,25px)] leading-snug font-bold text-[#f7601b]">
+        <p className="font-maple text-[clamp(18px,2.2vw,25px)] leading-snug font-bold text-[#f7601b]">
           {CREATOR_SLOGAN}
         </p>
 
@@ -140,7 +140,7 @@ function CreatorText() {
           {CREATOR_INTRO.map((paragraph, index) => (
             <p
               key={`${index}-${paragraph.slice(0, 8)}`}
-              className="text-[clamp(16px,1.9vw,22px)] leading-[1.36] font-bold whitespace-pre-line text-[#381f1e]"
+              className="font-intro text-[clamp(16px,1.9vw,22px)] leading-[1.36] font-bold whitespace-pre-line text-[#381f1e]"
             >
               {paragraph}
             </p>

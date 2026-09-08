@@ -27,7 +27,8 @@ export function SiteNav({ id, className }: SiteNavProps) {
                 href={item.href}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'rounded-pill relative inline-flex items-center text-[16px] font-semibold',
+                  /* 시안 헤더 GNB 만 Inter Semibold 16 이다(본문 Switzer 와 다르다). */
+                  'font-ui rounded-pill relative inline-flex items-center text-[16px] font-semibold',
                   'text-ink tracking-[-0.2px] whitespace-nowrap transition-opacity',
                   'after:rounded-pill after:absolute after:inset-x-0 after:-bottom-1.5 after:h-0.5',
                   'after:bg-ink after:transition-transform after:duration-200',

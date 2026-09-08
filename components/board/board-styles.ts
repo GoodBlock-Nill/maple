@@ -21,7 +21,7 @@ export const BOARD_ROW_META_CLASS = 'text-ink-muted text-[16px] leading-[19px] f
 
 /** 목록 하단 pill 액션(더보기 · 목록으로). */
 export const BOARD_PILL_CLASS =
-  'cta-more rounded-pill inline-flex h-11 items-center px-[17px] text-[16px] font-medium ' +
+  'cta-more font-ui rounded-pill inline-flex h-11 items-center px-[17px] text-[16px] font-medium ' +
   'transition-[filter] hover:brightness-125'
 
 /**

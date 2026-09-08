@@ -62,14 +62,53 @@
   --drop-shadow-mascot: 0 0 32px rgb(0 0 0 / 0.25);
 }
 
+/* ---------------------------------------------------------------------------
+   서체 토큰 — 시안(Figma) 실측 기준.
+
+   시안은 한 서체로 통일돼 있지 않다. 거의 모든 텍스트가 **Switzer**(Regular
+   400 / Medium 500 / Semibold 600)이고, 헤더 GNB·인증 버튼·"더보기"·확률형
+   아이템 카드·고객지원 큰 제목만 **Inter**, `/소개` 의 소개 문단만
+   **Noto Sans KR**, 같은 페이지의 이름·한 줄 소개말만 **Maplestory** 다.
+
+   Switzer 에는 한글 글리프가 없다. 시안에서도 한글은 Figma 의 기본 한글
+   폴백(macOS Apple SD Gothic Neo)이 그리고 있어서, 웹에서는 그 자리를
+   Pretendard 가 받도록 체인을 Switzer → Pretendard 순으로 세운다. 라틴·숫자·
+   문장부호는 Switzer, 한글은 Pretendard 가 **같은 굵기로** 나온다.
+--------------------------------------------------------------------------- */
 @theme inline {
-  /* 전 화면 기본 서체는 Maplestory OTF. 글리프가 없는 문자만 Pretendard 가
-     받는다(폴백 체인). 세 토큰이 같은 체인을 쓰므로 본문·제목이 함께 바뀐다. */
   --font-body:
-    var(--font-maple), var(--font-pretendard), 'Pretendard Variable', -apple-system,
+    var(--font-switzer), var(--font-pretendard), 'Pretendard Variable', -apple-system,
     BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-display: var(--font-body);
   --font-sans: var(--font-body);
+
+  /* 헤더 GNB·인증 버튼·"더보기"·확률형 아이템 카드·고객지원 제목 (`font-ui`) */
+  --font-ui:
+    var(--font-inter), var(--font-pretendard), 'Pretendard Variable', -apple-system,
+    BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  /* `/소개` 크리에이터 소개 문단 (`font-intro`) */
+  --font-intro:
+    var(--font-noto-kr), var(--font-pretendard), 'Pretendard Variable', -apple-system,
+    BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+/**
+ * `font-maple` 은 `@theme` 이 아니라 `@utility` 로 만든다.
+ * `@theme` 에 `--font-maple` 을 넣으면 Tailwind 가 `:root` 에도 같은 이름을
+ * 정의해서 next/font 가 <html> 에 심는 `--font-maple` 과 이름이 부딪힌다
+ * (`--font-maple: var(--font-maple), …` → 순환 참조).
+ */
+@utility font-maple {
+  font-family:
+    var(--font-maple),
+    var(--font-pretendard),
+    'Pretendard Variable',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Apple SD Gothic Neo',
+    'Malgun Gothic',
+    sans-serif;
 }
 
 /* ---------------------------------------------------------------------------

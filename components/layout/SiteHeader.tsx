@@ -28,7 +28,7 @@ export function SiteHeader({ user = null }: SiteHeaderProps) {
         <div className="ml-auto flex items-center gap-2 lg:hidden">
           {/* 미로그인일 때만 노출한다. 로그인 상태의 로그아웃은 드로어 안에 있다. */}
           {user === null ? (
-            <Button href="/login" variant="dark" size="sm">
+            <Button href="/login" variant="dark" size="sm" className="font-ui font-medium">
               로그인
             </Button>
           ) : null}

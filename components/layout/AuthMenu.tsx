@@ -33,7 +33,8 @@ export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
 
   return (
     <div id={id} className={cn('items-center gap-3', className)}>
-      <Button href="/login" variant="dark" size="sm">
+      {/* 시안 헤더 인증 버튼만 Inter Medium 16 이다(히어로 CTA 는 Switzer Semibold). */}
+      <Button href="/login" variant="dark" size="sm" className="font-ui font-medium">
         로그인
       </Button>
     </div>

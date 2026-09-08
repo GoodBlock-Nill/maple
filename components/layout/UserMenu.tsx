@@ -132,7 +132,7 @@ export function UserMenu({
         className={TRIGGER_CLASS}
       >
         <UserAvatar nickname={nickname} avatarUrl={avatarUrl} provider={provider} size="sm" />
-        <span className="text-ink max-w-[140px] truncate text-[16px] font-semibold">
+        <span className="font-ui text-ink max-w-[140px] truncate text-[16px] font-medium">
           {nickname}
         </span>
         <ChevronDownIcon

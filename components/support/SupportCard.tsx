@@ -37,7 +37,7 @@ export function SupportCard({
     >
       <div className="flex w-full flex-col gap-8 lg:max-w-[525px] lg:gap-7">
         <div className="flex flex-col gap-2 lg:gap-1">
-          <h2 className="text-ink text-[clamp(24px,3vw,30px)] leading-none font-medium">
+          <h2 className="font-ui text-ink text-[clamp(24px,3vw,30px)] leading-none font-medium">
             {heading}
           </h2>
           <p className="text-ink-muted text-[17px] leading-relaxed">{description}</p>

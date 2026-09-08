@@ -34,7 +34,7 @@ export function HeroSection() {
           높이가 비율로 움직이는 1280 이상에서는 상단 여백도 같은 비율(220/1440)로
           따라가야 시안의 구도가 유지된다. */}
       <div className="relative mx-auto flex max-w-[1140px] flex-col items-center px-6 pt-[140px] text-center sm:px-[50px] sm:pt-[186px] lg:pt-[220px] xl:pt-[calc(100vw*0.1527778)]">
-        <h1 className="text-ink text-[clamp(34px,6vw,64px)] leading-[1.17] font-semibold tracking-[-0.01em] text-balance">
+        <h1 className="text-ink text-[clamp(34px,6vw,64px)] leading-[1.17] font-semibold tracking-[-3.6px] text-balance">
           {SITE_HEADLINE}
         </h1>
         <p className="text-ink-muted mt-2.5 max-w-[640px] text-[clamp(16px,1.8vw,22px)] leading-[1.4] font-semibold">
