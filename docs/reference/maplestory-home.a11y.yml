@@ -1,0 +1,1282 @@
+- generic [active] [ref=f10e1]:
+  - generic [ref=f10e3]:
+    - heading [level=1] [ref=f10e4]:
+      - link [ref=f10e5] [cursor=pointer]:
+        - /url: https://www.nexon.com/Home/Game
+        - img "NEXON" [ref=f10e6]
+    - link "메뉴" [ref=f10e9] [cursor=pointer]:
+      - /url: "#gnbAllLayer"
+    - generic [ref=f10e11]:
+      - link [ref=f10e13] [cursor=pointer]:
+        - /url: https://connect-naver.nexon.com/home/?web_referer_service=nx_2
+      - generic [ref=f10e15]: 넥슨 회원가입
+      - generic [ref=f10e17]: 넥슨 로그인
+  - generic [ref=f10e19]:
+    - generic [ref=f10e20]:
+      - generic [ref=f10e23]:
+        - heading [level=1] [ref=f10e24]:
+          - link [ref=f10e25] [cursor=pointer]:
+            - /url: https://maplestory.nexon.com/Home/Main
+        - list [ref=f10e42]:
+          - listitem [ref=f10e43]:
+            - link "뉴스" [ref=f10e44] [cursor=pointer]:
+              - /url: /News/Notice
+            - list [ref=f10e46]:
+              - listitem [ref=f10e47]:
+                - link "공지사항" [ref=f10e48] [cursor=pointer]:
+                  - /url: /News/Notice
+              - listitem [ref=f10e50]:
+                - link "업데이트" [ref=f10e51] [cursor=pointer]:
+                  - /url: /News/Update
+              - listitem [ref=f10e53]:
+                - link "이벤트" [ref=f10e54] [cursor=pointer]:
+                  - /url: /News/Event
+              - listitem [ref=f10e56]:
+                - link "캐시샵 공지" [ref=f10e57] [cursor=pointer]:
+                  - /url: /News/CashShop
+              - listitem [ref=f10e59]:
+                - link "메이플 알림판" [ref=f10e60] [cursor=pointer]:
+                  - /url: /News/NoticeMapleBoard
+              - listitem [ref=f10e62]:
+                - link "with maple" [ref=f10e63] [cursor=pointer]:
+                  - /url: /withmaple
+          - listitem [ref=f10e65]:
+            - link "가이드" [ref=f10e66] [cursor=pointer]:
+              - /url: /Guide/N23GameInformation
+            - list [ref=f10e68]:
+              - listitem [ref=f10e69]:
+                - link "게임정보" [ref=f10e70] [cursor=pointer]:
+                  - /url: /Guide/N23GameInformation
+              - listitem [ref=f10e72]:
+                - link "직업소개" [ref=f10e73] [cursor=pointer]:
+                  - /url: /Guide/N23Job
+              - listitem [ref=f10e75]:
+                - link "확률형 아이템" [ref=f10e76] [cursor=pointer]:
+                  - /url: /Guide/CashShop/Probability/RoyalStyle
+              - listitem [ref=f10e78]:
+                - link "NEXON NOW" [ref=f10e79] [cursor=pointer]:
+                  - /url: https://now.nexon.com/service/maplestory
+              - listitem [ref=f10e81]:
+                - link "추가정보" [ref=f10e82] [cursor=pointer]:
+                  - /url: /guide/probability/view
+          - listitem [ref=f10e84]:
+            - link "랭킹" [ref=f10e85] [cursor=pointer]:
+              - /url: /N23Ranking/World
+            - list [ref=f10e87]:
+              - listitem [ref=f10e88]:
+                - link "월드 랭킹" [ref=f10e89] [cursor=pointer]:
+                  - /url: /N23Ranking/World
+              - listitem [ref=f10e91]:
+                - link "컨텐츠 랭킹" [ref=f10e92] [cursor=pointer]:
+                  - /url: /N23Ranking/Contents
+          - listitem [ref=f10e94]:
+            - link "커뮤니티" [ref=f10e95] [cursor=pointer]:
+              - /url: /Community/N23Free
+            - list [ref=f10e97]:
+              - listitem [ref=f10e98]:
+                - link "자유게시판" [ref=f10e99] [cursor=pointer]:
+                  - /url: /Community/N23Free
+              - listitem [ref=f10e101]:
+                - link "메이플 아트" [ref=f10e102] [cursor=pointer]:
+                  - /url: /Community/Art
+              - listitem [ref=f10e104]:
+                - link "메이플 코디" [ref=f10e105] [cursor=pointer]:
+                  - /url: /Community/N23Coordination
+              - listitem [ref=f10e107]:
+                - link "메이플스토리 파트너스" [ref=f10e108] [cursor=pointer]:
+                  - /url: https://partners.maplestory.nexon.com
+              - listitem [ref=f10e110]:
+                - link "AI Style Finder" [ref=f10e111] [cursor=pointer]:
+                  - /url: https://style-finder.nexon.com
+              - listitem [ref=f10e113]:
+                - link "미니게임" [ref=f10e114] [cursor=pointer]:
+                  - /url: https://maplestory.nexon.com/Community/MiniGame
+              - listitem [ref=f10e116]:
+                - link "커뮤니티 아카이브" [ref=f10e117] [cursor=pointer]:
+                  - /url: /Community/CommunityArchive
+          - listitem [ref=f10e119]:
+            - link "미디어" [ref=f10e120] [cursor=pointer]:
+              - /url: /Media/N23VideoMusic/C1
+            - list [ref=f10e122]:
+              - listitem [ref=f10e123]:
+                - link "영상" [ref=f10e124] [cursor=pointer]:
+                  - /url: /Media/N23VideoMusic/C1
+              - listitem [ref=f10e126]:
+                - link "음악" [ref=f10e127] [cursor=pointer]:
+                  - /url: /Media/N23VideoMusic/C2
+              - listitem [ref=f10e129]:
+                - link "아트웍" [ref=f10e130] [cursor=pointer]:
+                  - /url: /Media/ArtWork
+              - listitem [ref=f10e132]:
+                - link "웹툰" [ref=f10e133] [cursor=pointer]:
+                  - /url: /Media/WebToon
+          - listitem [ref=f10e135]:
+            - link "메이플 옥션" [ref=f10e136] [cursor=pointer]:
+              - /url: https://auction.maplestory.nexon.com
+            - list [ref=f10e138]:
+              - listitem [ref=f10e139]:
+                - link "메이플 옥션" [ref=f10e140] [cursor=pointer]:
+                  - /url: https://auction.maplestory.nexon.com
+          - listitem [ref=f10e142]:
+            - link "고객지원" [ref=f10e143] [cursor=pointer]:
+              - /url: /Support/BugReport
+            - list [ref=f10e145]:
+              - listitem [ref=f10e146]:
+                - link "다운로드" [ref=f10e147] [cursor=pointer]:
+                  - /url: /Common/PDS/Download
+              - listitem [ref=f10e149]:
+                - link "도움말/1:1문의" [ref=f10e150] [cursor=pointer]:
+                  - /url: https://cs.nexon.com/HelpBoard/Nexon?gamecode=18
+              - listitem [ref=f10e152]:
+                - link "버그악용/불법프로그램 신고" [ref=f10e153] [cursor=pointer]:
+                  - /url: /Support/BugReport
+              - listitem [ref=f10e155]:
+                - link "게임 접근성" [ref=f10e156] [cursor=pointer]:
+                  - /url: /Support/GameAccessibility
+        - generic [ref=f10e158]:
+          - generic [ref=f10e159] [cursor=pointer]:
+            - button [ref=f10e160]
+            - button [ref=f10e163]
+          - link "game start" [ref=f10e174] [cursor=pointer]:
+            - /url: javascript:;
+      - generic [ref=f10e175]:
+        - generic [ref=f10e178]:
+          - generic [ref=f10e180]:
+            - group "1 / 22" [ref=f10e181]:
+              - link [ref=f10e182] [cursor=pointer]:
+                - /url: /promotion/event/2026/20260618/event04
+                - img "미션 울티마" [ref=f10e183]
+                - generic [ref=f10e185]:
+                  - heading "미션 울티마" [level=4] [ref=f10e186]
+                  - paragraph
+            - group "2 / 22" [ref=f10e187]:
+              - link [ref=f10e188] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1374
+                - img "울티마 유물 탐사" [ref=f10e189]
+                - generic [ref=f10e191]:
+                  - heading "울티마 유물 탐사" [level=4] [ref=f10e192]
+                  - paragraph [ref=f10e193]: 2026년 8월 20일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "3 / 22" [ref=f10e194]:
+              - link [ref=f10e195] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1373
+                - img "광신도의 자격" [ref=f10e196]
+                - generic [ref=f10e198]:
+                  - heading "보스 격파 이벤트" [level=3] [ref=f10e199]
+                  - heading "광신도의 자격" [level=4] [ref=f10e200]
+                  - paragraph [ref=f10e201]: 2026년 8월 20일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "4 / 22" [ref=f10e202]:
+              - link [ref=f10e203] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1372
+                - img "상인단의<br>물자 지원 Ⅲ" [ref=f10e204]
+                - generic [ref=f10e206]:
+                  - heading "사냥 이벤트" [level=3] [ref=f10e207]
+                  - heading "상인단의 물자 지원 Ⅲ" [level=4] [ref=f10e208]: 상인단의물자 지원 Ⅲ
+                  - paragraph [ref=f10e209]: 2026년 8월 20일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "5 / 22" [ref=f10e210]:
+              - link [ref=f10e211] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1371
+                - img "모멘텀 패스<br>PLUS" [ref=f10e212]
+                - generic [ref=f10e214]:
+                  - heading "모멘텀 패스 PLUS" [level=4] [ref=f10e215]: 모멘텀 패스PLUS
+                  - paragraph [ref=f10e216]: 2026년 8월 20일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "6 / 22" [ref=f10e217]:
+              - link [ref=f10e218] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1370
+                - img "프리미엄PC방<br>접속보상 & 기프트샵" [ref=f10e219]
+                - generic [ref=f10e221]:
+                  - heading "프리미엄PC방 접속보상 & 기프트샵" [level=4] [ref=f10e222]: 프리미엄PC방접속보상 & 기프트샵
+                  - paragraph [ref=f10e223]: 2026년 8월 21일(금) 오전 0시 ~ 9월 17일(목) 오후 11시 59분
+            - group "7 / 22" [ref=f10e224]:
+              - link [ref=f10e225] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1337
+                - img "연합 토큰샵 &<br>상인단 현상금 의뢰" [ref=f10e226]
+                - generic [ref=f10e228]:
+                  - heading "이벤트샵" [level=3] [ref=f10e229]
+                  - heading "연합 토큰샵 & 상인단 현상금 의뢰" [level=4] [ref=f10e230]: 연합 토큰샵 &상인단 현상금 의뢰
+                  - paragraph [ref=f10e231]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "8 / 22" [ref=f10e232]:
+              - link [ref=f10e233] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1349
+                - img "챌린저스 월드<br>시즌4" [ref=f10e234]
+                - generic [ref=f10e236]:
+                  - heading "챌린저스 월드 시즌4" [level=4] [ref=f10e237]: 챌린저스 월드시즌4
+                  - paragraph [ref=f10e238]: 2026년 6월 18일(목) 점검 후 ~ 9월 17일(목) 점검 전
+            - group "9 / 22" [ref=f10e239]:
+              - link [ref=f10e240] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1348
+                - img "메이린 격파 이벤트" [ref=f10e241]
+                - generic [ref=f10e243]:
+                  - heading "보스 격파 이벤트" [level=3] [ref=f10e244]
+                  - heading "메이린 격파 이벤트" [level=4] [ref=f10e245]
+                  - paragraph [ref=f10e246]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "10 / 22" [ref=f10e247]:
+              - link [ref=f10e248] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1347
+                - img "챌린저스 패스" [ref=f10e249]
+                - generic [ref=f10e251]:
+                  - heading "챌린저스 패스" [level=4] [ref=f10e252]
+                  - paragraph [ref=f10e253]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "11 / 22" [ref=f10e254]:
+              - link [ref=f10e255] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1346
+                - img "하이퍼 버닝 MAX" [ref=f10e256]
+                - generic [ref=f10e258]:
+                  - heading "하이퍼 버닝 MAX" [level=4] [ref=f10e259]
+                  - paragraph [ref=f10e260]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "12 / 22" [ref=f10e261]:
+              - link [ref=f10e262] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1345
+                - img "하이퍼 블링크" [ref=f10e263]
+                - generic [ref=f10e265]:
+                  - heading "하이퍼 블링크" [level=4] [ref=f10e266]
+                  - paragraph [ref=f10e267]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "13 / 22" [ref=f10e268]:
+              - link [ref=f10e269] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1344
+                - img "버닝 BEYOND" [ref=f10e270]
+                - generic [ref=f10e272]:
+                  - heading "버닝 BEYOND" [level=4] [ref=f10e273]
+                  - paragraph [ref=f10e274]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "14 / 22" [ref=f10e275]:
+              - link [ref=f10e276] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1343
+                - img "아이템 버닝 PLUS" [ref=f10e277]
+                - generic [ref=f10e279]:
+                  - heading "아이템 버닝 PLUS" [level=4] [ref=f10e280]
+                  - paragraph [ref=f10e281]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "15 / 22" [ref=f10e282]:
+              - link [ref=f10e283] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1342
+                - img "울티마 작전 일지" [ref=f10e284]
+                - generic [ref=f10e286]:
+                  - heading "출석 이벤트" [level=3] [ref=f10e287]
+                  - heading "울티마 작전 일지" [level=4] [ref=f10e288]
+                  - paragraph [ref=f10e289]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "16 / 22" [ref=f10e290]:
+              - link [ref=f10e291] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1341
+                - img "에테리온 아티팩트" [ref=f10e292]
+                - generic [ref=f10e294]:
+                  - heading "성장 이벤트" [level=3] [ref=f10e295]
+                  - heading "에테리온 아티팩트" [level=4] [ref=f10e296]
+                  - paragraph [ref=f10e297]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "17 / 22" [ref=f10e298]:
+              - link [ref=f10e299] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1338
+                - img "신입 용병 지원 미션" [ref=f10e300]
+                - generic [ref=f10e302]:
+                  - heading "육성 지원 이벤트" [level=3] [ref=f10e303]
+                  - heading "신입 용병 지원 미션" [level=4] [ref=f10e304]
+                  - paragraph [ref=f10e305]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "18 / 22" [ref=f10e306]:
+              - link [ref=f10e307] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1360
+                - img "헤이즐의 부탁" [ref=f10e308]
+                - generic [ref=f10e310]:
+                  - heading "헤이즐의 부탁" [level=4] [ref=f10e311]
+                  - paragraph [ref=f10e312]: 2026년 7월 23일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "19 / 22" [ref=f10e313]:
+              - link [ref=f10e314] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1336
+                - img "의문의 결계" [ref=f10e315]
+                - generic [ref=f10e317]:
+                  - heading "의문의 결계" [level=4] [ref=f10e318]
+                  - paragraph [ref=f10e319]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+            - group "20 / 22" [ref=f10e320]:
+              - link [ref=f10e321] [cursor=pointer]:
+                - /url: /News/Event/Ongoing/1334
+                - img "VIP 사우나" [ref=f10e322]
+                - generic [ref=f10e324]:
+                  - heading "VIP 사우나" [level=4] [ref=f10e325]
+                  - paragraph [ref=f10e326]: 2026년 6월 18일(목) 점검 후 ~ 12월 16일(수) 오후 11시 59분
+            - group "21 / 22" [ref=f10e327]:
+              - link [ref=f10e328] [cursor=pointer]:
+                - /url: https://maplestory.essential.nexon.com/kr/@/brandedcontents/bellona
+                - img "잔혹한 처형인 벨로나<br>신상품 출시" [ref=f10e329]
+                - generic [ref=f10e331]:
+                  - heading "메이플스토어" [level=3] [ref=f10e332]
+                  - heading "잔혹한 처형인 벨로나 신상품 출시" [level=4] [ref=f10e333]: 잔혹한 처형인 벨로나신상품 출시
+                  - paragraph [ref=f10e334]: 2026년 8월 20일(목)
+            - group "22 / 22" [ref=f10e335]:
+              - link [ref=f10e336] [cursor=pointer]:
+                - /url: https://blog.maplestory.nexon.com/?utm_source=maplestory_main&utm_medium=display&utm_campaign=maplelog
+                - img "메이플로그" [ref=f10e337]
+                - generic [ref=f10e339]:
+                  - heading [level=4] [ref=f10e340]
+                  - paragraph
+          - generic [ref=f10e342]:
+            - generic [ref=f10e343]:
+              - button "Previous slide" [ref=f10e344] [cursor=pointer]: 이전
+              - generic [ref=f10e345]:
+                - generic [ref=f10e346]: "1"
+                - text: /
+                - generic [ref=f10e347]: "22"
+              - button "Next slide" [ref=f10e348] [cursor=pointer]: 다음
+            - button "더보기" [ref=f10e349] [cursor=pointer]
+        - generic [ref=f10e352]:
+          - generic [ref=f10e353]:
+            - generic [ref=f10e354]:
+              - heading "공지사항" [level=4] [ref=f10e355]
+              - link [ref=f10e356] [cursor=pointer]:
+                - /url: /News/Notice
+            - generic [ref=f10e358]:
+              - link [ref=f10e360] [cursor=pointer]:
+                - /url: /board/7/149706
+                - heading "공지 9/17(목) 마스터피스 사양 변경점 사전 안내" [level=5] [ref=f10e361]:
+                  - generic [ref=f10e362]: 공지
+                  - generic [ref=f10e363]: 9/17(목) 마스터피스 사양 변경점 사전 안내
+                - paragraph [ref=f10e364]: 9/17(목) 업데이트 이후 변경되는 사양을 확인해 주세요.
+              - link [ref=f10e366] [cursor=pointer]:
+                - /url: https://maplestory.nexon.com/board/7/149701
+                - heading "공지 8/13(목) 운영정책 위반 단속 결과 & 클린 캠페인 결과 발표" [level=5] [ref=f10e367]:
+                  - generic [ref=f10e368]: 공지
+                  - generic [ref=f10e369]: 8/13(목) 운영정책 위반 단속 결과 & 클린 캠페인 결과 발표
+                - paragraph [ref=f10e370]: 운영정책 위반 단속 결과 및 7월 클린 캠페인 결과 안내드립니다.
+              - link [ref=f10e372] [cursor=pointer]:
+                - /url: /board/7/149666
+                - heading "공지 8/7(금) 버그/불법프로그램 신고 보상 안내" [level=5] [ref=f10e373]:
+                  - generic [ref=f10e374]: 공지
+                  - generic [ref=f10e375]: 8/7(금) 버그/불법프로그램 신고 보상 안내
+                - paragraph [ref=f10e376]: 버그악용/불법프로그램 신고 보상 내용을 확인해주세요.
+          - generic [ref=f10e377]:
+            - generic [ref=f10e379]:
+              - link [ref=f10e380] [cursor=pointer]:
+                - /url: "#none"
+                - img "GAME START" [ref=f10e381]
+              - link "다운로드" [ref=f10e383] [cursor=pointer]:
+                - /url: https://maplestory.nexon.com/Common/PDS/Download
+            - generic [ref=f10e385]:
+              - heading "로그인을 해주세요." [level=4] [ref=f10e386]
+              - link "넥슨ID 로그인" [ref=f10e387] [cursor=pointer]:
+                - /url: javascript:;
+              - list [ref=f10e389]:
+                - listitem [ref=f10e390]:
+                  - link "넥슨ID 찾기" [ref=f10e391] [cursor=pointer]:
+                    - /url: https://myinfo.nexon.com/find-nexonid
+                  - link "넥슨 비밀번호 찾기" [ref=f10e392] [cursor=pointer]:
+                    - /url: https://myinfo.nexon.com/find-pw
+                - listitem [ref=f10e393]:
+                  - link "메이플ID에 연동된 넥슨 ID 찾기" [ref=f10e394] [cursor=pointer]:
+                    - /url: /account/search/nexonid
+                - listitem [ref=f10e395]:
+                  - link "메이플ID & 비밀번호 찾기" [ref=f10e396] [cursor=pointer]:
+                    - /url: /Account/Search/ID
+                - listitem [ref=f10e397]:
+                  - link "회원가입" [ref=f10e398] [cursor=pointer]:
+                    - /url: https://member.nexon.com/join/join.aspx?accesscode=1&src=js&redirect=https%3A//maplestory.nexon.com
+                - listitem [ref=f10e399]:
+                  - link "명의 내 메이플ID 찾기" [ref=f10e400] [cursor=pointer]:
+                    - /url: /Account/Search/Mapleid
+                - listitem [ref=f10e401]:
+                  - link "Green 메이플ID 선택하기" [ref=f10e402] [cursor=pointer]:
+                    - /url: /Account/Search/GreenMapleID
+          - generic [ref=f10e404]:
+            - generic [ref=f10e407]:
+              - heading "주요 업데이트 정보" [level=4] [ref=f10e408]
+              - paragraph [ref=f10e410]: 2026.08.20
+              - paragraph [ref=f10e412]: ver.1.2.418 업데이트
+              - link "자세히 보기" [ref=f10e414] [cursor=pointer]:
+                - /url: /promotion/event/2026/20260618/intro
+            - generic [ref=f10e416]:
+              - generic [ref=f10e418]:
+                - group "1 / 20" [ref=f10e419]:
+                  - link [ref=f10e420] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/642
+                    - generic [ref=f10e422]:
+                      - heading "마스터라벨 플러스" [level=4] [ref=f10e423]
+                      - paragraph [ref=f10e424]: 상시 판매
+                - group "2 / 20" [ref=f10e425]:
+                  - link [ref=f10e426] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/641
+                    - generic [ref=f10e428]:
+                      - heading "로얄스타일 & 마스터피스" [level=4] [ref=f10e429]
+                      - paragraph [ref=f10e430]: 상시 판매
+                - group "3 / 20" [ref=f10e431]:
+                  - link [ref=f10e432] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/640
+                    - generic [ref=f10e434]:
+                      - heading "메이플스토리 보스 패키지" [level=4] [ref=f10e435]
+                      - paragraph [ref=f10e436]: 2026년 8월 20일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "4 / 20" [ref=f10e437]:
+                  - link [ref=f10e438] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/639
+                    - generic [ref=f10e440]:
+                      - heading "프리미엄 헤어 & 성형 쿠폰" [level=4] [ref=f10e441]
+                      - paragraph [ref=f10e442]: 상시 판매
+                - group "5 / 20" [ref=f10e443]:
+                  - link [ref=f10e444] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/637
+                    - generic [ref=f10e446]:
+                      - heading "컬러링 프리즘 프로 & 무기 이펙트 프리즘" [level=4] [ref=f10e447]: 컬러링 프리즘 프로& 무기 이펙트 프리즘
+                      - paragraph [ref=f10e448]: 상시 판매
+                - group "6 / 20" [ref=f10e449]:
+                  - link [ref=f10e450] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/636
+                    - generic [ref=f10e452]:
+                      - heading "몬스터파크 핸즈 이용권" [level=4] [ref=f10e453]: 몬스터파크 핸즈이용권
+                      - paragraph [ref=f10e454]: 2026년 7월 23일(목) 점검 후 ~ 9월 15일(화) 오후 11시 59분
+                - group "7 / 20" [ref=f10e455]:
+                  - link [ref=f10e456] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/632
+                    - generic [ref=f10e458]:
+                      - heading "제네시스 패스 & 제네시스 패스 PLUS" [level=4] [ref=f10e459]: 제네시스 패스 &제네시스 패스 PLUS
+                      - paragraph [ref=f10e460]: 2026년 6월 18일(목) 점검 후 ~ 9월 15일(화) 오후 11시 59분
+                - group "8 / 20" [ref=f10e461]:
+                  - link [ref=f10e462] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/630
+                    - generic [ref=f10e464]:
+                      - heading "위습의 원더베리 & 루나 크리스탈" [level=4] [ref=f10e465]: 위습의 원더베리 &루나 크리스탈
+                      - paragraph [ref=f10e466]: 상시 판매
+                - group "9 / 20" [ref=f10e467]:
+                  - link [ref=f10e468] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/629
+                    - generic [ref=f10e470]:
+                      - heading "스페셜 루나 크리스탈" [level=4] [ref=f10e471]: 스페셜루나 크리스탈
+                      - paragraph [ref=f10e472]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "10 / 20" [ref=f10e473]:
+                  - link [ref=f10e474] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/627
+                    - generic [ref=f10e476]:
+                      - 'heading "일러스트 컬렉션 : 모험가" [level=4] [ref=f10e477]': "일러스트 컬렉션: 모험가"
+                      - paragraph [ref=f10e478]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "11 / 20" [ref=f10e479]:
+                  - link [ref=f10e480] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/626
+                    - generic [ref=f10e482]:
+                      - 'heading "일러스트 컬렉션 : 시그너스 & 영웅" [level=4] [ref=f10e483]': "일러스트 컬렉션: 시그너스 & 영웅"
+                      - paragraph [ref=f10e484]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "12 / 20" [ref=f10e485]:
+                  - link [ref=f10e486] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/625
+                    - generic [ref=f10e488]:
+                      - 'heading "일러스트 컬렉션 : 데몬 & 레지스탕스" [level=4] [ref=f10e489]': "일러스트 컬렉션: 데몬 & 레지스탕스"
+                      - paragraph [ref=f10e490]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "13 / 20" [ref=f10e491]:
+                  - link [ref=f10e492] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/624
+                    - generic [ref=f10e494]:
+                      - 'heading "일러스트 컬렉션 : 노바 & 레프" [level=4] [ref=f10e495]': "일러스트 컬렉션: 노바 & 레프"
+                      - paragraph [ref=f10e496]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "14 / 20" [ref=f10e497]:
+                  - link [ref=f10e498] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/623
+                    - generic [ref=f10e500]:
+                      - 'heading "일러스트 컬렉션 : 프렌즈 월드 & 초월자 & 아니마" [level=4] [ref=f10e501]': "일러스트 컬렉션: 프렌즈 월드 & 초월자 & 아니마"
+                      - paragraph [ref=f10e502]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "15 / 20" [ref=f10e503]:
+                  - link [ref=f10e504] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/622
+                    - generic [ref=f10e506]:
+                      - heading "전 직업 일러스트 컬렉션 헤어 쿠폰" [level=4] [ref=f10e507]: 전 직업 일러스트 컬렉션헤어 쿠폰
+                      - paragraph [ref=f10e508]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "16 / 20" [ref=f10e509]:
+                  - link [ref=f10e510] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/617
+                    - generic [ref=f10e512]:
+                      - heading "전 직업 헤어 & 성형 쿠폰" [level=4] [ref=f10e513]: 전 직업 헤어 &성형 쿠폰
+                      - paragraph [ref=f10e514]: 2026년 6월 18일(목) 점검 후 ~ 9월 16일(수) 오후 11시 59분
+                - group "17 / 20" [ref=f10e515]:
+                  - link [ref=f10e516] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/607
+                    - generic [ref=f10e518]:
+                      - heading "추가옵션, 잠재능력 전승 스크롤" [level=4] [ref=f10e519]: 추가옵션, 잠재능력전승 스크롤
+                      - paragraph [ref=f10e520]: 상시 판매
+                - group "18 / 20" [ref=f10e521]:
+                  - link [ref=f10e522] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/596
+                    - generic [ref=f10e524]:
+                      - heading "초이스 헤어 & 성형 쿠폰" [level=4] [ref=f10e525]
+                      - paragraph [ref=f10e526]: 상시 판매
+                - group "19 / 20" [ref=f10e527]:
+                  - link [ref=f10e528] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/595
+                    - generic [ref=f10e530]:
+                      - heading "성별 변경 쿠폰" [level=4] [ref=f10e531]
+                      - paragraph [ref=f10e532]: 상시 판매
+                - group "20 / 20" [ref=f10e533]:
+                  - link [ref=f10e534] [cursor=pointer]:
+                    - /url: /News/CashShop/Sale/560
+                    - generic [ref=f10e536]:
+                      - heading "스타일링 스타터 패키지" [level=4] [ref=f10e537]
+                      - paragraph [ref=f10e538]: 상시 판매
+              - generic [ref=f10e541]:
+                - button "Previous slide" [ref=f10e542] [cursor=pointer]: 이전
+                - generic [ref=f10e543]:
+                  - generic [ref=f10e544]: "1"
+                  - text: /
+                  - generic [ref=f10e545]: "20"
+                - button "Next slide" [ref=f10e546] [cursor=pointer]: 다음
+        - generic [ref=f10e549]:
+          - generic [ref=f10e550]:
+            - heading "유튜브" [level=4] [ref=f10e551]
+            - link [ref=f10e552] [cursor=pointer]:
+              - /url: https://www.youtube.com/@MapleStoryKR
+          - list [ref=f10e554]:
+            - listitem [ref=f10e555]:
+              - link "Maple Now | 김창섭 디렉터 (26.08.13)" [ref=f10e556] [cursor=pointer]:
+                - /url: https://live.nexon.com/lives/CsVDUSMwEWKAYlupO1lvHQ==
+                - paragraph [ref=f10e559]: Maple Now | 김창섭 디렉터 (26.08.13)
+            - listitem [ref=f10e560]:
+              - link "Maple Now| 김창섭 디렉터(26.07)" [ref=f10e561] [cursor=pointer]:
+                - /url: https://live.nexon.com/replays/xlal6QeLGx3UVv0Sc2NmmA==
+                - paragraph [ref=f10e564]: Maple Now| 김창섭 디렉터(26.07)
+            - listitem [ref=f10e565]:
+              - link "신규 직업 레테 | 메이플스토리 OVERDRIVE" [ref=f10e566] [cursor=pointer]:
+                - /url: https://www.youtube.com/watch?v=FM0Fsuf-4cY
+                - paragraph [ref=f10e569]: 신규 직업 레테 | 메이플스토리 OVERDRIVE
+            - listitem [ref=f10e570]:
+              - link "챌린저스 월드 시즌 4 X 시즌 보스 메이린 | 메이플스토리 OVERDRIVE" [ref=f10e571] [cursor=pointer]:
+                - /url: https://www.youtube.com/watch?v=7U_K-u6Jq-s
+                - paragraph [ref=f10e574]: 챌린저스 월드 시즌 4 X 시즌 보스 메이린 | 메이플스토리 OVERDRIVE
+            - listitem [ref=f10e575]:
+              - link "하이퍼 블링크 & 버닝 BEYOND | 메이플스토리 OVERDRIVE" [ref=f10e576] [cursor=pointer]:
+                - /url: https://www.youtube.com/watch?v=_GI0qUWI4zk
+                - paragraph [ref=f10e579]: 하이퍼 블링크 & 버닝 BEYOND | 메이플스토리 OVERDRIVE
+            - listitem [ref=f10e580]:
+              - link "OVERDRIVE 개편사항 | 메이플스토리 OVERDRIVE" [ref=f10e581] [cursor=pointer]:
+                - /url: https://www.youtube.com/watch?v=MzL7qTnbJK4
+                - paragraph [ref=f10e584]: OVERDRIVE 개편사항 | 메이플스토리 OVERDRIVE
+        - generic [ref=f10e587]:
+          - generic [ref=f10e588]:
+            - generic [ref=f10e589]:
+              - heading "메이플스토리 뉴스" [level=3] [ref=f10e590]
+              - group "1 / 1" [ref=f10e593]:
+                - generic [ref=f10e595]:
+                  - heading "버그악용&불법프로그램 신고" [level=4] [ref=f10e596]
+                  - paragraph [ref=f10e598]: 버그나 불법 프로그램은 꼭! 신고해주세요! 제보의 심각성에 따라 보상을 지급해드립니다.
+                  - link "자세히 보기" [ref=f10e600] [cursor=pointer]:
+                    - /url: https://maplestory.nexon.com/Support/BugReport
+              - generic [ref=f10e604]:
+                - button "Previous slide" [ref=f10e605] [cursor=pointer]: 이전
+                - generic [ref=f10e606]:
+                  - generic [ref=f10e607]: "1"
+                  - text: /
+                  - generic [ref=f10e608]: "1"
+                - button "Next slide" [ref=f10e609] [cursor=pointer]: 다음
+            - generic [ref=f10e610]:
+              - generic [ref=f10e611]:
+                - heading "MapleStore" [level=4] [ref=f10e612]
+                - link [ref=f10e613] [cursor=pointer]:
+                  - /url: https://maplestory.essential.nexon.com
+              - generic [ref=f10e615]:
+                - generic [ref=f10e617]:
+                  - group "1 / 9" [ref=f10e618]:
+                    - link [ref=f10e620] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25306754
+                      - img "장패드 - 벨로나" [ref=f10e622]
+                      - paragraph [ref=f10e624]: 장패드 - 벨로나
+                  - group "2 / 9" [ref=f10e625]:
+                    - link [ref=f10e627] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25306751
+                      - img "키캡 세트 - 벨로나" [ref=f10e629]
+                      - paragraph [ref=f10e631]: 키캡 세트 - 벨로나
+                  - group "3 / 9" [ref=f10e632]:
+                    - link [ref=f10e634] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25306753
+                      - img "벨벳 쿠션 - 벨로나" [ref=f10e636]
+                      - paragraph [ref=f10e638]: 벨벳 쿠션 - 벨로나
+                  - group "4 / 9" [ref=f10e639]:
+                    - link [ref=f10e641] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25312841
+                      - img "4구 키캡 키링 - 사도" [ref=f10e643]
+                      - paragraph [ref=f10e645]: 4구 키캡 키링 - 사도
+                  - group "5 / 9" [ref=f10e646]:
+                    - link [ref=f10e648] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25312811
+                      - img "LED 키캡 키링(2구) - 사도" [ref=f10e650]
+                      - paragraph [ref=f10e652]: LED 키캡 키링(2구) - 사도
+                  - group "6 / 9" [ref=f10e653]:
+                    - link [ref=f10e655] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25306752
+                      - img "아크릴 디오라마 - 벨로나" [ref=f10e657]
+                      - paragraph [ref=f10e659]: 아크릴 디오라마 - 벨로나
+                  - group "7 / 9" [ref=f10e660]:
+                    - link [ref=f10e662] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25306766
+                      - img "아크릴 키링 - 벨로나" [ref=f10e664]
+                      - paragraph [ref=f10e666]: 아크릴 키링 - 벨로나
+                  - group "8 / 9" [ref=f10e667]:
+                    - link [ref=f10e669] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25306755
+                      - img "메탈릭 포토카드 - 벨로나" [ref=f10e671]
+                      - paragraph [ref=f10e673]: 메탈릭 포토카드 - 벨로나
+                  - group "9 / 9" [ref=f10e674]:
+                    - link [ref=f10e676] [cursor=pointer]:
+                      - /url: https://maplestory.essential.nexon.com/maplestore/products/25312866
+                      - img "원형 아크릴 키링(오로라) - 사도" [ref=f10e678]
+                      - paragraph [ref=f10e680]: 원형 아크릴 키링(오로라) - 사도
+                - generic [ref=f10e683]:
+                  - button "Previous slide" [ref=f10e684] [cursor=pointer]: 이전
+                  - generic [ref=f10e685]:
+                    - generic [ref=f10e686]: "1"
+                    - text: /
+                    - generic [ref=f10e687]: "9"
+                  - button "Next slide" [ref=f10e688] [cursor=pointer]: 다음
+          - generic [ref=f10e689]:
+            - generic [ref=f10e690]:
+              - generic [ref=f10e692]:
+                - heading "테스트 월드" [level=4] [ref=f10e693]
+                - link [ref=f10e694] [cursor=pointer]:
+                  - /url: https://maplestory.nexon.com/Testworld/Main
+              - list [ref=f10e696]:
+                - listitem [ref=f10e697]:
+                  - link "이용 신청" [ref=f10e698] [cursor=pointer]:
+                    - /url: https://maplestory.nexon.com/MyMaple/TestWorld/Apply
+                - listitem [ref=f10e699]:
+                  - link "테스트 월드 보상" [ref=f10e700] [cursor=pointer]:
+                    - /url: https://maplestory.nexon.com/News/Notice/110655
+            - paragraph [ref=f10e703]: 테스트월드 운영 기간이 아닙니다. 다음 운영 공지를 기다려주세요.
+            - generic [ref=f10e705]:
+              - link [ref=f10e707] [cursor=pointer]:
+                - /url: https://maplestory.nexon.com/testworld/news/all/195
+                - heading "점검 수정 [점검종료] 8/14(금) 전체 테스트월드 채널 점검 (15:50~16:10)" [level=5] [ref=f10e708]:
+                  - generic [ref=f10e709]: 점검
+                  - generic [ref=f10e710]:
+                    - emphasis [ref=f10e711]: 수정
+                    - text: "[점검종료] 8/14(금) 전체 테스트월드 채널 점검 (15:50~16:10)"
+              - link [ref=f10e713] [cursor=pointer]:
+                - /url: https://maplestory.nexon.com/testworld/news/all/194
+                - heading "공지 클라이언트 1.2.418 정식 업데이트 시 변경될 주요사항 안내" [level=5] [ref=f10e714]:
+                  - generic [ref=f10e715]: 공지
+                  - generic [ref=f10e716]: 클라이언트 1.2.418 정식 업데이트 시 변경될 주요사항 안내
+              - link [ref=f10e718] [cursor=pointer]:
+                - /url: https://maplestory.nexon.com/testworld/news/all/193
+                - heading "패치 수정 클라이언트 1.2.205 릴리즈(이벤트, 컨텐츠, 개선사항 및 오류 수정)" [level=5] [ref=f10e719]:
+                  - generic [ref=f10e720]: 패치
+                  - generic [ref=f10e721]:
+                    - emphasis [ref=f10e722]: 수정
+                    - text: 클라이언트 1.2.205 릴리즈(이벤트, 컨텐츠, 개선사항 및 오류 수정)
+        - generic [ref=f10e725]:
+          - generic [ref=f10e726]:
+            - heading "메이플스토리와 함께 이용해 보세요!" [level=4] [ref=f10e728]
+            - generic [ref=f10e729]:
+              - generic [ref=f10e732]:
+                - heading "메이플핸즈+" [level=5] [ref=f10e733]
+                - paragraph [ref=f10e734]: 메이플스토리 공식 앱 언제 어디서나 내 캐릭터와 함께!
+                - generic [ref=f10e735]:
+                  - link "안드로이드" [ref=f10e736] [cursor=pointer]:
+                    - /url: https://play.google.com/store/apps/details?id=com.nexon.handsplus
+                  - link "애플스토어" [ref=f10e737] [cursor=pointer]:
+                    - /url: https://itunes.apple.com/kr/app/id1054905770
+              - generic [ref=f10e740]:
+                - heading "넥슨플레이" [level=5] [ref=f10e741]
+                - paragraph [ref=f10e742]: 넥슨 게이머의 필수 앱
+                - generic [ref=f10e743]:
+                  - link "안드로이드" [ref=f10e744] [cursor=pointer]:
+                    - /url: https://play.google.com/store/apps/details?id=com.nexon.nxplay
+                  - link "애플스토어" [ref=f10e745] [cursor=pointer]:
+                    - /url: https://itunes.apple.com/kr/app/id624443513
+          - generic [ref=f10e747]:
+            - generic [ref=f10e748]:
+              - heading "파트너스" [level=4] [ref=f10e749]
+              - link [ref=f10e750] [cursor=pointer]:
+                - /url: https://partners.maplestory.nexon.com/developers
+            - generic [ref=f10e751]:
+              - generic [ref=f10e753]:
+                - group "1 / 17" [ref=f10e754]:
+                  - generic [ref=f10e755]:
+                    - img "메이플북" [ref=f10e757]
+                    - paragraph [ref=f10e758]:
+                      - generic [ref=f10e759]: 메이플북
+                    - list [ref=f10e761]:
+                      - listitem [ref=f10e762]:
+                        - generic [ref=f10e763]: 캐릭터 조회
+                      - listitem [ref=f10e764]:
+                        - generic [ref=f10e765]: 시뮬레이터
+                      - listitem [ref=f10e766]:
+                        - generic [ref=f10e767]: 강화 이력
+                      - listitem [ref=f10e768]:
+                        - generic [ref=f10e769]: 이벤트 알림
+                    - list [ref=f10e772]:
+                      - listitem [ref=f10e773]:
+                        - link "iOS" [ref=f10e774] [cursor=pointer]:
+                          - /url: "\thttps://apps.apple.com/kr/app/%EB%A9%94%EC%9D%B4%ED%94%8C%EB%B6%81-%EC%8B%A4%EC%8B%9C%EA%B0%84-%EC%A0%95%EB%B3%B4-%EC%A1%B0%ED%9A%8C/id6502565190"
+                      - text: ","
+                      - listitem [ref=f10e775]:
+                        - link "Android" [ref=f10e776] [cursor=pointer]:
+                          - /url: https://play.google.com/store/apps/details?id=com.rocky.maplebook
+                - group "2 / 17" [ref=f10e777]:
+                  - generic [ref=f10e778]:
+                    - img "메이플히스토리" [ref=f10e780]
+                    - paragraph [ref=f10e781]:
+                      - generic [ref=f10e782]: 메이플히스토리
+                    - list [ref=f10e784]:
+                      - listitem [ref=f10e785]:
+                        - generic [ref=f10e786]: 캐릭터 조회
+                      - listitem [ref=f10e787]:
+                        - generic [ref=f10e788]: 길드 조회
+                      - listitem [ref=f10e789]:
+                        - generic [ref=f10e790]: 랭킹 정보
+                      - listitem [ref=f10e791]:
+                        - generic [ref=f10e792]: 강화 이력
+                      - listitem [ref=f10e793]:
+                        - generic [ref=f10e794]: 챗봇
+                    - list [ref=f10e797]:
+                      - listitem [ref=f10e798]:
+                        - link "WEB" [ref=f10e799] [cursor=pointer]:
+                          - /url: https://maplehistory.kr/?utm_source=partners&utm_medium=list
+                - group "3 / 17" [ref=f10e800]:
+                  - generic [ref=f10e801]:
+                    - img "메이플 박스" [ref=f10e803]
+                    - paragraph [ref=f10e804]:
+                      - generic [ref=f10e805]: 메이플 박스
+                    - list [ref=f10e807]:
+                      - listitem [ref=f10e808]:
+                        - generic [ref=f10e809]: 효율분석
+                      - listitem [ref=f10e810]:
+                        - generic [ref=f10e811]: 캐릭터 조회
+                    - list [ref=f10e814]:
+                      - listitem [ref=f10e815]:
+                        - link "WEB" [ref=f10e816] [cursor=pointer]:
+                          - /url: " https://maple-box.com/"
+                - group "4 / 17" [ref=f10e817]:
+                  - generic [ref=f10e818]:
+                    - img "메애기" [ref=f10e820]
+                    - paragraph [ref=f10e821]:
+                      - generic [ref=f10e822]: 메애기
+                    - list [ref=f10e824]:
+                      - listitem [ref=f10e825]:
+                        - generic [ref=f10e826]: 캐릭터 조회
+                      - listitem [ref=f10e827]:
+                        - generic [ref=f10e828]: 코디 정보
+                      - listitem [ref=f10e829]:
+                        - generic [ref=f10e830]: 닉네임 생성기
+                      - listitem [ref=f10e831]:
+                        - generic [ref=f10e832]: 주화 시세
+                      - listitem [ref=f10e833]:
+                        - generic [ref=f10e834]: 직업 분석
+                      - listitem [ref=f10e835]:
+                        - generic [ref=f10e836]: 통계 정보
+                    - list [ref=f10e839]:
+                      - listitem [ref=f10e840]:
+                        - link "WEB" [ref=f10e841] [cursor=pointer]:
+                          - /url: https://meaegi.com/?utm_source=partners&utm_medium=list
+                - group "5 / 17" [ref=f10e842]:
+                  - generic [ref=f10e843]:
+                    - img "환산 주스탯" [ref=f10e845]
+                    - paragraph [ref=f10e846]:
+                      - generic [ref=f10e847]: 환산 주스탯
+                    - list [ref=f10e849]:
+                      - listitem [ref=f10e850]:
+                        - generic [ref=f10e851]: 캐릭터 조회
+                      - listitem [ref=f10e852]:
+                        - generic [ref=f10e853]: 전투력 지표
+                      - listitem [ref=f10e854]:
+                        - generic [ref=f10e855]: 시뮬레이터
+                      - listitem [ref=f10e856]:
+                        - generic [ref=f10e857]: 최적화 도구
+                      - listitem [ref=f10e858]:
+                        - generic [ref=f10e859]: 명예의 전당
+                      - listitem [ref=f10e860]:
+                        - generic [ref=f10e861]: 스펙업 효율
+                    - list [ref=f10e864]:
+                      - listitem [ref=f10e865]:
+                        - link "WEB" [ref=f10e866] [cursor=pointer]:
+                          - /url: https://maplescouter.com/?utm_source=partners&utm_medium=list
+                - group "6 / 17" [ref=f10e867]:
+                  - generic [ref=f10e868]:
+                    - img "메이플지지" [ref=f10e870]
+                    - paragraph [ref=f10e871]:
+                      - generic [ref=f10e872]: 메이플지지
+                    - list [ref=f10e874]:
+                      - listitem [ref=f10e875]:
+                        - generic [ref=f10e876]: 캐릭터 조회
+                      - listitem [ref=f10e877]:
+                        - generic [ref=f10e878]: 통계 정보
+                      - listitem [ref=f10e879]:
+                        - generic [ref=f10e880]: 시뮬레이터
+                      - listitem [ref=f10e881]:
+                        - generic [ref=f10e882]: 코디 분석
+                      - listitem [ref=f10e883]:
+                        - generic [ref=f10e884]: 프로필 카드 제작
+                    - list [ref=f10e887]:
+                      - listitem [ref=f10e888]:
+                        - link "WEB" [ref=f10e889] [cursor=pointer]:
+                          - /url: https://maple.gg/?utm_source=partners&utm_medium=list
+                - group "7 / 17" [ref=f10e890]:
+                  - generic [ref=f10e891]:
+                    - img "츄츄지지" [ref=f10e893]
+                    - paragraph [ref=f10e894]:
+                      - generic [ref=f10e895]: 츄츄지지
+                    - list [ref=f10e897]:
+                      - listitem [ref=f10e898]:
+                        - generic [ref=f10e899]: 캐릭터 조회
+                      - listitem [ref=f10e900]:
+                        - generic [ref=f10e901]: 직업 분석
+                      - listitem [ref=f10e902]:
+                        - generic [ref=f10e903]: 강화 이력
+                      - listitem [ref=f10e904]:
+                        - generic [ref=f10e905]: 길드 조회
+                      - listitem [ref=f10e906]:
+                        - generic [ref=f10e907]: 캐릭터 목록
+                      - listitem [ref=f10e908]:
+                        - generic [ref=f10e909]: 시뮬레이터
+                    - list [ref=f10e912]:
+                      - listitem [ref=f10e913]:
+                        - link "WEB" [ref=f10e914] [cursor=pointer]:
+                          - /url: https://chuchu.gg/?utm_source=partners&utm_medium=list
+                - group "8 / 17" [ref=f10e915]:
+                  - generic [ref=f10e916]:
+                    - img "메이플커마" [ref=f10e918]
+                    - paragraph [ref=f10e919]:
+                      - generic [ref=f10e920]: 메이플커마
+                    - list [ref=f10e922]:
+                      - listitem [ref=f10e923]:
+                        - generic [ref=f10e924]: 코디 정보
+                      - listitem [ref=f10e925]:
+                        - generic [ref=f10e926]: 코디 시뮬레이터
+                    - list [ref=f10e929]:
+                      - listitem [ref=f10e930]:
+                        - link "WEB" [ref=f10e931] [cursor=pointer]:
+                          - /url: https://maple.curma.cc/?utm_source=partners&utm_medium=list
+                - group "9 / 17" [ref=f10e932]:
+                  - generic [ref=f10e933]:
+                    - img "Maple Week" [ref=f10e935]
+                    - paragraph [ref=f10e936]:
+                      - generic [ref=f10e937]: Maple Week
+                    - list [ref=f10e939]:
+                      - listitem [ref=f10e940]:
+                        - generic [ref=f10e941]: 주간 보스 현황
+                    - list [ref=f10e944]:
+                      - listitem [ref=f10e945]:
+                        - link "WEB" [ref=f10e946] [cursor=pointer]:
+                          - /url: https://www.maple-week.com/?utm_source=partners&utm_medium=list
+                - group "10 / 17" [ref=f10e947]:
+                  - generic [ref=f10e948]:
+                    - img "메짱" [ref=f10e950]
+                    - paragraph [ref=f10e951]:
+                      - generic [ref=f10e952]: 메짱
+                    - list [ref=f10e954]:
+                      - listitem [ref=f10e955]:
+                        - generic [ref=f10e956]: 캐릭터 조회
+                      - listitem [ref=f10e957]:
+                        - generic [ref=f10e958]: 캐릭터 캡처
+                      - listitem [ref=f10e959]:
+                        - generic [ref=f10e960]: 길드 조회
+                      - listitem [ref=f10e961]:
+                        - generic [ref=f10e962]: 썬데이메이플
+                      - listitem [ref=f10e963]:
+                        - generic [ref=f10e964]: 랜덤 직업 뽑기
+                    - list [ref=f10e967]:
+                      - listitem [ref=f10e968]:
+                        - link "WEB" [ref=f10e969] [cursor=pointer]:
+                          - /url: https://www.mezzang.com/?utm_source=partners&utm_medium=list
+                - group "11 / 17" [ref=f10e970]:
+                  - generic [ref=f10e971]:
+                    - img "메이플로드" [ref=f10e973]
+                    - paragraph [ref=f10e974]:
+                      - generic [ref=f10e975]: 메이플로드
+                    - list [ref=f10e977]:
+                      - listitem [ref=f10e978]:
+                        - generic [ref=f10e979]: 캐릭터 조회
+                      - listitem [ref=f10e980]:
+                        - generic [ref=f10e981]: 시뮬레이터
+                      - listitem [ref=f10e982]:
+                        - generic [ref=f10e983]: 링크모음
+                      - listitem [ref=f10e984]:
+                        - generic [ref=f10e985]: 계산기
+                    - list [ref=f10e988]:
+                      - listitem [ref=f10e989]:
+                        - link "WEB" [ref=f10e990] [cursor=pointer]:
+                          - /url: https://mapleroad.kr/?utm_source=partners&utm_medium=list
+                - group "12 / 17" [ref=f10e991]:
+                  - generic [ref=f10e992]:
+                    - img "OP.GG for Desktop" [ref=f10e994]
+                    - paragraph [ref=f10e995]:
+                      - generic [ref=f10e996]: OP.GG for Desktop
+                    - list [ref=f10e998]:
+                      - listitem [ref=f10e999]:
+                        - generic [ref=f10e1000]: 캐릭터 조회
+                      - listitem [ref=f10e1001]:
+                        - generic [ref=f10e1002]: 시뮬레이터
+                      - listitem [ref=f10e1003]:
+                        - generic [ref=f10e1004]: 강화 이력
+                    - list [ref=f10e1007]:
+                      - listitem [ref=f10e1008]:
+                        - link "WEB" [ref=f10e1009] [cursor=pointer]:
+                          - /url: https://op.gg/desktop/ko/games
+                - group "13 / 17" [ref=f10e1010]:
+                  - generic [ref=f10e1011]:
+                    - img "메핏" [ref=f10e1013]
+                    - paragraph [ref=f10e1014]:
+                      - generic [ref=f10e1015]: 메핏
+                    - list [ref=f10e1017]:
+                      - listitem [ref=f10e1018]:
+                        - generic [ref=f10e1019]: "#코디 정보"
+                    - list [ref=f10e1022]:
+                      - listitem [ref=f10e1023]:
+                        - link "WEB" [ref=f10e1024] [cursor=pointer]:
+                          - /url: https://mefit.co.kr/?utm_source=partners&utm_medium=list
+                - group "14 / 17" [ref=f10e1025]:
+                  - generic [ref=f10e1026]:
+                    - img "엔버봇" [ref=f10e1028]
+                    - paragraph [ref=f10e1029]:
+                      - generic [ref=f10e1030]: 엔버봇
+                    - list [ref=f10e1032]:
+                      - listitem [ref=f10e1033]:
+                        - generic [ref=f10e1034]: 챗봇
+                      - listitem [ref=f10e1035]:
+                        - generic [ref=f10e1036]: 캐릭터
+                      - listitem [ref=f10e1037]:
+                        - generic [ref=f10e1038]: 시뮬레이터
+                      - listitem [ref=f10e1039]:
+                        - generic [ref=f10e1040]: 계산기
+                    - list [ref=f10e1043]:
+                      - listitem [ref=f10e1044]:
+                        - link "WEB" [ref=f10e1045] [cursor=pointer]:
+                          - /url: https://abbot.kr/?utm_source=partners&utm_medium=list
+                      - text: ","
+                      - listitem [ref=f10e1046]:
+                        - link "Discord" [ref=f10e1047] [cursor=pointer]:
+                          - /url: https://discord.com/application-directory/1000054332244377711
+                - group "15 / 17" [ref=f10e1048]:
+                  - generic [ref=f10e1049]:
+                    - img "maplebosslab" [ref=f10e1051]
+                    - paragraph [ref=f10e1052]:
+                      - generic [ref=f10e1053]: maplebosslab
+                    - list [ref=f10e1055]:
+                      - listitem [ref=f10e1056]:
+                        - generic [ref=f10e1057]: 보스공략
+                      - listitem [ref=f10e1058]:
+                        - generic [ref=f10e1059]: 빌드모음
+                      - listitem [ref=f10e1060]:
+                        - generic [ref=f10e1061]: 직업별통계
+                    - list [ref=f10e1064]:
+                      - listitem [ref=f10e1065]:
+                        - link "WEB" [ref=f10e1066] [cursor=pointer]:
+                          - /url: https://maplebosslab.com/
+                - group "16 / 17" [ref=f10e1067]:
+                  - generic [ref=f10e1068]:
+                    - img "메이플가디언" [ref=f10e1070]
+                    - paragraph [ref=f10e1071]:
+                      - generic [ref=f10e1072]: 메이플가디언
+                    - list [ref=f10e1074]:
+                      - listitem [ref=f10e1075]:
+                        - generic [ref=f10e1076]: 캐릭터 조회
+                      - listitem [ref=f10e1077]:
+                        - generic [ref=f10e1078]: 랭킹
+                      - listitem [ref=f10e1079]:
+                        - generic [ref=f10e1080]: SNS
+                    - list [ref=f10e1083]:
+                      - listitem [ref=f10e1084]:
+                        - link "WEB" [ref=f10e1085] [cursor=pointer]:
+                          - /url: https://www.mapleguardian.kr/
+                - group "17 / 17" [ref=f10e1086]:
+                  - generic [ref=f10e1087]:
+                    - img "버닝필드" [ref=f10e1089]
+                    - paragraph [ref=f10e1090]:
+                      - generic [ref=f10e1091]: 버닝필드
+                    - list [ref=f10e1093]:
+                      - listitem [ref=f10e1094]:
+                        - generic [ref=f10e1095]: 사냥터검색
+                      - listitem [ref=f10e1096]:
+                        - generic [ref=f10e1097]: 캐릭터 조회
+                      - listitem [ref=f10e1098]:
+                        - generic [ref=f10e1099]: 시뮬레이터
+                    - list [ref=f10e1102]:
+                      - listitem [ref=f10e1103]:
+                        - link "WEB" [ref=f10e1104] [cursor=pointer]:
+                          - /url: https://mapleplan.kr
+              - generic [ref=f10e1107]:
+                - button "Previous slide" [ref=f10e1108] [cursor=pointer]: 이전
+                - generic [ref=f10e1109]:
+                  - generic [ref=f10e1110]: "1"
+                  - text: /
+                  - generic [ref=f10e1111]: "17"
+                - button "Next slide" [ref=f10e1112] [cursor=pointer]: 다음
+          - generic [ref=f10e1113]:
+            - generic [ref=f10e1114]:
+              - generic [ref=f10e1115]:
+                - heading "아트웍" [level=4] [ref=f10e1116]
+                - link [ref=f10e1117] [cursor=pointer]:
+                  - /url: /Media/ArtWork
+              - generic:
+                - generic [ref=f10e1119]:
+                  - group "1 / 5" [ref=f10e1120]:
+                    - link [ref=f10e1122] [cursor=pointer]:
+                      - /url: /Media/ArtWork?idx=132
+                      - img "아트웍 132" [ref=f10e1123]
+                  - group "2 / 5" [ref=f10e1124]:
+                    - link [ref=f10e1126] [cursor=pointer]:
+                      - /url: /Media/ArtWork?idx=131
+                      - img "아트웍 131" [ref=f10e1127]
+                  - group "3 / 5" [ref=f10e1128]:
+                    - link [ref=f10e1130] [cursor=pointer]:
+                      - /url: /Media/ArtWork?idx=130
+                      - img "아트웍 130" [ref=f10e1131]
+                  - group "4 / 5" [ref=f10e1132]:
+                    - link [ref=f10e1134] [cursor=pointer]:
+                      - /url: /Media/ArtWork?idx=129
+                      - img "아트웍 129" [ref=f10e1135]
+                  - group "5 / 5" [ref=f10e1136]:
+                    - link [ref=f10e1138] [cursor=pointer]:
+                      - /url: /Media/ArtWork?idx=128
+                      - img "아트웍 128" [ref=f10e1139]
+                - generic [ref=f10e1142]:
+                  - button "Previous slide" [ref=f10e1143] [cursor=pointer]: 이전
+                  - generic [ref=f10e1144]:
+                    - generic [ref=f10e1145]: "1"
+                    - text: /
+                    - generic [ref=f10e1146]: "5"
+                  - button "Next slide" [ref=f10e1147] [cursor=pointer]: 다음
+            - generic [ref=f10e1148]:
+              - generic:
+                - generic [ref=f10e1149]:
+                  - heading "pink_pinkbean" [level=4] [ref=f10e1150]
+                  - link [ref=f10e1151] [cursor=pointer]:
+                    - /url: https://www.instagram.com/pink_pinkbean/
+                - generic:
+                  - generic [ref=f10e1153]:
+                    - group "1 / 5" [ref=f10e1154]:
+                      - link [ref=f10e1156] [cursor=pointer]:
+                        - /url: https://www.instagram.com/p/DZpCqv2lNdX/?img_index=1
+                    - group "2 / 5" [ref=f10e1157]:
+                      - link [ref=f10e1159] [cursor=pointer]:
+                        - /url: https://www.instagram.com/p/DZoYfWRmD3Z/
+                    - group "3 / 5" [ref=f10e1160]:
+                      - link [ref=f10e1162] [cursor=pointer]:
+                        - /url: https://www.instagram.com/p/DZl7bVbGKZf/?img_index=1
+                    - group "4 / 5" [ref=f10e1163]:
+                      - link [ref=f10e1165] [cursor=pointer]:
+                        - /url: https://www.instagram.com/p/DZjOu8DAUCd/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==
+                    - group "5 / 5" [ref=f10e1166]:
+                      - link [ref=f10e1168] [cursor=pointer]:
+                        - /url: https://www.instagram.com/p/DZeTohKlA59/?img_index=1
+                  - generic [ref=f10e1171]:
+                    - button "Previous slide" [ref=f10e1172] [cursor=pointer]: 이전
+                    - generic [ref=f10e1173]:
+                      - generic [ref=f10e1174]: "1"
+                      - text: /
+                      - generic [ref=f10e1175]: "5"
+                    - button "Next slide" [ref=f10e1176] [cursor=pointer]: 다음
+        - generic [ref=f10e1178]:
+          - list [ref=f10e1181]:
+            - listitem [ref=f10e1182]:
+              - button [ref=f10e1183] [cursor=pointer]
+            - listitem [ref=f10e1187]:
+              - button [ref=f10e1188] [cursor=pointer]
+            - listitem [ref=f10e1192]:
+              - button [ref=f10e1193] [cursor=pointer]
+            - listitem [ref=f10e1197]:
+              - button [ref=f10e1198] [cursor=pointer]
+            - listitem [ref=f10e1202]:
+              - button [ref=f10e1203] [cursor=pointer]
+          - generic [ref=f10e1208]:
+            - generic [ref=f10e1210]:
+              - generic [ref=f10e1213]:
+                - generic [ref=f10e1214]:
+                  - generic [ref=f10e1215]: new
+                  - generic [ref=f10e1216]:
+                    - generic [ref=f10e1217]: 마법사
+                    - generic [ref=f10e1218]: 마족
+                - heading "레테" [level=3] [ref=f10e1219]
+                - heading "서약의 지배자" [level=4] [ref=f10e1220]
+                - paragraph [ref=f10e1221]: 사용무기 - 카르타
+                - button "직업 플레이 영상" [ref=f10e1222] [cursor=pointer]
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: remaster
+                      - generic:
+                        - generic: 마법사
+                        - generic: 프렌즈 월드
+                    - heading "키네시스" [level=3]
+                    - heading "이세계의 초능력자" [level=4]
+                    - paragraph: 사용무기 - ESP 리미터 (전용무기)
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 모험가
+                    - heading "아크메이지 (불,독)" [level=3]
+                    - heading "화염과 맹독의 마법사" [level=4]
+                    - paragraph: 사용무기 - 스태프, 완드
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 모험가
+                    - heading "아크메이지 (썬,콜)" [level=3]
+                    - heading "냉기와 전류의 마법사" [level=4]
+                    - paragraph: 사용무기 - 스태프, 완드
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 모험가
+                    - heading "비숍" [level=3]
+                    - heading "자애와 복수의 마법사" [level=4]
+                    - paragraph: 사용무기 - 스태프, 완드
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 시그너스 기사단
+                    - heading "플레임위자드" [level=3]
+                    - heading "순수한 화염의 기사" [level=4]
+                    - paragraph: 사용무기 - 스태프, 완드
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 레지스탕스
+                    - heading "배틀메이지" [level=3]
+                    - heading "최전선의 마법사" [level=4]
+                    - paragraph: 사용무기 - 스태프
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 영웅
+                    - heading "에반" [level=3]
+                    - heading "드래곤 마스터" [level=4]
+                    - paragraph: 사용무기 - 스태프, 완드
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 영웅
+                    - heading "루미너스" [level=3]
+                    - heading "빛과 어둠의 마법사" [level=4]
+                    - paragraph: 사용무기 - 샤이닝로드 (전용무기)
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 레프
+                    - heading "일리움" [level=3]
+                    - heading "광휘의 날개" [level=4]
+                    - paragraph: 사용무기 - 매직 건틀렛 (전용무기)
+                    - button "직업 플레이 영상"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: 마법사
+                        - generic: 아니마
+                    - heading "라라" [level=3]
+                    - heading "낭만풍수사" [level=4]
+                    - paragraph: 사용무기 - 완드
+                    - button "직업 플레이 영상"
+            - generic [ref=f10e1224]:
+              - button "Previous slide" [disabled] [ref=f10e1225] [cursor=pointer]
+              - generic [ref=f10e1229]:
+                - paragraph [ref=f10e1233] [cursor=pointer]: 레테
+                - paragraph [ref=f10e1237] [cursor=pointer]: 키네시스
+                - paragraph [ref=f10e1241] [cursor=pointer]: 아크메이지(불,독)
+                - paragraph [ref=f10e1245] [cursor=pointer]: 아크메이지(썬,콜)
+                - paragraph [ref=f10e1249] [cursor=pointer]: 비숍
+                - paragraph [ref=f10e1253] [cursor=pointer]: 플레임위자드
+                - paragraph [ref=f10e1257] [cursor=pointer]: 배틀메이지
+                - paragraph [ref=f10e1261] [cursor=pointer]: 에반
+                - paragraph [ref=f10e1265] [cursor=pointer]: 루미너스
+                - paragraph [ref=f10e1269] [cursor=pointer]: 일리움
+                - paragraph [ref=f10e1273] [cursor=pointer]: 라라
+              - button "Next slide" [ref=f10e1274] [cursor=pointer]
+    - generic [ref=f10e1278]:
+      - generic [ref=f10e1279]:
+        - button "Family Site" [ref=f10e1280] [cursor=pointer]
+        - generic:
+          - list:
+            - listitem:
+              - link "Global":
+                - /url: http://www.maplestory.com/
+            - listitem:
+              - link "Japan":
+                - /url: https://maplestory.nexon.co.jp
+            - listitem:
+              - link "China":
+                - /url: http://mxd.sdo.com/web5/home/home.asp
+            - listitem:
+              - link "Taiwan":
+                - /url: https://maplestory.beanfun.com/main
+            - listitem:
+              - link "S.E.A":
+                - /url: http://www.maplesea.com/
+            - listitem:
+              - link "North America":
+                - /url: http://maplestory.nexon.net/
+      - list [ref=f10e1282]:
+        - listitem [ref=f10e1283]:
+          - link "facebook" [ref=f10e1284] [cursor=pointer]:
+            - /url: https://www.facebook.com/MapleStoryKR
+        - listitem [ref=f10e1285]:
+          - link "X" [ref=f10e1286] [cursor=pointer]:
+            - /url: https://x.com/MapleStory_KR
+        - listitem [ref=f10e1287]:
+          - link "instagram" [ref=f10e1288] [cursor=pointer]:
+            - /url: https://www.instagram.com/pink_pinkbean/
+        - listitem [ref=f10e1289]:
+          - link "youtube" [ref=f10e1290] [cursor=pointer]:
+            - /url: https://www.youtube.com/@MapleStoryKR
+      - list [ref=f10e1292]:
+        - listitem [ref=f10e1293]:
+          - link "회사소개" [ref=f10e1294] [cursor=pointer]:
+            - /url: http://company.nexon.com/?ST=nexon&PS=footer
+        - listitem [ref=f10e1295]:
+          - link "채용안내" [ref=f10e1296] [cursor=pointer]:
+            - /url: https://careers.nexon.com/
+        - listitem [ref=f10e1297]:
+          - link "이용약관" [ref=f10e1298] [cursor=pointer]:
+            - /url: https://member.nexon.com/policy/stipulation.aspx
+        - listitem [ref=f10e1299]:
+          - link "게임이용등급안내" [ref=f10e1300] [cursor=pointer]:
+            - /url: https://maplestory.nexon.com/Common/Footer/GameGrade
+        - listitem [ref=f10e1301]:
+          - link "개인정보처리방침" [ref=f10e1302] [cursor=pointer]:
+            - /url: https://member.nexon.com/policy/privacy.aspx
+        - listitem [ref=f10e1303]:
+          - link "청소년보호정책" [ref=f10e1304] [cursor=pointer]:
+            - /url: https://member.nexon.com/policy/youthprotection.aspx
+        - listitem [ref=f10e1305]:
+          - link "운영정책" [ref=f10e1306] [cursor=pointer]:
+            - /url: /Common/Footer/OperationPolicy
+        - listitem [ref=f10e1307]:
+          - link "넥슨PC방" [ref=f10e1308] [cursor=pointer]:
+            - /url: http://pcbang.nexon.com/?ST=nexon&PS=footer
+        - listitem [ref=f10e1309]:
+          - link "사이트맵" [ref=f10e1310] [cursor=pointer]:
+            - /url: /Common/Footer/SiteMap
+      - generic [ref=f10e1311]:
+        - paragraph [ref=f10e1312]:
+          - generic [ref=f10e1313]: (주)넥슨코리아 대표이사 강대현·김정욱
+          - generic [ref=f10e1314]: 경기도 성남시 분당구 판교로 256번길 7
+          - generic [ref=f10e1315]: "전화 : 1588-7701"
+          - generic [ref=f10e1316]: "팩스 : 0502-258-8322"
+        - paragraph [ref=f10e1317]:
+          - generic [ref=f10e1318]: "E-mail : contact-us@nexon.co.kr"
+          - generic [ref=f10e1319]: "사업자등록번호 : 220-87-17483호"
+          - generic [ref=f10e1320]: "통신판매업 신고번호 : 제2013-경기성남-1659호"
+          - link "사업자정보확인" [ref=f10e1322] [cursor=pointer]:
+            - /url: http://www.ftc.go.kr/info/bizinfo/communicationViewPopup.jsp?wrkr_no=2208717483
+        - paragraph [ref=f10e1323]:
+          - generic [ref=f10e1324]: ⓒ NEXON Korea Corporation All Rights Reserved.
+        - link "NEXON" [ref=f10e1326] [cursor=pointer]:
+          - /url: https://www.nexon.com
+    - button [ref=f10e1327] [cursor=pointer]

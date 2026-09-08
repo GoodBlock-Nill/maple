@@ -1,0 +1,139 @@
+/* ---------------------------------------------------------------------------
+   디자인 토큰 (@theme).
+   Figma `홈`(489:2183) · `뉴스목록_시안_2` · `자유게시판` ·
+   `확률형 아이템 정보` · `랭킹` · `고객지원` · `유튜버 소개` 실측값.
+   docs/reference/figma/*-spec.md 참고.
+--------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   Design tokens — Figma `홈` (3DWCpzRZFWOMhvlcTpbFlj / 489:2183) 실측값.
+   시안은 일러스트 배경 위에 글래스 표면과 잉크 텍스트를 올리는 구조라
+   색 팔레트는 잉크 3단계 + 카드 4색 + 디스코드 그라데이션으로 최소화한다.
+   docs/reference/figma/home-spec.md 참고.
+--------------------------------------------------------------------------- */
+@theme {
+  /* Ink — 제목/본문/어두운 버튼 */
+  --color-ink: #2a2a2a;
+  --color-ink-muted: #737373;
+  --color-ink-soft: #c2c2c2;
+
+  /* Surfaces & lines */
+  --color-surface: #ffffff;
+  --color-sheet: #f6f6f6;
+  --color-page: #f3f3f3;
+  --color-line: #e5e8ef;
+  --color-line-soft: #cdd3db;
+
+  /* Discord CTA gradient stops */
+  --color-discord-from: #5290f4;
+  --color-discord-mid: #3b82f6;
+  --color-discord-to: #406ae4;
+
+  /* 카테고리 카드 하단 패널 */
+  --color-card-notice: #ffaee7;
+  --color-card-patch: #74b1ff;
+  --color-card-free: #33c791;
+  --color-card-support: #ffba43;
+
+  /* 포커스 링 — 밝은 배경/어두운 배경 모두에서 3:1 이상 */
+  --color-focus: #1d6fe0;
+
+  /* 게시판 말머리 뱃지 — lib/constants/categories.ts 에서 클래스로 매핑 */
+  --color-badge-red: #e8412f;
+  --color-badge-pink: #ff6b9a;
+  --color-badge-purple: #6a4ae0;
+  --color-badge-orange: #ff8a3d;
+  --color-badge-green: #22b573;
+  --color-badge-rose: #f5a3a3;
+  --color-badge-gray: #6b7280;
+
+  /* Radii — 헤더 10 · 카드 15 · 패널 20 · 버튼 pill */
+  --radius-bar: 10px;
+  --radius-card: 15px;
+  --radius-panel: 20px;
+  --radius-pill: 9999px;
+
+  /* Elevation */
+  --shadow-card: 0 2px 12px rgb(42 42 42 / 0.08);
+  --shadow-card-hover: 0 14px 30px rgb(42 42 42 / 0.18);
+  --shadow-sheet: 0 18px 48px rgb(42 42 42 / 0.18);
+
+  /* 푸터 마스코트 외곽 그림자 */
+  --drop-shadow-mascot: 0 0 32px rgb(0 0 0 / 0.25);
+}
+
+@theme inline {
+  --font-body:
+    var(--font-pretendard), 'Pretendard Variable', -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  /* 시안은 Switzer(라틴)+시스템 한글이지만 프로젝트는 Pretendard 단일 사용.
+     로고는 이미지이므로 별도 디스플레이 서체가 필요 없다. */
+  /* 소개 페이지의 크리에이터 이름/슬로건 전용. Maplestory 서체가 앞에 오고
+     한글 폴백은 Pretendard 가 받는다(app/layout.tsx 의 `--font-maple`). */
+  --font-display:
+    var(--font-maple), var(--font-pretendard), 'Pretendard Variable', -apple-system,
+    BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+  --font-sans:
+    var(--font-pretendard), 'Pretendard Variable', -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   게시판(뉴스·커뮤니티) 토큰 — Figma `뉴스목록_시안_2` / `자유게시판` 실측값.
+   docs/reference/figma/news-community-spec.md 참고.
+--------------------------------------------------------------------------- */
+@theme {
+  /* 서브 페이지 바탕 — 홈(#f3f3f3)보다 한 단계 밝다. 상단 배경 이미지가
+     아래로 페이드되는 지점과 색이 맞아야 이음매가 보이지 않는다. */
+  --color-page-sub: #fafafa;
+
+  /* 목록 시트(카드를 담는 회색 트레이) */
+  --color-tray: #ededed;
+
+  /**
+   * 카테고리 뱃지 4색. 배경은 시안 값 그대로 두고 전경색만 WCAG AA(4.5:1)를
+   * 만족하는 값으로 교체했다. 시안 원본값은 blue #2e6eff(3.78:1) /
+   * green #00b894(2.40:1) / orange #ff9728(1.98:1) 이었다.
+   * purple #921cff 은 4.56:1 로 이미 AA 를 만족해 그대로 둔다.
+   */
+  --color-tag-purple: #921cff;
+  --color-tag-purple-bg: #f2e5ff;
+  --color-tag-orange: #9a5200;
+  --color-tag-orange-bg: #fff2e5;
+  --color-tag-green: #00705a;
+  --color-tag-green-bg: #e5fff1;
+  --color-tag-blue: #1d4fd8;
+  --color-tag-blue-bg: #e5efff;
+
+  /* 칩·검색·카드가 공유하는 3단 그림자(시안의 얕은 종이 느낌) */
+  --shadow-chip:
+    0 0.33px 0.37px rgb(0 0 0 / 0.12), 0 1.5px 1.4px rgb(0 0 0 / 0.07),
+    0 4px 4.5px rgb(0 0 0 / 0.05);
+  --shadow-tray: 0 0.33px 0.37px rgb(0 0 0 / 0.12), 0 1.5px 1.4px rgb(0 0 0 / 0.07);
+  --shadow-menu: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* ---------------------------------------------------------------------------
+   가이드 · 랭킹 · 고객지원 · 소개 토큰 — Figma `확률형 아이템 정보` / `랭킹` /
+   `고객지원` / `유튜버 소개` 실측값.
+   docs/reference/figma/guide-ranking-support-about-spec.md 참고.
+--------------------------------------------------------------------------- */
+@theme {
+  /* 고객지원 폼 필드 표면(시안: bg #fafafa · border #d5d9df) */
+  --color-field: #fafafa;
+  --color-field-line: #d5d9df;
+
+  /* 상세 표 본문 텍스트/구분선 */
+  --color-table-head: #9b9b9b;
+  --color-table-body: #505865;
+  --color-table-line: #e0e4e9;
+
+  /* TOP3 카드 배경 패널 — 1/2/3위 순서 */
+  --color-top1: #fffaa9;
+  --color-top2: #cde3ed;
+  --color-top3: #e3d3b2;
+
+  /* TOP3 카드 그림자(시안 실측 3단) */
+  --shadow-top3:
+    0 0.33px 0.73px rgb(0 0 0 / 0.12), 0 1.5px 2.9px rgb(0 0 0 / 0.07), 0 4px 9px rgb(0 0 0 / 0.05);
+}

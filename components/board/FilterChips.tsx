@@ -1,0 +1,62 @@
+import Link from 'next/link'
+
+import { cn } from '@/lib/utils/cn'
+
+const CHIP_CLASS =
+  'board-control inline-flex items-center px-[15px] text-[17px] font-medium transition-colors'
+
+const ACTIVE_CLASS = 'bg-ink border-ink text-white'
+const INACTIVE_CLASS = 'text-ink-muted hover:border-ink/30 hover:text-ink'
+
+export type FilterChipOption<TValue extends string> = {
+  /** null 은 "전체"를 뜻한다. */
+  value: TValue | null
+  label: string
+}
+
+type FilterChipsProps<TValue extends string> = {
+  /** "전체" 항목까지 포함한 완성된 목록. 순서가 곧 표시 순서다. */
+  options: readonly FilterChipOption<TValue>[]
+  active: TValue | null
+  /** 칩 값 → 이동할 URL. 나머지 질의 문자열 유지는 호출부 책임. */
+  hrefFor: (value: TValue | null) => string
+  label: string
+  className?: string
+}
+
+/**
+ * 목록 필터 칩 한 줄. 값은 전부 URL 로 표현되므로 항목은 모두 `<Link>` 다.
+ * 좁은 화면에서는 가로 스크롤한다.
+ */
+export function FilterChips<TValue extends string>({
+  options,
+  active,
+  hrefFor,
+  label,
+  className,
+}: FilterChipsProps<TValue>) {
+  return (
+    <nav
+      aria-label={label}
+      className={cn('-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0', className)}
+    >
+      <ul className="flex w-max items-center gap-2.5 sm:w-auto sm:flex-wrap">
+        {options.map((option) => {
+          const isActive = option.value === active
+
+          return (
+            <li key={option.value ?? 'all'}>
+              <Link
+                href={hrefFor(option.value)}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(CHIP_CLASS, isActive ? ACTIVE_CLASS : INACTIVE_CLASS)}
+              >
+                {option.label}
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
+  )
+}

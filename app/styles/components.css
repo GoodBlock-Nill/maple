@@ -1,0 +1,212 @@
+/* ---------------------------------------------------------------------------
+   기본 스타일(@layer base)과 공용 표면 클래스(@layer components).
+   토큰은 ./tokens.css 가 소유한다.
+--------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    word-break: keep-all;
+  }
+
+  ::selection {
+    background-color: var(--color-card-patch);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* 시안 공통 표면: 배경 일러스트를 비추는 반투명 유리.
+     헤더 바와 히어로 CTA 링이 같은 값을 공유한다. */
+  .glass {
+    border: 1px solid #fff;
+    background-color: rgb(255 255 255 / 0.4);
+    box-shadow: inset 0 0 33px rgb(255 255 255 / 0.4);
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px);
+  }
+
+  /* 푸터 패널 — 잔디 배경 위에서 더 강한 블러와 어두운 그라데이션 */
+  .glass-panel {
+    border: 1px solid rgb(255 255 255 / 0.4);
+    background-image: linear-gradient(147deg, rgb(124 124 124 / 0.47) 0%, rgb(0 0 0 / 0) 110%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+
+  .cta-dark {
+    border: 1px solid #000;
+    background-color: var(--color-ink);
+    color: #fff;
+    box-shadow:
+      inset 0 0 14px rgb(255 255 255 / 0.6),
+      0 6px 5px rgb(0 0 0 / 0.2);
+  }
+
+  .cta-discord {
+    border: 1px solid var(--color-discord-mid);
+    background-image: linear-gradient(
+      77.6deg,
+      var(--color-discord-from) 0%,
+      var(--color-discord-mid) 52%,
+      var(--color-discord-to) 104%
+    );
+    color: #fff;
+    box-shadow:
+      inset 0 0 14px rgb(255 255 255 / 0.35),
+      0 6px 5px rgb(82 144 244 / 0.4);
+  }
+
+  .cta-light {
+    border: 1px solid var(--color-line-soft);
+    background-color: #fff;
+    color: #31373d;
+    box-shadow: inset 0 0 9px #ddd;
+  }
+
+  /* 카테고리 카드 바탕 — 위쪽만 흰색으로 뜨는 종이 질감 + 내부 그림자 */
+  .card-sheet {
+    background-image: linear-gradient(180deg, #fff 0%, var(--color-sheet) 35%);
+    box-shadow: inset 0 0 15px rgb(0 0 0 / 0.25);
+  }
+}
+
+@layer components {
+  /* 칩·검색창·보기전환이 공유하는 h45 흰 표면 */
+  .board-control {
+    height: 45px;
+    border-radius: 10px;
+    border: 1px solid var(--color-line-soft);
+    background-color: #fff;
+    box-shadow: var(--shadow-chip);
+  }
+
+  /* 목록 하단 "더보기" — cta-dark 보다 낮고 납작한 표면 */
+  .cta-more {
+    border: 1px solid #505967;
+    background-color: var(--color-ink);
+    color: #edeef0;
+    box-shadow: 0 1px 0 rgb(27 31 35 / 0.2);
+  }
+
+  /* 마크다운 본문. @tailwindcss/typography 를 새로 넣지 않고 필요한 요소만 정의한다. */
+  .prose-board {
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--color-ink);
+  }
+  .prose-board > * + * {
+    margin-top: 1.1em;
+  }
+  .prose-board h2,
+  .prose-board h3 {
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 1.8em;
+  }
+  .prose-board ul,
+  .prose-board ol {
+    padding-left: 1.3em;
+  }
+  .prose-board ul {
+    list-style: disc;
+  }
+  .prose-board ol {
+    list-style: decimal;
+  }
+  .prose-board li + li {
+    margin-top: 0.4em;
+  }
+  .prose-board a {
+    color: var(--color-focus);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose-board strong {
+    font-weight: 600;
+  }
+  .prose-board blockquote {
+    border-left: 3px solid var(--color-line-soft);
+    padding-left: 16px;
+    color: var(--color-ink-muted);
+  }
+  .prose-board table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+  }
+  .prose-board th,
+  .prose-board td {
+    border: 1px solid var(--color-line);
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .prose-board th {
+    background-color: var(--color-sheet);
+    font-weight: 600;
+  }
+  .prose-board code {
+    border-radius: 6px;
+    background-color: var(--color-sheet);
+    padding: 2px 6px;
+    font-size: 0.9em;
+  }
+}
+
+@layer components {
+  /* 서브 페이지 푸터 패널.
+     시안 값은 `rgba(178,178,178,.52) → transparent` 였지만 가이드/고객지원처럼
+     밝은 배경 변형에서 `#c2c2c2` 링크 대비가 1.6:1 까지 떨어져 읽히지 않았다.
+     회색 톤을 검정 쪽으로 내리고 하단 스톱을 투명 대신 어두운 색으로 바꿔
+     패널 어디에서나 4.5:1 이상을 확보한다(링크 색은 시안 값 그대로 유지). */
+  .glass-panel-sub {
+    border: 1px solid rgb(255 255 255 / 0.4);
+    background-image: linear-gradient(147deg, rgb(38 38 38 / 0.86) 0%, rgb(12 12 12 / 0.7) 110%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+
+  /* 배경 일러스트가 밝은 구간에서도 글자 경계가 남도록 하는 미세 그림자.
+     패널 루트에 걸면 내부 텍스트가 모두 상속받는다. */
+  .footer-ink {
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+  }
+}
+
+@layer components {
+  /* 고객지원 폼 공통 입력 표면. h/radius 는 사용처에서 지정한다. */
+  .support-field {
+    border: 1px solid var(--color-field-line);
+    background-color: var(--color-field);
+    box-shadow: var(--shadow-chip);
+    color: var(--color-ink);
+  }
+  .support-field::placeholder {
+    color: var(--color-ink-muted);
+  }
+
+  /* 네이티브 select 의 기본 화살표를 지우고 시안의 caret 아이콘을 얹는다. */
+  .support-select {
+    appearance: none;
+    background-image: url('/images/brand/icon-select-caret.svg');
+    background-repeat: no-repeat;
+    background-position: right 0 center;
+    background-size: 40px 40px;
+  }
+
+  /* 상세 모달 표 — 본문 행 하단만 파선으로 끊는다. */
+  .gacha-table-row + .gacha-table-row {
+    border-top: 1px dashed var(--color-table-line);
+  }
+}
