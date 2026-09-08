@@ -1,25 +1,10 @@
 import { INQUIRY_ATTACHMENT_HEADING } from '@/lib/constants/support'
+import { formatFileSize } from '@/lib/utils/format-file-size'
 
 import type { SignedInquiryAttachment } from '@/types/domain'
 
 type InquiryAttachmentListProps = {
   attachments: readonly SignedInquiryAttachment[]
-}
-
-const KILOBYTE = 1024
-const MEGABYTE = KILOBYTE * KILOBYTE
-
-/** 사람이 읽는 파일 크기. 소수점은 MB 에서만 의미가 있어 KB 는 정수로 끊는다. */
-export function formatFileSize(bytes: number): string {
-  if (bytes <= 0) {
-    return ''
-  }
-
-  if (bytes < MEGABYTE) {
-    return `${Math.max(1, Math.round(bytes / KILOBYTE))}KB`
-  }
-
-  return `${(bytes / MEGABYTE).toFixed(1)}MB`
 }
 
 function isImage(mimeType: string): boolean {

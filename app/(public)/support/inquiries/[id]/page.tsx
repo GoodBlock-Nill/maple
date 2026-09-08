@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 
 import { BackToListLink } from '@/components/board/BackToListLink'
+import { FlashNotice } from '@/components/board/FlashNotice'
 import { PageShell } from '@/components/layout/PageShell'
 import { InquiryDetailCard } from '@/components/support/InquiryDetailCard'
 import { InquiryReplyThread } from '@/components/support/InquiryReplyThread'
@@ -8,7 +9,13 @@ import { InquirySubmittedDialog } from '@/components/support/InquirySubmittedDia
 import { SupportCard } from '@/components/support/SupportCard'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
+  INQUIRY_CANCELLED_NOTICE,
+  INQUIRY_CANCELLED_PARAM,
+  INQUIRY_EDIT_LOCKED_NOTICE,
+  INQUIRY_EDIT_LOCKED_PARAM,
   INQUIRY_SUBMITTED_PARAM,
+  INQUIRY_UPDATED_NOTICE,
+  INQUIRY_UPDATED_PARAM,
   MY_INQUIRIES_DESCRIPTION,
   MY_INQUIRIES_HEADING,
   MY_INQUIRIES_PATH,
@@ -19,6 +26,26 @@ import { firstValue } from '@/lib/utils/list-query'
 import type { Metadata } from 'next'
 
 const SUPPORT_TITLE = '고객지원'
+
+type SearchParams = Record<string, string | string[] | undefined>
+
+type Notice = { param: string; message: string }
+
+/**
+ * 수정·취소 뒤 리다이렉트가 붙여 준 1회성 안내.
+ *
+ * 값이 아니라 존재 여부로 고르고, 문구는 서버가 정한다(주소에 문구를 실으면 링크
+ * 하나로 임의 텍스트를 이 화면에 띄울 수 있다). 주소 정리는 `FlashNotice` 가 한다.
+ */
+function readNotice(searchParams: SearchParams): Notice | null {
+  const notices: readonly Notice[] = [
+    { param: INQUIRY_UPDATED_PARAM, message: INQUIRY_UPDATED_NOTICE },
+    { param: INQUIRY_CANCELLED_PARAM, message: INQUIRY_CANCELLED_NOTICE },
+    { param: INQUIRY_EDIT_LOCKED_PARAM, message: INQUIRY_EDIT_LOCKED_NOTICE },
+  ]
+
+  return notices.find((notice) => firstValue(searchParams[notice.param]) === '1') ?? null
+}
 
 /** 제목에 개인정보가 섞일 수 있어 메타에는 싣지 않고 색인도 막는다. */
 export const metadata: Metadata = {
@@ -49,6 +76,7 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
 
   const searchParams = await props.searchParams
   const isSubmitted = firstValue(searchParams[INQUIRY_SUBMITTED_PARAM]) === '1'
+  const notice = readNotice(searchParams)
   const [replies, attachments] = await Promise.all([
     getInquiryReplies(inquiry.id),
     getSignedAttachments(inquiry.attachments),
@@ -66,6 +94,8 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
           {isSubmitted ? (
             <InquirySubmittedDialog detailPath={`${MY_INQUIRIES_PATH}/${inquiry.id}`} />
           ) : null}
+
+          {notice === null ? null : <FlashNotice param={notice.param} message={notice.message} />}
 
           <InquiryDetailCard inquiry={inquiry} attachments={attachments} />
 

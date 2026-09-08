@@ -26,6 +26,7 @@ supabase/
 | `20260908001500_profiles_msw.sql`          | `profiles.msw_uid`/`msw_profile_code` (메이플스토리 월드 계정 연동) + CHECK/유니크 제약    |
 | `20260908001600_news_categories.sql`       | 뉴스 말머리 6종 확장 — `maintenance`/`update`/`info` 추가 + 칩 순서(`sort_order`) 재정렬   |
 | `20260908001700_admin_foundation.sql`      | 관리자 사이트 기반 — `admin_invites` · `audit_logs` · 제재/숨김 컬럼 + `is_suspended()` + `handle_new_user` 초대 승격 |
+| `20260908001900_inquiries_owner_edit_cancel.sql` | 문의 소유자 수정/접수 취소 — `inquiries.cancelled_at` + `inquiries_update_own` + `guard_inquiry_owner_update()` + 첨부 삭제 정책 |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -236,7 +237,7 @@ while (true) {
 | `board_categories` | `is_active` 조회                 | 동일                                        | 전체 CRUD             |
 | `posts`            | 공개·미삭제·게시시각 도래분 조회 | + 본인 글 조회, 커뮤니티 글 작성/수정/삭제  | 전체 CRUD (뉴스 포함) |
 | `comments`         | 공개 글의 미삭제 댓글 조회       | + 본인 댓글 작성/수정/삭제                  | 전체 CRUD             |
-| `inquiries`        | ✗                                | 본인 문의 조회, 신규 접수                   | 전체 CRUD             |
+| `inquiries`        | ✗                                | 본인 문의 조회 · 접수 · 수정(접수 대기만) · 접수 취소 | 전체 CRUD             |
 | `inquiry_replies`  | ✗                                | 본인 문의의 답변 조회                       | 전체 CRUD             |
 | `faqs`             | `is_published` 조회              | 동일                                        | 전체 CRUD             |
 | `site_settings`    | 조회                             | 조회                                        | 수정                  |
@@ -252,7 +253,7 @@ while (true) {
 | --------------------- | ---- | --------------- | ----------------------------------------------- |
 | `public-assets`       | O    | 전체            | 관리자                                          |
 | `post-images`         | O    | 전체            | 로그인 사용자, `{uid}/…` 경로만                 |
-| `inquiry-attachments` | X    | 작성자 · 관리자 | 로그인 사용자, `{uid}/…` 경로만 (삭제는 관리자) |
+| `inquiry-attachments` | X    | 작성자 · 관리자 | 로그인 사용자, `{uid}/…` 경로만 (삭제도 본인 폴더만) |
 
 `post-images` 의 실제 경로는 `{uid}/{yyyy}/{uuid}.{ext}` 다(`lib/supabase/storage.ts` 의
 `buildPostImagePath()`). 정책이 보는 것은 **첫 세그먼트뿐**이라(`(storage.foldername(name))[1]`)
@@ -587,6 +588,35 @@ node --env-file=.env.local tests/manual/inquiry-reply-insert.mjs <inquiryId>
 > 화면 코드도 RLS 에만 기대지 않고 모든 질의에 `user_id = <본인>` 을 함께 건다.
 > 관리자 세션에는 전체 조회가 열려 있어서, 조건을 빼면 "내 문의 내역"이 남의 문의까지
 > 그리게 된다.
+
+### 4-10. 문의 수정 · 접수 취소 (소유자 쓰기)
+
+`20260908001900_inquiries_owner_edit_cancel.sql` 이 소유자에게 UPDATE 를 연다. 정책은
+"어느 행"만 말할 수 있으므로 "어떤 컬럼을 언제"는 가드 트리거가 강제한다.
+
+- `inquiries_update_own` — 본인 행만.
+- `guard_inquiry_owner_update()` (**SECURITY INVOKER**) — 관리자·서비스 롤이 아닌 호출에
+  대해 아래를 42501 로 거절한다.
+  - `user_id` · `created_at` 변경
+  - 취소 전이(`pending`·`in_progress` → `closed` + 같은 UPDATE 의 `cancelled_at`)를 벗어난 상태 변경
+  - 취소 해제, `cancelled_at` 단독 지정
+  - `status <> 'pending'` 이거나 이미 취소된 문의의 본문(제목·카테고리·유형·계정 ID·내용·첨부) 변경
+  - `answered_at` · `contact_email` · `privacy_consent` 는 조용히 이전 값으로 되돌린다.
+- `inquiry_attachments_delete_own` — 수정에서 첨부를 뺄 때 오브젝트까지 지운다. 상태
+  검사는 스토리지 정책에서 할 수 없으므로 실효 경계는 위 가드다(본문 수정 자체가 접수
+  대기에서만 열린다).
+
+**취소는 enum 값이 아니다.** `status = 'closed'` + `cancelled_at`(not null)로 표현하고,
+화면 라벨만 "접수 취소"로 바꾼다(`lib/constants/support.ts` 의 `resolveInquiryStatus()`).
+`inquiry_status` 를 읽는 관리자 큐·통계가 네 값을 전제로 이미 갈라져 있어서다.
+
+```bash
+node --env-file=.env.local tests/manual/inquiries-owner-edit-check.mjs
+```
+
+임시 계정 2개로 "접수 대기 수정 OK / 처리 중 수정 차단 / 처리 중 취소 OK / 취소 해제 차단 /
+answered 승격 차단 / cancelled_at 단독 지정 차단 / user_id 변경 차단 / 타인 수정 차단 /
+첨부 삭제 경계" 10항목을 확인하고 마지막에 지운다.
 
 ---
 

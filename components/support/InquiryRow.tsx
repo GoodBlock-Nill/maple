@@ -28,7 +28,11 @@ export function InquiryRow({ inquiry }: InquiryRowProps) {
   return (
     <Link href={`${MY_INQUIRIES_PATH}/${inquiry.id}`} className={ROW_CLASS}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <InquiryStatusBadge status={inquiry.status} className="self-start sm:order-2" />
+        <InquiryStatusBadge
+          status={inquiry.status}
+          cancelledAt={inquiry.cancelledAt}
+          className="self-start sm:order-2"
+        />
         <h3 className="text-ink line-clamp-2 min-w-0 flex-1 text-[18px] leading-[24px] font-medium sm:order-1 sm:line-clamp-1">
           {inquiry.title}
         </h3>

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  INQUIRY_CANCELLED_OPTION,
   INQUIRY_PAGE_SIZE,
   INQUIRY_STATUS_MAP,
   INQUIRY_STATUS_VALUES,
   MY_INQUIRIES_PATH,
+  resolveInquiryStatus,
   SUPPORT_MENU,
 } from '@/lib/constants/support'
 import { accumulatedCount } from '@/lib/utils/pagination'
@@ -45,6 +47,38 @@ describe('INQUIRY_STATUS_MAP', () => {
     for (const status of DB_STATUSES) {
       expect(INQUIRY_STATUS_MAP[status].className).not.toContain('${')
     }
+  })
+})
+
+describe('resolveInquiryStatus', () => {
+  const CANCELLED_AT = '2026-09-08T02:00:00.000Z'
+
+  it('should keep the enum label while the inquiry is not cancelled', () => {
+    // Arrange & Act
+    const labels = DB_STATUSES.map((status) => resolveInquiryStatus(status, null).label)
+
+    // Assert
+    expect(labels).toEqual(['접수 대기', '처리 중', '답변 완료', '종료'])
+  })
+
+  it('should label a cancelled inquiry 접수 취소 instead of 종료', () => {
+    // Arrange & Act — 취소는 DB 에 closed 로 저장되고 cancelled_at 으로만 구분된다.
+    const option = resolveInquiryStatus('closed', CANCELLED_AT)
+
+    // Assert
+    expect(option.label).toBe('접수 취소')
+    expect(option).toBe(INQUIRY_CANCELLED_OPTION)
+  })
+
+  it('should let the cancellation win over any status it was cancelled from', () => {
+    // Arrange & Act & Assert — 취소 직후 상태가 아직 밀려 있어도 라벨은 접수 취소다.
+    expect(resolveInquiryStatus('pending', CANCELLED_AT).label).toBe('접수 취소')
+    expect(resolveInquiryStatus('in_progress', CANCELLED_AT).label).toBe('접수 취소')
+  })
+
+  it('should spell out a full Tailwind class string for the cancelled badge', () => {
+    // Arrange & Act & Assert — v4 는 소스를 정적으로 스캔한다.
+    expect(INQUIRY_CANCELLED_OPTION.className).toBe('bg-tray text-ink-muted')
   })
 })
 

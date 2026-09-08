@@ -327,6 +327,7 @@ export type Database = {
           account_id: string | null
           answered_at: string | null
           attachments: Json
+          cancelled_at: string | null
           category: string
           contact_email: string | null
           content: string
@@ -343,6 +344,7 @@ export type Database = {
           account_id?: string | null
           answered_at?: string | null
           attachments?: Json
+          cancelled_at?: string | null
           category: string
           contact_email?: string | null
           content: string
@@ -359,6 +361,7 @@ export type Database = {
           account_id?: string | null
           answered_at?: string | null
           attachments?: Json
+          cancelled_at?: string | null
           category?: string
           contact_email?: string | null
           content?: string

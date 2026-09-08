@@ -8,6 +8,9 @@ type InquirySubmitButtonProps = {
   /** 비로그인 상태에서는 눌러도 실패하므로 아예 잠근다. */
   disabled: boolean
   describedBy: string | undefined
+  /** 수정 화면에서 갈아 끼우는 라벨. 기본값은 접수 문구다. */
+  label?: string
+  pendingLabel?: string
 }
 
 /** 시안 실측: 전폭 h48 pill · bg #2a2a2a · border #505967 · 17px medium #edeef0. */
@@ -23,7 +26,12 @@ const SUBMIT_CLASS =
  * `useFormStatus` 는 **폼의 자식 컴포넌트에서만** 상태를 읽을 수 있어 분리한다.
  * 덕분에 폼 전체를 상태 컴포넌트로 만들지 않고도 이중 제출을 막는다.
  */
-export function InquirySubmitButton({ disabled, describedBy }: InquirySubmitButtonProps) {
+export function InquirySubmitButton({
+  disabled,
+  describedBy,
+  label = '문의 등록하기',
+  pendingLabel = '접수 중…',
+}: InquirySubmitButtonProps) {
   const { pending } = useFormStatus()
 
   return (
@@ -34,7 +42,7 @@ export function InquirySubmitButton({ disabled, describedBy }: InquirySubmitButt
       aria-describedby={describedBy}
       className={cn(SUBMIT_CLASS)}
     >
-      {pending ? '접수 중…' : '문의 등록하기'}
+      {pending ? pendingLabel : label}
     </button>
   )
 }

@@ -70,6 +70,20 @@ export const createInquirySchema = z.object({
 
 export type CreateInquiryInput = z.infer<typeof createInquirySchema>
 
+/**
+ * 수정 입력. 접수와 **같은 규칙**을 쓰되 동의 체크박스만 뺀다 — 동의는 접수
+ * 시점에 이미 받아 `privacy_consent` 로 저장돼 있고, 수정 화면에서 다시 물으면
+ * 체크를 풀었을 때 "동의 철회"처럼 보인다(철회는 삭제 요청으로 처리할 일이다).
+ * 규칙을 새로 쓰지 않고 파생시키는 이유는 상한이 갈리면 "접수는 됐는데 수정은
+ * 막히는" 문의가 생기기 때문이다.
+ */
+export const updateInquirySchema = createInquirySchema.omit({ consent: true })
+
+export type UpdateInquiryInput = z.infer<typeof updateInquirySchema>
+
+/** 서버 액션에 실려 오는 문의 id. uuid 가 아니면 조회 자체를 하지 않는다(22P02 방지). */
+export const inquiryIdSchema = z.uuid()
+
 export type InquiryAttachmentCheck = { ok: true } | { ok: false; message: string }
 
 /** 파일 객체의 필요한 부분만 본다(File 없이도 단위 테스트할 수 있게). */
@@ -81,8 +95,11 @@ export type UploadCandidate = { name: string; type: string; size: number }
  */
 export function validateInquiryAttachments(
   files: readonly UploadCandidate[],
+  /* 수정 화면에서 그대로 두는 기존 첨부 수. 개수 제한은 DB CHECK
+     (`inquiries_attachments_max_3`)와 같아야 하므로 남길 것까지 합쳐서 센다. */
+  keptCount = 0,
 ): InquiryAttachmentCheck {
-  if (files.length > INQUIRY_ATTACHMENT_MAX_COUNT) {
+  if (files.length + keptCount > INQUIRY_ATTACHMENT_MAX_COUNT) {
     return {
       ok: false,
       message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개까지 올릴 수 있습니다.`,

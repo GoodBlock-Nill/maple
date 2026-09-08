@@ -1,4 +1,5 @@
 import { InquiryAttachmentList } from '@/components/support/InquiryAttachmentList'
+import { InquiryOwnerActions } from '@/components/support/InquiryOwnerActions'
 import { InquiryStatusBadge } from '@/components/support/InquiryStatusBadge'
 import { formatDateLong } from '@/lib/utils/format-date'
 import { maskAccountId } from '@/lib/utils/mask'
@@ -24,7 +25,16 @@ export function InquiryDetailCard({ inquiry, attachments }: InquiryDetailCardPro
           <h2 className="text-ink min-w-0 text-[24px] leading-[1.35] font-medium">
             {inquiry.title}
           </h2>
-          <InquiryStatusBadge status={inquiry.status} className="self-start" />
+          {/* 뱃지와 소유자 액션(수정 · 접수 취소)은 한 열로 묶는다. 좁은 화면에서
+              둘이 떨어지면 어느 문의에 대한 동작인지 읽기 어려워진다. */}
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <InquiryStatusBadge status={inquiry.status} cancelledAt={inquiry.cancelledAt} />
+            <InquiryOwnerActions
+              inquiryId={inquiry.id}
+              status={inquiry.status}
+              cancelledAt={inquiry.cancelledAt}
+            />
+          </div>
         </div>
 
         <dl className="text-ink-muted flex flex-wrap gap-x-5 gap-y-1 text-[15px] font-medium">

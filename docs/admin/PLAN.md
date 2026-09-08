@@ -25,6 +25,7 @@
 | 가이드 | `/gacha` | 확률형 아이템 CRUD(탭·확률·상세표), CSV 가져오기/내보내기, 공개 여부 |
 | 랭킹 | `/rankings` | CSV 업로드(종합/직업/길드), 스냅샷 이력, 미리보기 |
 | 사이트 설정 | `/settings` | 월드 ID, 디스코드, 유튜브, 연락 이메일, 크리에이터 이름/슬로건/소개/사진(Storage public-assets), 히어로 배너 |
+| Legal | `/legal`, `/legal/[slug]` | 개인정보처리방침·디스코드 운영정책·글자월드 운영정책 문서 관리: 에디터 편집, 버전·시행일, 발행/예약, 미리보기, 버전 이력·비교. 클라이언트 `/policy/[slug]`는 발행본을 DB에서 읽고(코드 내 문안은 초기 시드·폴백) |
 | 관리자 | `/admins` | 관리자 목록, 초대, 권한 회수 |
 | 감사 로그 | `/audit` | 누가·언제·무엇을(테이블/행/변경 전후), 필터 |
 
@@ -33,6 +34,7 @@
 - `profiles.suspended_until timestamptz`, `profiles.suspension_reason text` + 쓰기 정책에 정지 사용자 차단(글·댓글·신고·좋아요 insert 정책에 `not is_suspended()`)
 - `posts.is_hidden boolean`(운영 숨김; deleted_at과 구분), `comments.is_hidden`
 - `audit_logs(id, actor_id, action, target_table, target_id, before jsonb, after jsonb, created_at)` + 관리자 서버 액션에서 기록
+- `legal_documents(slug unique, title)` + `legal_document_versions(document_id, version, effective_date, content_html, is_published, published_at, created_by)` — 클라이언트는 최신 발행본 조회, 공개 읽기 정책
 - `rankings` 스냅샷 컬럼 확인(snapshot_at) / CSV 업로드용 `ranking_snapshots`
 - 기존 admin RLS 정책 점검(posts/comments/reports/inquiries/faqs/gacha/rankings/site_settings/hero_banners) — 누락 시 추가
 

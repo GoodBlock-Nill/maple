@@ -199,3 +199,85 @@ test('should accept an inquiry, list it, and surface the operator reply', async 
   ).toBeVisible()
   await otherContext.close()
 })
+
+/**
+ * 소유자의 수정 · 접수 취소.
+ *
+ * 접수 대기에서는 두 버튼이 모두 보이고, 취소하면 뱃지가 "접수 취소"로 바뀌며
+ * 버튼이 사라진다(되돌릴 수 없는 상태라 더 할 동작이 없다).
+ */
+test('should let the owner edit a pending inquiry and then cancel it', async ({
+  page,
+}, testInfo) => {
+  // Arrange
+  const isDesktop = testInfo.project.name === 'chromium'
+
+  if (isDesktop) {
+    await page.setViewportSize({ width: 1440, height: 1200 })
+  }
+
+  await stubLogin(page, SUPPORT_PATH)
+
+  const title = `E2E 수정 문의 ${Date.now()}`
+  const inquiryId = await submitInquiry(page, title)
+
+  await page
+    .getByRole('dialog', { name: '문의가 접수되었습니다' })
+    .getByRole('button', { name: '확인' })
+    .click()
+
+  /* 액션 버튼은 상세 카드(article) 안에 있다. 확인 모달은 body 로 포털되므로
+     같은 이름의 버튼이 둘 잡히는 것을 이 스코프가 막아 준다. */
+  const card = page.locator('article')
+
+  // Assert — 접수 대기: 수정 · 접수 취소가 모두 열려 있다
+  await expect(card.getByRole('link', { name: '수정' })).toBeVisible()
+  await expect(card.getByRole('button', { name: '접수 취소' })).toBeVisible()
+
+  // Act — 제목을 고쳐 저장한다
+  await card.getByRole('link', { name: '수정' }).click()
+  await page.waitForURL(`**${LIST_PATH}/${inquiryId}/edit`)
+
+  const editedTitle = `${title} 수정본`
+  await expect(page.locator('input[name="title"]')).toHaveValue(title)
+  await page.locator('input[name="title"]').fill(editedTitle)
+  await page.getByRole('button', { name: '수정 완료' }).click()
+
+  await page.waitForURL(new RegExp(`${LIST_PATH}/${inquiryId}`))
+
+  // Assert — 상세가 고친 제목과 1회성 안내를 보여 준다
+  await expect(page.getByRole('heading', { name: editedTitle })).toBeVisible()
+  await expect(page.getByText('문의가 수정되었습니다')).toBeVisible()
+
+  if (isDesktop) {
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/inquiry-edit-1440.png`, fullPage: true })
+  }
+
+  // Act — 접수 취소(확인 모달 경유)
+  await card.getByRole('button', { name: '접수 취소' }).click()
+
+  const confirmDialog = page.getByRole('dialog', { name: '문의 접수를 취소할까요?' })
+  await expect(confirmDialog).toContainText('취소한 문의는 되돌릴 수 없습니다.')
+  await confirmDialog.getByRole('button', { name: '접수 취소' }).click()
+
+  await expect(page.getByText('문의 접수를 취소했습니다.')).toBeVisible()
+
+  // Assert — 뱃지는 접수 취소, 소유자 액션은 사라진다
+  await expect(card.getByText('접수 취소')).toBeVisible()
+  await expect(card.getByText('종료')).toHaveCount(0)
+  await expect(card.getByRole('link', { name: '수정' })).toHaveCount(0)
+  await expect(card.getByRole('button', { name: '접수 취소' })).toHaveCount(0)
+
+  if (isDesktop) {
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/inquiry-cancelled-1440.png`, fullPage: true })
+  }
+
+  // Assert — 주소를 직접 쳐도 수정 화면은 열리지 않고 이유가 안내된다
+  await page.goto(`${LIST_PATH}/${inquiryId}/edit`)
+  await expect(page).toHaveURL(new RegExp(`${LIST_PATH}/${inquiryId}`))
+  await expect(page.getByText('접수 대기 상태의 문의만 수정할 수 있습니다.')).toBeVisible()
+
+  // Assert — 목록에서도 접수 취소로 보인다
+  await page.goto(LIST_PATH)
+  await expect(page.getByRole('link', { name: new RegExp(editedTitle) })).toContainText('접수 취소')
+})

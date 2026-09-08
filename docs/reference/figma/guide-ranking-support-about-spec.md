@@ -79,7 +79,10 @@
   - 상세: 제목·상태·메타(등록일/카테고리·유형/마스킹한 계정 ID) → 평문 본문(줄바꿈 유지) → 첨부(비공개 버킷 서명 URL, 이미지면 48 썸네일) → "답변" 스레드(운영자 카드) → `목록으로`. 답변 전에는 "운영자가 확인 중입니다…" 안내.
   - 접수 직후에는 `?submitted=1` 로 상세에 도착해 완료 모달(`DialogShell`)이 뜬다. `확인` 을 누르면 `router.replace` 로 파라미터를 떼어 새로고침에도 다시 뜨지 않는다.
   - 모바일 390: 좌 메뉴가 위로 접히고(기존 동작), 목록 행은 뱃지 → 제목 → 메타 순으로 세로 스택.
-- 데이터: FAQ 는 `faqs` 테이블, 문의 접수는 `lib/actions/inquiry-actions.ts`(첨부는 `inquiry-attachments` 비공개 버킷), 조회는 `lib/data/inquiries.ts`.
+  - **소유자 동작(시안에 없는 추가 사양, 2026-09-08)**: 상세 헤더의 상태 뱃지 아래에 액션 줄이 붙는다 — 접수 대기면 `수정`(→ `/support/inquiries/[id]/edit`)과 `접수 취소`, 처리 중이면 `접수 취소`만, 그 밖(답변 완료·종료·이미 취소)에는 없음. 버튼 규격은 게시판 상세 액션(`BOARD_ACTION_CLASS`, h32 pill)과 같다.
+    - 접수 취소: 확인 모달(`ConfirmDialog`, "문의 접수를 취소할까요? / 취소한 문의는 되돌릴 수 없습니다.") → `cancelInquiry` → `status=closed` + `cancelled_at`. 이후 목록·상세 뱃지는 `종료` 대신 **`접수 취소`(회색 `bg-tray text-ink-muted`)** 로 그린다(라벨 판정은 `resolveInquiryStatus()`).
+    - 수정: 같은 `SupportCard` 안에 접수 폼을 그대로 재사용하되 제목·설명이 "문의 수정"이고 동의 체크박스가 빠진다. 기존 첨부는 `삭제` 체크박스로 빼고 새 파일을 더한다(합쳐서 최대 3개). 저장 후 상세로 돌아가며 `?updated=1` 1회성 안내("문의가 수정되었습니다")를 띄운다(모달이 아니라 `FlashNotice`). 접수 대기가 아닌 문의의 수정 주소로 직접 들어오면 상세로 돌려보내고 `?locked=1` 안내를 띄운다.
+- 데이터: FAQ 는 `faqs` 테이블, 문의 접수는 `lib/actions/inquiry-actions.ts`(첨부는 `inquiry-attachments` 비공개 버킷), 수정·접수 취소는 `lib/actions/inquiry-edit-actions.ts`, 조회는 `lib/data/inquiries.ts`. 소유자 권한 판정은 `lib/utils/inquiry-permissions.ts` 한곳에 모아 화면과 서버가 같은 문장을 쓴다(DB 가드는 `guard_inquiry_owner_update()`).
 
 ## 소개 (509:2958, 1440×2609)
 

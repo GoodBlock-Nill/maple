@@ -29,10 +29,11 @@ import type {
  */
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
-const INQUIRY_LIST_COLUMNS = 'id, title, category, type, status, created_at, inquiry_replies(count)'
+const INQUIRY_LIST_COLUMNS =
+  'id, title, category, type, status, cancelled_at, created_at, inquiry_replies(count)'
 
 /* prettier-ignore */
-const INQUIRY_DETAIL_COLUMNS = 'id, title, category, type, status, created_at, account_id, content, attachments'
+const INQUIRY_DETAIL_COLUMNS = 'id, title, category, type, status, cancelled_at, created_at, account_id, content, attachments'
 
 const REPLY_COLUMNS = 'id, author_name, content, created_at'
 
@@ -50,6 +51,7 @@ type InquiryListRow = {
   category: string
   type: string
   status: InquiryStatus
+  cancelled_at: string | null
   created_at: string
   inquiry_replies: readonly ReplyCountRow[]
 }
@@ -103,6 +105,7 @@ function toSummary(row: InquiryListRow): InquirySummary {
     category: row.category,
     type: row.type,
     status: row.status,
+    cancelledAt: row.cancelled_at,
     createdAt: row.created_at,
     replyCount: toReplyCount(row.inquiry_replies),
   }
@@ -160,6 +163,7 @@ export async function getMyInquiry(id: string, userId: string): Promise<InquiryD
     category: data.category,
     type: data.type,
     status: data.status,
+    cancelledAt: data.cancelled_at,
     createdAt: data.created_at,
     accountId: data.account_id,
     content: data.content,

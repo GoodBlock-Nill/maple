@@ -270,6 +270,12 @@ export type InquirySummary = {
   category: string
   type: string
   status: InquiryStatus
+  /**
+   * 사용자가 스스로 접수를 취소한 시각. null 이면 취소되지 않았다.
+   * 취소는 `status = 'closed'` 로 저장되므로, "종료"와 "접수 취소"는 이 값으로만
+   * 구분된다(enum 에 값을 더하지 않은 이유는 마이그레이션 20260908001900 참고).
+   */
+  cancelledAt: string | null
   createdAt: string
   /** 운영자 답변 수. 목록에서 "답변 완료"를 눈으로 확인하는 보조 지표다. */
   replyCount: number

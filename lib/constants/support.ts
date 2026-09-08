@@ -1,3 +1,5 @@
+import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
+
 import type { BoardOption } from '@/lib/constants/board'
 import type { FaqCategory, InquiryStatus } from '@/types/domain'
 
@@ -110,6 +112,28 @@ export const INQUIRY_STATUS_MAP: Record<InquiryStatus, InquiryStatusOption> = {
   },
 }
 
+/**
+ * 접수 취소 뱃지.
+ *
+ * 취소한 문의는 DB 에 `status = 'closed'` 로 저장되고 `cancelled_at` 으로만
+ * 구분된다. 그래서 상태 맵에는 넣지 않는다 — 맵은 `inquiry_status` enum 과 1:1
+ * 이어야 관리자 화면·통계가 같은 값을 본다. 색은 종료보다 한 단계 더 물러난
+ * 중립 회색이다(사용자가 스스로 끝낸 문의라 시선을 끌 이유가 없다).
+ */
+export const INQUIRY_CANCELLED_OPTION: InquiryStatusOption = {
+  value: 'closed',
+  label: '접수 취소',
+  className: 'bg-tray text-ink-muted',
+}
+
+/** 목록·상세가 함께 쓰는 뱃지 판정. 취소 여부가 상태 라벨보다 우선한다. */
+export function resolveInquiryStatus(
+  status: InquiryStatus,
+  cancelledAt: string | null,
+): InquiryStatusOption {
+  return isInquiryCancelled(cancelledAt) ? INQUIRY_CANCELLED_OPTION : INQUIRY_STATUS_MAP[status]
+}
+
 export const INQUIRY_STATUSES: readonly InquiryStatusOption[] = Object.values(INQUIRY_STATUS_MAP)
 
 export const INQUIRY_STATUS_VALUES: readonly InquiryStatus[] = INQUIRY_STATUSES.map(
@@ -146,3 +170,46 @@ export const INQUIRY_REPLY_HEADING = '답변'
 export const INQUIRY_NO_REPLY_NOTICE = '운영자가 확인 중입니다. 답변이 등록되면 이곳에 표시됩니다.'
 
 export const INQUIRY_ATTACHMENT_HEADING = '첨부파일'
+
+/* -------------------------------------------------------------------------
+ * 소유자 동작 — 수정 · 접수 취소
+ * ---------------------------------------------------------------------- */
+
+export const INQUIRY_EDIT_LABEL = '수정'
+
+export const INQUIRY_CANCEL_LABEL = '접수 취소'
+
+export const INQUIRY_CANCEL_CONFIRM_TITLE = '문의 접수를 취소할까요?'
+
+export const INQUIRY_CANCEL_CONFIRM_DESCRIPTION = '취소한 문의는 되돌릴 수 없습니다.'
+
+export const INQUIRY_CANCEL_CONFIRM_LABEL = '접수 취소'
+
+export const INQUIRY_EDIT_HEADING = '문의 수정'
+
+export const INQUIRY_EDIT_DESCRIPTION = '접수 대기 중인 문의만 수정할 수 있습니다.'
+
+export const INQUIRY_EDIT_SUBMIT_LABEL = '수정 완료'
+
+export const INQUIRY_EXISTING_ATTACHMENT_HEADING = '기존 첨부파일'
+
+/** 체크하면 저장 시 그 첨부를 뺀다. 체크 상태를 폼이 그대로 서버로 넘긴다. */
+export const INQUIRY_ATTACHMENT_REMOVE_LABEL = '삭제'
+
+export const INQUIRY_ATTACHMENT_REMOVE_FIELD = 'removeAttachments'
+
+/**
+ * 리다이렉트로 전달되는 1회성 안내 파라미터.
+ * 값이 아니라 존재 여부로 판정하므로 전부 `=1` 로 붙인다.
+ */
+export const INQUIRY_UPDATED_PARAM = 'updated'
+
+export const INQUIRY_CANCELLED_PARAM = 'cancelled'
+
+export const INQUIRY_EDIT_LOCKED_PARAM = 'locked'
+
+export const INQUIRY_UPDATED_NOTICE = '문의가 수정되었습니다'
+
+export const INQUIRY_CANCELLED_NOTICE = '문의 접수를 취소했습니다.'
+
+export const INQUIRY_EDIT_LOCKED_NOTICE = '접수 대기 상태의 문의만 수정할 수 있습니다.'
