@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 
 import { Logo } from '@/components/layout/Logo'
 import { matchesPath } from '@/components/layout/navigation'
@@ -32,6 +33,12 @@ type MobileNavProps = {
   user?: { nickname: string; avatarUrl?: string | null; provider?: SocialProvider | null } | null
 }
 
+// 포털 대상은 바뀌지 않으므로 구독할 것이 없다. 서버 스냅샷은 null 로 두어 SSR 마크업과
+// 첫 클라이언트 렌더를 일치시킨다(하이드레이션 후 body 로 채워진다).
+const subscribeNever = () => () => {}
+const getBody = () => document.body
+const getServerBody = () => null
+
 const USER_ROW_CLASS =
   'rounded-card text-ink-muted block px-2 py-2.5 text-left text-[15px] transition-colors ' +
   'hover:bg-sheet hover:text-ink'
@@ -43,6 +50,10 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
   const isOpen = openedPath === pathname
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  /* 오버레이·패널은 body 로 포털한다. 헤더(.glass)의 backdrop-filter 가 fixed 자손의
+     containing block 이 되어, 헤더 안에 두면 드로어가 헤더 높이(74px)로 잘린다.
+     (모든 기기에서 "드로어가 올바르게 표시되지 않음" 으로 보고된 원인.) */
+  const portalTarget = useSyncExternalStore(subscribeNever, getBody, getServerBody)
 
   useFocusTrap(panelRef, isOpen)
 
@@ -87,20 +98,8 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
 
   const close = () => setOpenedPath(null)
 
-  return (
-    <div className={className}>
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label="메뉴 열기"
-        aria-expanded={isOpen}
-        aria-controls={PANEL_ID}
-        onClick={() => setOpenedPath(pathname)}
-        className={cn(ICON_BUTTON_CLASS, '-mr-1.5')}
-      >
-        <MenuIcon />
-      </button>
-
+  const drawer = (
+    <>
       <div
         aria-hidden={!isOpen}
         onClick={close}
@@ -119,8 +118,9 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
         inert={!isOpen}
         className={cn(
           'fixed inset-y-0 right-0 z-70 flex w-[86%] max-w-sm flex-col bg-white',
-          'shadow-sheet transition-transform duration-300 ease-out',
-          isOpen ? 'translate-x-0' : 'translate-x-full',
+          'shadow-sheet transition-[transform,visibility] duration-300 ease-out',
+          // 닫힌 상태에서는 화면 밖으로 완전히 나가 있으므로 탭을 가로채지 않는다.
+          isOpen ? 'translate-x-0' : 'invisible translate-x-full',
         )}
       >
         <div className="border-line flex items-center justify-between border-b px-5 py-4">
@@ -207,6 +207,24 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
           ) : null}
         </div>
       </div>
+    </>
+  )
+
+  return (
+    <div className={className}>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label="메뉴 열기"
+        aria-expanded={isOpen}
+        aria-controls={PANEL_ID}
+        onClick={() => setOpenedPath(pathname)}
+        className={cn(ICON_BUTTON_CLASS, '-mr-1.5')}
+      >
+        <MenuIcon />
+      </button>
+
+      {portalTarget === null ? null : createPortal(drawer, portalTarget)}
     </div>
   )
 }
