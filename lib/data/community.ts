@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache'
+import { connection } from 'next/server'
 
 import { BOARD_PAGE_SIZE, DEFAULT_COMMUNITY_SORT } from '@/lib/constants/board'
 import { CACHE_TAGS, LIST_REVALIDATE_SECONDS } from '@/lib/data/cache'
@@ -109,8 +110,15 @@ export async function getCommunityList({
   page = 1,
 }: CommunityListParams = {}): Promise<ListResult<Post>> {
   /* 검색어는 사용자가 무한히 만들어 낸다. 캐시에 담으면 키가 끝없이 늘어나므로
-     검색만 매 요청 직접 읽는다(그 대신 언제나 최신이다). */
+     검색만 매 요청 직접 읽는다(그 대신 언제나 최신이다).
+     `fetchCommunityList` 는 `createPublicClient()` 의 평범한 `fetch` 를 쓰므로,
+     Next 의 영속 fetch 캐시가 이 요청을 별도로 붙잡을 여지가 이론상 남는다.
+     `connection()` 으로 이 지점부터 렌더를 요청 시점으로 못 박아 매 요청 원본을
+     다시 읽게 한다 — 관리자가 숨기거나 지운 글이 검색 결과에 남지 않아야 한다
+     (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/connection.md`). */
   if (q !== '') {
+    await connection()
+
     return fetchCommunityList(category, sort, q, page)
   }
 

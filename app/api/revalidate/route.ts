@@ -108,10 +108,14 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   for (const tag of tags) {
     /* Next 16 의 두 번째 인자는 필수다(1-인자 형태는 폐기 예정).
-       'max' = stale-while-revalidate — 관리자가 저장한 직후 방문자는 이전 값을
-       한 번 더 볼 수 있지만 요청이 블로킹되지 않는다
-       (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/revalidateTag.md`). */
-    revalidateTag(tag, 'max')
+       `updateTag()` 는 Server Action 전용이라 Route Handler 인 여기서는 쓸 수 없다
+       (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/updateTag.md`).
+       그렇다고 `'max'`(stale-while-revalidate) 를 쓰면 관리자가 숨기거나 지운
+       직후의 첫 요청이 여전히 이전 값을 돌려준다 — read-your-own-writes 가 깨진다.
+       `{ expire: 0 }` 는 이전 값을 절대 서빙하지 않고 다음 요청이 새로 읽을 때까지
+       블로킹한다(`revalidateTag.md` "Route Handler" 절 — updateTag 를 쓸 수 없을 때의
+       권장값). */
+    revalidateTag(tag, { expire: 0 })
   }
 
   return NextResponse.json({ revalidated: tags })

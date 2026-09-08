@@ -11,7 +11,7 @@ import { CACHE_TAGS } from '@/lib/data/cache'
 const revalidateTag = vi.fn()
 
 vi.mock('next/cache', () => ({
-  revalidateTag: (tag: string, profile: string) => {
+  revalidateTag: (tag: string, profile: string | { expire?: number }) => {
     revalidateTag(tag, profile)
   },
 }))
@@ -90,15 +90,15 @@ describe('POST /api/revalidate', () => {
     expect(status).toBe(400)
   })
 
-  it('should revalidate each known tag with the max profile and echo them back', async () => {
+  it('should revalidate each known tag with an immediate expiry and echo them back', async () => {
     const { status, json } = await post({ tags: ['site', 'gacha'] }, SECRET)
 
     expect(status).toBe(200)
     expect(json.revalidated).toEqual(['site', 'gacha'])
     expect(revalidateTag).toHaveBeenCalledTimes(2)
-    // Next 16 은 두 번째 인자가 필수다. 'max' = stale-while-revalidate.
-    expect(revalidateTag).toHaveBeenCalledWith('site', 'max')
-    expect(revalidateTag).toHaveBeenCalledWith('gacha', 'max')
+    // Route Handler 에서는 updateTag() 를 못 쓴다. { expire: 0 } 이 read-your-own-writes 를 보장한다.
+    expect(revalidateTag).toHaveBeenCalledWith('site', { expire: 0 })
+    expect(revalidateTag).toHaveBeenCalledWith('gacha', { expire: 0 })
   })
 
   it('should accept every tag defined in lib/data/cache.ts', async () => {

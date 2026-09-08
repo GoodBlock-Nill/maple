@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache'
+import { connection } from 'next/server'
 
 import { BOARD_PAGE_SIZE } from '@/lib/constants/board'
 import { CACHE_TAGS, LIST_REVALIDATE_SECONDS } from '@/lib/data/cache'
@@ -83,8 +84,13 @@ export async function getNewsList({
   page = 1,
 }: NewsListParams = {}): Promise<ListResult<NewsItem>> {
   /* 검색어는 사용자가 무한히 만들어 낸다. 캐시 키가 끝없이 늘어나지 않도록
-     검색만 매 요청 직접 읽는다. */
+     검색만 매 요청 직접 읽는다. `connection()` 으로 이 지점을 요청 시점으로
+     못 박아, Next 의 영속 fetch 캐시가 이전 응답을 돌려줄 여지를 없앤다 —
+     관리자가 숨기거나 지운 글이 검색 결과에 남지 않아야 한다
+     (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/connection.md`). */
   if (q !== '') {
+    await connection()
+
     return fetchNewsList(category, q, page)
   }
 

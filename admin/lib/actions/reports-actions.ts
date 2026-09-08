@@ -67,17 +67,23 @@ async function openReportIdsForTarget(report: ReportRow): Promise<string[]> {
  * 전에 42501(permission denied)로 막힌다. 실측으로 확인했다. 마이그레이션으로
  * `grant update on public.reports to authenticated` 를 더하면 이 우회는 지워야 한다.
  *
- * 우회의 범위를 좁히기 위해 상태 컬럼만, 그것도 호출부가 `requireAdmin()` 을 통과한
- * 뒤에만 만진다.
+ * 우회의 범위를 좁히기 위해 처리 컬럼(상태 · 메모 · 처리자 · 처리 시각)만, 그것도
+ * 호출부가 `requireAdmin()` 을 통과한 뒤에만 만진다.
+ *
+ * `note` · `resolved_by` · `resolved_at` 은 20260908002100 이 추가한 컬럼이다.
+ * 감사 로그(`audit_logs`)가 처리 기록의 원본이라는 점은 그대로지만, 신고 큐에서
+ * "누가 · 언제 처리했는지" 를 한눈에 보려면 행 자체가 값을 들고 있어야 한다.
  */
 async function setReportStatus(
   ids: readonly string[],
   status: ReportStatus,
+  resolvedBy: string,
+  note: string | null,
 ): Promise<string | null> {
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('reports')
-    .update({ status })
+    .update({ status, note, resolved_by: resolvedBy, resolved_at: new Date().toISOString() })
     .in('id', [...ids])
 
   return error === null ? null : error.message
@@ -127,7 +133,7 @@ export async function resolveReportAction(
   }
 
   const ids = applyToTarget ? await openReportIdsForTarget(report) : [reportId]
-  const statusError = await setReportStatus(ids, 'resolved')
+  const statusError = await setReportStatus(ids, 'resolved', actor.id, note)
 
   if (statusError !== null) {
     return { formError: `신고 상태를 바꾸지 못했습니다. ${statusError}` }
@@ -210,7 +216,7 @@ export async function dismissReportAction(
   }
 
   const ids = applyToTarget ? await openReportIdsForTarget(report) : [reportId]
-  const statusError = await setReportStatus(ids, 'dismissed')
+  const statusError = await setReportStatus(ids, 'dismissed', actor.id, note)
 
   if (statusError !== null) {
     return { formError: `신고를 기각하지 못했습니다. ${statusError}` }
