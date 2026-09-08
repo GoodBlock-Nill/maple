@@ -8,14 +8,6 @@ import './globals.css'
 
 import type { Metadata, Viewport } from 'next'
 
-const pretendard = localFont({
-  src: './fonts/PretendardVariable.woff2',
-  weight: '45 920',
-  style: 'normal',
-  display: 'swap',
-  variable: '--font-pretendard',
-})
-
 /**
  * Switzer — 시안(Figma)의 본문/제목 서체. 거의 모든 텍스트가 이 서체다.
  *
@@ -47,8 +39,14 @@ const switzer = localFont({
  * Maplestory 서체 — 시안에서 `/소개`의 이름("세글자", 100px)과 그 아래 한 줄
  * 소개말(25px) **딱 두 곳**에만 쓰인다. 전 화면 기본 서체가 아니다.
  * Light(300)·Bold(700) 두 벌뿐이라 그 사이 굵기 요청은 근접 컷으로 대체된다.
+ *
+ * `preload: false` 인 이유: next/font 는 선언한 파일을 전부 preload 링크로 박는다.
+ * 두 벌 합쳐 619KB 인데 쓰이는 곳은 `/소개` 의 텍스트 두 줄뿐이라, 켜 두면 홈·목록
+ * 같은 나머지 모든 페이지가 쓰지도 않을 619KB 를 먼저 받는다. 끄면 `/소개` 에서
+ * 실제로 글자가 그려질 때만 받는다(`display: swap` 이라 문자는 즉시 보인다).
  */
 const maplestory = localFont({
+  preload: false,
   src: [
     { path: './fonts/MaplestoryOTFLight.otf', weight: '300', style: 'normal' },
     { path: './fonts/MaplestoryOTFBold.otf', weight: '700', style: 'normal' },
@@ -113,7 +111,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="ko"
-      className={`${switzer.variable} ${pretendard.variable} ${inter.variable} ${notoSansKr.variable} ${maplestory.variable} h-full antialiased`}
+      className={`${switzer.variable} ${inter.variable} ${notoSansKr.variable} ${maplestory.variable} h-full antialiased`}
     >
       <body className="bg-page text-ink flex min-h-full flex-col">{children}</body>
     </html>

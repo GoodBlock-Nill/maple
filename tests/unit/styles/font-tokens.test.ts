@@ -18,6 +18,7 @@ const read = (relativePath: string) => readFileSync(join(ROOT, relativePath), 'u
 const tokens = read('app/styles/tokens.css')
 const layout = read('app/layout.tsx')
 const globals = read('app/globals.css')
+const pretendard = read('app/styles/pretendard.css')
 
 /** 공백/줄바꿈을 한 칸으로 눌러 여러 줄에 걸친 폰트 체인을 한 줄로 비교한다. */
 const flat = (source: string) => source.replace(/\s+/g, ' ')
@@ -79,20 +80,13 @@ describe('font loading (app/layout.tsx)', () => {
     }
   })
 
-  it('should register every font CSS variable on <html>', () => {
-    // Assert
-    for (const variable of [
-      '--font-switzer',
-      '--font-pretendard',
-      '--font-inter',
-      '--font-noto-kr',
-      '--font-maple',
-    ]) {
+  it('should register every next/font CSS variable on <html>', () => {
+    // Assert — Pretendard 는 next/font 가 아니라 app/styles/pretendard.css 가 소유한다.
+    for (const variable of ['--font-switzer', '--font-inter', '--font-noto-kr', '--font-maple']) {
       expect(layout).toContain(`variable: '${variable}'`)
     }
     for (const applied of [
       'switzer.variable',
-      'pretendard.variable',
       'inter.variable',
       'notoSansKr.variable',
       'maplestory.variable',
@@ -104,5 +98,54 @@ describe('font loading (app/layout.tsx)', () => {
   it('should not preload Noto Sans KR (124 unicode-range chunks would spam <head>)', () => {
     // Assert
     expect(flat(layout)).toContain('Noto_Sans_KR({ preload: false')
+  })
+
+  it('should not preload Maplestory (619KB used only by two lines on /about)', () => {
+    // Assert — next/font 는 선언한 파일을 모두 <link rel=preload> 로 박는다.
+    expect(flat(layout)).toContain(
+      'localFont({ preload: false, src: [ { path: ' + "'./fonts/Maplestory",
+    )
+  })
+})
+
+/**
+ * Pretendard 는 next/font/local 단일 파일(2,009KB)에서 공식 동적 서브셋으로
+ * 바꿨다. 실기기(LTE)에서 그 2MB 가 모든 페이지의 초기 대역폭을 잡아먹어
+ * 하이드레이션이 늦어졌고, 그동안 누른 탭이 아무 반응 없이 버려졌다.
+ */
+describe('Pretendard 동적 서브셋 (app/styles/pretendard.css)', () => {
+  it('should split faces by unicode-range instead of shipping one 2MB file', () => {
+    // Arrange
+    const faces = pretendard.match(/@font-face/g) ?? []
+
+    // Assert
+    expect(faces.length).toBeGreaterThan(50)
+    expect(pretendard).toContain('unicode-range:')
+
+    // 어떤 face 도 통짜 파일을 가리키면 안 된다(서브셋 조각만 참조한다).
+    const sources = pretendard.match(/src:\s*url\(([^)]+)\)/g) ?? []
+    expect(sources.length).toBe(faces.length)
+    for (const source of sources) {
+      expect(source).toContain('.subset.')
+    }
+  })
+
+  it('should declare every face as woff2 with swap so text is never invisible', () => {
+    // Arrange
+    const faces = pretendard.match(/@font-face\s*\{[^}]*\}/g) ?? []
+
+    // Assert
+    expect(faces.length).toBeGreaterThan(0)
+    for (const face of faces) {
+      expect(face).toContain("format('woff2')")
+      expect(face).toContain('font-display: swap')
+      expect(face).toContain("font-family: 'Pretendard Variable'")
+    }
+  })
+
+  it('should define --font-pretendard so the tokens.css chain still resolves', () => {
+    // Assert — 정의가 없으면 var() 치환이 실패해 font-family 선언 전체가 무효가 된다.
+    expect(flat(pretendard)).toContain("--font-pretendard: 'Pretendard Variable'")
+    expect(flat(globals)).toContain("@import './styles/pretendard.css'")
   })
 })

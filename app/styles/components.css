@@ -8,6 +8,22 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* 실기기 터치 대응(iOS Safari · Samsung Internet).
+     기본값 `auto` 는 더블탭 확대를 기다리느라 탭 반응을 최대 300ms 늦추고,
+     그 사이 손가락이 1~2px 만 움직여도 합성 click 이 취소된다 — 실제 폰에서
+     "버튼이 잘 안 눌린다" 로 체감되는 원인이다. `manipulation` 은 패닝·핀치
+     확대는 그대로 두고 더블탭 확대만 끄므로 접근성 손실 없이 지연을 없앤다. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  label,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+
   body {
     background-color: var(--color-page);
     color: var(--color-ink);
