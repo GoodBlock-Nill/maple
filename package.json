@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "gen:types": "supabase gen types typescript --linked > types/database.types.ts && cp types/database.types.ts admin/types/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",

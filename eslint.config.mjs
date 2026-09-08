@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // 별도 워크스페이스 패키지(@maple/admin). 자체 eslint.config.mjs 로 검사한다.
+    'admin/**',
   ]),
 ])
 

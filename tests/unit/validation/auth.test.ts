@@ -322,8 +322,7 @@ describe('updateAccountSchema — feature flag ON', () => {
 
   it('should require the MSW UID and profile code alongside the nickname', async () => {
     // Arrange
-    const { updateAccountSchema: updateAccountSchemaOn } =
-      await importAuthValidationWithFlag(true)
+    const { updateAccountSchema: updateAccountSchemaOn } = await importAuthValidationWithFlag(true)
 
     // Act
     const missingUid = updateAccountSchemaOn.safeParse({ ...valid, mswUid: '' })

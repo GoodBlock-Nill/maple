@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+/* Tailwind v4 는 프로젝트 루트에서 소스를 자동 탐지하지만, 워크스페이스 패키지
+   안에서는 탐지 범위가 어긋날 수 있어 명시한다. 여기 없는 디렉터리의 클래스는
+   빌드에서 통째로 사라진다. */
+@source './';
+@source '../components';
+@source '../lib';
+
+/* ---------------------------------------------------------------------------
+   디자인 토큰 — docs/admin/PLAN.md §5.
+   "실용적 관리자 UI": 밝은 회색 배경 + 흰 카드 + 짙은 사이드바,
+   글자월드 핑크(#ff5fb8)는 강조에만 쓴다.
+--------------------------------------------------------------------------- */
+@theme {
+  /* 표면 */
+  --color-page: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-sidebar: #1f2430;
+  --color-sidebar-hover: #2a3040;
+  --color-line: #e5e7eb;
+
+  /* 글자 */
+  --color-ink: #1f2937;
+  --color-muted: #6b7280;
+
+  /* 강조 */
+  --color-accent: #ff5fb8;
+  --color-accent-strong: #e94ba1;
+  --color-accent-soft: #ffe9f6;
+
+  /* 상태 */
+  --color-success: #0f9d58;
+  --color-success-soft: #e6f6ee;
+  --color-warn: #b45309;
+  --color-warn-soft: #fdf1de;
+  --color-danger: #d93025;
+  --color-danger-soft: #fdecea;
+
+  /* 포커스 링 — 밝은 배경/짙은 사이드바 모두에서 3:1 이상 */
+  --color-focus: #1d6fe0;
+
+  --radius-card: 12px;
+  --radius-panel: 8px;
+  --radius-pill: 9999px;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-menu: 0 12px 32px rgb(16 24 40 / 0.16);
+
+  --font-sans:
+    var(--font-pretendard), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-maple: var(--font-maple), var(--font-pretendard), sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    /* Maplestory OTF 는 Light(300)·Bold(700) 두 벌뿐이다. 가짜 볼드 합성을 끈다. */
+    font-synthesis: none;
+  }
+
+  /* 표 안의 숫자가 자리마다 흔들리지 않게 고정폭 숫자를 쓴다. */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}

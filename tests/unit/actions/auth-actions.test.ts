@@ -324,10 +324,9 @@ describe('completeOnboarding — feature flag ON', () => {
     const { completeOnboarding: completeOnboardingOn } = await loadAuthActionsWithFlagOn()
 
     // Act
-    await completeOnboardingOn(
-      EMPTY_FORM_STATE,
-      form({ ...valid, mswProfileCode: 'ABCD1' }),
-    ).catch(() => undefined)
+    await completeOnboardingOn(EMPTY_FORM_STATE, form({ ...valid, mswProfileCode: 'ABCD1' })).catch(
+      () => undefined,
+    )
 
     // Assert
     const [payload] = stub.updates as [Record<string, string>]
