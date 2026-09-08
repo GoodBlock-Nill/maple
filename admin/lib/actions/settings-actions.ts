@@ -2,17 +2,17 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { readFile, uploadPublicAsset } from '@/lib/actions/asset-upload'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { getHeroBanners, SITE_SETTINGS_ID } from '@/lib/data/settings'
+import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import {
-  ASSET_TYPE_ERROR,
   heroBannerSchema,
   HERO_BANNER_TEXT_FIELDS,
   movedOrder,
-  PUBLIC_ASSET_EXTENSIONS,
   siteSettingsSchema,
   SITE_SETTINGS_TEXT_FIELDS,
   toHeroBannerRow,
@@ -29,47 +29,19 @@ import type { Json } from '@/types/database.types'
  */
 
 const SETTINGS_PATH = '/settings'
-const BUCKET = 'public-assets'
 
-function readFile(formData: FormData, name: string): File | null {
-  const value = formData.get(name)
-
-  return value instanceof File && value.size > 0 ? value : null
+/**
+ * 설정은 사용자 사이트의 헤더·푸터·소개까지 전부에 드러난다. `site` 태그 하나로
+ * `site_settings` 와 히어로 배너를 함께 태운다(둘 다 같은 태그로 캐시된다).
+ */
+async function revalidateSite(): Promise<void> {
+  revalidatePath(SETTINGS_PATH)
+  await revalidateClient([CLIENT_CACHE_TAGS.site])
 }
 
 /** 이름 목록을 그대로 읽어 `{ 이름: 값 }` 으로 만든다. 폼 필드가 많은 설정 화면용. */
 function readFields(formData: FormData, names: readonly string[]): Record<string, string> {
   return Object.fromEntries(names.map((name) => [name, readField(formData, name)]))
-}
-
-/**
- * public-assets 업로드. 경로가 고정된 자산(크리에이터 사진)은 덮어쓰되 URL 에
- * 갱신 시각을 붙인다 — 안 붙이면 CDN 이 옛 이미지를 계속 내려 준다.
- */
-async function uploadAsset(
-  file: File,
-  buildPath: (extension: string) => string,
-  upsert: boolean,
-): Promise<{ url: string } | { error: string }> {
-  const extension = PUBLIC_ASSET_EXTENSIONS[file.type]
-
-  if (extension === undefined) {
-    return { error: ASSET_TYPE_ERROR }
-  }
-
-  const supabase = await createClient()
-  const path = buildPath(extension)
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert })
-
-  if (error !== null) {
-    return { error: `이미지를 올리지 못했습니다. ${error.message}` }
-  }
-
-  const publicUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
-
-  return { url: upsert ? `${publicUrl}?v=${Date.now()}` : publicUrl }
 }
 
 export async function saveSiteSettingsAction(
@@ -81,7 +53,9 @@ export async function saveSiteSettingsAction(
   let creatorPhotoUrl = readField(formData, 'creatorPhotoUrl')
 
   if (photo !== null) {
-    const uploaded = await uploadAsset(photo, (ext) => `site/creator-photo.${ext}`, true)
+    const uploaded = await uploadPublicAsset(photo, (ext) => `site/creator-photo.${ext}`, {
+      upsert: true,
+    })
 
     if ('error' in uploaded) {
       return { fieldErrors: { creatorPhotoFile: uploaded.error } }
@@ -124,7 +98,7 @@ export async function saveSiteSettingsAction(
     after: payload as Json,
   })
 
-  revalidatePath(SETTINGS_PATH)
+  await revalidateSite()
   return { message: '사이트 설정을 저장했습니다.' }
 }
 
@@ -140,10 +114,9 @@ export async function saveHeroBannerAction(
   let imageUrl = readField(formData, 'imageUrl')
 
   if (image !== null) {
-    const uploaded = await uploadAsset(
+    const uploaded = await uploadPublicAsset(
       image,
       (ext) => `banners/${crypto.randomUUID()}.${ext}`,
-      false,
     )
 
     if ('error' in uploaded) {
@@ -188,7 +161,7 @@ export async function saveHeroBannerAction(
     after: payload as Json,
   })
 
-  revalidatePath(SETTINGS_PATH)
+  await revalidateSite()
   return { message: '배너를 저장했습니다.' }
 }
 
@@ -226,7 +199,7 @@ export async function deleteHeroBannerAction(
     before: before as Json,
   })
 
-  revalidatePath(SETTINGS_PATH)
+  await revalidateSite()
   return { message: `${before.title} 배너를 삭제했습니다.` }
 }
 
@@ -253,7 +226,7 @@ export async function toggleHeroBannerAction(
     after: { is_active: isActive },
   })
 
-  revalidatePath(SETTINGS_PATH)
+  await revalidateSite()
   return { message: isActive ? '배너를 노출합니다.' : '배너를 숨겼습니다.' }
 }
 
@@ -294,6 +267,6 @@ export async function moveHeroBannerAction(
     after: { order: ordered.map((banner) => banner.id) },
   })
 
-  revalidatePath(SETTINGS_PATH)
+  await revalidateSite()
   return { message: '배너 순서를 변경했습니다.' }
 }

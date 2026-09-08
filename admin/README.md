@@ -15,8 +15,9 @@ pnpm --filter @maple/admin test:e2e
 ```
 
 `admin/.env.local` 은 `admin/.env.example` 을 보고 채운다. 루트 `.env.local` 의
-Supabase 값 3개를 그대로 쓰고, 여기에 `NEXT_PUBLIC_CLIENT_SITE_URL` ·
-`NEXT_PUBLIC_ADMIN_URL` 을 더한다.
+Supabase 값 3개와 `REVALIDATE_SECRET` 을 **같은 값으로** 쓰고, 여기에
+`NEXT_PUBLIC_CLIENT_SITE_URL` · `NEXT_PUBLIC_ADMIN_URL` · `CLIENT_SITE_URL`
+(캐시 무효화를 보낼 사용자 사이트, 로컬은 `http://localhost:3000`)을 더한다.
 
 ---
 
@@ -34,6 +35,7 @@ admin/
     <모듈>/        모듈 전용 컴포넌트 (admins/, dashboard/, …)
   lib/
     nav.ts         사이드바 정보 구조 — 화면을 추가하면 여기 한 줄
+    revalidate.ts  사용자 사이트 캐시 무효화(revalidateClient) — 아래 §3
     supabase/      server · middleware · admin(서비스 롤) 클라이언트
     auth/          requireAdmin() · 30분 비활동 세션
     actions/       서버 액션 (+ FormState 계약)
@@ -53,6 +55,7 @@ admin/
 4. 서버 액션 첫 줄은 **항상** `const actor = await requireAdmin()` 이다.
    서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출된다.
 5. 상태를 바꾸는 액션은 `writeAuditLog(actor.id, …)` 를 남긴다.
+   사용자 사이트에 보이는 변경이면 `revalidateClient([...])` 도 함께 부른다(§3).
 6. 목록은 `components/ui/Table` + `Pagination` + `lib/utils/table-query.ts` 를 쓴다.
    정렬·페이지는 컴포넌트 상태가 아니라 **쿼리스트링**에 적는다.
 
@@ -67,15 +70,25 @@ admin/
   토큰은 `app/globals.css` 의 `@theme` 한곳에 있다.
 - **날짜는 `lib/utils/format-date.ts`.** `toLocaleString` 은 런타임 로캘에 따라
   서버·클라이언트 결과가 갈려 하이드레이션이 깨진다.
+- **사용자 사이트에 보이는 쓰기 뒤에는 `revalidateClient()`.** 사용자 사이트의 공개
+  목록은 `unstable_cache`(60초 · 300초)이고 관리자는 별도 배포라
+  `revalidateTag()` 가 닿지 않는다. 태그는 `lib/revalidate.ts` 의
+  `CLIENT_CACHE_TAGS` — 뉴스 `news-list`, 커뮤니티·댓글 `community-list`,
+  FAQ `faqs`, 확률형 아이템 `gacha`, 랭킹 `rankings`, 설정·배너 `site`.
+  관리자 전용 테이블(감사 로그 · 관리자 계정 · 신고 상태)에는 부르지 않는다.
+  호출이 실패해도 쓰기는 성공한다 — 반영이 태그 수명만큼 늦어질 뿐이다.
+- **문의 상태 뱃지는 사용자 사이트와 같은 색을 쓴다**(`info-blue` · `success-green`
+  · `muted`). 관리자와 사용자가 같은 스레드를 보는 유일한 모듈이라 색이 갈리면
+  운영자가 화면을 보며 상태를 설명할 수 없다. 관리자 전용 상태는 기존 팔레트 그대로.
 - **`any` 금지, 파일 300줄 / 컴포넌트 200줄 상한.**
 
 ## 4. 인증 흐름
 
-| 경로                       | 하는 일                                                        |
-| -------------------------- | -------------------------------------------------------------- |
-| `proxy.ts`                 | 토큰 갱신 · 미로그인 리다이렉트 · 30분 비활동 만료(낙관적 검사) |
-| `app/(admin)/layout.tsx`   | `requireAdmin()` — role 이 아니면 로그아웃 + `/login?error=not_admin` |
-| RLS                        | 최종 방어선. 화면을 우회해도 데이터는 열리지 않는다            |
+| 경로                     | 하는 일                                                               |
+| ------------------------ | --------------------------------------------------------------------- |
+| `proxy.ts`               | 토큰 갱신 · 미로그인 리다이렉트 · 30분 비활동 만료(낙관적 검사)       |
+| `app/(admin)/layout.tsx` | `requireAdmin()` — role 이 아니면 로그아웃 + `/login?error=not_admin` |
+| RLS                      | 최종 방어선. 화면을 우회해도 데이터는 열리지 않는다                   |
 
 메일 링크는 Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=`
 세 가지로 돌아온다. `app/auth/callback/` 이 셋 다 처리한다(해시는 서버로 전송되지

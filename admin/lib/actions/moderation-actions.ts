@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
+import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import { bulkHideSchema, toggleContentSchema } from '@/lib/validation/moderation'
 
@@ -54,16 +55,30 @@ async function applyPatch(
   const supabase = await createClient()
   const { error } =
     table === 'posts'
-      ? await supabase.from('posts').update(patch).in('id', [...ids])
-      : await supabase.from('comments').update(patch).in('id', [...ids])
+      ? await supabase
+          .from('posts')
+          .update(patch)
+          .in('id', [...ids])
+      : await supabase
+          .from('comments')
+          .update(patch)
+          .in('id', [...ids])
 
   return error === null ? null : error.message
 }
 
-function revalidateFor(table: ContentTable): void {
+/**
+ * 관리자 화면 + 사용자 사이트 목록을 함께 비운다.
+ *
+ * 상세는 세션 클라이언트로 매 요청 읽으므로 조치 즉시 404 가 되지만, 목록은
+ * `unstable_cache`(60초)라 태우지 않으면 지운 글이 최대 1분간 남는다.
+ * 사용자 사이트는 별도 배포라 `revalidateTag()` 가 닿지 않는다(lib/revalidate.ts).
+ */
+async function revalidateFor(table: ContentTable): Promise<void> {
   revalidatePath(table === 'posts' ? POSTS_PATH : COMMENTS_PATH)
   // 신고 큐는 대상의 숨김·삭제 상태를 함께 보여 준다.
   revalidatePath(REPORTS_PATH)
+  await revalidateClient([CLIENT_CACHE_TAGS.communityList])
 }
 
 const LABEL: Record<ContentTable, string> = { posts: '게시글', comments: '댓글' }
@@ -102,7 +117,7 @@ export async function moderateTarget(
     before: { is_hidden: snapshot.isHidden, deleted_at: snapshot.deletedAt },
     after: { ...patch },
   })
-  revalidateFor(table)
+  await revalidateFor(table)
 
   return null
 }
@@ -148,7 +163,7 @@ async function toggleContent(
     before: { is_hidden: snapshot.isHidden, deleted_at: snapshot.deletedAt },
     after: { ...patch },
   })
-  revalidateFor(table)
+  await revalidateFor(table)
 
   return { message: `${LABEL[table]}을(를) ${VERB_LABEL[verb]}했습니다.` }
 }
@@ -198,7 +213,7 @@ async function bulkHide(table: ContentTable, formData: FormData): Promise<FormSt
     targetTable: table,
     after: { ids: targets, count: targets.length },
   })
-  revalidateFor(table)
+  await revalidateFor(table)
 
   return { message: `${LABEL[table]} ${targets.length}건을 숨김 처리했습니다.` }
 }

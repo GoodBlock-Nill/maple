@@ -18,6 +18,12 @@ import type { ContentTable, ReportAction, ReportStatus } from '@/lib/validation/
  *
  * 처리 메모는 `audit_logs.after.note` 에 남긴다 — `reports` 에 메모 컬럼이 없다.
  * (스키마 공백. 마이그레이션 권한이 없어 이번 작업에서는 컬럼을 추가하지 않는다.)
+ *
+ * 사용자 사이트 캐시는 **여기서 직접 태우지 않는다**. 신고 처리가 사용자 화면을
+ * 바꾸는 경로는 숨김·삭제뿐이고, 그것은 `moderateTarget()` 이 수행하면서
+ * `community-list` 태그를 이미 태운다(`lib/actions/moderation-actions.ts`).
+ * 여기서 또 부르면 같은 태그를 두 번 비운다. `reports` 자체는 관리자 전용 테이블이라
+ * 사용자 사이트가 읽지 않는다.
  */
 
 const REPORTS_PATH = '/reports'
@@ -64,9 +70,15 @@ async function openReportIdsForTarget(report: ReportRow): Promise<string[]> {
  * 우회의 범위를 좁히기 위해 상태 컬럼만, 그것도 호출부가 `requireAdmin()` 을 통과한
  * 뒤에만 만진다.
  */
-async function setReportStatus(ids: readonly string[], status: ReportStatus): Promise<string | null> {
+async function setReportStatus(
+  ids: readonly string[],
+  status: ReportStatus,
+): Promise<string | null> {
   const supabase = createAdminClient()
-  const { error } = await supabase.from('reports').update({ status }).in('id', [...ids])
+  const { error } = await supabase
+    .from('reports')
+    .update({ status })
+    .in('id', [...ids])
 
   return error === null ? null : error.message
 }

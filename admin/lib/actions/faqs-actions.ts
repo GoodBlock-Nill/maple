@@ -6,6 +6,7 @@ import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-sta
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { getNextFaqSortOrder } from '@/lib/data/faqs'
+import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import { faqReorderSchema, faqSchema } from '@/lib/validation/faqs'
 
@@ -18,6 +19,16 @@ import { faqReorderSchema, faqSchema } from '@/lib/validation/faqs'
  */
 
 const FAQS_PATH = '/faqs'
+
+/**
+ * FAQ 는 사용자 사이트에서 `unstable_cache`(300초)로 읽는다. 저장 뒤 태그를 태우지
+ * 않으면 발행·수정이 최대 5분간 반영되지 않는다. 사용자 사이트는 별도 배포라
+ * `revalidateTag()` 가 닿지 않아 HTTP 로 부른다(lib/revalidate.ts).
+ */
+async function revalidateFaqs(): Promise<void> {
+  revalidatePath(FAQS_PATH)
+  await revalidateClient([CLIENT_CACHE_TAGS.faqs])
+}
 
 /** 폼 → 스키마 입력. 체크박스는 값이 없으면 아예 오지 않는다. */
 function readFaqInput(formData: FormData) {
@@ -68,7 +79,7 @@ export async function createFaqAction(
     after: { category, question, is_published: isPublished, sort_order: sortOrder },
   })
 
-  revalidatePath(FAQS_PATH)
+  await revalidateFaqs()
 
   return { message: 'FAQ 를 등록했습니다.' }
 }
@@ -123,7 +134,7 @@ export async function updateFaqAction(
     after: { category, question, answer, is_published: isPublished },
   })
 
-  revalidatePath(FAQS_PATH)
+  await revalidateFaqs()
 
   return { message: 'FAQ 를 수정했습니다.' }
 }
@@ -165,7 +176,7 @@ export async function deleteFaqAction(
     before,
   })
 
-  revalidatePath(FAQS_PATH)
+  await revalidateFaqs()
 
   return { message: 'FAQ 를 삭제했습니다.' }
 }
@@ -201,7 +212,7 @@ export async function toggleFaqPublishAction(
     after: { is_published: nextPublished },
   })
 
-  revalidatePath(FAQS_PATH)
+  await revalidateFaqs()
 
   return { message: nextPublished ? 'FAQ 를 발행했습니다.' : 'FAQ 를 숨겼습니다.' }
 }
@@ -251,7 +262,7 @@ export async function reorderFaqsAction(
     after: { category, ids: [...ids] },
   })
 
-  revalidatePath(FAQS_PATH)
+  await revalidateFaqs()
 
   return { message: '순서를 저장했습니다.' }
 }

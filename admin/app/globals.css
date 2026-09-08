@@ -37,6 +37,15 @@
   --color-danger: #d93025;
   --color-danger-soft: #fdecea;
 
+  /* 사용자 사이트와 **같은 값**을 보여 주는 상태 2색.
+     사용자 화면(`app/styles/tokens.css` 의 `--color-tag-blue` · `--color-tag-green`)
+     실측값 그대로다. 문의 상태처럼 관리자와 사용자가 같은 뱃지를 보는 곳에만 쓴다 —
+     관리자 전용 상태(발행 · 노출 …)는 위의 success/warn 팔레트를 그대로 쓴다. */
+  --color-info-blue: #2e6eff;
+  --color-info-blue-soft: #e5efff;
+  --color-success-green: #00b894;
+  --color-success-green-soft: #e5fff1;
+
   /* 포커스 링 — 밝은 배경/짙은 사이드바 모두에서 3:1 이상 */
   --color-focus: #1d6fe0;
 

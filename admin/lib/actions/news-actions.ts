@@ -12,6 +12,7 @@ import {
   type NewsSnapshot,
   type NewsSnapshotRow,
 } from '@/lib/constants/news'
+import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -35,6 +36,17 @@ const NEWS_PATH = '/news'
 const SAVE_FAILURE = '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 const SNAPSHOT_COLUMNS =
   'id, title, category_key, is_published, published_at, is_hidden, deleted_at'
+
+/**
+ * 사용자 사이트의 뉴스 목록 캐시를 태운다.
+ *
+ * 임시저장끼리의 수정은 사용자 사이트에 보이지 않으므로 부르지 않는다 — 남의
+ * 캐시를 이유 없이 비우지 않기 위해서다. 발행·숨김·삭제·복구는 목록이 즉시
+ * 달라져야 한다(목록은 `unstable_cache` 60초, 상세는 매 요청 조회).
+ */
+async function revalidateNewsList(): Promise<void> {
+  await revalidateClient([CLIENT_CACHE_TAGS.newsList])
+}
 
 /** `Json` 으로 좁히기 위한 한 겹. 스냅샷은 평평한 문자열 객체다. */
 function toJson(snapshot: NewsSnapshot): Json {
@@ -132,6 +144,11 @@ async function createNews(
   })
 
   revalidatePath(NEWS_PATH)
+
+  if (after.status !== 'draft') {
+    await revalidateNewsList()
+  }
+
   // redirect() 는 예외를 던져 이후 코드를 건너뛴다. 재검증을 반드시 앞에 둔다.
   redirect(`${NEWS_PATH}/${data.id}`)
 }
@@ -186,6 +203,12 @@ async function updateNews(
 
   revalidatePath(NEWS_PATH)
   revalidatePath(`${NEWS_PATH}/${postId}`)
+
+  /* 발행 → 임시저장으로 내린 경우에도 목록에서 빠져야 하므로 전/후 어느 쪽이든
+     임시저장이 아니면 태운다. */
+  if (before.status !== 'draft' || after.status !== 'draft') {
+    await revalidateNewsList()
+  }
 
   return { message: '저장했습니다.' }
 }
@@ -266,6 +289,7 @@ export async function newsStateAction(
   }
 
   revalidatePath(NEWS_PATH)
+  await revalidateNewsList()
 
   return { message: `${ids.length}건을 ${NEWS_INTENTS[intent].done}` }
 }

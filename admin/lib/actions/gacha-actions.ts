@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { readFile, uploadPublicAsset } from '@/lib/actions/asset-upload'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
+import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import { parseCsvTable } from '@/lib/utils/csv'
 import {
@@ -15,7 +17,7 @@ import {
   GACHA_CSV_REQUIRED_HEADERS,
   type GachaTab,
 } from '@/lib/validation/gacha'
-import { ASSET_TYPE_ERROR, kstLocalToIso, PUBLIC_ASSET_EXTENSIONS } from '@/lib/validation/settings'
+import { kstLocalToIso } from '@/lib/validation/settings'
 
 import type { TablesInsert } from '@/lib/supabase/types'
 import type { Json } from '@/types/database.types'
@@ -28,38 +30,14 @@ import type { Json } from '@/types/database.types'
  */
 
 const LIST_PATH = '/gacha'
-const BUCKET = 'public-assets'
 
 /**
- * 아이콘 업로드.
- *
- * 파일 이름을 그대로 쓰지 않고 UUID 로 바꾼다. 같은 이름의 다른 파일이 서로를
- * 덮어써 이미 공시된 아이템의 아이콘이 조용히 바뀌는 사고를 막는다.
+ * 사용자 사이트의 확률 공시(목록·상세)는 `unstable_cache` 로 읽는다. 태우지 않으면
+ * 공시 변경이 최대 1분 늦게 보인다 — 확률 공시는 법적 고지라 늦으면 안 된다.
  */
-async function uploadIcon(file: File): Promise<{ url: string } | { error: string }> {
-  const extension = PUBLIC_ASSET_EXTENSIONS[file.type]
-
-  if (extension === undefined) {
-    return { error: ASSET_TYPE_ERROR }
-  }
-
-  const supabase = await createClient()
-  const path = `gacha/${crypto.randomUUID()}.${extension}`
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false })
-
-  if (error !== null) {
-    return { error: `아이콘을 올리지 못했습니다. ${error.message}` }
-  }
-
-  return { url: supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl }
-}
-
-function readFile(formData: FormData, name: string): File | null {
-  const value = formData.get(name)
-
-  return value instanceof File && value.size > 0 ? value : null
+async function revalidateGacha(): Promise<void> {
+  revalidatePath(LIST_PATH)
+  await revalidateClient([CLIENT_CACHE_TAGS.gacha])
 }
 
 /** 생성·수정 공용. `id` 가 비어 있으면 생성이다. */
@@ -74,7 +52,13 @@ export async function saveGachaItemAction(
   let iconUrl = readField(formData, 'iconUrl')
 
   if (iconFile !== null) {
-    const uploaded = await uploadIcon(iconFile)
+    /* 아이콘은 매번 새 UUID 경로로 올린다. 같은 이름의 다른 파일이 서로를 덮어써
+       이미 공시된 아이템의 아이콘이 조용히 바뀌는 사고를 막는다. */
+    const uploaded = await uploadPublicAsset(
+      iconFile,
+      (ext) => `gacha/${crypto.randomUUID()}.${ext}`,
+      { label: '아이콘' },
+    )
 
     if ('error' in uploaded) {
       return { fieldErrors: { iconFile: uploaded.error } }
@@ -138,7 +122,7 @@ export async function saveGachaItemAction(
     after: payload as unknown as Json,
   })
 
-  revalidatePath(LIST_PATH)
+  await revalidateGacha()
   redirect(`${LIST_PATH}?tab=${input.tab}`)
 }
 
@@ -173,7 +157,7 @@ export async function deleteGachaItemAction(
     before: before as Json,
   })
 
-  revalidatePath(LIST_PATH)
+  await revalidateGacha()
   return { message: `${before.name} 을(를) 삭제했습니다.` }
 }
 
@@ -280,7 +264,7 @@ export async function importGachaCsvAction(
     after: { total: upsertRows.length, created, updated, tabs },
   })
 
-  revalidatePath(LIST_PATH)
+  await revalidateGacha()
   return {
     message: `${upsertRows.length}건을 적용했습니다. (신규 ${created}건 · 수정 ${updated}건)`,
   }

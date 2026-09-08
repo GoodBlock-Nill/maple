@@ -6,6 +6,7 @@ import { readField, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { getRankingSnapshots } from '@/lib/data/rankings'
+import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import {
   isRankType,
@@ -29,6 +30,15 @@ import {
  */
 
 const LIST_PATH = '/rankings'
+
+/**
+ * 사용자 사이트의 랭킹 표는 `unstable_cache`(60초)다. 새 스냅샷을 넣거나 되돌린
+ * 직후 태우지 않으면 관리자 화면과 사용자 화면이 최대 1분간 다른 표를 보여 준다.
+ */
+async function revalidateRankings(): Promise<void> {
+  revalidatePath(LIST_PATH)
+  await revalidateClient([CLIENT_CACHE_TAGS.rankings])
+}
 
 /** 한 번에 보내는 행 수. 100건짜리 스냅샷도 한 요청에 다 실리지만 상한을 둔다. */
 const CHUNK_SIZE = 500
@@ -136,7 +146,7 @@ export async function applyRankingCsvAction(
     after: { rank_type: rankType, snapshot_at: result.snapshotAt, rows: result.inserted },
   })
 
-  revalidatePath(LIST_PATH)
+  await revalidateRankings()
 
   return { message: `${result.inserted}건을 새 스냅샷으로 적용했습니다.` }
 }
@@ -189,7 +199,7 @@ export async function rollbackRankingSnapshotAction(
     after: { rank_type: rankType, snapshot_at: result.snapshotAt, rows: result.inserted },
   })
 
-  revalidatePath(LIST_PATH)
+  await revalidateRankings()
 
   return { message: `${result.inserted}건을 되돌렸습니다.` }
 }

@@ -64,8 +64,11 @@ export type ReportListResult = {
 export type ReportCounts = Record<ReportStatus, number>
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
+/* `profiles` 임베드에는 FK 힌트가 **필요하다**. `reports` 는 `reporter_id` 와
+   `resolved_by` 두 개의 FK 로 `profiles` 를 가리키므로, 힌트 없이 쓰면 PostgREST 가
+   "more than one relationship was found" 로 반려한다(신고 목록이 통째로 빈다). */
 const REPORT_COLUMNS =
-  'id, target_type, target_id, reason, detail, status, created_at, reporter_id, profiles(nickname)'
+  'id, target_type, target_id, reason, detail, status, created_at, reporter_id, profiles!reports_reporter_id_fkey(nickname)'
 
 const EXCERPT_MAX = 60
 
@@ -104,7 +107,9 @@ async function loadTargets(
   rows: readonly ReportRowShape[],
 ): Promise<Map<string, ReportTarget>> {
   const idsOf = (type: ReportTargetType): string[] => [
-    ...new Set(rows.filter((row) => toTargetType(row.target_type) === type).map((row) => row.target_id)),
+    ...new Set(
+      rows.filter((row) => toTargetType(row.target_type) === type).map((row) => row.target_id),
+    ),
   ]
 
   const postIds = idsOf('post')
