@@ -18,7 +18,14 @@ export const SITE_HEADLINE = `새로운 즐거움의 시작, ${SITE_NAME}`
 export const SITE_TAGLINE = `지금 바로 ${SITE_NAME}에서 당신만의 특별한 메이플 이야기를 펼쳐보세요.`
 
 /** TODO: site_settings.contact_email 로 교체 예정인 플레이스홀더. */
-export const CONTACT_EMAIL = 'contact@example.com'
+export const CONTACT_EMAIL = 'contact@글자월드.co.kr'
+
+/**
+ * `mailto:` 링크용 ASCII(Punycode) 도메인 이메일.
+ * 한글 도메인을 `mailto:` href 에 그대로 넣으면 일부 메일 클라이언트가
+ * 열지 못하므로, 화면 표기(`CONTACT_EMAIL`)와 href 를 분리한다.
+ */
+export const CONTACT_EMAIL_HREF = 'contact@xn--bj0b33kj0qqva.co.kr'
 
 export const PLAY_URL = '/play'
 
@@ -47,6 +54,7 @@ export const FOOTER_MENU_LINKS: readonly NavItem[] = NAV_ITEMS
 export const POLICY_LINKS: readonly NavItem[] = [
   { label: '개인정보처리방침', href: '/policy/privacy' },
   { label: '디스코드 운영정책', href: '/policy/discord' },
+  { label: '글자월드 운영정책', href: '/policy/operating' },
 ]
 
 export type SnsLink = NavItem & {

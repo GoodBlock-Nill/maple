@@ -27,6 +27,22 @@
 | 레이아웃 컴포넌트 모음 | `499:2946` | layout-components.png | 뉴스 카드 3변형(아이콘형/썸네일형/한 줄 컴팩트), 커뮤니티 행, 랭킹 TOP3+테이블, 문의 폼 2변형 |
 | 뉴스 목록 내부 | `490:2795`(본문 1200×1763), `490:2996`(카드형/리스트형 드롭다운) | notice.png | 상단 배경 `490:2789`(벚꽃 PNG) + `490:2782`(벚꽃 GIF) |
 
+## GIF 에셋 전수 스캔 (2026-09-08, Figma Plugin API — GIF 매직바이트 판별)
+
+| 화면 | GIF 노드 | 표시 w×h @ x,y (프레임 로컬) | 로컬 파일 |
+|---|---|---|---|
+| 홈 | I489:2184;344:6906 / 6908 / 6917(반전) / 6935(반전) | 201×152 @1151,78 / 160.73² @1118.63,348.4 / 124.19×211.33 @130,158 / 235×214 @209,465 | `home/chars/pixchar-right.gif`, `mushroom.gif`, `pixchar-left.gif`, `boy.gif` |
+| 홈 | 496:13627 드래곤(165.57°+flip) / 496:13640 슬라임 / 496:13641 오리 / I489:2263;461:15737 푸터 | 301.29×284.9 bbox @−79.93,664.94 / 170.1×175.77 @1301.44,1317.5 / 364×192 @1076,727.5 / 275.89×149.34 @1132.11,1848.33 | `home/dragon.gif`, `slime.gif`, `duck.gif`, `footer/home-mascot.gif` |
+| 뉴스 | 490:2794 / I490:2995;461:15991 (벚꽃 GIF 그룹 490:2782는 **숨김** → PNG가 정본) | 268.12×195 @930.94,282.82 / 231.23×177.65 @1171.9,2138.96 | `news/mascot-top.gif`, `news/mascot-footer.gif` |
+| 커뮤니티 | 490:3545 / I490:3547;461:16269 | 290.77×233.63 @1044.5,306.87 / 154.36×198.89 @1182,2442.93 | `community/axolotl.gif`, `community/mascot-footer.gif` |
+| 가이드 | 496:12279 / I496:12280;461:16630 | 169.71×100.17 @1085.11,330.45 / 182×235.34 @1243,1931.45 | `guide/mascot-top.gif`, `guide/mascot-footer.gif` |
+| 랭킹 | 493:7138 / I493:7142;461:16893 | 214.38×177.1 @1059.31,349.4 / 248.42×200.43 @1179.72,2616.07 | `ranking/mascot-panda.gif`, `ranking/mascot-footer.gif` |
+| 고객지원 | 461:15262 / I461:17063;461:17062 | 271.19×198.07 @979.87,264.93 / 216×198.17 @1154,1396.92 | `support/mascot-top.gif`, `support/mascot-footer.gif` |
+| 소개 | 10개 — `about-gif-spec.md` 표와 동일(전부 일치 확인) | | `about/chars/*.gif`, `avatar-dot.gif`, `mascot-footer.gif` |
+
+배경 재export: `home/hero-bg-v2.jpg`(캐릭터·텍스트 제외), `home/mid-under-v2.png`(드래곤 제외)는 Figma에서 해당 레이어를 숨긴 클론을 @2x export한 것이다(방법은 메모리 `figma-asset-render-workflow` 참고). 브라우저 합성본은 폐기.
+파일명에 `-v2` 를 붙인 이유: 같은 경로를 덮어쓰면 `next/image` 최적화 캐시가 예전(캐릭터가 구워진) 이미지를 계속 내려준다. 새 이름을 쓰면 캐시 키가 달라져 항상 최신 파일이 나간다.
+
 ## 배경 이미지 합성 방법
 
 `public/images/{page}/*-bg.png|jpg`는 Figma의 다층 이미지 레이어를 브라우저에서 합성한 결과다. 재생성이 필요하면: `get_design_context`로 노드의 React+Tailwind 코드를 받고, 텍스트/버튼 노드를 제외한 뒤 React UMD + Babel standalone + `@tailwindcss/browser@4`를 넣은 HTML로 렌더링해 Playwright로 `deviceScaleFactor: 2`, `omitBackground: true` 스크린샷을 찍는다. 스펙 문서: `home-spec.md`, `news-community-spec.md`, `guide-ranking-support-about-spec.md`.
@@ -54,3 +70,9 @@
 | ~~`about/footer-bg.png`~~ 수령·합성 완료(16 레이어) | 529:6317 하위 이미지 노드 | 1440×703 |
 
 2026-09-08 추가 수령: `support/deco-484/485/479/508.png`, `support/top-bg.png`, `support/mascot-snowmen.png`, `ranking/mascot-panda.png`. 미수령: 없음(홈 `duck.gif` 크기 차이만 남음).
+※ 상단 마스코트는 정지 PNG 대신 애니메이션 GIF(`guide/mascot-top.gif`, `support/mascot-top.gif`, `ranking/mascot-panda.gif`)를 쓴다. 위 PNG 3장은 더 이상 참조되지 않는다.
+
+2026-09-08 재수출: `about/footer-bg.png` → `about/footer-bg-v2.png`(선명도 개선). 파일명을 바꿔
+next/image 최적화 캐시가 구본을 계속 서빙하는 문제를 우회했다.
+
+2026-09-08 정리: GIF로 대체된 정지 이미지(`guide/mascot-top.png`, `support/mascot-snowmen.png`, `ranking/mascot-panda.png`)와 소개 페이지의 폐기 합성본(`about/video-poster.png`, `hero-overlay.png`, `creator-panel.png`, `avatar-dot.png`, `mascot-footer.png`)을 삭제. 위 표의 해당 행은 이력용.

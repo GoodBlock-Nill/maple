@@ -98,26 +98,32 @@ function buildRankingQuery(
   return query.order('rank', { ascending: true })
 }
 
-/** TOP3 카드와 4위부터의 표로 쪼갠다. `total` 은 카드까지 포함한 전체 인원이다. */
-function toRankingPage(
+/**
+ * TOP3 카드와 4위부터의 표로 쪼갠다. `total` 은 카드까지 포함한 전체 인원이다.
+ *
+ * 시안의 "더보기(10/100)"는 카드 3장을 포함해 페이지 N까지 누적된 **전체 노출
+ * 인원**을 분자로 쓴다. 그래서 표 행 수가 아니라 `shown`(=N*10건, 상한 total)을
+ * 기준으로 행 개수를 역산한다: 행 = shown - TOP3.
+ */
+export function toRankingPage(
   ranked: readonly RankedEntry[],
   count: number | null,
   page: number,
 ): RankingListResult {
   const total = count ?? ranked.length
-  const tableTotal = Math.max(total - TOP_RANK_COUNT, 0)
-  const shown = Math.min(
+  const shown = accumulatedCount(page, RANKING_PAGE_SIZE, total)
+  const rowCount = Math.min(
     Math.max(ranked.length - TOP_RANK_COUNT, 0),
-    accumulatedCount(page, RANKING_PAGE_SIZE, tableTotal),
+    Math.max(shown - TOP_RANK_COUNT, 0),
   )
 
   return {
     top: ranked.slice(0, TOP_RANK_COUNT),
-    rows: ranked.slice(TOP_RANK_COUNT, TOP_RANK_COUNT + shown),
+    rows: ranked.slice(TOP_RANK_COUNT, TOP_RANK_COUNT + rowCount),
     total,
     shown,
     page,
-    hasMore: shown < tableTotal,
+    hasMore: shown < total,
   }
 }
 
@@ -134,7 +140,8 @@ async function fetchRankingList(
     return EMPTY_RESULT(page)
   }
 
-  const { from, to } = accumulatedRange(page, RANKING_PAGE_SIZE, TOP_RANK_COUNT)
+  // 카드(TOP3)도 페이지 크기에 포함되므로 오프셋 없이 page*RANKING_PAGE_SIZE건을 그대로 읽는다.
+  const { from, to } = accumulatedRange(page, RANKING_PAGE_SIZE)
   const { data, count, error } = await buildRankingQuery(supabase, snapshot, type, job, q).range(
     from,
     to,

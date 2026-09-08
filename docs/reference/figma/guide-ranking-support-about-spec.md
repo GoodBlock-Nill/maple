@@ -7,9 +7,9 @@
 | 페이지 | 상단 배경 (`public/images/…`) | 제목 옆 장식 (x, y, w×h · 1440 기준) | 푸터 배경 / 패널 위치 | 푸터 마스코트 |
 |---|---|---|---|---|
 | 가이드 `/guide` | `guide/top-bg.png` 1440×420 (단풍, 투명) | `guide/mascot-top.gif` 170×100 at (1085, 330) — 버섯 캐릭터 | `guide/footer-bg.png` 1440×631, 패널 bottom 70 (=top 208) | `guide/mascot-footer.gif` 182×235 at (center+614−91 → x 1243, bottom 153) 토끼 |
-| 랭킹 `/ranking` | `ranking/top-bg.png` 1440×296 (판다 바위·사당, 투명) | `ranking/mascot-panda.png` 214×177 at (1059, 349) 책 읽는 판다 · `ranking/deco-right.png` 277×256 at (1280, 224) · `ranking/deco-left.png` 108×104 at (0, 244) | `ranking/footer-bg.png` 1440×631, 패널 bottom 70. 패널 그라데이션 `rgba(140,151,137,.55)` | `ranking/mascot-footer.gif` 248×200 at (1180, 246) 판다 |
-| 고객지원 `/support` | `support/top-bg.png` 1440×282 (눈 덮인 숲, 투명) | `support/mascot-snowmen.png` 271×198 at (980, 265) · `support/deco-484.png` 60×84 at (161, 268) · `deco-485.png` 60×64 at (1261, 275) · `deco-479.png` 124×60 at (1271, 287) · `deco-508.png` 162×77 at (273, 298) | `support/footer-bg.png` 1440×631, 패널 bottom 70 | `support/mascot-footer.gif` 216×198 at (1154, 236) |
-| 소개 `/about` | 아래 별도 | | `about/footer-bg.png` 1440×703, 패널 top 280 (inset 39.83% ~ 9.96%) | `about/mascot-footer.gif` 214×169 at (1202, 339) |
+| 랭킹 `/ranking` | `ranking/top-bg.png` 1440×296 (판다 바위·사당, 투명) | `ranking/mascot-panda.gif` 214.38×177.1 at (1059.31, 349.4) 책 읽는 판다(애니메이션) · `ranking/deco-right.png` 277×256 at (1280, 224) · `ranking/deco-left.png` 108×104 at (0, 244) | `ranking/footer-bg.png` 1440×631, 패널 bottom 70. 패널 그라데이션 `rgba(140,151,137,.55)` | `ranking/mascot-footer.gif` 248×200 at (1180, 246) 판다 |
+| 고객지원 `/support` | `support/top-bg.png` 1440×282 (눈 덮인 숲, 투명) | `support/mascot-top.gif` 271.19×198.07 at (979.87, 264.93) 눈사람(애니메이션) · `support/deco-484.png` 60×84 at (161, 268) · `deco-485.png` 60×64 at (1261, 275) · `deco-479.png` 124×60 at (1271, 287) · `deco-508.png` 162×77 at (273, 298) | `support/footer-bg.png` 1440×631, 패널 bottom 70 | `support/mascot-footer.gif` 216×198 at (1154, 236) |
+| 소개 `/about` | 아래 별도 | | `about/footer-bg-v2.png`(재수출, 선명도 개선) 1440×703, 패널 top 280 (inset 39.83% ~ 9.96%) | `about/mascot-footer.gif` 214×169 at (1202, 339) |
 
 - 서브 페이지 푸터 높이: 뉴스/커뮤니티/소개 703, 가이드/랭킹/고객지원 631. `SiteFooter variant`로 배경·높이·마스코트만 분기.
 

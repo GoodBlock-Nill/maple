@@ -104,12 +104,19 @@ function PageHeroBackdrop({ hero }: PageHeroBackdropProps) {
             key={mascot.src}
             src={mascot.src}
             alt=""
-            width={mascot.width}
-            height={mascot.height}
+            /* width/height 속성은 정수여야 해서, 소수점까지 맞춰야 하는 실제
+               렌더 크기는 style 로 지정한다. */
+            width={Math.round(mascot.width)}
+            height={Math.round(mascot.height)}
             unoptimized={mascot.animated}
             priority
-            style={{ ...heroMascotOffset(mascot), top: mascot.top, width: mascot.width }}
-            className="absolute max-w-none"
+            style={{
+              ...heroMascotOffset(mascot),
+              top: mascot.top,
+              width: mascot.width,
+              height: mascot.height,
+            }}
+            className="absolute max-w-none object-cover"
           />
         ))}
       </div>

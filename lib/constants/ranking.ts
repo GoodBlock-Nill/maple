@@ -1,7 +1,7 @@
 import type { BoardOption } from '@/lib/constants/board'
 import type { JobGroup, RankingType } from '@/types/domain'
 
-/** 표는 4위부터 10행씩 쌓인다(시안 `더보기(10/100)`). */
+/** "더보기" 페이지당 누적 노출 인원(카드 3장 포함, 시안 `더보기(10/100)`). */
 export const RANKING_PAGE_SIZE = 10
 
 /** TOP3 카드로 빠지는 상위 인원수. */

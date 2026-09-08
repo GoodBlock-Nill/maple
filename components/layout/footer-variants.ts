@@ -142,7 +142,9 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     },
   },
   about: {
-    background: '/images/about/footer-bg.png',
+    /* v2: Figma 재수출본으로 교체(선명도 개선). 파일명을 바꿔 next/image 최적화
+       캐시가 구본을 계속 서빙하는 문제를 우회한다. */
+    background: '/images/about/footer-bg-v2.png',
     /* 앞 섹션(보라→시안 밴드)의 끝 색. 배경이 없을 때의 마지막 폴백. */
     backgroundColor: '#8dd5ff',
     needsGrassPatch: false,

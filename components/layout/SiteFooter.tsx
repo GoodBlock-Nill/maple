@@ -5,6 +5,7 @@ import { FOOTER_CONFIG } from '@/components/layout/footer-variants'
 import { Logo } from '@/components/layout/Logo'
 import {
   CONTACT_EMAIL,
+  CONTACT_EMAIL_HREF,
   FOOTER_MENU_LINKS,
   POLICY_LINKS,
   SITE_NAME,
@@ -102,7 +103,7 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
               <Logo width={109} height={40} />
               <p className="mt-[15px] text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
               <a
-                href={`mailto:${CONTACT_EMAIL}`}
+                href={`mailto:${CONTACT_EMAIL_HREF}`}
                 className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-[18px] leading-6 font-semibold transition-colors"
               >
                 {CONTACT_EMAIL}

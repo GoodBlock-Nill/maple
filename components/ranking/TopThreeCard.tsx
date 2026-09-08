@@ -1,6 +1,7 @@
 import Image from 'next/image'
 
 import { CrownIcon, GuildEmblem, MedalRibbon } from '@/components/ranking/ranking-icons'
+import { TopThreeLaurel } from '@/components/ranking/TopThreeLaurel'
 import {
   TOP_CHARACTER_FALLBACK_SIZE,
   TOP_CHARACTER_SIZE,
@@ -28,6 +29,24 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
     character === null
       ? TOP_CHARACTER_FALLBACK_SIZE
       : (TOP_CHARACTER_SIZE[character] ?? TOP_CHARACTER_FALLBACK_SIZE)
+  const characterImage =
+    character === null ? null : (
+      <Image
+        src={character}
+        alt=""
+        width={characterSize.width}
+        height={characterSize.height}
+        aria-hidden
+        /* 시안은 크롭 원본 크기 그대로 바닥에 붙인다(패널 높이로 늘리지 않는다).
+           relative + z-10 은 월계관과의 앞뒤 순서를 rank 별로 뒤집기 위한 것.
+           패널은 flex 컨테이너라 img(대체 요소)의 기본 min-width 가 원본 폭
+           (auto)으로 잡혀 max-w-full 이 무시되고, 1024 처럼 패널이 원본보다
+           좁아지는 폭에서 오른쪽이 잘렸다 — min-w-0 으로 그 하한을 없애야
+           object-contain 이 실제로 축소해 패널 안에 맞는다. 1440 은 패널이
+           원본보다 넓어 애초에 축소가 필요 없으므로 렌더 크기가 그대로 유지된다. */
+        className="relative z-10 h-auto max-h-full w-auto max-w-full min-w-0 object-contain"
+      />
+    )
 
   return (
     <article
@@ -44,16 +63,18 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
           panelClass,
         )}
       >
-        {character === null ? null : (
-          <Image
-            src={character}
-            alt=""
-            width={characterSize.width}
-            height={characterSize.height}
-            aria-hidden
-            /* 시안은 크롭 원본 크기 그대로 바닥에 붙인다(패널 높이로 늘리지 않는다). */
-            className="h-auto max-h-full w-auto max-w-full object-contain"
-          />
+        {entry.rank === 1 ? (
+          <>
+            {/* 1위: 월계관이 캐릭터 위에 덮인다(시안 실측). */}
+            {characterImage}
+            <TopThreeLaurel className="z-20" />
+          </>
+        ) : (
+          <>
+            {/* 2·3위: 월계관이 캐릭터 뒤로 깔린다(시안 실측). */}
+            <TopThreeLaurel className="z-0" />
+            {characterImage}
+          </>
         )}
       </div>
 
