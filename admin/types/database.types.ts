@@ -327,6 +327,7 @@ export type Database = {
           account_id: string | null
           answered_at: string | null
           attachments: Json
+          cancelled_at: string | null
           category: string
           contact_email: string | null
           content: string
@@ -343,6 +344,7 @@ export type Database = {
           account_id?: string | null
           answered_at?: string | null
           attachments?: Json
+          cancelled_at?: string | null
           category: string
           contact_email?: string | null
           content: string
@@ -359,6 +361,7 @@ export type Database = {
           account_id?: string | null
           answered_at?: string | null
           attachments?: Json
+          cancelled_at?: string | null
           category?: string
           contact_email?: string | null
           content?: string
@@ -752,6 +755,13 @@ export type Database = {
       increment_post_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
+      replace_ranking_snapshot: {
+        Args: {
+          p_rank_type: Database["public"]["Enums"]["ranking_type"]
+          p_rows: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       board_type: "news" | "community"

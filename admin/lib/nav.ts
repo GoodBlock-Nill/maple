@@ -34,7 +34,15 @@ export type NavItem = {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: '대시보드', href: '/', icon: 'dashboard' },
-  { label: '뉴스', href: '/news', icon: 'news' },
+  {
+    label: '뉴스',
+    href: '/news',
+    icon: 'news',
+    children: [
+      { label: '목록', href: '/news' },
+      { label: '새 글 작성', href: '/news/new' },
+    ],
+  },
   {
     label: '커뮤니티',
     href: '/community/posts',
@@ -55,7 +63,16 @@ export const NAV_ITEMS: readonly NavItem[] = [
       { label: 'FAQ', href: '/faqs' },
     ],
   },
-  { label: '가이드', href: '/gacha', icon: 'guide' },
+  {
+    label: '가이드',
+    href: '/gacha',
+    icon: 'guide',
+    children: [
+      { label: '목록', href: '/gacha' },
+      { label: '새 아이템', href: '/gacha/new' },
+      { label: 'CSV 가져오기', href: '/gacha/import' },
+    ],
+  },
   { label: '랭킹', href: '/rankings', icon: 'ranking' },
   { label: '사이트 설정', href: '/settings', icon: 'settings' },
   { label: '관리자', href: '/admins', icon: 'admin' },
