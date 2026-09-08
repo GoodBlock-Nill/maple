@@ -13,10 +13,10 @@
 export const FEATURES = {
   mswAccountFields: process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS === 'true',
   /**
-   * 오너 요청: 확률형 아이템 정보(가이드)·랭킹은 9/18 오픈 시점에 서비스하지
-   * 않는다. 두 페이지 모두 기본값 OFF(= "서비스 준비 중" 노출)이고, 실제
-   * 오픈 시 배포 환경 변수만 `true` 로 바꾸면 코드 변경 없이 전환된다.
+   * 가이드(확률형 아이템 정보)·랭킹의 "서비스 준비 중" 화면. 개발팀이 실제 화면을
+   * 보며 개발해야 하므로 기본값은 OPEN(준비 중 화면 OFF)이고, 오픈 전 잠시 막고
+   * 싶을 때만 배포 환경 변수 `NEXT_PUBLIC_FEATURE_*_COMING_SOON=true` 로 켠다.
    */
-  guideOpen: process.env.NEXT_PUBLIC_FEATURE_GUIDE_OPEN === 'true',
-  rankingOpen: process.env.NEXT_PUBLIC_FEATURE_RANKING_OPEN === 'true',
+  guideOpen: process.env.NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON !== 'true',
+  rankingOpen: process.env.NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON !== 'true',
 } as const
