@@ -46,7 +46,7 @@ export function GachaModalShell({ closeHref, labelledBy, children }: GachaModalS
   }, [close])
 
   return (
-    <div className="fixed inset-0 z-80 flex items-start justify-center overflow-y-auto p-4 py-24">
+    <div className="fixed inset-0 z-80 flex items-start justify-center overflow-y-auto p-4">
       <button
         type="button"
         aria-label="상세 정보 닫기"
@@ -59,7 +59,9 @@ export function GachaModalShell({ closeHref, labelledBy, children }: GachaModalS
         role="dialog"
         aria-modal
         aria-labelledby={labelledBy}
-        className="rounded-panel relative w-full max-w-[1200px] bg-white p-6"
+        /* 뷰포트 세로 중앙. `items-center` 대신 auto 마진을 써야 내용이 화면보다
+           길어졌을 때 위쪽이 잘리지 않는다. */
+        className="rounded-panel relative my-auto w-full max-w-[1200px] bg-white p-6"
       >
         {/* 시안에는 없지만 키보드/터치 사용자를 위한 닫기 버튼.
             카드 우상단에 두고 헤더 행에 오른쪽 여백을 줘 확률과 겹치지 않게 한다. */}

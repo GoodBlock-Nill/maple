@@ -15,8 +15,12 @@ type RankingTableProps = {
  */
 export function RankingTable({ rows }: RankingTableProps) {
   return (
-    <ListSheet className="mt-10 xl:mt-6">
-      <div aria-hidden className={cn(RANKING_GRID_CLASS, 'hidden h-[45px] px-4 sm:px-6 lg:grid')}>
+    /* 시안: TOP3 영역 아래 53px 부터 표 시트가 시작한다. */
+    <ListSheet className="mt-10 xl:mt-[53px]">
+      <div
+        aria-hidden
+        className={cn(RANKING_GRID_CLASS, 'hidden h-[45px] items-center px-4 sm:px-6 lg:grid lg:px-0 lg:pr-4')}
+      >
         {RANKING_COLUMNS.map((column) => (
           <p
             key={column.key}

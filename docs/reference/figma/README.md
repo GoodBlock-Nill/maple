@@ -37,18 +37,20 @@
 
 | 저장 경로 (`public/images/`) | 노드 | 크기 |
 |---|---|---|
-| `ranking/deco-right.png` | 493:7139 | 160×256 |
-| `ranking/deco-left.png` | 493:7140 | 108×104 |
-| `ranking/top3-char-1.png` / `-2` / `-3` | 496:11678 / 496:11676 / 496:11796 | 332×243 / 234×205 / 363×243 |
-| `ranking/crown.png` | 496:11108 | 31×30 |
-| `ranking/guild-icon.png` | 496:11111 | 32×35 |
-| `ranking/row-avatar.png` | 493:7037 | 80×80 |
-| `ranking/medal-ribbon.png` | 496:11182 | 60×80 |
-| `guide/top-bg-clean.png` (흰 박스 없는 단풍) | 496:12104 | 1440×505 |
-| `guide/fallen-leaves.png` | 496:12276 | 416×149 |
-| `guide/detail-icon-*.png` | 496:14389, 14409, 14419, 14429 | 48 / 32 |
-| `about/video-poster.png` (영상 프레임+캐릭터) | 509:2965 | 1440×763 |
-| `about/hero-stage.png`, `about/hero-bush.png` | 509:2978, 509:2979 | 1440×345, 1440×446 |
-| `about/avatar-dot.png` | 509:3011 | 206×285 |
-| `about/mascot-footer.gif` | 540:6447 | 214×169 |
-| `about/footer-bg.png` (15개 레이어 합성 필요) | 529:6317 하위 이미지 노드 | 1440×703 |
+| ~~`ranking/deco-right.png`~~ 수령 | 493:7139 | 160×256 |
+| ~~`ranking/deco-left.png`~~ 수령 | 493:7140 | 108×104 |
+| ~~`ranking/top3-char-1.png` / `-2` / `-3`~~ 수령 | 496:11678 / 496:11676 / 496:11796 | 332×243 / 234×205 / 363×243 |
+| ~~`ranking/crown.png`~~ 수령 | 496:11108 | 31×30 |
+| ~~`ranking/guild-icon.png`~~ 수령 | 496:11111 | 32×35 |
+| ~~`ranking/row-avatar.png`~~ 수령 | 493:7037 | 80×80 |
+| ~~`ranking/medal-ribbon.png`~~ 수령 | 496:11182 | 60×80 |
+| ~~`guide/top-bg-clean.png`~~ 수령 (흰 박스 없는 단풍) | 496:12104 | 1440×505 |
+| ~~`guide/fallen-leaves.png`~~ 수령 | 496:12276 | 416×149 |
+| ~~`guide/detail-icon-*.png`~~ 수령(box/pinkbean/slime/food) | 496:14389, 14409, 14419, 14429 | 48 / 32 |
+| ~~`about/video-poster.png`~~ 수령: `about/video-still.png`(영상 스틸+50% 딤, 509:2966), 캐릭터는 `hero-overlay.png`에 합성 | 509:2966 | 1440×763 |
+| ~~`about/hero-stage.png`, `about/hero-bush.png`~~ 수령 → `about/hero-overlay.png` 합성(1440×1017, 캐릭터 7 + 단상 + 풀숲) | 509:2978, 509:2979 | 1440×345, 1440×446 |
+| ~~`about/avatar-dot.png`~~ 수령 | 509:3011 | 206×285 |
+| ~~`about/mascot-footer.gif`~~ 수령(`mascot-footer.png`, 정지 이미지) | 540:6447 | 214×169 |
+| ~~`about/footer-bg.png`~~ 수령·합성 완료(16 레이어) | 529:6317 하위 이미지 노드 | 1440×703 |
+
+2026-09-08 추가 수령: `support/deco-484/485/479/508.png`, `support/top-bg.png`, `support/mascot-snowmen.png`, `ranking/mascot-panda.png`. 미수령: 없음(홈 `duck.gif` 크기 차이만 남음).

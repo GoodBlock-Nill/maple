@@ -76,7 +76,7 @@ export default async function CommunityPage(props: PageProps<'/community'>) {
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SortSelect active={sort} hrefFor={sortHref} />
 
-        <div className="flex items-center gap-[15px]">
+        <div className="flex items-center gap-[10px]">
           <SearchForm
             action={COMMUNITY_PATH}
             defaultValue={q}

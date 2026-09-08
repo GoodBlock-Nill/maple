@@ -14,7 +14,7 @@ export function CategoryCardGrid({ className }: CategoryCardGridProps) {
   return (
     <ul
       className={cn(
-        'grid grid-cols-1 justify-items-center gap-8 md:grid-cols-2 xl:block xl:gap-0',
+        'card-deck grid grid-cols-1 justify-items-center gap-8 md:grid-cols-2 xl:block xl:gap-0',
         className,
       )}
     >

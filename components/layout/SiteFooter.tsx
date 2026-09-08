@@ -32,6 +32,9 @@ type SiteFooterProps = {
 export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
   const config = FOOTER_CONFIG[variant]
   const { mascot } = config
+  const background = hasPublicAsset(config.background)
+    ? config.background
+    : (config.backgroundFallback ?? null)
   const style = {
     '--footer-height': `${config.height}px`,
     '--footer-panel-top': `${config.panelTop}px`,
@@ -48,10 +51,10 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
         className="absolute inset-0 -z-20"
         style={{ backgroundColor: config.backgroundColor }}
       />
-      {/* TODO(asset): 배경 일러스트가 아직 없으면 backgroundColor 만 남는다. */}
-      {hasPublicAsset(config.background) ? (
+      {/* TODO(asset): 배경도 폴백도 없으면 backgroundColor 만 남는다. */}
+      {background !== null && hasPublicAsset(background) ? (
         <Image
-          src={config.background}
+          src={background}
           alt=""
           fill
           sizes="100vw"
@@ -90,10 +93,10 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           <div className="flex flex-col gap-10 lg:flex-row lg:gap-[100px]">
             <div className="flex w-full max-w-[309px] flex-col items-start">
               <Logo width={109} height={40} />
-              <p className="mt-5 text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
+              <p className="mt-[13px] text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="rounded-pill text-ink hover:bg-sheet mt-10 inline-flex bg-white px-10 py-[15px] text-[18px] leading-none font-semibold transition-colors"
+                className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-[18px] leading-6 font-semibold transition-colors"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -132,7 +135,9 @@ function FooterColumn({ title, links }: FooterColumnProps) {
   return (
     <nav aria-label={title}>
       <p className="text-[20px] leading-none font-medium text-white">{title}</p>
-      <ul className="mt-3 flex flex-col gap-3">
+      {/* 링크 줄 간격은 시안 기준 28px(글자 16 + 간격 12). `leading-none` 은
+          인라인 <a> 가 아니라 <li> 스트럿에 걸려야 실제 높이가 줄어든다. */}
+      <ul className="mt-3 flex flex-col gap-3 leading-none">
         {links.map((link) => (
           <li key={link.href}>
             <Link

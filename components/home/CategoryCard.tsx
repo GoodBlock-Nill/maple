@@ -15,9 +15,9 @@ export function CategoryCard({ card }: CategoryCardProps) {
     <Link
       href={card.href}
       className={cn(
-        'card-sheet group rounded-card relative block aspect-[333/482] w-full max-w-[333px] shrink-0 overflow-hidden',
+        'card-sheet category-card rounded-card relative block aspect-[333/482] w-full max-w-[333px] shrink-0 overflow-hidden',
         'sm:aspect-auto sm:h-[482px] sm:w-[333px] sm:max-w-none',
-        'transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none',
+        'transition-[transform,filter] duration-200 ease-out will-change-transform motion-reduce:transition-none',
         'hover:-translate-y-1.5 hover:rotate-0 focus-visible:-translate-y-1.5 focus-visible:rotate-0',
         card.positionClass,
       )}
@@ -26,12 +26,12 @@ export function CategoryCard({ card }: CategoryCardProps) {
         className={cn(
           'rounded-card absolute inset-x-0 top-[39.7303%] flex h-[60.3734%] flex-col',
           'sm:top-[191.5px] sm:h-[291px]',
-          'text-ink px-[30px] pt-[134px] pb-[30px]',
+          'text-ink px-[30px] pt-[131px] pb-[27px]',
           card.panelClass,
         )}
       >
         <h3 className="text-[35px] leading-none font-semibold tracking-[-0.02em]">{card.title}</h3>
-        <p className="mt-[15px] text-[25px] leading-none font-semibold opacity-50">
+        <p className="mt-[8px] text-[25px] leading-none font-semibold opacity-50">
           {card.english}
         </p>
         <span className="mt-auto flex items-center gap-[10px] text-[20px] font-semibold">

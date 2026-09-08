@@ -6,10 +6,24 @@ import { useState } from 'react'
 import { youtubeEmbedUrl } from '@/lib/utils/youtube'
 
 type VideoHeroProps = {
-  /** null 이면 썸네일 대신 폴백 스틸을 쓰고 재생 버튼을 숨긴다. */
+  /** null 이면 재생 버튼을 장식용 마크로 낮추고 클릭을 받지 않는다. */
   videoId: string | null
-  thumbnail: string
+  /** 유튜브 썸네일 또는 로컬 스틸. null 이면 중립 포스터로 폴백한다. */
+  thumbnail: string | null
   title: string
+}
+
+/** 시안의 유튜브 재생 버튼(141×100, 라운드 사각형 + 흰 삼각형) 실루엣. */
+const PLAY_MARK_CLASS =
+  'flex h-[70px] w-[100px] items-center justify-center rounded-[18px] bg-[#ff0000] lg:h-[100px] lg:w-[141px] lg:rounded-[26px]'
+
+function PlayTriangle() {
+  return (
+    /* TODO(asset): about/youtube-play.svg 도착 전까지 CSS/SVG 로 그린 버튼. */
+    <svg viewBox="0 0 24 28" aria-hidden className="h-[38%] w-auto">
+      <path d="M2 1.5 22 14 2 26.5Z" fill="#ffffff" />
+    </svg>
+  )
 }
 
 /**
@@ -35,30 +49,39 @@ export function VideoHero({ videoId, thumbnail, title }: VideoHeroProps) {
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden bg-[#1b1420] lg:aspect-auto lg:h-[763px]">
-      <Image
-        src={thumbnail}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-center"
-      />
-      <div aria-hidden className="absolute inset-0 bg-black/50" />
-
-      {videoId === null ? null : (
-        <button
-          type="button"
-          onClick={() => setIsPlaying(true)}
-          aria-label={`${title} 재생`}
-          className="focus-visible:outline-focus absolute top-1/2 left-1/2 flex h-[70px] w-[100px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[18px] bg-[#ff0000] transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 lg:h-[100px] lg:w-[141px] lg:rounded-[26px]"
-        >
-          {/* TODO(asset): about/youtube-play.svg 도착 전까지 CSS/SVG 로 그린 버튼. */}
-          <svg viewBox="0 0 24 28" aria-hidden className="h-[38%] w-auto">
-            <path d="M2 1.5 22 14 2 26.5Z" fill="#ffffff" />
-          </svg>
-        </button>
+    <div className="relative aspect-video w-full overflow-hidden bg-[linear-gradient(180deg,#2b2b3d_0%,#0e0e14_100%)] lg:aspect-auto lg:h-[763px]">
+      {/* 영상 주소도 로컬 스틸도 없으면 중립 포스터(위 그라데이션)만 남는다. */}
+      {thumbnail === null ? null : (
+        <>
+          <Image
+            src={thumbnail}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+          <div aria-hidden className="absolute inset-0 bg-black/50" />
+        </>
       )}
+
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+        {videoId === null ? (
+          /* 재생할 영상이 없을 때는 시안의 실루엣만 남기고 조작은 받지 않는다. */
+          <div aria-hidden className={PLAY_MARK_CLASS}>
+            <PlayTriangle />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsPlaying(true)}
+            aria-label={`${title} 재생`}
+            className={`${PLAY_MARK_CLASS} focus-visible:outline-focus transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4`}
+          >
+            <PlayTriangle />
+          </button>
+        )}
+      </div>
     </div>
   )
 }

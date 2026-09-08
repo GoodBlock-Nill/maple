@@ -75,8 +75,8 @@ describe('option maps', () => {
     // Arrange & Act
     const result = NEWS_VIEW_MAP.tile.label
 
-    // Assert
-    expect(result).toBe('타일')
+    // Assert — 시안(notice.png) 트리거 표기가 "카드형"이다.
+    expect(result).toBe('카드형')
   })
 
   it('should label the default community sort when resolved', () => {

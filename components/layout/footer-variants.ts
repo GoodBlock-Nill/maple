@@ -15,6 +15,12 @@ export type FooterMascot = {
 
 export type FooterConfig = {
   background: string
+  /**
+   * `background` 자산이 아직 없을 때 대신 쓰는 일러스트.
+   * 단색으로 두면 시안의 풍경 실루엣이 통째로 사라지므로, 결이 가장 가까운
+   * 기존 배경을 빌려 온다. TODO(asset)
+   */
+  backgroundFallback?: string
   /** 배경 PNG의 투명 영역 뒤에 깔리는 색. */
   backgroundColor: string
   /**
@@ -106,7 +112,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: false,
     height: 631,
     panelTop: subPanelTop(631),
-    panelClass: 'glass-panel-sub',
+    /* 랭킹만 패널 그라데이션이 초록빛 회색이다(시안 실측). */
+    panelClass: 'glass-panel-ranking',
     mascot: {
       src: '/images/ranking/mascot-footer.gif',
       width: 248,
@@ -134,8 +141,10 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
   },
   about: {
     background: '/images/about/footer-bg.png',
-    /* 앞 섹션(보라→시안 밴드)의 끝 색. 배경 PNG 가 아직 없을 때도
-       푸터가 밴드에서 자연스럽게 이어지도록 한다. TODO(asset) */
+    /* 소개 푸터 배경이 도착하기 전까지는 홈 푸터의 잔디 사진을 빌려 쓴다.
+       단색 하늘색보다 시안(풀숲 위 글래스 패널)의 인상에 훨씬 가깝다. */
+    backgroundFallback: '/images/footer/home-bg.jpg',
+    /* 앞 섹션(보라→시안 밴드)의 끝 색. 두 배경 모두 없을 때의 마지막 폴백. */
     backgroundColor: '#7fd8f2',
     needsGrassPatch: false,
     height: 703,

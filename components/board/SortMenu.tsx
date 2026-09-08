@@ -30,7 +30,7 @@ export function SortMenu<TValue extends string>({
     <LinkMenu
       className={className}
       label={label}
-      triggerClassName="text-ink-muted flex items-center text-[17px] font-medium"
+      triggerClassName="text-ink-muted flex items-center pl-3 text-[17px] font-medium"
       menuClassName="right-auto left-0"
       trigger={
         <>

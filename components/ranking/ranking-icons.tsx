@@ -30,13 +30,14 @@ export function MedalRibbon({ rank, className }: MedalRibbonProps) {
       aria-label={`${rank}위`}
       className={className}
     >
-      <path d="M8 0h44v52L30 40 8 52Z" fill={color.ribbon} />
-      <path d="M8 0h44v8H8Z" fill={color.edge} opacity="0.35" />
-      <circle cx="30" cy="34" r="20" fill={color.edge} />
-      <circle cx="30" cy="32" r="18" fill={color.disc} />
+      {/* 시안: 원판이 카드 상단 모서리에 걸치고 리본 꼬리가 아래로 흐른다. */}
+      <path d="M12 22h36v54L30 63 12 76Z" fill={color.ribbon} />
+      <path d="M12 22h36v8H12Z" fill={color.edge} opacity="0.35" />
+      <circle cx="30" cy="30" r="25" fill={color.edge} />
+      <circle cx="30" cy="30" r="22" fill={color.disc} />
       <text
         x="30"
-        y="32"
+        y="30"
         textAnchor="middle"
         dominantBaseline="central"
         fontSize="20"

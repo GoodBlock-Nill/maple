@@ -19,14 +19,16 @@ export function HeroSection() {
         className="-z-10 object-cover object-center"
       />
 
-      <div className="mx-auto flex max-w-[1140px] flex-col items-center gap-4 px-6 pt-[140px] text-center sm:px-[50px] sm:pt-[186px] lg:pt-[220px]">
+      {/* 세로 리듬은 시안 렌더(home.png)와 글리프 단위로 맞춘 값이다. 서브카피와
+          CTA 는 줄 높이가 서로 달라 일괄 gap 대신 각자 margin 을 갖는다. */}
+      <div className="mx-auto flex max-w-[1140px] flex-col items-center px-6 pt-[140px] text-center sm:px-[50px] sm:pt-[186px] lg:pt-[220px]">
         <h1 className="text-ink text-[clamp(34px,6vw,64px)] leading-[1.17] font-semibold tracking-[-0.01em] text-balance">
           {SITE_HEADLINE}
         </h1>
-        <p className="text-ink-muted max-w-[640px] text-[clamp(16px,1.8vw,22px)] leading-[1.4] font-semibold">
+        <p className="text-ink-muted mt-2.5 max-w-[640px] text-[clamp(16px,1.8vw,22px)] leading-[1.4] font-semibold">
           {SITE_TAGLINE}
         </p>
-        <HeroCtaGroup />
+        <HeroCtaGroup className="mt-[25px]" />
       </div>
     </section>
   )

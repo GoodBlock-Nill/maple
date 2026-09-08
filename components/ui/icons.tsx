@@ -29,6 +29,18 @@ export function CloseIcon({ className = 'size-6', ...props }: IconProps) {
   )
 }
 
+/** 뉴스 목록 "카드형" 보기 전환 트리거 아이콘(시안: 2×2 라운드 사각형). */
+export function GridIcon({ className = 'size-6', ...props }: IconProps) {
+  return (
+    <svg {...BASE_PROPS} className={className} {...props}>
+      <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+    </svg>
+  )
+}
+
 export function ChevronDownIcon({ className = 'size-4', ...props }: IconProps) {
   return (
     <svg {...BASE_PROPS} className={className} {...props}>

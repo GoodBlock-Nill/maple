@@ -29,7 +29,7 @@ export function NewsCommunitySection() {
       <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 pt-[130px] pb-[200px] sm:pt-[180px] sm:pb-[280px] xl:h-full xl:px-0 xl:pt-0 xl:pb-0">
         <h2
           id={HEADING_ID}
-          className="text-ink text-center text-[clamp(32px,5vw,64px)] leading-none font-semibold tracking-[-0.02em] uppercase xl:absolute xl:inset-x-0 xl:top-[280px]"
+          className="text-ink text-center text-[clamp(32px,5vw,64px)] leading-none font-semibold uppercase xl:absolute xl:inset-x-0 xl:top-[271px]"
         >
           NEWS &amp; COMMUNITY
         </h2>

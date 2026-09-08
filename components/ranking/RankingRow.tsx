@@ -8,12 +8,15 @@ import { maskNickname } from '@/lib/utils/mask'
 import type { RankedEntry } from '@/types/domain'
 
 /**
- * 헤더 행과 공유하는 5열 그리드(시안 120/400/200/220/236).
+ * 헤더 행과 공유하는 5열 그리드.
+ * 시안 문서의 비율(120/400/200/220/236)은 근사치라, 실제 렌더의 셀 중심을
+ * 맞춘 값으로 보정했다. 그리드는 행 카드의 좌우 패딩 없이 시트 내부 폭
+ * 전체(1168)를 쓴다.
  * 모바일에서는 뒤 3열이 숨겨지고 `순위 | 캐릭터` 2열만 남는다.
  */
 export const RANKING_GRID_CLASS =
   'grid grid-cols-[auto_1fr] items-center gap-4 ' +
-  'lg:grid-cols-[120fr_400fr_200fr_220fr_236fr] lg:gap-2'
+  'lg:grid-cols-[92fr_412fr_205fr_238fr_206fr] lg:gap-2'
 
 const VALUE_CLASS = 'text-ink text-[clamp(18px,2vw,26px)] leading-none font-medium'
 
@@ -30,7 +33,7 @@ export function RankingRow({ entry }: RankingRowProps) {
     entry.character !== undefined && hasPublicAsset(entry.character) ? entry.character : null
 
   return (
-    <li className="rounded-panel border-line-soft shadow-chip flex flex-col gap-3 border bg-white px-4 py-4 sm:px-6 lg:min-h-24 lg:justify-center lg:gap-0 lg:py-3">
+    <li className="rounded-panel border-line-soft shadow-chip flex flex-col gap-3 border bg-white px-4 py-4 sm:px-6 lg:min-h-24 lg:justify-center lg:gap-0 lg:px-0 lg:pr-4 lg:py-6">
       <div className={RANKING_GRID_CLASS}>
         <p className={cn(VALUE_CLASS, 'shrink-0 lg:text-center')}>
           <span className="sr-only">순위 </span>

@@ -33,14 +33,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
 ]
 
 /**
- * 푸터 Menu 열. 시안 GNB 는 5개로 고정이라 랭킹을 헤더에 넣지 않는 대신
- * 푸터에서만 진입점을 제공한다.
+ * 푸터 Menu 열. 시안(home.png)은 GNB 와 똑같이 5개만 노출한다.
+ * TODO: 시안에 `/ranking` 진입점이 없다. 노출 위치가 정해지면 여기나 GNB 에
+ * 추가한다(임의로 넣으면 푸터 패널 높이가 시안과 어긋난다).
  */
-export const FOOTER_MENU_LINKS: readonly NavItem[] = [
-  ...NAV_ITEMS.slice(0, 4),
-  { label: '랭킹', href: '/ranking' },
-  ...NAV_ITEMS.slice(4),
-]
+export const FOOTER_MENU_LINKS: readonly NavItem[] = NAV_ITEMS
 
 export const POLICY_LINKS: readonly NavItem[] = [
   { label: '개인정보처리방침', href: '/policy/privacy' },

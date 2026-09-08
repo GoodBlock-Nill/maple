@@ -33,7 +33,7 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
         className,
       )}
     >
-      <MedalRibbon rank={entry.rank} className="absolute -top-px left-[22px] z-10" />
+      <MedalRibbon rank={entry.rank} className="absolute -top-[35px] left-[22px] z-10" />
 
       <div
         className={cn(
@@ -57,7 +57,9 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
       </div>
 
       <div className="flex flex-col gap-6 px-6 py-[15px]">
-        <div className="flex items-center justify-between gap-3">
+        {/* 이름 행 높이 35 = 길드 아이콘(32×35). 시안 카드 높이 395 =
+            244(패널) + 15 + 35 + 24 + 17 + 24 + 17 + 15. */}
+        <div className="flex min-h-[35px] items-center justify-between gap-3">
           <h3 className="text-ink flex min-w-0 items-center gap-1.5 text-[clamp(20px,2.2vw,27px)] leading-tight font-medium">
             {entry.rank === 1 ? <CrownIcon className="size-[26px] shrink-0" /> : null}
             <span className="truncate">{entry.nickname}</span>
@@ -74,7 +76,7 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
 
         <dl className="grid grid-cols-3 gap-2 text-center">
           {STAT_LABELS.map((label, index) => (
-            <div key={label} className="flex flex-col gap-2">
+            <div key={label} className="flex flex-col gap-6">
               <dt className="text-ink-muted text-[17px] leading-none">{label}</dt>
               <dd className="text-ink text-[17px] leading-none">{stats[index]}</dd>
             </div>

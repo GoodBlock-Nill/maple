@@ -61,7 +61,9 @@ export function CreatorPanel() {
           <div className={cn(PARCHMENT_CLASS, 'absolute inset-0 rounded-[12px]')} />
         )}
 
-        <div className="absolute top-1/2 left-[41.4%] flex w-[49.4%] -translate-y-1/2 flex-col gap-10">
+        {/* 시안의 텍스트 블록은 패널 세로 중앙이 아니라 그보다 35px 아래에 있다
+            (사진 타원·덩굴 장식을 피한 위치). 739 기준 54.7%. */}
+        <div className="absolute top-[54.7%] left-[41.4%] flex w-[49.4%] -translate-y-1/2 flex-col gap-10">
           <CreatorText />
         </div>
 
@@ -85,16 +87,19 @@ export function CreatorPanel() {
 function CreatorText() {
   return (
     <>
-      <h2 className="font-display bg-gradient-to-b from-[#ffd200] to-[#ff6c00] bg-clip-text text-[clamp(56px,8vw,100px)] leading-none font-bold text-transparent">
+      {/* 시안: 그라데이션 글자 위에 두꺼운 고동색 외곽선(메이플 로고 스타일).
+          `background-clip:text` 배경이 먼저 칠해지고 그 위에 스트로크가 얹히므로
+          선 두께의 절반이 글자 안쪽을 덮는다 — 시안의 두께감이 그렇게 나온다. */}
+      <h2 className="font-display bg-gradient-to-b from-[#ffd200] to-[#ff6c00] bg-clip-text text-[clamp(56px,8vw,100px)] leading-none font-bold text-transparent [-webkit-text-stroke:6px_#382a20] lg:[-webkit-text-stroke:8px_#382a20]">
         {CREATOR_NAME}
       </h2>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 lg:gap-[10px]">
         <p className="font-display text-[clamp(18px,2.2vw,25px)] leading-snug font-bold text-[#f7601b]">
           {CREATOR_SLOGAN}
         </p>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 lg:gap-[15px]">
           {CREATOR_INTRO.map((paragraph) => (
             <p
               key={paragraph}

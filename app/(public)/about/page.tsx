@@ -22,7 +22,8 @@ export const metadata: Metadata = {
 
 export default function AboutPage(_props: PageProps<'/about'>) {
   const videoId = extractYoutubeId(CREATOR_YOUTUBE_URL)
-  const thumbnail = videoId === null ? FALLBACK_STILL : youtubeThumbnail(videoId)
+  const localStill = hasPublicAsset(FALLBACK_STILL) ? FALLBACK_STILL : null
+  const thumbnail = videoId === null ? localStill : youtubeThumbnail(videoId)
 
   return (
     <>
@@ -43,7 +44,8 @@ export default function AboutPage(_props: PageProps<'/about'>) {
               className="object-cover object-top"
             />
           ) : null}
-          <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-20 pb-16 lg:px-[50px] lg:pt-[365px] lg:pb-20">
+          {/* 시안: 양피지 패널 page x 59, w 1341 · 패널 아래 39px 뒤 푸터. */}
+          <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-20 pb-16 lg:pt-[365px] lg:pr-[40px] lg:pb-[39px] lg:pl-[59px]">
             <CreatorPanel />
           </div>
         </div>

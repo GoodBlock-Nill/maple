@@ -79,6 +79,37 @@
     background-image: linear-gradient(180deg, #fff 0%, var(--color-sheet) 35%);
     box-shadow: inset 0 0 15px rgb(0 0 0 / 0.25);
   }
+
+  /* 카드 한 장을 가리키면 그 장만 색을 유지하고 나머지는 흑백으로 물러난다
+     (시안 `home-menu-drag`). 딤은 카드 위에 덮는 ::after 한 겹으로 처리해
+     아트 PNG(z-10)와 색 패널을 한 번에 어둡게 한다. */
+  .category-card::after {
+    content: '';
+    position: absolute;
+    z-index: 20;
+    inset: 0;
+    border-radius: inherit;
+    background-color: rgb(0 0 0 / 0.55);
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+    pointer-events: none;
+  }
+
+  .card-deck:has(.category-card:hover) .category-card:not(:hover),
+  .card-deck:has(.category-card:focus-visible) .category-card:not(:focus-visible) {
+    filter: grayscale(1);
+  }
+
+  .card-deck:has(.category-card:hover) .category-card:not(:hover)::after,
+  .card-deck:has(.category-card:focus-visible) .category-card:not(:focus-visible)::after {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .category-card::after {
+      transition: none;
+    }
+  }
 }
 
 @layer components {
@@ -165,22 +196,28 @@
 }
 
 @layer components {
-  /* 서브 페이지 푸터 패널.
-     시안 값은 `rgba(178,178,178,.52) → transparent` 였지만 가이드/고객지원처럼
-     밝은 배경 변형에서 `#c2c2c2` 링크 대비가 1.6:1 까지 떨어져 읽히지 않았다.
-     회색 톤을 검정 쪽으로 내리고 하단 스톱을 투명 대신 어두운 색으로 바꿔
-     패널 어디에서나 4.5:1 이상을 확보한다(링크 색은 시안 값 그대로 유지). */
+  /* 서브 페이지 푸터 패널 — 시안(Figma) 실측값 그대로.
+     홈(.glass-panel)보다 밝은 회색으로 시작해 110% 지점에서 투명으로 빠진다. */
   .glass-panel-sub {
     border: 1px solid rgb(255 255 255 / 0.4);
-    background-image: linear-gradient(147deg, rgb(38 38 38 / 0.86) 0%, rgb(12 12 12 / 0.7) 110%);
+    background-image: linear-gradient(147deg, rgb(178 178 178 / 0.5) 0%, rgb(0 0 0 / 0) 110%);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
   }
 
-  /* 배경 일러스트가 밝은 구간에서도 글자 경계가 남도록 하는 미세 그림자.
-     패널 루트에 걸면 내부 텍스트가 모두 상속받는다. */
+  /* 랭킹 푸터만 패널 그라데이션이 초록빛 회색이다(시안 실측). */
+  .glass-panel-ranking {
+    border: 1px solid rgb(255 255 255 / 0.4);
+    background-image: linear-gradient(147deg, rgb(140 151 137 / 0.55) 0%, rgb(0 0 0 / 0) 110%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+
+  /* 패널이 시안 값(밝은 반투명)으로 돌아가면서 가이드·고객지원처럼 배경이
+     밝은 변형에서 `#c2c2c2` 링크의 경계가 사라졌다. 색은 시안 그대로 두고
+     아주 옅은 그림자만 얹어 글자 윤곽을 남긴다(패널 루트에 걸면 상속된다). */
   .footer-ink {
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
   }
 }
 

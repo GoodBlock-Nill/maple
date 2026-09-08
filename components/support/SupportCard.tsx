@@ -20,10 +20,11 @@ type SupportCardProps = {
  */
 export function SupportCard({ activeHref, children }: SupportCardProps) {
   return (
-    <div className={cn(SUPPORT_CARD_CLASS, 'mt-6 flex flex-col gap-8 lg:flex-row lg:gap-6')}>
-      <div className="flex w-full flex-col gap-8 lg:max-w-[525px]">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-ink text-[clamp(24px,3vw,30px)] leading-tight font-medium">
+    /* 세로 리듬은 시안 렌더(support.png)와 글리프 단위로 맞춘 값이다. */
+    <div className={cn(SUPPORT_CARD_CLASS, 'mt-6 flex flex-col gap-8 lg:mt-[2px] lg:flex-row lg:gap-6')}>
+      <div className="flex w-full flex-col gap-8 lg:max-w-[525px] lg:gap-7">
+        <div className="flex flex-col gap-2 lg:gap-1">
+          <h2 className="text-ink text-[clamp(24px,3vw,30px)] leading-none font-medium">
             {SUPPORT_HEADING}
           </h2>
           <p className="text-ink-muted text-[17px] leading-relaxed">{SUPPORT_DESCRIPTION}</p>

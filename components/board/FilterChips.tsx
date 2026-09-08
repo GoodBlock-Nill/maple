@@ -2,8 +2,13 @@ import Link from 'next/link'
 
 import { cn } from '@/lib/utils/cn'
 
+/**
+ * 시안 실측: h45 pill, px 15, 그리고 **최소 폭 78px**.
+ * (커뮤니티 칩 그룹 폭 343 = 78.25×4 + 10×3 — 두 글자 라벨도 78 로 맞춰진다.)
+ */
 const CHIP_CLASS =
-  'board-control inline-flex items-center px-[15px] text-[17px] font-medium transition-colors'
+  'board-control rounded-pill inline-flex min-w-[78px] items-center justify-center px-[15px] ' +
+  'text-[17px] font-medium transition-colors'
 
 const ACTIVE_CLASS = 'bg-ink border-ink text-white'
 const INACTIVE_CLASS = 'text-ink-muted hover:border-ink/30 hover:text-ink'

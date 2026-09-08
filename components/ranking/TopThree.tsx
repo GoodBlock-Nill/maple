@@ -19,7 +19,9 @@ export function TopThree({ entries }: TopThreeProps) {
   }
 
   return (
-    <section aria-label="상위 3위" className="mt-6">
+    /* 시안: 툴바 아래 44px 부터 TOP3 영역(1200×489)이 시작하고 그 위쪽 31px 은
+       메달 리본이 카드 밖으로 걸치는 공간이다 → 카드 자체는 툴바에서 75px 아래. */
+    <section aria-label="상위 3위" className="mt-10 xl:mt-[75px]">
       <ol className="flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-4">
         {entries.map((entry, index) => (
           <li key={entry.id} className={DESKTOP_ORDER[index]}>

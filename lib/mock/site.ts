@@ -16,9 +16,11 @@ export const CREATOR_INTRO: readonly string[] = [
 ]
 
 /**
- * TODO: site_settings.youtube_url 로 교체 예정인 플레이스홀더 영상.
- * 실제 크리에이터 채널 영상 주소를 받으면 이 값만 바꾸면 된다.
+ * TODO: site_settings.youtube_url 로 교체 예정인 크리에이터 소개 영상 주소.
+ * 실제 채널 영상 주소를 받으면 이 값만 바꾸면 된다. 비워 두면 히어로가
+ * 중립 포스터(어두운 그라데이션 + 재생 마크)로 폴백한다 — 무관한 영상을
+ * 플레이스홀더로 두는 것보다 안전하다.
  */
-export const CREATOR_YOUTUBE_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+export const CREATOR_YOUTUBE_URL = ''
 
 export const CREATOR_VIDEO_TITLE = `${CREATOR_NAME} 크리에이터 소개 영상`

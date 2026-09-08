@@ -91,18 +91,18 @@
   --color-tray: #ededed;
 
   /**
-   * 카테고리 뱃지 4색. 배경은 시안 값 그대로 두고 전경색만 WCAG AA(4.5:1)를
-   * 만족하는 값으로 교체했다. 시안 원본값은 blue #2e6eff(3.78:1) /
-   * green #00b894(2.40:1) / orange #ff9728(1.98:1) 이었다.
-   * purple #921cff 은 4.56:1 로 이미 AA 를 만족해 그대로 둔다.
+   * 카테고리 뱃지 4색 — 전경·배경 모두 시안(Figma) 실측값 그대로다.
+   * blue #2e6eff(3.78:1) / green #00b894(2.40:1) / orange #ff9728(1.98:1) 은
+   * WCAG AA 4.5:1 에 못 미치지만, 색 자체가 말머리 구분의 유일한 수단이 아니고
+   * (라벨 텍스트가 함께 있다) 디자인 일치를 우선한다는 결정에 따라 유지한다.
    */
   --color-tag-purple: #921cff;
   --color-tag-purple-bg: #f2e5ff;
-  --color-tag-orange: #9a5200;
+  --color-tag-orange: #ff9728;
   --color-tag-orange-bg: #fff2e5;
-  --color-tag-green: #00705a;
+  --color-tag-green: #00b894;
   --color-tag-green-bg: #e5fff1;
-  --color-tag-blue: #1d4fd8;
+  --color-tag-blue: #2e6eff;
   --color-tag-blue-bg: #e5efff;
 
   /* 칩·검색·카드가 공유하는 3단 그림자(시안의 얕은 종이 느낌) */

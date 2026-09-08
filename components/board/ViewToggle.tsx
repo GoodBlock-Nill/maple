@@ -1,6 +1,5 @@
-import Image from 'next/image'
-
 import { LinkMenu } from '@/components/board/LinkMenu'
+import { GridIcon } from '@/components/ui/icons'
 import { NEWS_VIEW_MAP, NEWS_VIEWS } from '@/lib/constants/board'
 
 import type { NewsView } from '@/types/domain'
@@ -22,14 +21,7 @@ export function ViewToggle({ active, hrefFor, className }: ViewToggleProps) {
       triggerClassName="board-control flex items-center gap-2 px-3 text-[17px] text-ink"
       trigger={
         <>
-          <Image
-            src="/images/brand/icon-list.svg"
-            alt=""
-            width={25}
-            height={25}
-            aria-hidden
-            className="shrink-0"
-          />
+          <GridIcon className="text-ink size-[25px] shrink-0" />
           {current.label}
         </>
       }

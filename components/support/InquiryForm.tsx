@@ -27,7 +27,8 @@ const SUBMIT_NOTICE_ID = 'inquiry-submit-notice'
  */
 export function InquiryForm() {
   return (
-    <form className="flex flex-col gap-5">
+    /* 시안 렌더 기준 행 간격 17(라벨 줄 25.5 + 8 + 필드 40 = 90.5 피치). */
+    <form className="flex flex-col gap-5 lg:gap-[17px]">
       <FormRow label="글자월드 계정 ID" htmlFor="inquiry-account">
         <input
           id="inquiry-account"
@@ -89,7 +90,8 @@ export function InquiryForm() {
           <span className={cn(SUPPORT_LABEL_CLASS, 'font-bold')}>첨부파일</span>
           <span className="text-ink-muted text-[17px]">{ATTACHMENT_NOTICE}</span>
         </p>
-        <label className="rounded-[5px] border border-[#d5d9df] bg-[#e7e7e7] px-4 text-[17px] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--color-focus)]">
+        {/* 시안: 라벨 폭에 맞는 작은 버튼. 블록 <label> 이라 전폭으로 늘어나던 것을 막는다. */}
+        <label className="w-fit rounded-[5px] border border-[#d5d9df] bg-[#e7e7e7] px-4 text-[17px] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--color-focus)]">
           <span className="text-ink flex h-10 items-center">파일 선택</span>
           <input
             type="file"

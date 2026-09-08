@@ -40,7 +40,9 @@ export function GachaItemCard({ item, href }: GachaItemCardProps) {
         </span>
       </div>
 
-      <h3 className="text-ink line-clamp-2 flex-1 text-[clamp(19px,2vw,27px)] leading-[1.25] font-medium tracking-[-0.2px]">
+      {/* 시안 카드 높이 189 = 24 + 48 + 24 + 26 + 24 + 19 + 24. 제목 줄 높이를
+          26px 로 고정해야 한 줄 제목에서 정확히 189 가 된다. */}
+      <h3 className="text-ink line-clamp-2 flex-1 text-[clamp(19px,2vw,27px)] leading-[26px] font-medium tracking-[-0.2px]">
         {item.name}
       </h3>
 

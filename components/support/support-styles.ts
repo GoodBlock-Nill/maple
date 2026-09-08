@@ -11,4 +11,4 @@ export const SUPPORT_LABEL_CLASS = 'text-ink text-[17px] font-medium'
 /** 카드 자체(시안: white · border #cdd3db · radius 20 · shadow-chip). */
 export const SUPPORT_CARD_CLASS =
   'rounded-panel border-line-soft shadow-chip border bg-white ' +
-  'px-5 py-8 sm:px-8 lg:py-8 lg:pr-6 lg:pl-8'
+  'px-5 py-8 sm:px-8 lg:pt-[27px] lg:pr-6 lg:pb-8 lg:pl-8'

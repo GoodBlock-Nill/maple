@@ -26,10 +26,11 @@ export const COMMUNITY_CATEGORIES = [
   { value: 'info', label: '정보', badge: 'info' },
 ] as const satisfies readonly CategoryOption<CommunityCategory>[]
 
+/** 라벨은 시안(notice.png) 트리거 표기를 따른다 — 기본값이 "카드형". */
 export const NEWS_VIEWS = [
   { value: 'row', label: '가로형' },
   { value: 'detail', label: '자세히' },
-  { value: 'tile', label: '타일' },
+  { value: 'tile', label: '카드형' },
 ] as const satisfies readonly BoardOption<NewsView>[]
 
 export const DEFAULT_NEWS_VIEW: NewsView = 'tile'

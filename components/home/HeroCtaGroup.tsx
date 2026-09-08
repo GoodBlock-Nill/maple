@@ -2,16 +2,21 @@ import Image from 'next/image'
 
 import { Button } from '@/components/ui/Button'
 import { DISCORD_URL, PLAY_URL } from '@/lib/constants/site'
+import { cn } from '@/lib/utils/cn'
 
 import type { ButtonVariant } from '@/components/ui/Button'
 import type { ReactNode } from 'react'
 
 type CtaVariant = Extract<ButtonVariant, 'dark' | 'discord'>
 
+type HeroCtaGroupProps = {
+  className?: string
+}
+
 /** 시안: 글래스 링(패딩 6px) 안에 높이 47px 버튼이 들어간다. */
-export function HeroCtaGroup() {
+export function HeroCtaGroup({ className }: HeroCtaGroupProps) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-5">
+    <div className={cn('flex flex-wrap items-center justify-center gap-5', className)}>
       <HeroCta href={PLAY_URL} variant="dark">
         메이플월드 바로가기
       </HeroCta>

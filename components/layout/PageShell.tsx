@@ -35,7 +35,9 @@ export function PageShell({ variant, title, overlay, children }: PageShellProps)
           style={contentStyle}
           className="relative mx-auto w-full max-w-[1200px] px-4 pt-[190px] xl:px-0 xl:pt-[var(--content-top)]"
         >
-          <h1 className="text-ink text-center text-[clamp(36px,5vw,64px)] leading-[1.17] font-semibold tracking-[-0.056em]">
+          {/* 시안의 letter-spacing −3.6px 는 Figma 쪽 서체 기준값이다. Pretendard 로
+              같은 렌더 폭을 얻으려면 트래킹을 0 으로 둬야 한다(실측 대조). */}
+          <h1 className="text-ink text-center text-[clamp(36px,5vw,64px)] leading-[1.17] font-semibold">
             {title}
           </h1>
           <div className="mt-10 flex flex-col xl:mt-[52px]">{children}</div>
