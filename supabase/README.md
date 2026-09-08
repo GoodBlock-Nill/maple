@@ -25,6 +25,7 @@ supabase/
 | `20260908001400_post_likes.sql`            | `post_likes` (복합 PK) + `sync_post_like_count()` 집계 트리거                              |
 | `20260908001500_profiles_msw.sql`          | `profiles.msw_uid`/`msw_profile_code` (메이플스토리 월드 계정 연동) + CHECK/유니크 제약    |
 | `20260908001600_news_categories.sql`       | 뉴스 말머리 6종 확장 — `maintenance`/`update`/`info` 추가 + 칩 순서(`sort_order`) 재정렬   |
+| `20260908001700_admin_foundation.sql`      | 관리자 사이트 기반 — `admin_invites` · `audit_logs` · 제재/숨김 컬럼 + `is_suspended()` + `handle_new_user` 초대 승격 |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -558,6 +559,35 @@ rollback;
 node --env-file=.env.local tests/manual/post-likes-rls-check.mjs
 ```
 
+### 4-9. 내 문의 내역 (소유자 읽기)
+
+"내 문의 내역"(`/support/inquiries`)에 **새 마이그레이션은 필요하지 않았다.** 필요한
+정책은 이미 있다.
+
+- `inquiries_select_own` · `inquiry_replies_select_owner` (`20260908000700_rls_policies.sql`)
+- `inquiry_attachments_read_own` (`20260908000800_storage_buckets.sql`) — 비공개 버킷이라
+  화면은 **사용자 세션 클라이언트**로 서명 URL 을 발급한다(`lib/data/inquiries.ts` 의
+  `getSignedAttachments()`). 서비스 롤로 서명하면 경로 첫 세그먼트(uid) 검사가 사라진다.
+
+실제 원격 DB 에 대고 확인하는 스크립트를 두었다(임시 계정 2개를 만들어 서로의 문의·답변·
+첨부에 접근해 보고 마지막에 지운다, 10항목).
+
+```bash
+node --env-file=.env.local tests/manual/inquiries-rls-check.mjs
+```
+
+관리자 화면이 붙기 전까지 답변 스레드를 눈으로 확인하려면 서비스 롤로 답변을 하나
+넣는다(상태도 `answered` 로 올린다). E2E(`tests/e2e/support-inquiries.spec.ts`)가 이
+스크립트를 그대로 호출한다.
+
+```bash
+node --env-file=.env.local tests/manual/inquiry-reply-insert.mjs <inquiryId>
+```
+
+> 화면 코드도 RLS 에만 기대지 않고 모든 질의에 `user_id = <본인>` 을 함께 건다.
+> 관리자 세션에는 전체 조회가 열려 있어서, 조건을 빼면 "내 문의 내역"이 남의 문의까지
+> 그리게 된다.
+
 ---
 
 ## 5. 시드 데이터
@@ -581,3 +611,75 @@ E2E 테스트에서 특정 행을 지목할 때 이 값을 쓴다.
 
 시드를 다시 만들려면 `lib/mock/*` 을 고친 뒤 생성 스크립트를 다시 돌린다. 스크립트는
 저장소에 두지 않았으므로, 손으로 고치는 편이 빠르면 `seed.sql` 을 직접 수정해도 된다.
+
+---
+
+## 6. 관리자 사이트(`admin/`)가 쓰는 스키마
+
+`20260908001700_admin_foundation.sql` 이 관리자 콘솔(@maple/admin)의 기반을 깐다.
+사용자 사이트는 이 마이그레이션으로 **동작이 바뀌지 않는다** — 새 컬럼의 기본값이
+모두 "이전과 같은 상태"이기 때문이다.
+
+### 6.1 추가된 것
+
+| 대상                                          | 내용                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| `admin_invites`                               | 관리자 초대 허용 목록. 권한 승격의 **유일한** 근거                       |
+| `audit_logs`                                  | 관리자 행위 이력(추가 전용). 관리자만 select/insert                      |
+| `profiles.suspended_until` / `suspension_reason` | 회원 제재. 읽기는 되고 쓰기만 막힌다                                  |
+| `posts.is_hidden` / `comments.is_hidden`      | 운영 숨김. 작성자 삭제(`deleted_at`)와 구분한다                          |
+| `is_suspended()`                              | SECURITY INVOKER. 쓰기 정책에서만 쓴다                                   |
+
+### 6.2 권한 승격 규칙 (중요)
+
+`handle_new_user()` 는 role 을 **사용자 메타데이터에서 절대 읽지 않는다.** 새 계정이
+`admin` 이 되는 조건은 단 하나 — 가입 시각에 같은 이메일의 `admin_invites` 행이
+`pending` 상태로 존재하는 것이다. 승격에 쓰인 초대는 같은 트랜잭션에서 `accepted` 로
+닫히므로 초대장 하나가 두 계정을 관리자로 만들 수 없다.
+
+`auth.admin.inviteUserByEmail()` 은 **메일을 보내는 순간** `auth.users` 행을 만든다.
+따라서 초대 서버 액션은 반드시 이 순서를 지킨다.
+
+1. `admin_invites` 에 `pending` 행 기록
+2. `inviteUserByEmail()` 호출
+3. 실패하면 1번 행을 `revoked` 로 되돌린다
+
+첫 관리자는 초대할 사람이 없으므로 서비스 롤 스크립트로 만든다.
+
+```bash
+ADMIN_BOOTSTRAP_EMAIL=... ADMIN_BOOTSTRAP_PASSWORD=... pnpm --filter @maple/admin bootstrap:admin
+```
+
+### 6.3 숨김·제재가 기존 정책에 붙는 방식
+
+목록 필터링은 뷰가 아니라 **정책**이 한다(§ `20260908000700`). 그래서 숨김도 정책에
+조건 한 줄을 더하는 것으로 끝나고, 클라이언트 질의는 하나도 바뀌지 않는다.
+
+- `posts_select_published` · `posts_select_own` · `comments_select_public` 에 `not is_hidden`
+- `posts_insert_community` · `comments_insert_own` · `reports_insert_own` ·
+  `post_likes_insert_own` 에 `not public.is_suspended()`
+
+숨김 상태의 글은 작성자에게도 보이지 않는다. 예외를 두면 "숨겼는데 당사자에게는
+그대로 보이는" 상태가 되어 운영 조치가 무의미해진다.
+
+### 6.4 보안 회귀 수정 — `guard_profile_role()`
+
+`20260908001000` 이 이 트리거 함수를 `security invoker` 로 고쳤는데(사유: DEFINER
+안에서는 `current_user` 가 호출자가 아니라 **함수 소유자**로 평가되어 첫 분기가 항상
+참이 되고 가드가 무력화된다), `20260908001200` 이 본문을 확장하면서 `security
+definer` 로 되돌려 구멍이 되살아나 있었다.
+
+2026-09-08 재확인: 일반 사용자 JWT 로 `update profiles set role='admin' where
+id = <본인>` 이 그대로 반영됐다. `20260908001700` 이 다시 `security invoker` 로
+고정하고, 제재 컬럼(`suspended_until` · `suspension_reason`)도 가드에 추가했다.
+
+> 이 함수의 보안 속성을 바꾸는 변경은 반드시 리뷰 대상이다. `security definer` 로
+> 되돌리는 순간 **누구나 관리자로 승격**할 수 있다.
+
+### 6.5 타입 생성
+
+두 앱이 같은 스키마 타입을 쓴다. 루트에서 한 번에 만든다.
+
+```bash
+pnpm gen:types   # types/database.types.ts + admin/types/database.types.ts
+```

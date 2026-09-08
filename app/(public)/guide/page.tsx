@@ -6,7 +6,9 @@ import { SearchForm } from '@/components/board/SearchForm'
 import { SortMenu } from '@/components/board/SortMenu'
 import { GachaDetailModal } from '@/components/guide/GachaDetailModal'
 import { GachaItemCard } from '@/components/guide/GachaItemCard'
+import { ComingSoon } from '@/components/layout/ComingSoon'
 import { PageShell } from '@/components/layout/PageShell'
+import { FEATURES } from '@/lib/constants/features'
 import {
   DEFAULT_GACHA_SORT,
   DEFAULT_GACHA_TAB,
@@ -30,6 +32,10 @@ export const metadata: Metadata = {
   title: '가이드',
   description:
     '글자월드 확률형 아이템의 등급별 획득 확률을 부화기·큐브·주문서 종류별로 확인하세요.',
+  // 오너 요청: 9/18 오픈 시점에는 서비스하지 않아 검색 노출도 함께 막는다.
+  // 오픈 후(FEATURES.guideOpen === true)에는 robots 필드를 아예 넣지 않아
+  // Next 기본값(인덱싱 허용)을 그대로 따른다.
+  ...(FEATURES.guideOpen ? {} : { robots: { index: false, follow: false } }),
 }
 
 /** 탭 칩에는 "전체"가 없다(시안 GNB 와 동일하게 첫 탭이 기본 선택). */
@@ -39,6 +45,16 @@ const TAB_OPTIONS: readonly FilterChipOption<GachaTab>[] = GACHA_TABS.map((tab) 
 }))
 
 export default async function GuidePage(props: PageProps<'/guide'>) {
+  // 오너 요청: 9/18 오픈 시점에는 미제공. 플래그가 꺼져 있으면 Supabase
+  // 조회 자체를 건너뛰고 "서비스 준비 중" 카드만 그린다.
+  if (!FEATURES.guideOpen) {
+    return (
+      <PageShell variant="guide" title={GUIDE_TITLE}>
+        <ComingSoon variant="guide" />
+      </PageShell>
+    )
+  }
+
   const searchParams = await props.searchParams
   const tab = parseOption<GachaTab>(searchParams.tab, GACHA_TAB_VALUES, DEFAULT_GACHA_TAB)
   const sort = parseOption<GachaSort>(searchParams.sort, GACHA_SORT_VALUES, DEFAULT_GACHA_SORT)

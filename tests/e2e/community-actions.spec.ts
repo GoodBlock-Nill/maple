@@ -45,7 +45,9 @@ test('should expose the report dialog as a labelled modal that Escape closes', a
   // Arrange — 신고 버튼은 로그인 사용자 전용이라 개발 전용 하네스로 연다.
   await page.goto('/community/dialog-preview')
 
-  const dialog = page.getByRole('dialog')
+  /* 모바일 헤더가 오프스크린 내비게이션을 role="dialog" 로 들고 있어 이름 없이
+     찾으면 두 개가 잡힌다(strict mode 위반). 이름으로 좁힌다. */
+  const dialog = page.getByRole('dialog', { name: '게시글 신고' })
 
   // Assert — 접근성 계약
   await expect(dialog).toBeVisible()
@@ -71,10 +73,10 @@ test('should return focus to the trigger after the report dialog closes', async 
 
   // Act
   await trigger.click()
-  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page.getByRole('dialog', { name: '게시글 신고' })).toBeVisible()
   await page.keyboard.press('Escape')
 
   // Assert
-  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: '게시글 신고' })).toHaveCount(0)
   await expect(trigger).toBeFocused()
 })

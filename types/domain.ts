@@ -234,3 +234,58 @@ export type SiteSettings = {
   creatorIntro: string | null
   creatorPhotoUrl: string | null
 }
+
+/* -------------------------------------------------------------------------
+ * 1:1 문의 — 내 문의 내역
+ * ---------------------------------------------------------------------- */
+
+/** `inquiries.status` (inquiry_status enum) 과 1:1. */
+export type InquiryStatus = 'pending' | 'in_progress' | 'answered' | 'closed'
+
+/**
+ * `inquiries.attachments` 의 원소.
+ * 파일 실체는 비공개 버킷에 있고 DB 에는 이 메타만 남는다(마이그레이션 20260908000400).
+ */
+export type InquiryAttachment = {
+  name: string
+  /** 버킷 안 오브젝트 키(`{uid}/{파일명}`). 서명 URL 발급에만 쓴다. */
+  path: string
+  size: number
+  mimeType: string
+}
+
+/** 서명 URL 을 붙인 첨부. 발급에 실패하면 `url` 이 null 이고 이름만 노출한다. */
+export type SignedInquiryAttachment = InquiryAttachment & {
+  url: string | null
+}
+
+/**
+ * 목록 행. 본문·첨부는 담지 않는다 — 목록에 필요 없고, 개인정보(계정 ID·첨부)를
+ * 필요 없는 화면까지 실어 나르지 않는 편이 안전하다.
+ */
+export type InquirySummary = {
+  id: string
+  title: string
+  /** 자유 문자열. DB 가 text 라 화면도 값을 그대로 쓴다. */
+  category: string
+  type: string
+  status: InquiryStatus
+  createdAt: string
+  /** 운영자 답변 수. 목록에서 "답변 완료"를 눈으로 확인하는 보조 지표다. */
+  replyCount: number
+}
+
+export type InquiryDetail = InquirySummary & {
+  /** 접수 당시 입력한 MSW 계정 ID. 화면에는 마스킹해서 그린다. */
+  accountId: string | null
+  /** 평문. 줄바꿈만 살려서 그린다(마크다운·HTML 을 해석하지 않는다). */
+  content: string
+  attachments: readonly InquiryAttachment[]
+}
+
+export type InquiryReply = {
+  id: string
+  authorName: string
+  content: string
+  createdAt: string
+}

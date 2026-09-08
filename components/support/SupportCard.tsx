@@ -11,6 +11,9 @@ import type { ReactNode } from 'react'
 type SupportCardProps = {
   /** 현재 활성 메뉴 경로. */
   activeHref: string
+  /** 좌 컬럼 제목·설명. 기본값은 시안의 "1:1 문의하기" 카피다. */
+  heading?: string
+  description?: string
   children: ReactNode
 }
 
@@ -18,7 +21,12 @@ type SupportCardProps = {
  * 고객지원 공통 카드. 좌측 메뉴 + 세로 구분선 + 우측 슬롯.
  * 모바일에서는 구분선을 가로로 눕히고 메뉴가 위로 올라간다.
  */
-export function SupportCard({ activeHref, children }: SupportCardProps) {
+export function SupportCard({
+  activeHref,
+  heading = SUPPORT_HEADING,
+  description = SUPPORT_DESCRIPTION,
+  children,
+}: SupportCardProps) {
   return (
     /* 세로 리듬은 시안 렌더(support.png)와 글리프 단위로 맞춘 값이다. */
     <div
@@ -30,9 +38,9 @@ export function SupportCard({ activeHref, children }: SupportCardProps) {
       <div className="flex w-full flex-col gap-8 lg:max-w-[525px] lg:gap-7">
         <div className="flex flex-col gap-2 lg:gap-1">
           <h2 className="text-ink text-[clamp(24px,3vw,30px)] leading-none font-medium">
-            {SUPPORT_HEADING}
+            {heading}
           </h2>
-          <p className="text-ink-muted text-[17px] leading-relaxed">{SUPPORT_DESCRIPTION}</p>
+          <p className="text-ink-muted text-[17px] leading-relaxed">{description}</p>
         </div>
 
         <nav aria-label="고객지원 메뉴">

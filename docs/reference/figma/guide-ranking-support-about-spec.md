@@ -31,6 +31,13 @@
 - 인라인 확장 시안(493:7143)도 있으나 **모달 채택**. 페이지당 15건, `더보기(15/100)`.
 - 데이터: `lib/mock/gacha.ts` — 탭별 아이템(name, icon, probability, updatedAt, rows[{grade, itemName, itemIcon, probability, note}]).
 
+> **오너 요청(2026-09-08)**: 9/18 오픈 시점에는 가이드를 서비스하지 않는다.
+> `FEATURES.guideOpen`(`NEXT_PUBLIC_FEATURE_GUIDE_OPEN`, 기본 false)이 꺼져
+> 있으면 위 목록·모달 대신 `components/layout/ComingSoon.tsx` 카드를
+> `PageShell` 안(제목 아래)에 그리고 Supabase 조회를 건너뛴다. 밴드·제목·
+> 마스코트는 그대로 유지된다. 실제 오픈 시 배포 환경 변수만 `true` 로 바꾸면
+> 코드 변경 없이 전환된다.
+
 ## 랭킹 (493:6646, 2안 496:12818)
 
 - 제목 "랭킹". 툴바(세로 gap 24): 1행 랭킹 종류 칩(종합 랭킹 / 직업 랭킹 / 길드 랭킹 → `?type=total|job|guild`). 2행: 좌 직업 칩(전체 직업 / 모험가 / 시그너스 / 레지스탕스 / 영웅 / 데몬(마족) → `?job=`), 우 검색 300(캐릭터명).
@@ -46,6 +53,13 @@
 - 데이터: `lib/mock/rankings.ts` 100건(type×job 필터 가능). 출처 미정 → 관리자 CSV 업로드 전제.
 - 모바일: TOP3 세로 스택(1위 먼저), 테이블은 카드형 행(순위·아바타·이름 / 레벨·직업·길드 2줄).
 
+> **오너 요청(2026-09-08)**: 9/18 오픈 시점에는 랭킹을 서비스하지 않는다.
+> `FEATURES.rankingOpen`(`NEXT_PUBLIC_FEATURE_RANKING_OPEN`, 기본 false)이
+> 꺼져 있으면 위 TOP3·테이블 대신 `components/layout/ComingSoon.tsx` 카드를
+> `PageShell` 안(제목 아래)에 그리고 Supabase 조회를 건너뛴다. 밴드·제목·
+> 마스코트는 그대로 유지된다. 실제 오픈 시 배포 환경 변수만 `true` 로 바꾸면
+> 코드 변경 없이 전환된다.
+
 ## 고객지원 (461:15245)
 
 - 제목 "고객지원". 시트 대신 **단일 흰 카드**(border `#cdd3db`, radius 20, pl 32 pr 24 py 32, shadow-chip) 폭 1200.
@@ -60,7 +74,12 @@
     - 제출: 전폭 h 48 pill, bg `#2a2a2a`, border `#505967`, 17px medium `#edeef0` "문의 등록하기".
   - 컴포넌트 모음(`layout-components.png`)에 "문의 & 신고하기" 제목이 붙은 카드형 변형도 있음 → 모바일에서 좌 메뉴를 상단 탭으로 접고 폼만 카드로.
 - `/support/faq`: 같은 카드, 우측에 아코디언(Section 7 흑백 시안의 아코디언 참고: 행 `공지사항` 소카테고리 라벨 + 질문 + 우측 ˅, 펼치면 회색 답변 영역).
-- 데이터: `lib/mock/faqs.ts`, 문의 제출은 Phase 6까지 `console`-free 목업(성공 토스트만).
+- `/support/inquiries` · `/support/inquiries/[id]` (**시안에 없는 추가 화면**): 문의를 남긴 사람이 스스로 답변을 확인할 수 있어야 해서 붙였다. 같은 `SupportCard` 를 쓰되 좌 컬럼 제목·설명만 "내 문의 내역"으로 갈아 끼우고(`heading`/`description` prop), 메뉴 3번째 항목(`support/icon-my-inquiries.svg`, FAQ 아이콘과 같은 48×48 흰 박스)으로 들어간다. 비로그인은 페이지에서 `/login?next=…` 로 보낸다(프록시로 접두사를 잠그면 문의 폼까지 닫힌다).
+  - 목록: 흰 카드 행(radius 12, border `#cdd3db`) — 제목 + 상태 뱃지 / 카테고리·유형 · 등록일 · 답변 수. 상태 색은 `접수 대기` 회색(`bg-tray`), `처리 중` `tag-blue`(#2e6eff/#e5efff), `답변 완료` `tag-green`(#00b894/#e5fff1), `종료` 아웃라인 muted. 10건 누적 "더보기". 비어 있으면 "아직 남긴 문의가 없습니다" + `문의하기` 버튼.
+  - 상세: 제목·상태·메타(등록일/카테고리·유형/마스킹한 계정 ID) → 평문 본문(줄바꿈 유지) → 첨부(비공개 버킷 서명 URL, 이미지면 48 썸네일) → "답변" 스레드(운영자 카드) → `목록으로`. 답변 전에는 "운영자가 확인 중입니다…" 안내.
+  - 접수 직후에는 `?submitted=1` 로 상세에 도착해 완료 모달(`DialogShell`)이 뜬다. `확인` 을 누르면 `router.replace` 로 파라미터를 떼어 새로고침에도 다시 뜨지 않는다.
+  - 모바일 390: 좌 메뉴가 위로 접히고(기존 동작), 목록 행은 뱃지 → 제목 → 메타 순으로 세로 스택.
+- 데이터: FAQ 는 `faqs` 테이블, 문의 접수는 `lib/actions/inquiry-actions.ts`(첨부는 `inquiry-attachments` 비공개 버킷), 조회는 `lib/data/inquiries.ts`.
 
 ## 소개 (509:2958, 1440×2609)
 

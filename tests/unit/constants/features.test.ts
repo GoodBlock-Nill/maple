@@ -5,33 +5,48 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
  * 바꿔 가며 검증하려면 env 설정 → `vi.resetModules()` → 재 import 순서를
  * 지켜야 한다.
  */
-const FEATURE_ENV_KEY = 'NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS'
-const ORIGINAL_FEATURE_ENV = process.env[FEATURE_ENV_KEY]
+const FEATURE_ENV_KEYS = [
+  'NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS',
+  'NEXT_PUBLIC_FEATURE_GUIDE_OPEN',
+  'NEXT_PUBLIC_FEATURE_RANKING_OPEN',
+] as const
 
-async function importFeaturesWithEnv(value: string | undefined) {
+type FeatureEnvKey = (typeof FEATURE_ENV_KEYS)[number]
+
+const ORIGINAL_ENV: Record<FeatureEnvKey, string | undefined> = Object.fromEntries(
+  FEATURE_ENV_KEYS.map((key) => [key, process.env[key]]),
+) as Record<FeatureEnvKey, string | undefined>
+
+async function importFeaturesWithEnv(overrides: Partial<Record<FeatureEnvKey, string>>) {
   vi.resetModules()
 
-  if (value === undefined) {
-    delete process.env[FEATURE_ENV_KEY]
-  } else {
-    process.env[FEATURE_ENV_KEY] = value
+  for (const key of FEATURE_ENV_KEYS) {
+    const value = overrides[key]
+    if (value === undefined) {
+      delete process.env[key]
+    } else {
+      process.env[key] = value
+    }
   }
 
   return import('@/lib/constants/features')
 }
 
 afterEach(() => {
-  if (ORIGINAL_FEATURE_ENV === undefined) {
-    delete process.env[FEATURE_ENV_KEY]
-  } else {
-    process.env[FEATURE_ENV_KEY] = ORIGINAL_FEATURE_ENV
+  for (const key of FEATURE_ENV_KEYS) {
+    const original = ORIGINAL_ENV[key]
+    if (original === undefined) {
+      delete process.env[key]
+    } else {
+      process.env[key] = original
+    }
   }
 })
 
 describe('FEATURES.mswAccountFields', () => {
   it('should default to off when the env var is unset', async () => {
     // Arrange & Act
-    const { FEATURES } = await importFeaturesWithEnv(undefined)
+    const { FEATURES } = await importFeaturesWithEnv({})
 
     // Assert
     expect(FEATURES.mswAccountFields).toBe(false)
@@ -39,7 +54,9 @@ describe('FEATURES.mswAccountFields', () => {
 
   it('should stay off for any value other than the literal string "true"', async () => {
     // Arrange & Act
-    const { FEATURES } = await importFeaturesWithEnv('false')
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS: 'false',
+    })
 
     // Assert
     expect(FEATURES.mswAccountFields).toBe(false)
@@ -47,9 +64,54 @@ describe('FEATURES.mswAccountFields', () => {
 
   it('should turn on only when set to the literal string "true"', async () => {
     // Arrange & Act
-    const { FEATURES } = await importFeaturesWithEnv('true')
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS: 'true',
+    })
 
     // Assert
     expect(FEATURES.mswAccountFields).toBe(true)
+  })
+})
+
+// 오너 요청: 가이드(확률형 아이템 정보)·랭킹은 9/18 오픈 시점에 미제공 —
+// 두 플래그 모두 기본값이 꺼져 있어야 "서비스 준비 중" 화면이 뜬다.
+describe('FEATURES.guideOpen / FEATURES.rankingOpen', () => {
+  it('should default both flags to closed when the env vars are unset', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({})
+
+    // Assert
+    expect(FEATURES.guideOpen).toBe(false)
+    expect(FEATURES.rankingOpen).toBe(false)
+  })
+
+  it('should stay closed for any value other than the literal string "true"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_GUIDE_OPEN: 'yes',
+      NEXT_PUBLIC_FEATURE_RANKING_OPEN: '1',
+    })
+
+    // Assert
+    expect(FEATURES.guideOpen).toBe(false)
+    expect(FEATURES.rankingOpen).toBe(false)
+  })
+
+  it('should open guide only when NEXT_PUBLIC_FEATURE_GUIDE_OPEN is "true"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({ NEXT_PUBLIC_FEATURE_GUIDE_OPEN: 'true' })
+
+    // Assert
+    expect(FEATURES.guideOpen).toBe(true)
+    expect(FEATURES.rankingOpen).toBe(false)
+  })
+
+  it('should open ranking only when NEXT_PUBLIC_FEATURE_RANKING_OPEN is "true"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({ NEXT_PUBLIC_FEATURE_RANKING_OPEN: 'true' })
+
+    // Assert
+    expect(FEATURES.rankingOpen).toBe(true)
+    expect(FEATURES.guideOpen).toBe(false)
   })
 })

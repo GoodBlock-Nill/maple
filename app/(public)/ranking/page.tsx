@@ -3,9 +3,11 @@ import { FilterChips } from '@/components/board/FilterChips'
 import { ListSheet } from '@/components/board/ListSheet'
 import { LoadMoreButton } from '@/components/board/LoadMoreButton'
 import { SearchForm } from '@/components/board/SearchForm'
+import { ComingSoon } from '@/components/layout/ComingSoon'
 import { PageShell } from '@/components/layout/PageShell'
 import { RankingTable } from '@/components/ranking/RankingTable'
 import { TopThree } from '@/components/ranking/TopThree'
+import { FEATURES } from '@/lib/constants/features'
 import {
   ALL_JOB_LABEL,
   DEFAULT_RANKING_TYPE,
@@ -33,6 +35,8 @@ const RANKING_TITLE = '랭킹'
 export const metadata: Metadata = {
   title: '랭킹',
   description: '글자월드의 종합·직업·길드 랭킹을 직업군별로 확인하세요.',
+  // 오너 요청: 9/18 오픈 시점에는 서비스하지 않아 검색 노출도 함께 막는다.
+  ...(FEATURES.rankingOpen ? {} : { robots: { index: false, follow: false } }),
 }
 
 /** 종류 칩에는 "전체"가 없다. 첫 항목(종합 랭킹)이 기본 선택이다. */
@@ -47,6 +51,16 @@ const JOB_OPTIONS: readonly FilterChipOption<JobGroup>[] = [
 ]
 
 export default async function RankingPage(props: PageProps<'/ranking'>) {
+  // 오너 요청: 9/18 오픈 시점에는 미제공. 플래그가 꺼져 있으면 Supabase
+  // 조회 자체를 건너뛰고 "서비스 준비 중" 카드만 그린다.
+  if (!FEATURES.rankingOpen) {
+    return (
+      <PageShell variant="ranking" title={RANKING_TITLE}>
+        <ComingSoon variant="ranking" />
+      </PageShell>
+    )
+  }
+
   const searchParams = await props.searchParams
   const type = parseOption<RankingType>(
     searchParams.type,
