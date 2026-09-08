@@ -39,7 +39,7 @@
 | 정렬(커뮤니티) | 좌측. "최신순" 17px `#727272` + `brand/icon-sort-caret.svg` 25px(rotate 90, 열림 시 +180°). 옵션 최신순/조회순/인기순(구 좋아요순, URL 값은 `likes` 유지) → `?sort=latest|views|likes`. 드롭다운은 `LinkMenu` 공용 컴포넌트: listbox 역할 + 체크마크, `useTransition`으로 트리거에 대기 상태 표시 |
 | 글쓰기(커뮤니티) | 110×47, radius 10, bg `#2a2a2a`, border `#2a2a2a`, 아이콘 `brand/icon-write.svg` 25 + "글쓰기" 17px semibold white, inset `0 0 14px rgba(255,255,255,.6)`, drop `0 6px 5px rgba(0,0,0,.25)`. 링크 `/community/write` (비로그인 → `/login?next=`) |
 | 목록 시트 | bg `#ededed`, radius 20, p 16, shadow `0 .33px .37px rgba(0,0,0,.12), 0 1.5px 1.4px rgba(0,0,0,.07)` |
-| 뱃지 | pill, px 10, py 5, 17px medium. 공지사항 bg `#f2e5ff` / 글자 `#921cff` · 패치노트 `#fff2e5` / `#ff9728` · 이벤트(시안 미표기) `#e5fff1` / `#00b894` · 잡담 `#f2e5ff` / `#921cff` · 질문 `#e5efff` / `#2e6eff` · 정보 `#e5fff1` / `#00b894` |
+| 뱃지 | pill, px 10, py 5, 17px medium. 공지사항 bg `#f2e5ff` / 글자 `#921cff` · 점검안내 `#e5efff` / `#2e6eff` · 업데이트 안내 `#e5f8ff` / `#0ea5c9` · 패치노트 `#fff2e5` / `#ff9728` · 이벤트(시안 미표기) `#e5fff1` / `#00b894` · 안내사항 `#ffe9f6` / `#ff5fb8` · 잡담 `#f2e5ff` / `#921cff` · 질문 `#e5efff` / `#2e6eff` · 정보 `#e5fff1` / `#00b894`. 점검안내·업데이트 안내·안내사항 3색은 배너 아트의 주조색에서 뽑았고, 뉴스 '안내사항'은 커뮤니티 '정보'와 키가 겹쳐 `news-info` 토큰을 따로 둔다 |
 | 메타 | 아이콘+숫자 묶음 gap 6, 묶음 간격 12, 16px medium `#2a2a2a`. 시계 `brand/icon-clock.svg` 12×12 → `YYYY-MM-DD`, 눈 `brand/icon-eye.svg` 15×12 → 조회수, 좋아요 `brand/icon-like.svg` 11×12 |
 | 더보기 | h 44, pill, bg `#2a2a2a`, border `#505967`, px 17, 16px medium `#edeef0`, shadow `0 1px 0 rgba(27,31,35,.2)`. 라벨 `더보기(표시수/전체수)`. 클릭 → `?page=N+1` (1~N 누적 표시). 전부 표시되면 숨김 |
 
@@ -47,7 +47,8 @@
 
 > **업데이트(2026-09-08)**: 제품 결정으로 보기 전환(카드형/자세히/가로형 토글)이 제거되었다. 뉴스 목록은 항상 가로형(리스트) 레이아웃으로만 렌더링된다. 아래 타일 뷰·자세히 뷰 설명은 히스토리 참고용이며 더 이상 코드에 존재하지 않는다.
 
-- 칩: 전체 / 공지사항 / 패치노트 / 이벤트 → `?category=notice|patch|event` (없으면 전체). 칩 그룹 폭 365.
+- 칩: 전체 / 공지사항 / 점검안내 / 업데이트 안내 / 패치노트 / 이벤트 / 안내사항 → `?category=notice|maintenance|update|patch|event|info` (없으면 전체).
+  - **업데이트(2026-09-08)**: 말머리가 3종 → 6종으로 늘었다(Figma `공지별 배너_1200x628`, 2032:1882 의 배너 6종과 1:1). 칩이 한 줄에 담기지 않으므로 뉴스 칩만 가로 스크롤 대신 줄바꿈(`CategoryChips wrap`)을 쓴다. 커뮤니티·가이드·랭킹 칩은 종전대로 한 줄 + 좁은 화면 스크롤이다.
 - 툴바 우측: 검색(300) + 보기 전환. 툴바와 시트 사이 24px.
 - **타일 뷰(기본)**: 시트 안 2열 grid, gap 16. 카드: bg white, border `#cdd3db`, radius 20, p 24, gap 24, shadow-chip.
   - 1행: 뱃지 (좌). (`layout-components.png` 변형에서는 좌측에 24×24 아이콘 박스(별/클립보드) + 우측 뱃지 — 아이콘 박스는 선택 사항, 기본 뷰는 뱃지만.)
@@ -73,6 +74,7 @@
 ## 상세 · 작성 (시안 없음 — 목록 스타일에서 파생)
 
 - `/news/[id]`, `/community/[id]`: 같은 PageShell + 상단 배경. 시트 안 단일 흰 카드(p 32~40): 뱃지 + 제목 32px + 메타 → 구분선 → 마크다운 본문(17px lh 1.8) → (커뮤니티) 좋아요 버튼 + 댓글 목록/작성 폼. 하단 "목록으로" 더보기 스타일 버튼.
+- **뉴스 상세 배너(2026-09-08 추가)**: 카드 최상단, 뱃지 위에 말머리 배너를 깐다. 자산 `public/images/news/banners/<category>.png` (Figma `공지별 배너_1200x628`, 2032:1882), 카드 폭 전체 · 비율 1200:628 · radius 12 · 아래 여백 24. 첫 화면 이미지라 `next/image` 의 `preload`(Next 16 에서 `priority` 대체)를 쓴다. 같은 배너를 `generateMetadata` 의 Open Graph · Twitter 이미지(절대 URL, `NEXT_PUBLIC_SITE_URL` 기준)로도 쓴다. 매핑은 `lib/constants/news-banners.ts` 단일 출처이며 알 수 없는 말머리는 공지사항 배너로 떨어진다. 목록 행에는 배너를 넣지 않는다(행 높이 81px 유지).
 - `/community/write`: 시트 안 폼 카드. 카테고리 셀렉트(칩 스타일 라디오) + 제목 input + **본문 에디터** + 등록(글쓰기 버튼 스타일). 고객지원 폼 필드 스타일(`support` 시안: input h 44, radius 10, border `#cdd3db`, placeholder `#9a9a9a`) 재사용.
 
 에디터(시안에 없는 추가분)

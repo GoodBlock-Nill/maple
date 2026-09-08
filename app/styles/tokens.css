@@ -98,6 +98,12 @@
   --color-tag-green-bg: #e5fff1;
   --color-tag-blue: #2e6eff;
   --color-tag-blue-bg: #e5efff;
+  /* 뉴스 말머리 확장 2색 — 배너 아트의 주조색에서 뽑았다.
+     cyan 은 "업데이트 안내" 배너의 하늘색, pink 는 "안내사항" 배너의 분홍이다. */
+  --color-tag-cyan: #0ea5c9;
+  --color-tag-cyan-bg: #e5f8ff;
+  --color-tag-pink: #ff5fb8;
+  --color-tag-pink-bg: #ffe9f6;
 
   /* 칩·검색·카드가 공유하는 3단 그림자(시안의 얕은 종이 느낌) */
   --shadow-chip:

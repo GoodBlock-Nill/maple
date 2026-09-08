@@ -27,11 +27,16 @@ type FilterChipsProps<TValue extends string> = {
   hrefFor: (value: TValue | null) => string
   label: string
   className?: string
+  /**
+   * 좁은 화면에서 가로 스크롤 대신 다음 줄로 접는다.
+   * 칩이 많아 한 줄에 담기지 않는 목록(뉴스 말머리 6종 + 전체)에 쓴다.
+   */
+  wrap?: boolean
 }
 
 /**
- * 목록 필터 칩 한 줄. 값은 전부 URL 로 표현되므로 항목은 모두 `<Link>` 다.
- * 좁은 화면에서는 가로 스크롤한다.
+ * 목록 필터 칩. 값은 전부 URL 로 표현되므로 항목은 모두 `<Link>` 다.
+ * 기본은 한 줄 + 좁은 화면 가로 스크롤이고, `wrap` 이면 좁은 화면에서 접힌다.
  */
 export function FilterChips<TValue extends string>({
   options,
@@ -39,13 +44,22 @@ export function FilterChips<TValue extends string>({
   hrefFor,
   label,
   className,
+  wrap = false,
 }: FilterChipsProps<TValue>) {
   return (
     <nav
       aria-label={label}
-      className={cn('-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0', className)}
+      className={cn(
+        wrap ? '' : '-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0',
+        className,
+      )}
     >
-      <ul className="flex w-max items-center gap-2.5 sm:w-auto sm:flex-wrap">
+      <ul
+        className={cn(
+          'flex items-center gap-2.5 sm:w-auto sm:flex-wrap',
+          wrap ? 'w-full flex-wrap' : 'w-max',
+        )}
+      >
         {options.map((option) => {
           const isActive = option.value === active
 

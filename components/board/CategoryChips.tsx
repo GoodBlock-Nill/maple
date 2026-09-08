@@ -11,6 +11,8 @@ type CategoryChipsProps<TValue extends string> = {
   /** 칩 값 → 이동할 URL. 나머지 질의 문자열 유지는 호출부 책임. */
   hrefFor: (value: TValue | null) => string
   label: string
+  /** 좁은 화면에서 가로 스크롤 대신 줄바꿈. 항목이 많은 뉴스 말머리에 쓴다. */
+  wrap?: boolean
 }
 
 /** 맨 앞에 "전체"가 붙는 카테고리 칩. 표현은 `FilterChips` 가 담당한다. */
@@ -19,11 +21,14 @@ export function CategoryChips<TValue extends string>({
   active,
   hrefFor,
   label,
+  wrap = false,
 }: CategoryChipsProps<TValue>) {
   const options: readonly FilterChipOption<TValue>[] = [
     { value: null, label: ALL_CATEGORY_LABEL },
     ...items.map((item) => ({ value: item.value, label: item.label })),
   ]
 
-  return <FilterChips options={options} active={active} hrefFor={hrefFor} label={label} />
+  return (
+    <FilterChips options={options} active={active} hrefFor={hrefFor} label={label} wrap={wrap} />
+  )
 }

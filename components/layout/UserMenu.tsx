@@ -3,14 +3,19 @@
 import Link from 'next/link'
 import { useEffect, useId, useRef, useState } from 'react'
 
+import { UserAvatar } from '@/components/layout/UserAvatar'
 import { ChevronDownIcon } from '@/components/ui/icons'
 import { signOut } from '@/lib/actions/auth-actions'
 import { cn } from '@/lib/utils/cn'
 
+import type { SocialProvider } from '@/lib/validation/auth'
+
 type UserMenuProps = {
   nickname: string
-  /** 프로필 아바타. 대부분 없으므로(스텁 로그인은 채우지 않는다) 첫 글자로 폴백한다. */
+  /** 프로필 아바타. 대부분 없으므로(스텁 로그인은 채우지 않는다) 첫 글자/제공자 마크로 폴백한다. */
   avatarUrl?: string | null
+  /** 간편로그인 제공자 — 아바타에 구글/카카오/네이버 마크를 그리는 데 쓴다. */
+  provider?: SocialProvider | null
   id?: string
   className?: string
 }
@@ -41,7 +46,13 @@ const ITEM_CLASS =
  * GET 링크가 아니라 POST 폼이어야 해서(CSRF — LogoutButton과 같은 이유) 이
  * 컴포넌트만의 새 구현으로 둔다.
  */
-export function UserMenu({ nickname, avatarUrl = null, id, className }: UserMenuProps) {
+export function UserMenu({
+  nickname,
+  avatarUrl = null,
+  provider = null,
+  id,
+  className,
+}: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const menuId = useId()
@@ -120,20 +131,7 @@ export function UserMenu({ nickname, avatarUrl = null, id, className }: UserMenu
         onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
         className={TRIGGER_CLASS}
       >
-        {avatarUrl ? (
-          /* 임의 외부 호스트(제공자 아바타)라 next.config 의 remotePatterns 화이트리스트로는
-             감당 못 한다. 지금은 스텁 로그인이 값을 채우지 않아 실제로는 항상 첫 글자
-             폴백이 그려진다. */
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="size-7 shrink-0 rounded-full object-cover" />
-        ) : (
-          <span
-            aria-hidden
-            className="bg-ink/10 text-ink flex size-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold"
-          >
-            {nickname.charAt(0)}
-          </span>
-        )}
+        <UserAvatar nickname={nickname} avatarUrl={avatarUrl} provider={provider} size="sm" />
         <span className="text-ink max-w-[140px] truncate text-[16px] font-semibold">
           {nickname}
         </span>

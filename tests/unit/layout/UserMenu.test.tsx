@@ -20,6 +20,18 @@ describe('UserMenu', () => {
     expect(screen.queryByText('로그아웃')).not.toBeInTheDocument()
   })
 
+  it('should render the provider brand mark instead of a text initial when a provider is known', () => {
+    // Arrange & Act — "구/카/네" 같은 글자 대신 로고 마크(SVG)가 그려져야 한다.
+    const { container } = render(<UserMenu nickname="카카오테스터" provider="kakao" />)
+    const trigger = screen.getByRole('button', { name: /카카오테스터/ })
+
+    // Assert
+    expect(container.querySelector('svg')).toBeInTheDocument()
+    expect(screen.queryByText('카')).not.toBeInTheDocument()
+    // 접근 가능한 이름은 마크를 더해도 여전히 닉네임 그대로다.
+    expect(trigger).toHaveAccessibleName('카카오테스터')
+  })
+
   it('should open a menu with 내 정보 and 로그아웃 when the trigger is clicked', () => {
     // Arrange
     render(<UserMenu nickname="모험가" />)

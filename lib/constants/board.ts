@@ -14,10 +14,17 @@ export type CategoryOption<TValue extends string> = BoardOption<TValue> & {
   badge: BadgeColor
 }
 
+/**
+ * 뉴스 말머리 6종. 배열 순서가 곧 칩 순서이고 DB `board_categories.sort_order`
+ * (마이그레이션 20260908001600) 와 같은 순서를 유지한다.
+ */
 export const NEWS_CATEGORIES = [
   { value: 'notice', label: '공지사항', badge: 'notice' },
+  { value: 'maintenance', label: '점검안내', badge: 'maintenance' },
+  { value: 'update', label: '업데이트 안내', badge: 'update' },
   { value: 'patch', label: '패치노트', badge: 'patch' },
   { value: 'event', label: '이벤트', badge: 'event' },
+  { value: 'info', label: '안내사항', badge: 'news-info' },
 ] as const satisfies readonly CategoryOption<NewsCategory>[]
 
 export const COMMUNITY_CATEGORIES = [

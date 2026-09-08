@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { NEWS_CATEGORY_VALUES } from '@/lib/constants/board'
 import {
   buildHref,
   firstValue,
@@ -78,6 +79,24 @@ describe('parseOptionalOption', () => {
     const result = parseOptionalOption('unknown', VIEWS)
 
     // Assert
+    expect(result).toBeNull()
+  })
+
+  it('should accept every news category when parsed from the url', () => {
+    // Arrange & Act — /news?category= 가 말머리 6종을 모두 받아야 칩이 동작한다.
+    const parsed = NEWS_CATEGORY_VALUES.map((value) =>
+      parseOptionalOption(value, NEWS_CATEGORY_VALUES),
+    )
+
+    // Assert
+    expect(parsed).toEqual(['notice', 'maintenance', 'update', 'patch', 'event', 'info'])
+  })
+
+  it('should fall back to 전체 when the news category is unknown', () => {
+    // Arrange & Act
+    const result = parseOptionalOption('inspection', NEWS_CATEGORY_VALUES)
+
+    // Assert — null 은 "전체" 칩이 활성이라는 뜻이다.
     expect(result).toBeNull()
   })
 })

@@ -2,9 +2,11 @@ import { UserMenu } from '@/components/layout/UserMenu'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils/cn'
 
+import type { SocialProvider } from '@/lib/validation/auth'
+
 type AuthMenuProps = {
   /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
-  user?: { nickname: string; avatarUrl?: string | null } | null
+  user?: { nickname: string; avatarUrl?: string | null; provider?: SocialProvider | null } | null
   id?: string
   className?: string
 }
@@ -24,7 +26,7 @@ export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
   if (user) {
     return (
       <div id={id} className={cn('items-center', className)}>
-        <UserMenu nickname={user.nickname} avatarUrl={user.avatarUrl} />
+        <UserMenu nickname={user.nickname} avatarUrl={user.avatarUrl} provider={user.provider} />
       </div>
     )
   }

@@ -6,12 +6,15 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Logo } from '@/components/layout/Logo'
 import { matchesPath } from '@/components/layout/navigation'
+import { UserAvatar } from '@/components/layout/UserAvatar'
 import { useFocusTrap } from '@/components/layout/use-focus-trap'
 import { Button } from '@/components/ui/Button'
 import { CloseIcon, MenuIcon } from '@/components/ui/icons'
 import { signOut } from '@/lib/actions/auth-actions'
 import { DISCORD_URL, NAV_ITEMS, PLAY_URL } from '@/lib/constants/site'
 import { cn } from '@/lib/utils/cn'
+
+import type { SocialProvider } from '@/lib/validation/auth'
 
 const PANEL_ID = 'mobile-nav-panel'
 
@@ -26,7 +29,7 @@ const ICON_BUTTON_CLASS =
 type MobileNavProps = {
   className?: string
   /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
-  user?: { nickname: string; avatarUrl?: string | null } | null
+  user?: { nickname: string; avatarUrl?: string | null; provider?: SocialProvider | null } | null
 }
 
 const USER_ROW_CLASS =
@@ -137,23 +140,12 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
         {user === null ? null : (
           <div className="border-line flex flex-col gap-2 border-b px-4 py-4">
             <div className="flex items-center gap-2.5 px-2">
-              {user.avatarUrl ? (
-                /* 임의 외부 호스트(제공자 아바타)라 next.config 의 remotePatterns
-                   화이트리스트로는 감당 못 한다. */
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.avatarUrl}
-                  alt=""
-                  className="size-8 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <span
-                  aria-hidden
-                  className="bg-ink/10 text-ink flex size-8 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold"
-                >
-                  {user.nickname.charAt(0)}
-                </span>
-              )}
+              <UserAvatar
+                nickname={user.nickname}
+                avatarUrl={user.avatarUrl}
+                provider={user.provider}
+                size="md"
+              />
               <span className="text-ink truncate text-[17px] font-semibold">{user.nickname}</span>
             </div>
 

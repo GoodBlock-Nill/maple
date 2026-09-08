@@ -5,7 +5,13 @@
  * (snake_case → camelCase 매핑)을 그대로 따른다.
  */
 
-export type NewsCategory = 'notice' | 'patch' | 'event'
+/**
+ * 뉴스 말머리 6종. `board_categories(board='news').key` 및 카테고리별 배너
+ * (`lib/constants/news-banners.ts`)와 1:1 대응한다.
+ * 값 `info`(안내사항)는 커뮤니티의 `info`(정보)와 문자열만 같고 다른 게시판이라
+ * 뱃지 색은 별도 토큰(`news-info`)을 쓴다.
+ */
+export type NewsCategory = 'notice' | 'maintenance' | 'update' | 'patch' | 'event' | 'info'
 
 export type CommunityCategory = 'chat' | 'question' | 'info'
 

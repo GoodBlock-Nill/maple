@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
+import { BADGE_CLASS } from '@/lib/constants/categories'
+import { getNewsBanner } from '@/lib/constants/news-banners'
 import {
   toAdjacentNewsItem,
   toComment,
@@ -87,6 +90,31 @@ describe('toNewsItem', () => {
 
     // Assert
     expect(result.category).toBe('notice')
+  })
+
+  it('should keep every seeded news category when mapped', () => {
+    // Arrange
+    const keys = ['notice', 'maintenance', 'update', 'patch', 'event', 'info']
+
+    // Act
+    const categories = keys.map((key) => toNewsItem({ ...newsRow, category_key: key }).category)
+
+    // Assert
+    expect(categories).toEqual(keys)
+  })
+
+  it('should resolve the badge and banner of a mapped category when rendered', () => {
+    // Arrange
+    const item = toNewsItem({ ...newsRow, category_key: 'info' })
+
+    // Act
+    const badge = NEWS_CATEGORY_MAP[item.category].badge
+    const banner = getNewsBanner(item.category)
+
+    // Assert — 뉴스 '안내사항'은 커뮤니티 '정보'와 키가 같아도 색이 달라야 한다.
+    expect(badge).toBe('news-info')
+    expect(BADGE_CLASS[badge]).toBe('bg-tag-pink-bg text-tag-pink')
+    expect(banner.src).toBe('/images/news/banners/info.png')
   })
 })
 

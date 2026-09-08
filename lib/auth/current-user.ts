@@ -1,8 +1,10 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { isSocialProvider } from '@/lib/validation/auth'
 
 import type { UserRole } from '@/lib/supabase/types'
+import type { SocialProvider } from '@/lib/validation/auth'
 
 /**
  * 화면이 쓰는 최소 사용자 정보.
@@ -14,6 +16,8 @@ export type CurrentUser = {
   role: UserRole
   /** 헤더 아바타용. 지금은 스텁 로그인이 채우지 않아 대부분 null — 첫 글자 폴백으로 그린다. */
   avatarUrl: string | null
+  /** 헤더 아바타에 브랜드 마크를 그리는 데 쓴다. 모르는 값(레거시 이메일 등)이면 null. */
+  provider: SocialProvider | null
 }
 
 /**
@@ -37,7 +41,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, role, avatar_url')
+    .select('nickname, role, avatar_url, provider')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -46,5 +50,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     nickname: profile?.nickname ?? (user.email ?? '모험가').split('@')[0] ?? '모험가',
     role: profile?.role ?? 'user',
     avatarUrl: profile?.avatar_url ?? null,
+    // DB 컬럼은 자유 문자열(string | null)이라 알려진 세 값으로 좁힌다 — 레거시
+    // 이메일 계정 등 알 수 없는 값은 헤더에서 중립 폴백(첫 글자)으로 그린다.
+    provider: isSocialProvider(profile?.provider) ? profile.provider : null,
   }
 }

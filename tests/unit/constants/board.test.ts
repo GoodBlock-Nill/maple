@@ -17,7 +17,22 @@ describe('news category map', () => {
     const labels = NEWS_CATEGORY_VALUES.map((value) => NEWS_CATEGORY_MAP[value].label)
 
     // Assert
-    expect(labels).toEqual(['공지사항', '패치노트', '이벤트'])
+    expect(labels).toEqual([
+      '공지사항',
+      '점검안내',
+      '업데이트 안내',
+      '패치노트',
+      '이벤트',
+      '안내사항',
+    ])
+  })
+
+  it('should keep the designed chip order when listed', () => {
+    // Arrange & Act
+    const values = NEWS_CATEGORIES.map((category) => category.value)
+
+    // Assert
+    expect(values).toEqual(['notice', 'maintenance', 'update', 'patch', 'event', 'info'])
   })
 
   it('should map every news category to a badge class when resolved', () => {
@@ -27,9 +42,24 @@ describe('news category map', () => {
     // Assert
     expect(classes).toEqual([
       'bg-tag-purple-bg text-tag-purple',
+      'bg-tag-blue-bg text-tag-blue',
+      'bg-tag-cyan-bg text-tag-cyan',
       'bg-tag-orange-bg text-tag-orange',
       'bg-tag-green-bg text-tag-green',
+      'bg-tag-pink-bg text-tag-pink',
     ])
+  })
+
+  it('should not reuse the community badge token for 안내사항 when both keys are "info"', () => {
+    // Arrange
+    const newsInfo = NEWS_CATEGORY_MAP.info
+
+    // Act
+    const newsClass = BADGE_CLASS[newsInfo.badge]
+
+    // Assert — 같은 'info' 키지만 색이 겹치면 두 게시판이 구분되지 않는다.
+    expect(newsInfo.badge).toBe('news-info')
+    expect(newsClass).not.toBe(BADGE_CLASS[COMMUNITY_CATEGORY_MAP.info.badge])
   })
 })
 

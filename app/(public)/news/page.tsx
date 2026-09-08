@@ -24,7 +24,8 @@ const NEWS_TITLE = '뉴스목록'
 
 export const metadata: Metadata = {
   title: '뉴스',
-  description: '글자월드의 공지사항, 패치노트, 이벤트 소식을 한곳에서 확인하세요.',
+  description:
+    '글자월드의 공지사항, 점검안내, 업데이트 안내, 패치노트, 이벤트, 안내사항을 한곳에서 확인하세요.',
 }
 
 export default async function NewsPage(props: PageProps<'/news'>) {
@@ -40,11 +41,14 @@ export default async function NewsPage(props: PageProps<'/news'>) {
   return (
     <PageShell variant="news" title={NEWS_TITLE}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* 말머리 6종 + 전체는 390 폭에 한 줄로 담기지 않는다. 가로 스크롤 대신
+            줄바꿈으로 전부 보여 준다. */}
         <CategoryChips
           label="뉴스 카테고리"
           items={NEWS_CATEGORIES}
           active={category}
           hrefFor={categoryHref}
+          wrap
         />
 
         <div className="flex items-center gap-[15px]">

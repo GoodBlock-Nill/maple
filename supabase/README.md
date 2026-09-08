@@ -24,6 +24,7 @@ supabase/
 | `20260908001300_post_content_html.sql`     | 본문 에디터 도입 — `content_format` 에 `html` 보장 + 저장 형식 계약 주석                   |
 | `20260908001400_post_likes.sql`            | `post_likes` (복합 PK) + `sync_post_like_count()` 집계 트리거                              |
 | `20260908001500_profiles_msw.sql`          | `profiles.msw_uid`/`msw_profile_code` (메이플스토리 월드 계정 연동) + CHECK/유니크 제약    |
+| `20260908001600_news_categories.sql`       | 뉴스 말머리 6종 확장 — `maintenance`/`update`/`info` 추가 + 칩 순서(`sort_order`) 재정렬   |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 

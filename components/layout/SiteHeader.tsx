@@ -5,9 +5,11 @@ import { MobileNav } from '@/components/layout/MobileNav'
 import { SiteNav } from '@/components/layout/SiteNav'
 import { Button } from '@/components/ui/Button'
 
+import type { SocialProvider } from '@/lib/validation/auth'
+
 type SiteHeaderProps = {
   /** 세션 연동 전까지는 항상 null. */
-  user?: { nickname: string; avatarUrl?: string | null } | null
+  user?: { nickname: string; avatarUrl?: string | null; provider?: SocialProvider | null } | null
 }
 
 /**

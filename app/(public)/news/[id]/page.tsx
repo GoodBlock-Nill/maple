@@ -5,10 +5,15 @@ import { ArticleCard } from '@/components/board/ArticleCard'
 import { BackToListLink } from '@/components/board/BackToListLink'
 import { ListSheet } from '@/components/board/ListSheet'
 import { Markdown } from '@/components/board/Markdown'
+import { NewsBanner } from '@/components/board/NewsBanner'
+import { ShareButton } from '@/components/board/ShareButton'
 import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
 import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
+import { getNewsBanner } from '@/lib/constants/news-banners'
 import { getAdjacentNews, getNewsById } from '@/lib/data/news'
+import { absoluteUrl } from '@/lib/utils/absolute-url'
+import { newsShareUrl } from '@/lib/utils/share'
 
 import type { Metadata } from 'next'
 
@@ -23,10 +28,35 @@ export async function generateMetadata(props: PageProps<'/news/[id]'>): Promise<
     return { title: '찾을 수 없는 소식' }
   }
 
+  /* 공유 카드 이미지는 말머리 배너를 그대로 쓴다. 크롤러가 외부에서 받아 가므로
+     절대 URL 이어야 한다. */
+  const banner = getNewsBanner(item.category)
+  const canonical = newsShareUrl(item.id)
+  const image = {
+    url: absoluteUrl(banner.src),
+    width: banner.width,
+    height: banner.height,
+    alt: banner.alt,
+  }
+
   return {
     title: item.title,
     description: item.summary,
-    openGraph: { title: item.title, description: item.summary, type: 'article' },
+    /* 공유 버튼이 복사하는 주소와 크롤러가 정본으로 삼는 주소를 같게 맞춘다. */
+    alternates: { canonical },
+    openGraph: {
+      title: item.title,
+      description: item.summary,
+      type: 'article',
+      url: canonical,
+      images: [image],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: item.title,
+      description: item.summary,
+      images: [image],
+    },
   }
 }
 
@@ -46,9 +76,13 @@ export default async function NewsDetailPage(props: PageProps<'/news/[id]'>) {
       <ListSheet className="mt-6">
         <ArticleCard
           badge={{ label: category.label, color: category.badge }}
+          banner={<NewsBanner category={item.category} />}
           title={item.title}
           date={item.publishedAt}
           views={item.views}
+          metaAside={
+            <ShareButton title={item.title} text={item.summary} url={newsShareUrl(item.id)} />
+          }
         >
           <Markdown>{item.body}</Markdown>
         </ArticleCard>

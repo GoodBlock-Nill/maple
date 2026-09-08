@@ -15,10 +15,14 @@ export type BadgeColor =
   | 'green'
   | 'rose'
   | 'gray'
-  /* 게시판 말머리 6종 — lib/constants/board.ts 의 카테고리와 1:1 대응한다. */
+  /* 게시판 말머리 9종 — lib/constants/board.ts 의 카테고리와 1:1 대응한다. */
   | 'notice'
+  | 'maintenance'
+  | 'update'
   | 'patch'
   | 'event'
+  /* 뉴스 "안내사항". 커뮤니티 'info'(정보)가 이미 초록을 쓰고 있어 키를 분리한다. */
+  | 'news-info'
   | 'chat'
   | 'question'
   | 'info'
@@ -32,10 +36,13 @@ export const BADGE_CLASS: Record<BadgeColor, string> = {
   rose: 'bg-badge-rose text-ink',
   gray: 'bg-badge-gray text-white',
 
-  /* 뉴스 */
+  /* 뉴스 — 배너(public/images/news/banners)의 주조색과 맞춘다. */
   notice: 'bg-tag-purple-bg text-tag-purple',
+  maintenance: 'bg-tag-blue-bg text-tag-blue',
+  update: 'bg-tag-cyan-bg text-tag-cyan',
   patch: 'bg-tag-orange-bg text-tag-orange',
   event: 'bg-tag-green-bg text-tag-green',
+  'news-info': 'bg-tag-pink-bg text-tag-pink',
 
   /* 커뮤니티 — 잡담은 공지사항, 정보는 이벤트와 같은 색을 공유한다(시안 기준). */
   chat: 'bg-tag-purple-bg text-tag-purple',
