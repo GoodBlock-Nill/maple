@@ -10,23 +10,24 @@ supabase/
   seed-users.md                    테스트 계정 생성 절차 (auth 는 SQL 로 못 만든다)
 ```
 
-| 파일                                       | 내용                                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `20260908000100_init_enums.sql`            | `extensions` 스키마, `pg_trgm`, enum 8종                                                   |
-| `20260908000200_profiles.sql`              | `profiles` (auth.users 1:1)                                                                |
-| `20260908000300_boards_posts_comments.sql` | `board_categories` · `posts` · `comments` + 인덱스                                         |
-| `20260908000400_support.sql`               | `inquiries` · `inquiry_replies` · `faqs`                                                   |
-| `20260908000500_site_content.sql`          | `site_settings` · `hero_banners` · `gacha_items` · `rankings`                              |
-| `20260908000600_functions_triggers.sql`    | `set_updated_at` · `is_admin` · `handle_new_user` · `increment_post_view` · 집계/권한 가드 |
-| `20260908000700_rls_policies.sql`          | 전 테이블 RLS + 정책                                                                       |
-| `20260908000800_storage_buckets.sql`       | 버킷 3종 + `storage.objects` 정책                                                          |
-| `20260908001200_social_auth_profiles.sql`  | 간편로그인 전환 — `profiles.provider`/`provider_id`/동의 시각 3종 + `handle_new_user` 개편 |
-| `20260908001300_post_content_html.sql`     | 본문 에디터 도입 — `content_format` 에 `html` 보장 + 저장 형식 계약 주석                   |
-| `20260908001400_post_likes.sql`            | `post_likes` (복합 PK) + `sync_post_like_count()` 집계 트리거                              |
-| `20260908001500_profiles_msw.sql`          | `profiles.msw_uid`/`msw_profile_code` (메이플스토리 월드 계정 연동) + CHECK/유니크 제약    |
-| `20260908001600_news_categories.sql`       | 뉴스 말머리 6종 확장 — `maintenance`/`update`/`info` 추가 + 칩 순서(`sort_order`) 재정렬   |
-| `20260908001700_admin_foundation.sql`      | 관리자 사이트 기반 — `admin_invites` · `audit_logs` · 제재/숨김 컬럼 + `is_suspended()` + `handle_new_user` 초대 승격 |
-| `20260908001900_inquiries_owner_edit_cancel.sql` | 문의 소유자 수정/접수 취소 — `inquiries.cancelled_at` + `inquiries_update_own` + `guard_inquiry_owner_update()` + 첨부 삭제 정책 |
+| 파일                                                | 내용                                                                                                                             |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `20260908000100_init_enums.sql`                     | `extensions` 스키마, `pg_trgm`, enum 8종                                                                                         |
+| `20260908000200_profiles.sql`                       | `profiles` (auth.users 1:1)                                                                                                      |
+| `20260908000300_boards_posts_comments.sql`          | `board_categories` · `posts` · `comments` + 인덱스                                                                               |
+| `20260908000400_support.sql`                        | `inquiries` · `inquiry_replies` · `faqs`                                                                                         |
+| `20260908000500_site_content.sql`                   | `site_settings` · `hero_banners` · `gacha_items` · `rankings`                                                                    |
+| `20260908000600_functions_triggers.sql`             | `set_updated_at` · `is_admin` · `handle_new_user` · `increment_post_view` · 집계/권한 가드                                       |
+| `20260908000700_rls_policies.sql`                   | 전 테이블 RLS + 정책                                                                                                             |
+| `20260908000800_storage_buckets.sql`                | 버킷 3종 + `storage.objects` 정책                                                                                                |
+| `20260908001200_social_auth_profiles.sql`           | 간편로그인 전환 — `profiles.provider`/`provider_id`/동의 시각 3종 + `handle_new_user` 개편                                       |
+| `20260908001300_post_content_html.sql`              | 본문 에디터 도입 — `content_format` 에 `html` 보장 + 저장 형식 계약 주석                                                         |
+| `20260908001400_post_likes.sql`                     | `post_likes` (복합 PK) + `sync_post_like_count()` 집계 트리거                                                                    |
+| `20260908001500_profiles_msw.sql`                   | `profiles.msw_uid`/`msw_profile_code` (메이플스토리 월드 계정 연동) + CHECK/유니크 제약                                          |
+| `20260908001600_news_categories.sql`                | 뉴스 말머리 6종 확장 — `maintenance`/`update`/`info` 추가 + 칩 순서(`sort_order`) 재정렬                                         |
+| `20260908001700_admin_foundation.sql`               | 관리자 사이트 기반 — `admin_invites` · `audit_logs` · 제재/숨김 컬럼 + `is_suspended()` + `handle_new_user` 초대 승격            |
+| `20260908001900_inquiries_owner_edit_cancel.sql`    | 문의 소유자 수정/접수 취소 — `inquiries.cancelled_at` + `inquiries_update_own` + `guard_inquiry_owner_update()` + 첨부 삭제 정책 |
+| `20260908002100_reports_admin_update_and_notes.sql` | 신고 처리 — `reports` UPDATE 권한 + `note`/`resolved_by`/`resolved_at` + `guard_report_admin_columns()`                          |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -231,28 +232,28 @@ while (true) {
 
 ## 3. RLS 요약
 
-| 테이블             | anon                             | 로그인 사용자                               | 관리자                |
-| ------------------ | -------------------------------- | ------------------------------------------- | --------------------- |
-| `profiles`         | ✗                                | 본인 행 조회·수정 (`role` 은 트리거가 고정) | 전체                  |
-| `board_categories` | `is_active` 조회                 | 동일                                        | 전체 CRUD             |
-| `posts`            | 공개·미삭제·게시시각 도래분 조회 | + 본인 글 조회, 커뮤니티 글 작성/수정/삭제  | 전체 CRUD (뉴스 포함) |
-| `comments`         | 공개 글의 미삭제 댓글 조회       | + 본인 댓글 작성/수정/삭제                  | 전체 CRUD             |
+| 테이블             | anon                             | 로그인 사용자                                         | 관리자                |
+| ------------------ | -------------------------------- | ----------------------------------------------------- | --------------------- |
+| `profiles`         | ✗                                | 본인 행 조회·수정 (`role` 은 트리거가 고정)           | 전체                  |
+| `board_categories` | `is_active` 조회                 | 동일                                                  | 전체 CRUD             |
+| `posts`            | 공개·미삭제·게시시각 도래분 조회 | + 본인 글 조회, 커뮤니티 글 작성/수정/삭제            | 전체 CRUD (뉴스 포함) |
+| `comments`         | 공개 글의 미삭제 댓글 조회       | + 본인 댓글 작성/수정/삭제                            | 전체 CRUD             |
 | `inquiries`        | ✗                                | 본인 문의 조회 · 접수 · 수정(접수 대기만) · 접수 취소 | 전체 CRUD             |
-| `inquiry_replies`  | ✗                                | 본인 문의의 답변 조회                       | 전체 CRUD             |
-| `faqs`             | `is_published` 조회              | 동일                                        | 전체 CRUD             |
-| `site_settings`    | 조회                             | 조회                                        | 수정                  |
-| `hero_banners`     | 노출기간 내 활성 배너            | 동일                                        | 전체 CRUD             |
-| `gacha_items`      | 공개분 조회                      | 동일                                        | 전체 CRUD             |
-| `rankings`         | 조회                             | 조회                                        | 전체 CRUD             |
-| `reports`          | ✗ (권한 자체를 회수)             | 신고 접수 + 본인 신고 조회                  | 전체 조회 · 상태 변경 |
-| `post_likes`       | ✗ (권한 자체를 회수)             | 본인 좋아요 조회 · 등록 · 취소              | 전체 조회             |
+| `inquiry_replies`  | ✗                                | 본인 문의의 답변 조회                                 | 전체 CRUD             |
+| `faqs`             | `is_published` 조회              | 동일                                                  | 전체 CRUD             |
+| `site_settings`    | 조회                             | 조회                                                  | 수정                  |
+| `hero_banners`     | 노출기간 내 활성 배너            | 동일                                                  | 전체 CRUD             |
+| `gacha_items`      | 공개분 조회                      | 동일                                                  | 전체 CRUD             |
+| `rankings`         | 조회                             | 조회                                                  | 전체 CRUD             |
+| `reports`          | ✗ (권한 자체를 회수)             | 신고 접수 + 본인 신고 조회                            | 전체 조회 · 상태 변경 |
+| `post_likes`       | ✗ (권한 자체를 회수)             | 본인 좋아요 조회 · 등록 · 취소                        | 전체 조회             |
 
 스토리지
 
-| 버킷                  | 공개 | 읽기            | 쓰기                                            |
-| --------------------- | ---- | --------------- | ----------------------------------------------- |
-| `public-assets`       | O    | 전체            | 관리자                                          |
-| `post-images`         | O    | 전체            | 로그인 사용자, `{uid}/…` 경로만                 |
+| 버킷                  | 공개 | 읽기            | 쓰기                                                 |
+| --------------------- | ---- | --------------- | ---------------------------------------------------- |
+| `public-assets`       | O    | 전체            | 관리자                                               |
+| `post-images`         | O    | 전체            | 로그인 사용자, `{uid}/…` 경로만                      |
 | `inquiry-attachments` | X    | 작성자 · 관리자 | 로그인 사용자, `{uid}/…` 경로만 (삭제도 본인 폴더만) |
 
 `post-images` 의 실제 경로는 `{uid}/{yyyy}/{uuid}.{ext}` 다(`lib/supabase/storage.ts` 의
@@ -652,13 +653,13 @@ E2E 테스트에서 특정 행을 지목할 때 이 값을 쓴다.
 
 ### 6.1 추가된 것
 
-| 대상                                          | 내용                                                                     |
-| --------------------------------------------- | ------------------------------------------------------------------------ |
-| `admin_invites`                               | 관리자 초대 허용 목록. 권한 승격의 **유일한** 근거                       |
-| `audit_logs`                                  | 관리자 행위 이력(추가 전용). 관리자만 select/insert                      |
-| `profiles.suspended_until` / `suspension_reason` | 회원 제재. 읽기는 되고 쓰기만 막힌다                                  |
-| `posts.is_hidden` / `comments.is_hidden`      | 운영 숨김. 작성자 삭제(`deleted_at`)와 구분한다                          |
-| `is_suspended()`                              | SECURITY INVOKER. 쓰기 정책에서만 쓴다                                   |
+| 대상                                             | 내용                                                |
+| ------------------------------------------------ | --------------------------------------------------- |
+| `admin_invites`                                  | 관리자 초대 허용 목록. 권한 승격의 **유일한** 근거  |
+| `audit_logs`                                     | 관리자 행위 이력(추가 전용). 관리자만 select/insert |
+| `profiles.suspended_until` / `suspension_reason` | 회원 제재. 읽기는 되고 쓰기만 막힌다                |
+| `posts.is_hidden` / `comments.is_hidden`         | 운영 숨김. 작성자 삭제(`deleted_at`)와 구분한다     |
+| `is_suspended()`                                 | SECURITY INVOKER. 쓰기 정책에서만 쓴다              |
 
 ### 6.2 권한 승격 규칙 (중요)
 
@@ -692,6 +693,15 @@ ADMIN_BOOTSTRAP_EMAIL=... ADMIN_BOOTSTRAP_PASSWORD=... pnpm --filter @maple/admi
 숨김 상태의 글은 작성자에게도 보이지 않는다. 예외를 두면 "숨겼는데 당사자에게는
 그대로 보이는" 상태가 되어 운영 조치가 무의미해진다.
 
+제재는 **사용자에게 이유가 보여야** 조치가 끝난다. 사용자 사이트는 정지 상태를
+`profiles_select_self` 로 본인 것만 읽어(`lib/auth/current-user.ts` 의 `suspendedUntil` ·
+`suspensionReason`) 글쓰기 · 댓글 · 신고 · 좋아요에서 같은 문구를 그린다
+(`lib/utils/suspension.ts` 의 `describeSuspension()`).
+
+- 화면: 붉은 안내 배너 + 제출 버튼 비활성화
+- 서버 액션: 같은 문구를 `formError` 로 반환(정책이 42501 로 막았을 때도 같은 문구로 옮겨 적는다)
+- 남의 제재 상태는 어느 경로로도 노출하지 않는다(`is_suspended()` 도 INVOKER 라 본인만 판정한다)
+
 ### 6.4 보안 회귀 수정 — `guard_profile_role()`
 
 `20260908001000` 이 이 트리거 함수를 `security invoker` 로 고쳤는데(사유: DEFINER
@@ -713,3 +723,35 @@ id = <본인>` 이 그대로 반영됐다. `20260908001700` 이 다시 `security
 ```bash
 pnpm gen:types   # types/database.types.ts + admin/types/database.types.ts
 ```
+
+### 6.6 신고 처리 (`20260908002100`)
+
+`20260908001100` 이 `reports_update_admin` 정책은 만들었지만 테이블 권한은
+`select, insert` 만 다시 부여했다. **RLS 정책은 권한을 주지 않는다** — GRANT 를
+통과한 뒤에야 정책이 평가된다. 그래서 관리자 세션도 신고 상태를 바꾸려 하면 정책이
+아니라 권한 단계에서 42501 로 튕겼다.
+
+| 대상                                       | 내용                                                         |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| `grant update on reports to authenticated` | 행 판정은 그대로 `reports_update_admin`(`is_admin()`)이 한다 |
+| `reports.note`                             | 운영자 처리 메모. `char_length(note) <= 500`                 |
+| `reports.resolved_by`                      | 처리한 관리자. `on delete set null`                          |
+| `reports.resolved_at`                      | 처리 완료 시각                                               |
+| `guard_report_admin_columns()`             | SECURITY **INVOKER**. 처리 컬럼을 관리자 외에는 되돌린다     |
+
+가드는 INSERT 에도 걸린다. `reports_insert_own` 은 `status = 'open'` 만 강제하므로,
+신고를 넣으면서 `note` · `resolved_by` · `resolved_at` 을 함께 실어 보내는 요청이
+그대로 통과해 "접수되자마자 처리된 것처럼 보이는" 행이 만들어진다. 트리거가 INSERT
+시점에 그 셋을 비우고 `status` 를 `open` 으로 되돌린다.
+
+DELETE 는 여전히 열지 않는다. 신고 이력은 지우지 않고 `status` 로만 종결한다.
+
+실제 DB 에 대고 확인하려면(스텁 계정으로 진짜 세션을 만들어 두드린다):
+
+```bash
+node --env-file=.env.local tests/manual/reports-admin-columns-check.mjs
+```
+
+> `guard_report_admin_columns()` 를 `security definer` 로 바꾸면 `current_user` 가
+> 함수 소유자로 평가되어 첫 분기가 항상 참이 된다 — 즉 아무나 자기 신고를 "처리됨"
+> 으로 만들 수 있다. § 6.4 와 같은 함정이다.

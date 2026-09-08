@@ -36,7 +36,7 @@ export function FaqAccordion({ groups }: FaqAccordionProps) {
                   </span>
                   <ChevronDownIcon className="text-ink-muted size-5 shrink-0 transition-transform group-open:rotate-180" />
                 </summary>
-                <p className="bg-page-sub border-line text-ink-muted mx-4 mb-4 rounded-[10px] border px-4 py-3.5 text-[16px] leading-[1.7]">
+                <p className="bg-page-sub border-line text-ink-muted mx-4 mb-4 rounded-[10px] border px-4 py-3.5 text-[16px] leading-[1.7] whitespace-pre-line">
                   {item.answer}
                 </p>
               </details>

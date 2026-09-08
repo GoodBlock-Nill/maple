@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
-import { isUniqueViolation } from '@/lib/actions/pg-error'
+import { isRlsViolation, isUniqueViolation } from '@/lib/actions/pg-error'
 import {
   cooldownMessage,
   REPORT_COOLDOWN_SECONDS,
@@ -18,6 +18,7 @@ import {
 } from '@/lib/constants/report'
 import { createClient } from '@/lib/supabase/server'
 import { isAuthor } from '@/lib/utils/authorship'
+import { suspensionBlockedMessage, suspensionNotice } from '@/lib/utils/suspension'
 import { sanitizeNextPath } from '@/lib/validation/auth'
 import { reportSchema } from '@/lib/validation/report'
 
@@ -29,7 +30,7 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
  * 신고 접수 서버 액션.
  *
  * 검사는 세 겹이다.
- *   1) 여기(세션 · 자기 글 · 도배) — 사용자에게 이유를 알려 주기 위해.
+ *   1) 여기(세션 · 정지 · 자기 글 · 도배) — 사용자에게 이유를 알려 주기 위해.
  *   2) `reports_insert_own` 정책 + `can_report_target()` — 직접 POST 우회 차단.
  *   3) `reports_unique_reporter` 유니크 제약 — 동시 요청 경합까지 막는다.
  *
@@ -99,6 +100,12 @@ export async function submitReport(_prevState: FormState, formData: FormData): P
     redirect(`/login?next=${encodeURIComponent(nextPath)}`)
   }
 
+  const suspended = suspensionNotice(user)
+
+  if (suspended !== null) {
+    return { formError: suspended }
+  }
+
   const parsed = reportSchema.safeParse({
     targetType: readField(formData, 'targetType'),
     targetId: readField(formData, 'targetId'),
@@ -142,6 +149,10 @@ export async function submitReport(_prevState: FormState, formData: FormData): P
 
   if (isUniqueViolation(error)) {
     return { formError: duplicateReportMessage(targetType) }
+  }
+
+  if (isRlsViolation(error)) {
+    return { formError: suspensionBlockedMessage(user) }
   }
 
   if (error !== null) {

@@ -14,6 +14,7 @@ import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
 import { getPostById, getPostLikeState } from '@/lib/data/community'
 import { isEdited } from '@/lib/utils/authorship'
 import { maskNickname } from '@/lib/utils/mask'
+import { suspensionNotice } from '@/lib/utils/suspension'
 import { postHtmlText } from '@/lib/utils/post-html'
 
 import type { Metadata } from 'next'
@@ -54,6 +55,9 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
   const detailPath = `${COMMUNITY_PATH}/${post.id}`
   const viewerId = user?.id ?? null
   const liked = await getPostLikeState(post.id, viewerId)
+  /* 본인 정지 상태만 내려간다. 남의 제재 여부는 `profiles_select_self` 때문에
+     애초에 조회되지 않는다. */
+  const suspended = suspensionNotice(user)
 
   return (
     <PageShell variant="community" title={COMMUNITY_TITLE}>
@@ -74,6 +78,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
                 authorId={post.authorId}
                 viewerId={viewerId}
                 detailPath={detailPath}
+                suspensionNotice={suspended}
               />
             </div>
           }
@@ -92,6 +97,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
               likeCount={post.likes}
               detailPath={detailPath}
               isAuthenticated={user !== null}
+              suspensionNotice={suspended}
             />
           </div>
 
@@ -100,6 +106,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
             comments={post.comments}
             isAuthenticated={user !== null}
             viewerId={viewerId}
+            suspensionNotice={suspended}
           />
         </ArticleCard>
       </ListSheet>

@@ -99,7 +99,11 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
 
           <InquiryDetailCard inquiry={inquiry} attachments={attachments} />
 
-          <InquiryReplyThread replies={replies} />
+          <InquiryReplyThread
+            replies={replies}
+            status={inquiry.status}
+            cancelledAt={inquiry.cancelledAt}
+          />
 
           <BackToListLink href={MY_INQUIRIES_PATH} />
         </div>

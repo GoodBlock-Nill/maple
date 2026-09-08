@@ -4,10 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
+import { isRlsViolation } from '@/lib/actions/pg-error'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
 import { isAuthor } from '@/lib/utils/authorship'
+import { suspensionBlockedMessage, suspensionNotice } from '@/lib/utils/suspension'
 import { commentIdSchema, postIdSchema, updatePostSchema } from '@/lib/validation/post'
 
 import type { FormState } from '@/lib/actions/form-state'
@@ -23,6 +25,10 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
  *
  * 삭제는 전부 소프트 삭제(`deleted_at`)다. 물리 삭제는 관리자 정책에만 열려 있고,
  * 댓글이 달린 글을 지우면 알림·링크가 통째로 깨진다.
+ *
+ * 정지 계정은 수정 · 삭제도 막는다. 정지는 "읽기는 되고 쓰기만 막힌다"는 규칙이고
+ * (마이그레이션 20260908001700), 글을 고치거나 지우는 것도 쓰기다. 이의 제기 경로는
+ * 고객지원 문의로 열려 있다.
  */
 
 const COMMUNITY_PATH = '/community'
@@ -44,7 +50,19 @@ async function requireUser(): Promise<
 > {
   const user = await getCurrentUser()
 
-  return user === null ? { ok: false, state: { formError: LOGIN_MESSAGE } } : { ok: true, user }
+  if (user === null) {
+    return { ok: false, state: { formError: LOGIN_MESSAGE } }
+  }
+
+  /* 세 액션(수정 · 글 삭제 · 댓글 삭제)이 모두 이 관문을 지난다. 여기 한 곳에서
+     막아야 "어떤 버튼은 되고 어떤 버튼은 안 되는" 상태가 생기지 않는다. */
+  const suspended = suspensionNotice(user)
+
+  if (suspended !== null) {
+    return { ok: false, state: { formError: suspended } }
+  }
+
+  return { ok: true, user }
 }
 
 /** 삭제되지 않은 커뮤니티 글의 작성자를 확인한다. */
@@ -147,7 +165,11 @@ export async function updatePost(
     .eq('author_id', guard.user.id)
 
   if (error !== null) {
-    return { formError: UPDATE_FAILURE_MESSAGE }
+    return {
+      formError: isRlsViolation(error)
+        ? suspensionBlockedMessage(guard.user)
+        : UPDATE_FAILURE_MESSAGE,
+    }
   }
 
   revalidateDetail(id)
@@ -174,7 +196,11 @@ export async function deletePost(id: string, _prevState: FormState): Promise<For
     .eq('author_id', guard.user.id)
 
   if (error !== null) {
-    return { formError: DELETE_FAILURE_MESSAGE }
+    return {
+      formError: isRlsViolation(error)
+        ? suspensionBlockedMessage(guard.user)
+        : DELETE_FAILURE_MESSAGE,
+    }
   }
 
   revalidateDetail(id)
@@ -205,7 +231,11 @@ export async function deleteComment(
     .eq('author_id', guard.user.id)
 
   if (error !== null) {
-    return { formError: COMMENT_DELETE_FAILURE_MESSAGE }
+    return {
+      formError: isRlsViolation(error)
+        ? suspensionBlockedMessage(guard.user)
+        : COMMENT_DELETE_FAILURE_MESSAGE,
+    }
   }
 
   revalidateDetail(postId)

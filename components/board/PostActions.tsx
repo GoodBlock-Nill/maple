@@ -12,6 +12,8 @@ type PostActionsProps = {
   viewerId: string | null
   /** 로그인 유도 링크의 복귀 경로. */
   detailPath: string
+  /** 뷰어 본인의 정지 안내. 신고 다이얼로그가 그대로 그린다. */
+  suspensionNotice?: string | null
 }
 
 /**
@@ -23,7 +25,13 @@ type PostActionsProps = {
  *
  * 여기서 하는 분기는 표시용이다. 실제 권한은 서버 액션과 RLS 가 강제한다.
  */
-export function PostActions({ postId, authorId, viewerId, detailPath }: PostActionsProps) {
+export function PostActions({
+  postId,
+  authorId,
+  viewerId,
+  detailPath,
+  suspensionNotice = null,
+}: PostActionsProps) {
   if (isAuthor(authorId, viewerId)) {
     return (
       <div className="flex items-center gap-2">
@@ -42,7 +50,12 @@ export function PostActions({ postId, authorId, viewerId, detailPath }: PostActi
           신고
         </Link>
       ) : (
-        <ReportDialog targetType="post" targetId={postId} nextPath={detailPath} />
+        <ReportDialog
+          targetType="post"
+          targetId={postId}
+          nextPath={detailPath}
+          suspensionNotice={suspensionNotice}
+        />
       )}
     </div>
   )

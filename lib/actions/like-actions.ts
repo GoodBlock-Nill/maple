@@ -2,11 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { isUniqueViolation } from '@/lib/actions/pg-error'
+import { isRlsViolation, isUniqueViolation } from '@/lib/actions/pg-error'
 import { LIKE_COOLDOWN_SECONDS, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { createClient } from '@/lib/supabase/server'
 import { toggleLikeState } from '@/lib/utils/like-state'
+import { suspensionBlockedMessage, suspensionNotice } from '@/lib/utils/suspension'
 import { postIdSchema } from '@/lib/validation/post'
 
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
@@ -20,7 +21,7 @@ import type { ToggleLikeResult } from '@/lib/utils/like-state'
  * `guard_post_counters()` 가 되돌린다).
  *
  * 검사는 세 겹이다.
- *   1) 여기(세션 · 대상 존재 · 연타) — 사용자에게 이유를 알려 주기 위해.
+ *   1) 여기(세션 · 정지 · 대상 존재 · 연타) — 사용자에게 이유를 알려 주기 위해.
  *   2) `post_likes_insert_own` / `post_likes_delete_own` 정책 — 직접 POST 차단.
  *   3) 복합 PK — 더블클릭·동시 요청으로 같은 행이 두 번 들어가는 것을 막는다.
  *
@@ -80,6 +81,12 @@ export async function toggleLike(postId: string): Promise<ToggleLikeResult> {
     return failure(LOGIN_MESSAGE, true)
   }
 
+  const suspended = suspensionNotice(user)
+
+  if (suspended !== null) {
+    return failure(suspended)
+  }
+
   const parsed = postIdSchema.safeParse(postId)
 
   if (!parsed.success) {
@@ -130,7 +137,9 @@ export async function toggleLike(postId: string): Promise<ToggleLikeResult> {
   /* 중복 insert 는 경합의 정상적인 결말이다(다른 탭이 먼저 눌렀다). 이미 눌린
      상태이므로 오류가 아니라 "눌림"으로 확정한다. */
   if (error !== null && !isUniqueViolation(error)) {
-    return failure(FAILURE_MESSAGE)
+    /* 정책이 막았다면(`post_likes_insert_own` 의 `not is_suspended()`) 그 사이
+       정지가 걸린 것이다. 일반 실패 문구 대신 같은 정지 안내를 돌려준다. */
+    return failure(isRlsViolation(error) ? suspensionBlockedMessage(user) : FAILURE_MESSAGE)
   }
 
   // 낙관적 UI 와 같은 규칙을 쓴다. 집계를 못 읽었을 때의 폴백값이기도 하다.

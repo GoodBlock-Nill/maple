@@ -1,15 +1,20 @@
 import Image from 'next/image'
 
-import { PANEL_LAYERS } from '@/components/about/panel-layers'
-import { CREATOR_INTRO, CREATOR_NAME, CREATOR_SLOGAN } from '@/lib/mock/site'
+import { PANEL_LAYERS, PANEL_PHOTO_SRC } from '@/components/about/panel-layers'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
 
-const PHOTO_SRC = '/images/about/panel-photo.png'
+import type { CreatorView } from '@/lib/data/site-view'
+
 const AVATAR_SRC = '/images/about/avatar-dot.gif'
 
 /** 양피지 레이어가 하나도 없을 때 텍스트가 놓이는 종이색. */
 const PARCHMENT_CLASS = 'bg-[#f7edd7]'
+
+type CreatorPanelProps = {
+  /** `site_settings.creator_*` 를 폴백까지 합류시킨 값(`lib/data/site-view.ts`). */
+  creator: CreatorView
+}
 
 /**
  * 양피지 패널(시안 1341×739).
@@ -19,8 +24,16 @@ const PARCHMENT_CLASS = 'bg-[#f7edd7]'
  * 위치도 시안과 어긋나서(사용자 지적) 분해본을 쓴다.
  * 모바일에서는 사진만 상단에 얹고 본문을 종이색 카드에 세로로 쌓는다.
  */
-export function CreatorPanel() {
-  const hasPhoto = hasPublicAsset(PHOTO_SRC)
+export function CreatorPanel({ creator }: CreatorPanelProps) {
+  /* 사진은 DB(`site_settings.creator_photo_url`) 가 우선이고, 비어 있으면 시안
+     자산으로 떨어진다. 원격 URL 은 `hasPublicAsset()` 이 그대로 통과시킨다. */
+  const photoSrc = creator.photoUrl ?? PANEL_PHOTO_SRC
+  const isRemotePhoto = creator.photoUrl !== null
+  const hasPhoto = hasPublicAsset(photoSrc)
+  /* 사진 레이어만 DB 값으로 갈아끼운다. 나머지는 시안 자산 그대로다. */
+  const layers = PANEL_LAYERS.map((layer) =>
+    layer.src === PANEL_PHOTO_SRC ? { ...layer, src: photoSrc } : layer,
+  ).filter((layer) => hasPublicAsset(layer.src))
 
   return (
     <div className="mx-auto w-full max-w-[1341px]">
@@ -29,12 +42,12 @@ export function CreatorPanel() {
           승격하면 뷰포트와 무관하게 DOM 에는 항상 h1 이 두 개 남는다.
           그래서 시각 제목은 h2 로 유지하고, 화면에는 보이지 않되 항상
           하나만 존재하는 sr-only h1 을 페이지 대표 제목으로 둔다. */}
-      <h1 className="sr-only">세글자 소개</h1>
+      <h1 className="sr-only">{creator.name} 소개</h1>
       <div className="lg:hidden">
         {hasPhoto ? (
           <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-[12px] bg-[#f7edd7]">
             <Image
-              src={PHOTO_SRC}
+              src={photoSrc}
               alt=""
               fill
               /* 원본이 462px 이라 그 이상 요청하면 최적화 이득이 없다. */
@@ -51,14 +64,14 @@ export function CreatorPanel() {
             hasPhoto ? 'rounded-b-[12px]' : 'rounded-[12px]',
           )}
         >
-          <CreatorText />
+          <CreatorText creator={creator} />
         </div>
       </div>
 
       <div className="relative hidden aspect-[1341/739] w-full lg:block">
         <div className={cn(PARCHMENT_CLASS, 'absolute inset-[8%_4%] rounded-[12px]')} />
 
-        {PANEL_LAYERS.filter((layer) => hasPublicAsset(layer.src)).map((layer) => (
+        {layers.map((layer) => (
           <Image
             key={layer.src}
             src={layer.src}
@@ -80,6 +93,9 @@ export function CreatorPanel() {
             className={cn(
               'pointer-events-none absolute max-w-none',
               layer.isAnimated && 'pixel-art',
+              /* 시안 자산은 레이어 박스와 비율이 정확히 같지만 관리자가 올린
+                 사진은 그렇지 않다. 원격일 때만 잘라 맞춰 왜곡을 막는다. */
+              layer.src === photoSrc && isRemotePhoto && 'object-cover',
             )}
           />
         ))}
@@ -87,7 +103,7 @@ export function CreatorPanel() {
         {/* 시안의 텍스트 블록은 패널 세로 중앙이 아니라 그보다 35px 아래에 있다
             (사진 타원·덩굴 장식을 피한 위치). 739 기준 54.7%. */}
         <div className="absolute top-[54.7%] left-[41.4%] flex w-[49.4%] -translate-y-1/2 flex-col gap-10">
-          <CreatorText />
+          <CreatorText creator={creator} />
         </div>
 
         {hasPublicAsset(AVATAR_SRC) ? (
@@ -109,7 +125,7 @@ export function CreatorPanel() {
 }
 
 /** 이름 · 슬로건 · 본문. 데스크톱/모바일 레이아웃이 같은 내용을 공유한다. */
-function CreatorText() {
+function CreatorText({ creator }: CreatorPanelProps) {
   return (
     <>
       {/* 시안(509:3002): #ffd200→#ff6c00 세로 그라데이션 글자 + 글자 **바깥**
@@ -124,20 +140,20 @@ function CreatorText() {
           aria-hidden
           className="absolute inset-0 text-[#3a2b20] drop-shadow-[0_4px_6px_rgba(58,43,32,0.35)] [-webkit-text-stroke:12px_#3a2b20] lg:[-webkit-text-stroke:16px_#3a2b20]"
         >
-          {CREATOR_NAME}
+          {creator.name}
         </span>
         <span className="relative bg-gradient-to-b from-[#ffd200] to-[#ff6c00] bg-clip-text text-transparent">
-          {CREATOR_NAME}
+          {creator.name}
         </span>
       </h2>
 
       <div className="relative z-10 flex flex-col gap-6 lg:gap-[10px]">
         <p className="font-maple text-[clamp(18px,2.2vw,25px)] leading-snug font-bold text-[#f7601b]">
-          {CREATOR_SLOGAN}
+          {creator.slogan}
         </p>
 
         <div className="flex flex-col gap-5 lg:gap-[15px]">
-          {CREATOR_INTRO.map((paragraph, index) => (
+          {creator.intro.map((paragraph, index) => (
             <p
               key={`${index}-${paragraph.slice(0, 8)}`}
               className="font-intro text-[clamp(16px,1.9vw,22px)] leading-[1.36] font-bold whitespace-pre-line text-[#381f1e]"

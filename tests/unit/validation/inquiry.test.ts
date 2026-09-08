@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createInquirySchema,
   inquiryIdSchema,
+  normalizeCRLF,
   updateInquirySchema,
   validateInquiryAttachments,
 } from '@/lib/validation/inquiry'
@@ -71,6 +72,65 @@ describe('createInquirySchema', () => {
     // Assert
     expect(shortTitle.success).toBe(false)
     expect(longContent.success).toBe(false)
+  })
+})
+
+describe('normalizeCRLF', () => {
+  it('should turn CRLF into LF', () => {
+    // Arrange & Act — 브라우저가 textarea 값을 전송 시 CRLF 로 정규화한다(HTML 사양).
+    const result = normalizeCRLF('첫 줄\r\n둘째 줄\r\n셋째 줄')
+
+    // Assert
+    expect(result).toBe('첫 줄\n둘째 줄\n셋째 줄')
+  })
+
+  it('should also turn a lone CR into LF', () => {
+    // Arrange & Act — 구형 클라이언트/직접 POST 가 CR 만 보낼 수도 있다.
+    const result = normalizeCRLF('첫 줄\r둘째 줄')
+
+    // Assert
+    expect(result).toBe('첫 줄\n둘째 줄')
+  })
+
+  it('should leave LF-only text untouched', () => {
+    // Arrange & Act
+    const result = normalizeCRLF('첫 줄\n둘째 줄')
+
+    // Assert
+    expect(result).toBe('첫 줄\n둘째 줄')
+  })
+})
+
+describe('createInquirySchema CRLF normalization', () => {
+  it('should normalize CRLF in title and content before checking length', () => {
+    // Arrange
+    const crlfTitle = '제목 첫 줄\r\n제목 둘째 줄'
+    const crlfContent = '문의 내용\r\n둘째 줄\r\n셋째 줄'
+
+    // Act
+    const parsed = createInquirySchema.safeParse({
+      ...VALID_INPUT,
+      title: crlfTitle,
+      content: crlfContent,
+    })
+
+    // Assert — 저장되는 값은 LF 로 정규화돼 있다(관리자와 같은 규칙, CRLF 를 남기지 않는다).
+    expect(parsed.success).toBe(true)
+    expect(parsed.data?.title).toBe('제목 첫 줄\n제목 둘째 줄')
+    expect(parsed.data?.content).toBe('문의 내용\n둘째 줄\n셋째 줄')
+  })
+
+  it('should count normalized length, not the raw CRLF length, against the max', () => {
+    // Arrange — LF 기준(99자)으로는 상한(100자) 이내지만, CRLF 그대로 세면
+    // 줄바꿈마다 1자씩 더 붙어(102자) 상한을 넘긴다.
+    const line = '가'.repeat(24)
+    const title = `${line}\r\n${line}\r\n${line}\r\n${line}`
+
+    // Act
+    const parsed = createInquirySchema.safeParse({ ...VALID_INPUT, title })
+
+    // Assert
+    expect(parsed.success).toBe(true)
   })
 })
 

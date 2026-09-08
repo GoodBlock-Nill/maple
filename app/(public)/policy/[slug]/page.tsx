@@ -5,7 +5,9 @@ import { SiteFooter } from '@/components/layout/SiteFooter'
 import { PolicySectionArticle } from '@/components/policy/PolicySectionArticle'
 import { PolicyToc } from '@/components/policy/PolicyToc'
 import { Container } from '@/components/ui/Container'
-import { IP_NOTICE, POLICY_LINKS } from '@/lib/constants/site'
+import { POLICY_LINKS } from '@/lib/constants/site'
+import { getSiteSettings } from '@/lib/data/site'
+import { resolveIpNotice } from '@/lib/data/site-view'
 import {
   PRIVACY_POLICY_EFFECTIVE_DATE,
   PRIVACY_POLICY_SECTIONS,
@@ -79,9 +81,11 @@ export default async function PolicyPage(props: PageProps<'/policy/[slug]'>) {
   }
 
   const current = POLICY_LINKS.find((link) => link.href === `/policy/${slug}`)
+  /* 지식재산권 고지는 `site_settings.ip_notice` 가 단일 출처다(비어 있으면 상수). */
+  const ipNotice = resolveIpNotice(await getSiteSettings())
 
   if (slug === 'privacy') {
-    return <PrivacyPolicyPage label={current?.label} />
+    return <PrivacyPolicyPage label={current?.label} ipNotice={ipNotice} />
   }
 
   return (
@@ -103,7 +107,7 @@ export default async function PolicyPage(props: PageProps<'/policy/[slug]'>) {
               <h2 id="ip-notice" className="text-ink text-[20px] font-semibold">
                 지식재산권 고지
               </h2>
-              <p className="text-ink-muted mt-3 text-[15px] leading-[1.7]">{IP_NOTICE}</p>
+              <p className="text-ink-muted mt-3 text-[15px] leading-[1.7]">{ipNotice}</p>
             </section>
           ) : null}
         </Container>
@@ -115,10 +119,11 @@ export default async function PolicyPage(props: PageProps<'/policy/[slug]'>) {
 
 type PrivacyPolicyPageProps = {
   label?: string
+  ipNotice: string
 }
 
 /** 개인정보처리방침 전용 뷰 — `/policy/operating` 과 동일한 목차 + 본문 카드 레이아웃을 쓴다. */
-function PrivacyPolicyPage({ label }: PrivacyPolicyPageProps) {
+function PrivacyPolicyPage({ label, ipNotice }: PrivacyPolicyPageProps) {
   return (
     <>
       <div className="bg-page-sub pt-[190px] pb-24">
@@ -152,7 +157,7 @@ function PrivacyPolicyPage({ label }: PrivacyPolicyPageProps) {
               <h2 id="ip-notice" className="text-ink text-[22px] font-bold sm:text-[27px]">
                 지식재산권 고지
               </h2>
-              <p className="text-ink-muted mt-4 text-[17px] leading-[1.8]">{IP_NOTICE}</p>
+              <p className="text-ink-muted mt-4 text-[17px] leading-[1.8]">{ipNotice}</p>
             </section>
           </div>
         </Container>

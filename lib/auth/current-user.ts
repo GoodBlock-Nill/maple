@@ -18,6 +18,15 @@ export type CurrentUser = {
   avatarUrl: string | null
   /** 헤더 아바타에 브랜드 마크를 그리는 데 쓴다. 모르는 값(레거시 이메일 등)이면 null. */
   provider: SocialProvider | null
+  /**
+   * 제재 종료 시각(ISO). null 이면 제재 없음.
+   *
+   * **본인 값만** 담긴다. `profiles_select_self` 정책이 자기 행만 열어 주므로 이
+   * 경로로 남의 제재 상태를 읽을 수는 없다(읽기가 막히면 값은 그냥 null 이 된다).
+   */
+  suspendedUntil: string | null
+  /** 사용자에게 그대로 보여 주는 제재 사유. 내부 메모가 아니다. */
+  suspensionReason: string | null
 }
 
 /**
@@ -41,7 +50,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, role, avatar_url, provider')
+    .select('nickname, role, avatar_url, provider, suspended_until, suspension_reason')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -53,5 +62,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     // DB 컬럼은 자유 문자열(string | null)이라 알려진 세 값으로 좁힌다 — 레거시
     // 이메일 계정 등 알 수 없는 값은 헤더에서 중립 폴백(첫 글자)으로 그린다.
     provider: isSocialProvider(profile?.provider) ? profile.provider : null,
+    /* 정지 안내(글쓰기 · 댓글 · 신고 · 좋아요)를 그리는 데 쓴다. 프로필을 못 읽었을
+       때 null 로 떨어지는 것은 안전한 방향이다 — 제재는 최종적으로 RLS 가 막고,
+       액션은 42501 을 같은 안내로 옮겨 적는다. */
+    suspendedUntil: profile?.suspended_until ?? null,
+    suspensionReason: profile?.suspension_reason ?? null,
   }
 }

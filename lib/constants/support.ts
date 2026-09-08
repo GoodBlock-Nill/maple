@@ -169,6 +169,16 @@ export const INQUIRY_REPLY_HEADING = '답변'
 
 export const INQUIRY_NO_REPLY_NOTICE = '운영자가 확인 중입니다. 답변이 등록되면 이곳에 표시됩니다.'
 
+/** 접수 취소된 문의(답변 없음)의 안내. 처리 중 문구와 구분해 다시 확인할 것이 없음을 알린다. */
+export const INQUIRY_CANCELLED_NO_REPLY_NOTICE = '접수가 취소된 문의입니다.'
+
+/** 답변 없이 종료된 문의의 안내. 재문의는 새 글로 남겨야 한다는 것까지 알려 준다. */
+export const INQUIRY_CLOSED_NO_REPLY_NOTICE =
+  '운영자 검토 후 종료된 문의입니다. 추가 문의는 새 1:1 문의로 남겨 주세요.'
+
+/** 처리 중이며 아직 답변이 없는 문의의 안내. 대기 중 문구와 구분해 진행 상태를 알린다. */
+export const INQUIRY_IN_PROGRESS_NO_REPLY_NOTICE = '운영자가 처리 중입니다. 답변이 등록되면 이곳에 표시됩니다.'
+
 export const INQUIRY_ATTACHMENT_HEADING = '첨부파일'
 
 /* -------------------------------------------------------------------------

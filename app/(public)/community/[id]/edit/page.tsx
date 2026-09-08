@@ -8,6 +8,7 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { getPostById } from '@/lib/data/community'
 import { markdownToPostHtml } from '@/lib/sanitize/markdown'
 import { isAuthor } from '@/lib/utils/authorship'
+import { suspensionNotice } from '@/lib/utils/suspension'
 
 import type { Metadata } from 'next'
 
@@ -54,6 +55,7 @@ export default async function CommunityEditPage(props: PageProps<'/community/[id
         <PostForm
           postId={post.id}
           defaultValues={{ category: post.category, title: post.title, content }}
+          suspensionNotice={suspensionNotice(user)}
         />
       </ListSheet>
 

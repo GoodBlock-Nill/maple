@@ -22,6 +22,8 @@ async function fetchFaqGroups(): Promise<readonly FaqGroup[]> {
     .select('*')
     .eq('is_published', true)
     .order('sort_order', { ascending: true })
+    // sort_order 가 같으면 등록이 빠른 쪽을 위에 둔다(관리자 화면과 같은 순서를 보장).
+    .order('created_at', { ascending: true })
 
   if (error !== null) {
     throw new Error(`자주 묻는 질문을 불러오지 못했습니다: ${error.message}`)

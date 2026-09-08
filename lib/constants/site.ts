@@ -1,11 +1,17 @@
-/** 사이트 전역 상수. 추후 Supabase `site_settings` 테이블 값으로 교체된다. */
+/**
+ * 사이트 전역 상수.
+ *
+ * `site_settings` 로 옮겨진 값들의 **폴백**이다. 단일 출처는 DB(`getSiteSettings()`)
+ * 이고, 여기 값은 설정 행을 못 읽거나 해당 칸이 비어 있을 때만 쓰인다
+ * (`lib/data/site-view.ts` 가 그 합류 지점이다).
+ */
 
 export type NavItem = {
   label: string
   href: string
 }
 
-/** TODO: site_settings.name 으로 교체 예정인 플레이스홀더. */
+/** `site_settings.game_name` 폴백. */
 export const SITE_NAME = '글자월드'
 
 export const SITE_DESCRIPTION =
@@ -17,15 +23,24 @@ export const SITE_HEADLINE = `새로운 즐거움의 시작, ${SITE_NAME}`
 /** 히어로 서브카피 겸 푸터 소개문. */
 export const SITE_TAGLINE = `지금 바로 ${SITE_NAME}에서 당신만의 특별한 메이플 이야기를 펼쳐보세요.`
 
-/** TODO: site_settings.contact_email 로 교체 예정인 플레이스홀더. */
+/** `site_settings.contact_email` 폴백(화면 표기형). */
 export const CONTACT_EMAIL = 'contact@글자월드.co.kr'
 
 /**
  * `mailto:` 링크용 ASCII(Punycode) 도메인 이메일.
- * 한글 도메인을 `mailto:` href 에 그대로 넣으면 일부 메일 클라이언트가
- * 열지 못하므로, 화면 표기(`CONTACT_EMAIL`)와 href 를 분리한다.
+ *
+ * 실제 푸터는 이 상수를 직접 읽지 않고 `toAsciiEmail()` 로 표기형을 변환해 쓴다
+ * (관리자가 DB 에 어느 형태로 저장하든 같은 링크가 나와야 하므로). 여기 값은
+ * 그 변환 결과가 지금과 같아야 한다는 **불변식**을 문서화하고 테스트가 대조할
+ * 기준으로 남는다 — `tests/unit/utils/email.test.ts`.
  */
 export const CONTACT_EMAIL_HREF = 'contact@xn--bj0b33kj0qqva.co.kr'
+
+/**
+ * `site_settings.copyright` 폴백. 시안 푸터 문구 그대로다.
+ * DB 에 값이 있으면 그 문장을 통째로(연도 표기 포함) 대신 쓴다.
+ */
+export const COPYRIGHT = `Copyright © ${SITE_NAME}. All rights reserved.`
 
 export const PLAY_URL = '/play'
 
@@ -91,6 +106,6 @@ export const SNS_LINKS: readonly SnsLink[] = [
  * 시안 푸터(home.png)에는 이 문단이 없고, 넣으면 글래스 패널이 353px 을
  * 넘겨 아래 행 위치가 전부 밀린다. 그래서 푸터에서는 빼고 개인정보처리방침
  * 페이지(`/policy/privacy`)에서만 노출한다.
- * TODO: 최종 문구는 사용자 확정 후 교체 예정(플랫폼 고지 요건 검토 중).
+ * `site_settings.ip_notice` 폴백 — 최종 문구는 관리자에서 갱신한다.
  */
 export const IP_NOTICE = `본 사이트는 넥슨(주)의 메이플스토리 월드 플랫폼에서 서비스되는 ${SITE_NAME} 월드의 공식 홈페이지입니다. 'MapleStory' 및 관련 지식재산권은 NEXON Korea Corp.에 있습니다. 'MapleStory Worlds' 및 관련 지식재산권은 Toben Studio Inc.에 있습니다.`

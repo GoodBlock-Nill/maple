@@ -4,10 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
+import { isRlsViolation } from '@/lib/actions/pg-error'
 import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
+import { suspensionBlockedMessage, suspensionNotice } from '@/lib/utils/suspension'
 import { createCommentSchema, createPostSchema } from '@/lib/validation/post'
 
 import type { FormState } from '@/lib/actions/form-state'
@@ -19,6 +21,11 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
  * 인증은 여기서 다시 확인한다. 프록시의 검사는 낙관적(optimistic)이고, 서버 액션은
  * UI 를 거치지 않는 직접 POST 로도 호출될 수 있기 때문이다. 실제 권한은 RLS 가
  * 최종적으로 강제한다(`posts_insert_community` · `comments_insert_own`).
+ *
+ * 정지 계정도 같은 두 겹이다. 먼저 여기서 막아 **이유(기간 · 사유)를 알려 주고**,
+ * 그래도 뚫린 경우(우리가 읽은 프로필이 낡았다)에는 정책이 42501 로 막는다. 그때도
+ * 일반 실패 문구가 아니라 같은 정지 안내로 옮겨 적는다 — 관리자 조치와 사용자가
+ * 보는 화면 사이에 틈을 두지 않는다.
  */
 
 const COMMUNITY_PATH = '/community'
@@ -50,6 +57,12 @@ export async function createPost(_prevState: FormState, formData: FormData): Pro
 
   if (user === null) {
     return { formError: LOGIN_MESSAGE }
+  }
+
+  const suspended = suspensionNotice(user)
+
+  if (suspended !== null) {
+    return { formError: suspended }
   }
 
   /* 정제를 검증보다 **먼저** 한다. 상한(20,000자)은 실제로 저장되는 문자열을 재야
@@ -87,6 +100,10 @@ export async function createPost(_prevState: FormState, formData: FormData): Pro
     .single()
 
   if (error !== null || data === null) {
+    if (isRlsViolation(error)) {
+      return { formError: suspensionBlockedMessage(user) }
+    }
+
     return { formError: '글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.' }
   }
 
@@ -101,6 +118,12 @@ export async function createComment(_prevState: FormState, formData: FormData): 
 
   if (user === null) {
     return { formError: LOGIN_MESSAGE }
+  }
+
+  const suspended = suspensionNotice(user)
+
+  if (suspended !== null) {
+    return { formError: suspended }
   }
 
   const parsed = createCommentSchema.safeParse({
@@ -127,6 +150,10 @@ export async function createComment(_prevState: FormState, formData: FormData): 
   })
 
   if (error !== null) {
+    if (isRlsViolation(error)) {
+      return { formError: suspensionBlockedMessage(user) }
+    }
+
     return { formError: '댓글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.' }
   }
 

@@ -31,7 +31,24 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => stub.client 
 const { deleteComment, deletePost, updatePost } = await import('@/lib/actions/post-edit-actions')
 const { EMPTY_FORM_STATE } = await import('@/lib/actions/form-state')
 
-const USER = { id: 'aaaaaaaa-0000-4000-8000-000000000001', nickname: '모험가', role: 'user' }
+const USER = {
+  id: 'aaaaaaaa-0000-4000-8000-000000000001',
+  nickname: '모험가',
+  role: 'user',
+  suspendedUntil: null,
+  suspensionReason: null,
+}
+/** 정지 계정. 먼 미래 시각이라 날짜 표기가 오늘과 무관하게 고정된다. */
+const SUSPENDED_USER = {
+  ...USER,
+  suspendedUntil: '2099-01-01T00:00:00.000Z',
+  suspensionReason: '도배',
+}
+const SUSPENDED_NOTICE = '정지된 계정입니다 (2099-01-01까지 · 사유: 도배)'
+/** DB 가 42501 로 막았는데 우리가 읽은 프로필은 아직 깨끗할 때의 문구. */
+const SUSPENDED_FALLBACK = '정지된 계정입니다. 문의는 고객지원에서 접수해 주세요.'
+const RLS_ERROR = { code: '42501', message: 'new row violates row-level security policy' }
+
 const OTHER_ID = 'aaaaaaaa-0000-4000-8000-000000000002'
 const POST_ID = '22222222-0000-4000-8000-000000000001'
 const COMMENT_ID = '33333333-0000-4000-8000-000000000001'
@@ -128,15 +145,20 @@ describe('updatePost', () => {
   })
 
   it('should never leak the raw database message', async () => {
-    // Arrange
+    /* Arrange — 정책 위반(42501)은 정지 안내로 옮겨 적으므로(아래 '정지 계정' 참고)
+       여기서는 그 밖의 DB 오류로 제약 이름이 새지 않는지만 본다. */
     getCurrentUser.mockResolvedValue(USER)
-    stub = stubFor(USER.id, { code: '42501', message: 'row-level security policy' })
+    stub = stubFor(USER.id, {
+      code: '23514',
+      message: 'violates check constraint "posts_title_length"',
+    })
 
     // Act
     const result = await updatePost(POST_ID, EMPTY_FORM_STATE, postForm())
 
     // Assert
     expect(result.formError).toBe('글을 수정하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    expect(result.formError).not.toContain('constraint')
   })
 
   it('should write only the editable columns and redirect to the detail page', async () => {
@@ -243,5 +265,61 @@ describe('deleteComment', () => {
     expect(stub.tables).toEqual(['comments', 'comments'])
     expect(Object.keys(stub.updates[0] as object)).toEqual(['deleted_at'])
     expect(revalidatePath).toHaveBeenCalledWith(`/community/${POST_ID}`)
+  })
+})
+
+/**
+ * 정지 계정은 수정 · 삭제도 막힌다.
+ *
+ * 정지는 "읽기는 되고 쓰기만 막힌다"는 규칙이고, 글을 고치거나 지우는 것도 쓰기다.
+ * 세 액션이 같은 관문(`requireUser`)을 지나므로 문구도 하나다.
+ */
+describe('정지 계정', () => {
+  it('should refuse an update before looking the post up', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(SUSPENDED_USER)
+
+    // Act
+    const result = await updatePost(POST_ID, EMPTY_FORM_STATE, postForm())
+
+    // Assert
+    expect(result.formError).toBe(SUSPENDED_NOTICE)
+    expect(stub.updates).toHaveLength(0)
+  })
+
+  it('should refuse a post delete', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(SUSPENDED_USER)
+
+    // Act
+    const result = await deletePost(POST_ID, EMPTY_FORM_STATE)
+
+    // Assert
+    expect(result.formError).toBe(SUSPENDED_NOTICE)
+    expect(stub.updates).toHaveLength(0)
+  })
+
+  it('should refuse a comment delete', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(SUSPENDED_USER)
+
+    // Act
+    const result = await deleteComment(POST_ID, COMMENT_ID, EMPTY_FORM_STATE)
+
+    // Assert
+    expect(result.formError).toBe(SUSPENDED_NOTICE)
+    expect(stub.updates).toHaveLength(0)
+  })
+
+  it('should map an RLS violation on update to the suspension notice', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(USER)
+    stub = stubFor(USER.id, RLS_ERROR)
+
+    // Act
+    const result = await updatePost(POST_ID, EMPTY_FORM_STATE, postForm())
+
+    // Assert
+    expect(result.formError).toBe(SUSPENDED_FALLBACK)
   })
 })

@@ -659,8 +659,11 @@ export type Database = {
           created_at: string
           detail: string | null
           id: string
+          note: string | null
           reason: Database["public"]["Enums"]["report_reason"]
           reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
           status: string
           target_id: string
           target_type: string
@@ -669,8 +672,11 @@ export type Database = {
           created_at?: string
           detail?: string | null
           id?: string
+          note?: string | null
           reason: Database["public"]["Enums"]["report_reason"]
           reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           target_id: string
           target_type: string
@@ -679,8 +685,11 @@ export type Database = {
           created_at?: string
           detail?: string | null
           id?: string
+          note?: string | null
           reason?: Database["public"]["Enums"]["report_reason"]
           reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           target_id?: string
           target_type?: string
@@ -689,6 +698,13 @@ export type Database = {
           {
             foreignKeyName: "reports_reporter_id_fkey"
             columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -755,6 +771,13 @@ export type Database = {
       increment_post_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
+      replace_ranking_snapshot: {
+        Args: {
+          p_rank_type: Database["public"]["Enums"]["ranking_type"]
+          p_rows: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       board_type: "news" | "community"

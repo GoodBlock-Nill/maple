@@ -1,10 +1,42 @@
-import { INQUIRY_NO_REPLY_NOTICE, INQUIRY_REPLY_HEADING } from '@/lib/constants/support'
+import {
+  INQUIRY_CANCELLED_NO_REPLY_NOTICE,
+  INQUIRY_CLOSED_NO_REPLY_NOTICE,
+  INQUIRY_IN_PROGRESS_NO_REPLY_NOTICE,
+  INQUIRY_NO_REPLY_NOTICE,
+  INQUIRY_REPLY_HEADING,
+} from '@/lib/constants/support'
+import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
 import { formatDateLong } from '@/lib/utils/format-date'
 
-import type { InquiryReply } from '@/types/domain'
+import type { InquiryReply, InquiryStatus } from '@/types/domain'
 
 type InquiryReplyThreadProps = {
   replies: readonly InquiryReply[]
+  status: InquiryStatus
+  cancelledAt: string | null
+}
+
+/**
+ * 답변이 없을 때 보여줄 안내 문구를 상태별로 고른다.
+ *
+ * 접수 취소·종료는 더 이상 답변을 기다릴 이유가 없으므로 "확인 중" 문구를
+ * 그대로 보여주면 사용자가 계속 기다리게 된다. 취소 여부가 상태 라벨보다
+ * 우선한다는 판정은 `resolveInquiryStatus` 와 같다.
+ */
+export function resolveNoReplyNotice(status: InquiryStatus, cancelledAt: string | null): string {
+  if (isInquiryCancelled(cancelledAt)) {
+    return INQUIRY_CANCELLED_NO_REPLY_NOTICE
+  }
+
+  if (status === 'closed') {
+    return INQUIRY_CLOSED_NO_REPLY_NOTICE
+  }
+
+  if (status === 'in_progress') {
+    return INQUIRY_IN_PROGRESS_NO_REPLY_NOTICE
+  }
+
+  return INQUIRY_NO_REPLY_NOTICE
 }
 
 /**
@@ -13,7 +45,7 @@ type InquiryReplyThreadProps = {
  * 답변이 없어도 영역 자체는 남긴다 — "언제 어디서 답을 받는지"를 알려 주는 것이
  * 이 화면의 존재 이유이기 때문이다.
  */
-export function InquiryReplyThread({ replies }: InquiryReplyThreadProps) {
+export function InquiryReplyThread({ replies, status, cancelledAt }: InquiryReplyThreadProps) {
   return (
     <section className="flex flex-col gap-3">
       <h3 className="text-ink text-[20px] font-medium">
@@ -23,7 +55,7 @@ export function InquiryReplyThread({ replies }: InquiryReplyThreadProps) {
 
       {replies.length === 0 ? (
         <p className="border-line-soft text-ink-muted bg-page-sub rounded-[12px] border border-dashed px-4 py-5 text-[15px]">
-          {INQUIRY_NO_REPLY_NOTICE}
+          {resolveNoReplyNotice(status, cancelledAt)}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

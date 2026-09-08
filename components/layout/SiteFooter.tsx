@@ -3,15 +3,9 @@ import Link from 'next/link'
 
 import { FOOTER_CONFIG } from '@/components/layout/footer-variants'
 import { Logo } from '@/components/layout/Logo'
-import {
-  CONTACT_EMAIL,
-  CONTACT_EMAIL_HREF,
-  FOOTER_MENU_LINKS,
-  POLICY_LINKS,
-  SITE_NAME,
-  SITE_TAGLINE,
-  SNS_LINKS,
-} from '@/lib/constants/site'
+import { FOOTER_MENU_LINKS, POLICY_LINKS, SITE_TAGLINE, SNS_LINKS } from '@/lib/constants/site'
+import { resolveContactEmail, resolveCopyright } from '@/lib/data/site-view'
+import { getSiteSettings } from '@/lib/data/site'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
 
@@ -31,8 +25,15 @@ type SiteFooterProps = {
  * 페이지 배경 위에 떠 있는 1300×353 글래스 패널. 우측 상단에 마스코트가 걸친다.
  * 가변 수치(섹션 높이·패널 오프셋·마스코트 좌표)는 Tailwind 동적 클래스 대신
  * CSS 변수로 넘겨 반응형 분기(`xl:`)를 그대로 쓴다.
+ *
+ * 연락처·저작권은 `site_settings` 가 단일 출처다. 푸터는 모든 페이지에 있으므로
+ * 페이지마다 설정을 내려받아 prop 으로 넘기는 대신 여기서 직접 읽는다 — 조회는
+ * `unstable_cache`(300초)를 거쳐 요청마다 DB 를 때리지 않는다.
  */
-export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
+export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
+  const settings = await getSiteSettings()
+  const contactEmail = resolveContactEmail(settings)
+  const copyright = resolveCopyright(settings)
   const config = FOOTER_CONFIG[variant]
   const { mascot } = config
   const background = hasPublicAsset(config.background)
@@ -107,10 +108,10 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
               <Logo width={109} height={40} />
               <p className="mt-[15px] text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
               <a
-                href={`mailto:${CONTACT_EMAIL_HREF}`}
+                href={contactEmail.href}
                 className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-[18px] leading-6 font-semibold transition-colors"
               >
-                {CONTACT_EMAIL}
+                {contactEmail.display}
               </a>
             </div>
 
@@ -128,9 +129,7 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           {/* 시안 푸터에는 IP 고지 문단이 없다. 넣으면 패널이 353px 을 넘겨
               모든 행이 밀리므로 `/policy/privacy` 로 옮겼다. */}
           <div className="mt-[23px] flex w-full flex-col items-center gap-5 sm:flex-row sm:justify-between">
-            <p className="text-ink-soft text-[16px] font-medium">
-              Copyright © {SITE_NAME}. All rights reserved.
-            </p>
+            <p className="text-ink-soft text-[16px] font-medium">{copyright}</p>
             <SnsList />
           </div>
         </div>

@@ -4,7 +4,8 @@ import { CreatorPanel } from '@/components/about/CreatorPanel'
 import { HeroCharacters } from '@/components/about/HeroCharacters'
 import { VideoHero } from '@/components/about/VideoHero'
 import { SiteFooter } from '@/components/layout/SiteFooter'
-import { CREATOR_VIDEO_TITLE, CREATOR_YOUTUBE_URL } from '@/lib/mock/site'
+import { getSiteSettings } from '@/lib/data/site'
+import { resolveAboutVideoUrl, resolveCreator } from '@/lib/data/site-view'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { extractYoutubeId, youtubeThumbnail } from '@/lib/utils/youtube'
 
@@ -82,8 +83,13 @@ export const metadata: Metadata = {
     '메이플스토리의 역사를 함께해 온 2세대 최초 만렙 크리에이터가 만든 글자월드를 소개합니다.',
 }
 
-export default function AboutPage(_props: PageProps<'/about'>) {
-  const videoId = extractYoutubeId(CREATOR_YOUTUBE_URL)
+export default async function AboutPage(_props: PageProps<'/about'>) {
+  const settings = await getSiteSettings()
+  const creator = resolveCreator(settings)
+  /* 히어로 영상은 푸터 `/sns/youtube` 와 같은 칸(`site_settings.youtube_url`)을
+     읽는다. 채널 주소처럼 영상 ID 를 못 뽑는 값이면 null 이 되어 중립 포스터로
+     떨어진다 — 무관한 영상을 자동으로 트는 것보다 안전하다. */
+  const videoId = extractYoutubeId(resolveAboutVideoUrl(settings))
   const localStill = hasPublicAsset(FALLBACK_STILL) ? FALLBACK_STILL : null
   const thumbnail = videoId === null ? localStill : youtubeThumbnail(videoId)
 
@@ -94,7 +100,7 @@ export default function AboutPage(_props: PageProps<'/about'>) {
           videoId={videoId}
           thumbnail={thumbnail}
           isDimmed={videoId !== null}
-          title={CREATOR_VIDEO_TITLE}
+          title={`${creator.name} 크리에이터 소개 영상`}
         />
 
         {/* 보라→시안 돌 질감 밴드. */}
@@ -139,7 +145,7 @@ export default function AboutPage(_props: PageProps<'/about'>) {
 
           {/* 시안: 양피지 패널 page x 59, w 1341 · 패널 아래 39px 뒤 푸터. */}
           <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-20 pb-16 lg:pt-[calc(var(--about-w)*0.2534722)] lg:pr-[calc(var(--about-w)*0.0277778)] lg:pb-[calc(var(--about-w)*0.0270833)] lg:pl-[calc(var(--about-w)*0.0409722)]">
-            <CreatorPanel />
+            <CreatorPanel creator={creator} />
           </div>
         </div>
 

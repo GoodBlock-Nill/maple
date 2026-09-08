@@ -12,12 +12,10 @@ import type { NewsCategory } from '@/types/domain'
 import type { Metadata } from 'next'
 
 /**
- * 목록은 세션에 따라 달라지지 않지만, Supabase 서버 클라이언트가 쿠키를 읽어
- * 라우트가 동적으로 렌더된다. 세그먼트 기본 재검증 주기를 데이터 계층
- * (`LIST_REVALIDATE_SECONDS`)과 맞춰 두면, 이후 캐시 가능한 데이터가 추가돼도
- * 신선도 기준이 한곳에서 유지된다.
+ * 커뮤니티 목록과 같은 이유로 세그먼트 `revalidate` 를 걷어냈다. 신선도는
+ * `getNewsList` 가 `news-list` 태그로 소유하고, 관리자 앱이 `POST /api/revalidate` 로
+ * 태그를 태우면 다음 요청에서 반영된다(`lib/data/news.ts` · `lib/data/cache.ts`).
  */
-export const revalidate = 60
 
 const NEWS_PATH = '/news'
 const NEWS_TITLE = '뉴스목록'

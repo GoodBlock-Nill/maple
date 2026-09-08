@@ -1,6 +1,10 @@
+import { unstable_cache } from 'next/cache'
+
 import { BOARD_PAGE_SIZE } from '@/lib/constants/board'
+import { CACHE_TAGS, LIST_REVALIDATE_SECONDS } from '@/lib/data/cache'
 import { toAdjacentNewsItem, toNewsItem } from '@/lib/data/mappers'
 import { accumulatedRange, containsPattern, toListResult } from '@/lib/data/query'
+import { createPublicClient } from '@/lib/supabase/public'
 import { createClient } from '@/lib/supabase/server'
 
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
@@ -8,6 +12,7 @@ import type {
   AdjacentNews,
   AdjacentNewsItem,
   ListResult,
+  NewsCategory,
   NewsItem,
   NewsListParams,
 } from '@/types/domain'
@@ -22,17 +27,21 @@ import type {
  * 이미 걸러 주지만, 로그인한 작성자·관리자에게는 자기 글이 추가로 보이는
  * 정책이 있으므로 목록 쿼리에서 한 번 더 명시한다. 그래야 누가 보든 같은
  * 목록·같은 건수가 나온다.
+ *
+ * 그 "누가 보든 같다"를 권한 수준에서도 못 박으려고 목록만 익명 클라이언트로 읽고
+ * `news-list` 태그를 달아 캐시한다(커뮤니티 목록과 같은 이유 — `lib/data/community.ts`).
+ * 관리자가 뉴스를 숨기거나 지우면 `POST /api/revalidate` 로 이 태그를 태운다.
  */
 
 const NEWS_COLUMNS =
   'id, category_key, title, summary, content, content_format, thumbnail_url, view_count, published_at, edited_at'
 
-export async function getNewsList({
-  category = null,
-  q = '',
-  page = 1,
-}: NewsListParams = {}): Promise<ListResult<NewsItem>> {
-  const supabase = await createClient()
+async function fetchNewsList(
+  category: NewsCategory | null,
+  q: string,
+  page: number,
+): Promise<ListResult<NewsItem>> {
+  const supabase = createPublicClient()
   const { from, to } = accumulatedRange(page, BOARD_PAGE_SIZE)
   const pattern = containsPattern(q)
 
@@ -61,6 +70,25 @@ export async function getNewsList({
   }
 
   return toListResult(data.map(toNewsItem), count, page, BOARD_PAGE_SIZE)
+}
+
+const getCachedNewsList = unstable_cache(fetchNewsList, ['news-list'], {
+  tags: [CACHE_TAGS.newsList],
+  revalidate: LIST_REVALIDATE_SECONDS,
+})
+
+export async function getNewsList({
+  category = null,
+  q = '',
+  page = 1,
+}: NewsListParams = {}): Promise<ListResult<NewsItem>> {
+  /* 검색어는 사용자가 무한히 만들어 낸다. 캐시 키가 끝없이 늘어나지 않도록
+     검색만 매 요청 직접 읽는다. */
+  if (q !== '') {
+    return fetchNewsList(category, q, page)
+  }
+
+  return getCachedNewsList(category, '', page)
 }
 
 export async function getNewsById(id: string): Promise<NewsItem | null> {

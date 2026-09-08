@@ -11,6 +11,8 @@ type CommentActionsProps = {
   authorId: string | null
   viewerId: string | null
   detailPath: string
+  /** 뷰어 본인의 정지 안내. 신고 다이얼로그가 그대로 그린다. */
+  suspensionNotice?: string | null
 }
 
 /** 댓글 한 줄의 액션. 규칙은 게시글과 같다(작성자 → 삭제, 그 외 → 신고). */
@@ -20,6 +22,7 @@ export function CommentActions({
   authorId,
   viewerId,
   detailPath,
+  suspensionNotice = null,
 }: CommentActionsProps) {
   if (isAuthor(authorId, viewerId)) {
     return <DeleteCommentButton postId={postId} commentId={commentId} />
@@ -33,5 +36,12 @@ export function CommentActions({
     )
   }
 
-  return <ReportDialog targetType="comment" targetId={commentId} nextPath={detailPath} />
+  return (
+    <ReportDialog
+      targetType="comment"
+      targetId={commentId}
+      nextPath={detailPath}
+      suspensionNotice={suspensionNotice}
+    />
+  )
 }

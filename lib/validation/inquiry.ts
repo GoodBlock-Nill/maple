@@ -42,6 +42,24 @@ function optionOf(options: readonly string[], message: string) {
     .refine((value) => options.includes(value), { message })
 }
 
+/**
+ * 브라우저는 textarea/input 값을 폼 전송 시 CRLF 로 정규화한다(HTML 사양).
+ * 그대로 저장하면 글자 수 계산·검색·사용자 화면이 보이지 않는 `\r` 에 흔들리므로
+ * 길이를 재기 전에 LF 로 되돌린다. 관리자 쪽(`admin/lib/validation/inquiries.ts`)과
+ * 같은 규칙이라 한쪽만 CRLF 를 남기는 일이 없다.
+ */
+export function normalizeCRLF(text: string): string {
+  return text.replace(/\r\n?/g, '\n')
+}
+
+/** CRLF 정규화 + trim 뒤 길이 제한을 검사하는 평문 필드. */
+function plainTextField(min: number, max: number, minMessage: string, maxMessage: string) {
+  return z
+    .string()
+    .transform((value) => normalizeCRLF(value).trim())
+    .pipe(z.string().min(min, { message: minMessage }).max(max, { message: maxMessage }))
+}
+
 export const createInquirySchema = z.object({
   /* 빈 문자열은 "입력하지 않음"으로 본다. DB 는 null 을 받는다. */
   accountId: z
@@ -53,16 +71,18 @@ export const createInquirySchema = z.object({
     .transform((value) => (value === '' ? null : value)),
   category: optionOf(INQUIRY_CATEGORIES, '카테고리를 선택해 주세요.'),
   type: optionOf(INQUIRY_TYPES, '유형을 선택해 주세요.'),
-  title: z
-    .string()
-    .trim()
-    .min(INQUIRY_TITLE_MIN, { message: `제목은 ${INQUIRY_TITLE_MIN}자 이상 입력해 주세요.` })
-    .max(INQUIRY_TITLE_MAX, { message: `제목은 ${INQUIRY_TITLE_MAX}자 이하로 입력해 주세요.` }),
-  content: z
-    .string()
-    .trim()
-    .min(INQUIRY_CONTENT_MIN, { message: `내용은 ${INQUIRY_CONTENT_MIN}자 이상 입력해 주세요.` })
-    .max(INQUIRY_CONTENT_MAX, { message: `내용은 ${INQUIRY_CONTENT_MAX}자 이하로 입력해 주세요.` }),
+  title: plainTextField(
+    INQUIRY_TITLE_MIN,
+    INQUIRY_TITLE_MAX,
+    `제목은 ${INQUIRY_TITLE_MIN}자 이상 입력해 주세요.`,
+    `제목은 ${INQUIRY_TITLE_MAX}자 이하로 입력해 주세요.`,
+  ),
+  content: plainTextField(
+    INQUIRY_CONTENT_MIN,
+    INQUIRY_CONTENT_MAX,
+    `내용은 ${INQUIRY_CONTENT_MIN}자 이상 입력해 주세요.`,
+    `내용은 ${INQUIRY_CONTENT_MAX}자 이하로 입력해 주세요.`,
+  ),
   /* DB 에 `privacy_consent` CHECK 가 걸려 있어 미동의는 어차피 저장되지 않는다.
      여기서 먼저 막아 제약 위반(23514) 대신 사람이 읽는 문구를 돌려준다. */
   consent: z.literal(true, { message: '개인정보 수집 및 이용에 동의해 주세요.' }),

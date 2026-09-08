@@ -31,6 +31,8 @@ export type SupabaseStub = {
   updates: unknown[]
   /** `delete()` 호출 뒤 이어진 `eq()` 필터. 삭제 대상 확인용. */
   deletes: Record<string, unknown>[]
+  /** `order()` 에 넘어온 `[column, options]` 호출 순서. 동률 정렬 키 검증용. */
+  orders: [string, unknown][]
 }
 
 const EMPTY_RESULT: StubResult = { data: null, error: null }
@@ -40,6 +42,7 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
   const inserts: unknown[] = []
   const updates: unknown[] = []
   const deletes: Record<string, unknown>[] = []
+  const orders: [string, unknown][] = []
   let cursor = 0
 
   const nextResult = (): StubResult => results[cursor++] ?? EMPTY_RESULT
@@ -50,8 +53,14 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
        기록하지 않는다(조회는 결과 큐로 검증한다). */
     let deleteFilter: Record<string, unknown> | null = null
 
-    for (const method of ['select', 'is', 'not', 'ilike', 'order', 'limit', 'range']) {
+    for (const method of ['select', 'is', 'not', 'ilike', 'limit', 'range']) {
       builder[method] = () => builder
+    }
+
+    builder.order = (column: string, options: unknown) => {
+      orders.push([column, options])
+
+      return builder
     }
 
     builder.eq = (column: string, value: unknown) => {
@@ -110,5 +119,6 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     inserts,
     updates,
     deletes,
+    orders,
   }
 }

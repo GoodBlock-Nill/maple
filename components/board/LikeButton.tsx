@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useId, useOptimistic, useState, useTransition } from 'react'
 
+import { SuspensionNotice } from '@/components/board/SuspensionNotice'
 import { toggleLike } from '@/lib/actions/like-actions'
 import { cn } from '@/lib/utils/cn'
 import { toggleLikeState } from '@/lib/utils/like-state'
@@ -19,6 +20,8 @@ type LikeButtonProps = {
   detailPath: string
   /** 비로그인이면 왕복 없이 바로 로그인으로 보낸다. 권한 판정은 액션·RLS 가 한다. */
   isAuthenticated: boolean
+  /** 뷰어 본인의 정지 안내. 넘어오면 버튼을 잠그고 이유를 아래에 적는다. */
+  suspensionNotice?: string | null
 }
 
 const FAILURE_MESSAGE = '좋아요를 반영하지 못했습니다. 잠시 후 다시 시도해 주세요.'
@@ -64,6 +67,7 @@ export function LikeButton({
   likeCount,
   detailPath,
   isAuthenticated,
+  suspensionNotice = null,
 }: LikeButtonProps) {
   const router = useRouter()
   const errorId = useId()
@@ -83,6 +87,7 @@ export function LikeButton({
   }
 
   const loginPath = `/login?next=${encodeURIComponent(detailPath)}`
+  const isSuspended = suspensionNotice !== null
 
   const handleClick = () => {
     if (!isAuthenticated) {
@@ -118,7 +123,7 @@ export function LikeButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={isPending}
+        disabled={isPending || isSuspended}
         aria-pressed={optimistic.liked}
         aria-describedby={error === null ? undefined : errorId}
         className={cn(
@@ -134,6 +139,8 @@ export function LikeButton({
         <LikeIcon />
         좋아요 {optimistic.likeCount}
       </button>
+
+      {isSuspended ? <SuspensionNotice message={suspensionNotice} compact /> : null}
 
       {error === null ? null : (
         <p id={errorId} role="alert" className="text-badge-red text-[14px] font-medium">

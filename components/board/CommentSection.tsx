@@ -12,6 +12,8 @@ type CommentSectionProps = {
   isAuthenticated: boolean
   /** 로그인한 사용자의 uuid. 본인 댓글에만 삭제를 연다. */
   viewerId: string | null
+  /** 뷰어 본인의 정지 안내. 작성 폼과 신고 다이얼로그가 같은 문구를 쓴다. */
+  suspensionNotice?: string | null
 }
 
 /**
@@ -25,6 +27,7 @@ export function CommentSection({
   comments,
   isAuthenticated,
   viewerId,
+  suspensionNotice = null,
 }: CommentSectionProps) {
   const detailPath = `/community/${postId}`
 
@@ -55,6 +58,7 @@ export function CommentSection({
                   authorId={comment.authorId}
                   viewerId={viewerId}
                   detailPath={detailPath}
+                  suspensionNotice={suspensionNotice}
                 />
               </div>
               <p className="text-ink mt-1.5 text-[17px] leading-[1.7]">{comment.body}</p>
@@ -63,7 +67,11 @@ export function CommentSection({
         </ul>
       )}
 
-      <CommentForm postId={postId} isAuthenticated={isAuthenticated} />
+      <CommentForm
+        postId={postId}
+        isAuthenticated={isAuthenticated}
+        suspensionNotice={suspensionNotice}
+      />
     </section>
   )
 }

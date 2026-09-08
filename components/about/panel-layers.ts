@@ -42,6 +42,14 @@ function place(
   }
 }
 
+/**
+ * 크리에이터 사진 레이어의 로컬(시안) 자산 경로.
+ *
+ * `site_settings.creator_photo_url` 이 채워지면 이 자리만 원격 이미지로 갈아끼운다.
+ * 레이어 배열에서 사진을 골라내야 하므로 상수로 빼서 식별자로 쓴다.
+ */
+export const PANEL_PHOTO_SRC = '/images/about/panel-photo.png'
+
 /** 아래에서 위 순서(DOM 순서 = 페인트 순서). */
 export const PANEL_LAYERS: readonly PanelLayer[] = [
   {
@@ -53,7 +61,7 @@ export const PANEL_LAYERS: readonly PanelLayer[] = [
     isAnimated: false,
   },
   {
-    src: '/images/about/panel-photo.png',
+    src: PANEL_PHOTO_SRC,
     naturalWidth: 462,
     naturalHeight: 406,
     ...place(152.1, 1327.05, 462, 406),

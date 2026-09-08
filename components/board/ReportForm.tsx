@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
 import { BOARD_ACTION_CLASS, BOARD_DANGER_CLASS } from '@/components/board/board-styles'
+import { SuspensionNotice } from '@/components/board/SuspensionNotice'
 import { Textarea } from '@/components/ui/Textarea'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { submitReport } from '@/lib/actions/report-actions'
@@ -17,6 +18,8 @@ type ReportFormProps = {
   /** 비로그인 상태로 액션이 직접 호출됐을 때 로그인 후 돌아올 경로. */
   nextPath: string
   titleId: string
+  /** 뷰어 본인의 정지 안내. 넘어오면 배너를 띄우고 접수 버튼을 잠근다. */
+  suspensionNotice?: string | null
   onClose: () => void
 }
 
@@ -26,12 +29,20 @@ type ReportFormProps = {
  * 다이얼로그가 닫히면 통째로 언마운트되므로 `useActionState` 도 함께 초기화된다.
  * 다시 열었을 때 지난 제출의 문구가 남지 않는 것은 그 덕분이다.
  */
-export function ReportForm({ targetType, targetId, nextPath, titleId, onClose }: ReportFormProps) {
+export function ReportForm({
+  targetType,
+  targetId,
+  nextPath,
+  titleId,
+  suspensionNotice = null,
+  onClose,
+}: ReportFormProps) {
   const [state, formAction, isPending] = useActionState(submitReport, EMPTY_FORM_STATE)
   const [detailLength, setDetailLength] = useState(0)
 
   const targetLabel = REPORT_TARGET_LABEL[targetType]
   const isDone = state.message !== undefined
+  const isSuspended = suspensionNotice !== null
 
   return (
     <>
@@ -43,6 +54,8 @@ export function ReportForm({ targetType, targetId, nextPath, titleId, onClose }:
       </p>
 
       <form action={formAction} className="mt-5 flex flex-col gap-5">
+        {isSuspended ? <SuspensionNotice message={suspensionNotice} compact /> : null}
+
         <FormFeedback state={state} />
 
         <input type="hidden" name="targetType" value={targetType} />
@@ -95,7 +108,11 @@ export function ReportForm({ targetType, targetId, nextPath, titleId, onClose }:
             {isDone ? '닫기' : '취소'}
           </button>
           {isDone ? null : (
-            <button type="submit" disabled={isPending} className={BOARD_DANGER_CLASS}>
+            <button
+              type="submit"
+              disabled={isPending || isSuspended}
+              className={BOARD_DANGER_CLASS}
+            >
               {isPending ? '접수 중' : '신고하기'}
             </button>
           )}

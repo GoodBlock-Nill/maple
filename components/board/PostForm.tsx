@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useActionState, useMemo } from 'react'
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
+import { SuspensionNotice } from '@/components/board/SuspensionNotice'
 import { PostEditor } from '@/components/editor/PostEditor'
 import { Input } from '@/components/ui/Input'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
@@ -28,6 +29,11 @@ type PostFormProps = {
   /** 넘기면 수정 모드가 된다. 없으면 새 글 작성. */
   postId?: string
   defaultValues?: PostFormValues
+  /**
+   * 정지 계정 안내(`describeSuspension()` 결과). 넘어오면 배너를 띄우고 제출을 막는다.
+   * 서버 액션도 같은 문구로 거절하므로 이 값은 "미리 알려 주기" 용도다.
+   */
+  suspensionNotice?: string | null
 }
 
 /**
@@ -40,7 +46,7 @@ type PostFormProps = {
  * 제출 버튼은 아이콘이 붙은 전용 마크업이 필요해 `SubmitButton` 을 쓰지 않고
  * `useActionState` 의 pending 플래그로 비활성화한다.
  */
-export function PostForm({ postId, defaultValues }: PostFormProps) {
+export function PostForm({ postId, defaultValues, suspensionNotice = null }: PostFormProps) {
   const action = useMemo(
     () => (postId === undefined ? createPost : updatePost.bind(null, postId)),
     [postId],
@@ -49,12 +55,15 @@ export function PostForm({ postId, defaultValues }: PostFormProps) {
 
   const isEditMode = postId !== undefined
   const submitLabel = isEditMode ? '수정' : '등록'
+  const isSuspended = suspensionNotice !== null
 
   return (
     <form
       action={formAction}
       className="rounded-panel border-line-soft bg-surface shadow-chip flex flex-col gap-8 border p-6 sm:p-10"
     >
+      {isSuspended ? <SuspensionNotice message={suspensionNotice} /> : null}
+
       <FormFeedback state={state} />
 
       <fieldset>
@@ -108,7 +117,7 @@ export function PostForm({ postId, defaultValues }: PostFormProps) {
       <div className="flex justify-end">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || isSuspended}
           className="cta-dark inline-flex h-[47px] w-[110px] items-center justify-center gap-1.5 rounded-[10px] text-[17px] font-semibold whitespace-nowrap disabled:pointer-events-none disabled:opacity-50"
         >
           <Image

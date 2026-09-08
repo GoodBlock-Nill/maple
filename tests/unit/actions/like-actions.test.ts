@@ -18,7 +18,24 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => stub.client 
 
 const { toggleLike } = await import('@/lib/actions/like-actions')
 
-const USER = { id: 'aaaaaaaa-0000-4000-8000-000000000001', nickname: '모험가', role: 'user' }
+const USER = {
+  id: 'aaaaaaaa-0000-4000-8000-000000000001',
+  nickname: '모험가',
+  role: 'user',
+  suspendedUntil: null,
+  suspensionReason: null,
+}
+/** 정지 계정. 먼 미래 시각이라 날짜 표기가 오늘과 무관하게 고정된다. */
+const SUSPENDED_USER = {
+  ...USER,
+  suspendedUntil: '2099-01-01T00:00:00.000Z',
+  suspensionReason: '도배',
+}
+const SUSPENDED_NOTICE = '정지된 계정입니다 (2099-01-01까지 · 사유: 도배)'
+/** DB 가 42501 로 막았는데 우리가 읽은 프로필은 아직 깨끗할 때의 문구. */
+const SUSPENDED_FALLBACK = '정지된 계정입니다. 문의는 고객지원에서 접수해 주세요.'
+const RLS_ERROR = { code: '42501', message: 'new row violates row-level security policy' }
+
 const POST_ID = '22222222-0000-4000-8000-000000000001'
 const DETAIL_PATH = `/community/${POST_ID}`
 
@@ -175,10 +192,14 @@ describe('toggleLike', () => {
   })
 
   it('should never leak the raw database message', async () => {
-    // Arrange — RLS 위반 등
+    /* Arrange — 정책 위반(42501)은 정지 안내로 옮겨 적으므로(아래 '정지 계정' 참고)
+       여기서는 그 밖의 DB 오류로 제약 이름이 새지 않는지만 본다. */
     getCurrentUser.mockResolvedValue(USER)
     stub = stubFor({
-      mutationError: { code: '42501', message: 'new row violates row-level security policy' },
+      mutationError: {
+        code: '23503',
+        message: 'violates foreign key constraint "post_likes_post_id_fkey"',
+      },
     })
 
     // Act
@@ -215,5 +236,32 @@ describe('toggleLike', () => {
 
     // Assert
     expect(revalidatePath).not.toHaveBeenCalled()
+  })
+})
+
+describe('정지 계정', () => {
+  it('should refuse the toggle with the suspension notice and no write', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(SUSPENDED_USER)
+
+    // Act
+    const result = await toggleLike(POST_ID)
+
+    // Assert
+    expect(result).toEqual({ ok: false, requiresLogin: false, formError: SUSPENDED_NOTICE })
+    expect(stub.inserts).toHaveLength(0)
+    expect(stub.deletes).toHaveLength(0)
+  })
+
+  it('should map an RLS violation to the suspension notice', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(USER)
+    stub = stubFor({ mutationError: RLS_ERROR })
+
+    // Act
+    const result = await toggleLike(POST_ID)
+
+    // Assert
+    expect(result).toEqual({ ok: false, requiresLogin: false, formError: SUSPENDED_FALLBACK })
   })
 })
