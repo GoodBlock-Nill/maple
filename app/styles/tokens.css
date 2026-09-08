@@ -200,3 +200,11 @@
     inset: -14px -8px;
   }
 }
+
+/* 가로 스크롤 칩 줄처럼 스크롤은 되되 막대는 보이지 않아야 하는 컨테이너. */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

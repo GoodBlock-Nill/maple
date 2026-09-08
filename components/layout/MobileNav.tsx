@@ -64,12 +64,21 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
       if (event.key === 'Escape') setOpenedPath(null)
     }
 
-    const { overflow } = document.body.style
-    document.body.style.overflow = 'hidden'
+    /* iOS Safari 는 body overflow:hidden 만으로는 뒤 페이지 스크롤이 막히지 않는다.
+       body 를 현재 스크롤 위치에 고정(position:fixed)하고 닫을 때 원위치로 되돌린다. */
+    const scrollY = window.scrollY
+    const { position, top, width, overflow } = document.body.style
+    Object.assign(document.body.style, {
+      position: 'fixed',
+      top: `-${scrollY}px`,
+      width: '100%',
+      overflow: 'hidden',
+    })
     document.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      document.body.style.overflow = overflow
+      Object.assign(document.body.style, { position, top, width, overflow })
+      window.scrollTo(0, scrollY)
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
@@ -170,6 +179,8 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
                   <Link
                     href={item.href}
                     aria-current={isActive ? 'page' : undefined}
+                    /* 현재 페이지 링크는 경로가 바뀌지 않아 자동으로 닫히지 않으므로 직접 닫는다. */
+                    onClick={close}
                     className={cn(
                       'rounded-card block px-3 py-3 text-[17px] font-semibold transition-colors',
                       isActive

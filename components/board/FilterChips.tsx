@@ -50,7 +50,9 @@ export function FilterChips<TValue extends string>({
     <nav
       aria-label={label}
       className={cn(
-        wrap ? '' : '-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0',
+        wrap
+          ? ''
+          : 'scrollbar-hidden -mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0',
         className,
       )}
     >

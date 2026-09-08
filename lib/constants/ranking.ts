@@ -31,14 +31,20 @@ export const DEFAULT_RANKING_TYPE: RankingType = 'total'
 export const ALL_JOB_LABEL = '전체 직업'
 
 /**
- * TOP3 캐릭터 크롭의 원본 크기(시안 실측).
- * 카드 패널(244) 높이에 억지로 맞추면 2위 캐릭터가 시안보다 커진다.
+ * TOP3 캐릭터 크롭의 원본 크기(시안 실측). next/image 의 비율 계산에만 쓰고,
+ * 실제 표시 크기는 `TOP_CHARACTER_BOX_CLASS` 의 높이 박스가 정한다.
  */
 export const TOP_CHARACTER_SIZE: Record<string, { width: number; height: number }> = {
   '/images/ranking/top3-char-1.png': { width: 333, height: 243 },
   '/images/ranking/top3-char-2.png': { width: 234, height: 206 },
   '/images/ranking/top3-char-3.png': { width: 363, height: 243 },
 }
+
+/**
+ * TOP3 캐릭터 표시 높이. 세 카드가 같은 잣대를 쓰고 1위만 한 단계 크다.
+ * (패널 244px 안에서 위 여백을 남긴다.)
+ */
+export const TOP_CHARACTER_BOX_CLASS = { first: 'h-[228px]', rest: 'h-[204px]' } as const
 
 /** 크기를 모르는 캐릭터 이미지의 기본값. */
 export const TOP_CHARACTER_FALLBACK_SIZE = { width: 332, height: 243 } as const

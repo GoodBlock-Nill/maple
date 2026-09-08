@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { CrownIcon, GuildEmblem, MedalRibbon } from '@/components/ranking/ranking-icons'
 import { TopThreeLaurel } from '@/components/ranking/TopThreeLaurel'
 import {
+  TOP_CHARACTER_BOX_CLASS,
   TOP_CHARACTER_FALLBACK_SIZE,
   TOP_CHARACTER_SIZE,
   TOP_PANEL_CLASS,
@@ -37,14 +38,17 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
         width={characterSize.width}
         height={characterSize.height}
         aria-hidden
-        /* 시안은 크롭 원본 크기 그대로 바닥에 붙인다(패널 높이로 늘리지 않는다).
-           relative + z-10 은 월계관과의 앞뒤 순서를 rank 별로 뒤집기 위한 것.
-           패널은 flex 컨테이너라 img(대체 요소)의 기본 min-width 가 원본 폭
-           (auto)으로 잡혀 max-w-full 이 무시되고, 1024 처럼 패널이 원본보다
-           좁아지는 폭에서 오른쪽이 잘렸다 — min-w-0 으로 그 하한을 없애야
-           object-contain 이 실제로 축소해 패널 안에 맞는다. 1440 은 패널이
-           원본보다 넓어 애초에 축소가 필요 없으므로 렌더 크기가 그대로 유지된다. */
-        className="relative z-10 h-auto max-h-full w-auto max-w-full min-w-0 object-contain"
+        /* 세 카드의 캐릭터는 같은 높이 박스에 담아 크기를 통일한다(1위만 한 단계 크게).
+           시안의 샘플 크롭은 원본 크기가 제각각(234~363px)이라 그대로 두면 2위가
+           작고 3위가 커 보여 "크기가 부자연스럽다"는 오너 피드백(2026-09-09)이 왔다.
+           실데이터의 캐릭터 이미지도 크기를 보장할 수 없으므로 박스 기준이 맞다.
+           relative + z-10 은 월계관과의 앞뒤 순서를 rank 별로 뒤집기 위한 것이고,
+           min-w-0 은 flex 컨테이너에서 img 기본 min-width(원본 폭)를 풀어 좁은
+           패널에서도 object-contain 이 실제로 축소되게 한다. */
+        className={cn(
+          'relative z-10 w-auto max-w-[90%] min-w-0 object-contain object-bottom',
+          entry.rank === 1 ? TOP_CHARACTER_BOX_CLASS.first : TOP_CHARACTER_BOX_CLASS.rest,
+        )}
       />
     )
 
