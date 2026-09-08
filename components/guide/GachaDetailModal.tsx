@@ -34,18 +34,18 @@ export function GachaDetailModal({ item, closeHref }: GachaDetailModalProps) {
                 className="size-full object-contain"
               />
             </span>
-            <span className="text-ink text-[24px] leading-none font-medium">
+            <span className="text-ink text-title-md leading-none font-medium">
               {item.probability}%
             </span>
           </div>
-          <h2 id={TITLE_ID} className="text-ink text-[24px] leading-[1.3] font-medium">
+          <h2 id={TITLE_ID} className="text-ink text-title-md leading-[1.3] font-medium">
             {item.name}
           </h2>
         </div>
 
         <GachaGradeTable rows={item.rows} caption={item.name} />
 
-        <p className="text-ink flex items-center gap-1.5 text-[16px] leading-[19px] font-medium">
+        <p className="text-ink flex items-center gap-1.5 text-ui-sm leading-[19px] font-medium">
           <Image src="/images/brand/icon-clock.svg" alt="" width={12} height={12} aria-hidden />
           <span className="sr-only">갱신일</span>
           {formatDateIso(item.updatedAt)}

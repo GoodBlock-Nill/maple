@@ -106,10 +106,10 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           <div className="flex flex-col gap-10 lg:flex-row lg:gap-[100px]">
             <div className="flex w-full max-w-[309px] flex-col items-start">
               <Logo width={109} height={40} />
-              <p className="mt-[15px] text-[18px] leading-[25px] text-white">{SITE_TAGLINE}</p>
+              <p className="mt-[15px] text-body-lg leading-[25px] text-white">{SITE_TAGLINE}</p>
               <a
                 href={contactEmail.href}
-                className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-[18px] leading-6 font-semibold transition-colors"
+                className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-body-lg leading-6 font-semibold transition-colors"
               >
                 {contactEmail.display}
               </a>
@@ -129,7 +129,7 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           {/* 시안 푸터에는 IP 고지 문단이 없다. 넣으면 패널이 353px 을 넘겨
               모든 행이 밀리므로 `/policy/privacy` 로 옮겼다. */}
           <div className="mt-[23px] flex w-full flex-col items-center gap-5 sm:flex-row sm:justify-between">
-            <p className="text-ink-soft text-[16px] font-medium">{copyright}</p>
+            <p className="text-ink-soft text-ui-sm font-medium">{copyright}</p>
             <SnsList />
           </div>
         </div>
@@ -147,7 +147,7 @@ type FooterColumnProps = {
 function FooterColumn({ title, links, className }: FooterColumnProps) {
   return (
     <nav aria-label={title} className={className}>
-      <p className="text-[20px] leading-none font-medium text-white">{title}</p>
+      <p className="text-label-lg leading-none font-medium text-white">{title}</p>
       {/* 링크 줄 간격은 시안 기준 28px(글자 16 + 간격 12, lg 이상). 폰에서는 tap-area
           확장(±14px)이 이웃 링크와 겹치지 않도록 28px 로 벌린다(행 44px). `leading-none` 은
           인라인 <a> 가 아니라 <li> 스트럿에 걸려야 실제 높이가 줄어든다. */}
@@ -156,7 +156,7 @@ function FooterColumn({ title, links, className }: FooterColumnProps) {
           <li key={link.href}>
             <Link
               href={link.href}
-              className="tap-area rounded-pill text-ink-soft text-[16px] whitespace-nowrap transition-colors hover:text-white"
+              className="tap-area rounded-pill text-ink-soft text-ui-sm whitespace-nowrap transition-colors hover:text-white"
             >
               {link.label}
             </Link>

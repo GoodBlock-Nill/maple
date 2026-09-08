@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './styles/pretendard.css';
 @import './styles/tokens.css';
+@import './styles/typography.css';
 @import './styles/components.css';
 
 /* Tailwind v4 auto-detects sources from the project root, but these are declared

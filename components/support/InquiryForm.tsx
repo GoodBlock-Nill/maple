@@ -91,12 +91,12 @@ export function InquiryForm({
               type="checkbox"
               className="focus-visible:outline-focus size-[30px] shrink-0 appearance-none rounded-[5px] border-[1.5px] border-[#d5d9df] bg-white checked:border-[#2a2a2a] checked:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2"
             />
-            <label htmlFor="inquiry-consent" className="text-[17px] text-[#1e2938]">
+            <label htmlFor="inquiry-consent" className="text-ui text-[#1e2938]">
               {PRIVACY_CONSENT_LABEL}
             </label>
             <Link
               href={PRIVACY_POLICY_PATH}
-              className="tap-area text-[17px] text-[#0067ff] underline underline-offset-2"
+              className="tap-area text-ui text-[#0067ff] underline underline-offset-2"
             >
               {PRIVACY_CONSENT_LINK_LABEL}
             </Link>

@@ -16,7 +16,7 @@ import { POST_TITLE_MAX } from '@/lib/validation/post'
 import type { CommunityCategory } from '@/types/domain'
 
 /** 고객지원 폼과 동일한 입력 표면(h44 · radius 10 · border #cdd3db). */
-const FIELD_CLASS = 'rounded-[10px] border-line-soft text-[17px] placeholder:text-[#9a9a9a]'
+const FIELD_CLASS = 'rounded-[10px] border-line-soft text-input placeholder:text-[#9a9a9a]'
 
 type PostFormValues = {
   category: CommunityCategory
@@ -67,7 +67,7 @@ export function PostForm({ postId, defaultValues, suspensionNotice = null }: Pos
       <FormFeedback state={state} />
 
       <fieldset>
-        <legend className="text-ink text-[17px] font-semibold">카테고리</legend>
+        <legend className="text-ink text-ui font-semibold">카테고리</legend>
         <div className="flex flex-wrap gap-2.5 pt-3">
           {COMMUNITY_CATEGORIES.map((category, index) => (
             <label key={category.value} className="cursor-pointer">
@@ -82,7 +82,7 @@ export function PostForm({ postId, defaultValues, suspensionNotice = null }: Pos
                 }
                 className="peer sr-only"
               />
-              <span className="board-control text-ink-muted peer-checked:bg-ink peer-checked:border-ink peer-focus-visible:outline-focus inline-flex items-center px-[15px] text-[17px] font-medium transition-colors peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">
+              <span className="board-control text-ink-muted peer-checked:bg-ink peer-checked:border-ink peer-focus-visible:outline-focus inline-flex items-center px-[15px] text-ui font-medium transition-colors peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">
                 {category.label}
               </span>
             </label>
@@ -118,7 +118,7 @@ export function PostForm({ postId, defaultValues, suspensionNotice = null }: Pos
         <button
           type="submit"
           disabled={isPending || isSuspended}
-          className="cta-dark inline-flex h-[47px] w-[110px] items-center justify-center gap-1.5 rounded-[10px] text-[17px] font-semibold whitespace-nowrap disabled:pointer-events-none disabled:opacity-50"
+          className="cta-dark inline-flex h-[47px] w-[110px] items-center justify-center gap-1.5 rounded-[10px] text-ui font-semibold whitespace-nowrap disabled:pointer-events-none disabled:opacity-50"
         >
           <Image
             src="/images/brand/icon-write.svg"

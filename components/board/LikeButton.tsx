@@ -127,7 +127,7 @@ export function LikeButton({
         aria-pressed={optimistic.liked}
         aria-describedby={error === null ? undefined : errorId}
         className={cn(
-          'rounded-pill inline-flex h-12 items-center gap-2 border px-7 text-[17px] font-medium',
+          'rounded-pill inline-flex h-12 items-center gap-2 border px-7 text-ui font-medium',
           'transition-[transform,color,background-color,border-color] duration-150',
           'hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2',
           'focus-visible:outline-focus disabled:pointer-events-none disabled:opacity-70',

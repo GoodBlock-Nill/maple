@@ -136,7 +136,7 @@ export function PostEditor({ name, label, defaultValue = '', hint, error }: Post
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-ink text-[17px] font-semibold">{label}</span>
+      <span className="text-ink text-ui font-semibold">{label}</span>
 
       <div
         className={SURFACE_CLASS}

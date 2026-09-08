@@ -33,7 +33,7 @@ export function InquiryRow({ inquiry }: InquiryRowProps) {
           cancelledAt={inquiry.cancelledAt}
           className="self-start sm:order-2"
         />
-        <h3 className="text-ink line-clamp-2 min-w-0 flex-1 text-[18px] leading-[24px] font-medium sm:order-1 sm:line-clamp-1">
+        <h3 className="text-ink line-clamp-2 min-w-0 flex-1 text-body-lg leading-[24px] font-medium sm:order-1 sm:line-clamp-1">
           {inquiry.title}
         </h3>
       </div>

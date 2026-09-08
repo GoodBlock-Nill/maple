@@ -33,19 +33,19 @@ export function CommentSection({
 
   return (
     <section aria-labelledby="comments-heading" className="border-line mt-10 border-t pt-8">
-      <h3 id="comments-heading" className="text-ink text-[20px] font-semibold">
+      <h3 id="comments-heading" className="text-ink text-label-lg font-semibold">
         댓글 <span className="text-ink-muted">({comments.length})</span>
       </h3>
 
       {comments.length === 0 ? (
-        <p className="text-ink-muted mt-4 text-[16px]">첫 댓글을 남겨보세요.</p>
+        <p className="text-ink-muted mt-4 text-ui-sm">첫 댓글을 남겨보세요.</p>
       ) : (
         <ul className="mt-4 flex flex-col">
           {comments.map((comment) => (
             <li key={comment.id} className="border-line border-b py-4 last:border-b-0">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="text-ink text-[16px] font-semibold">
+                  <span className="text-ink text-ui-sm font-semibold">
                     {maskNickname(comment.author)}
                   </span>
                   <time dateTime={comment.createdAt} className="text-ink-muted text-[14px]">
@@ -61,7 +61,7 @@ export function CommentSection({
                   suspensionNotice={suspensionNotice}
                 />
               </div>
-              <p className="text-ink mt-1.5 text-[17px] leading-[1.7]">{comment.body}</p>
+              <p className="text-ink mt-1.5 text-prose leading-[1.7]">{comment.body}</p>
             </li>
           ))}
         </ul>

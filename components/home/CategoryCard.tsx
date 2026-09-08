@@ -30,15 +30,19 @@ export function CategoryCard({ card }: CategoryCardProps) {
           card.panelClass,
         )}
       >
-        <h3 className="text-[35px] leading-none font-semibold tracking-[-0.02em]">{card.title}</h3>
-        <p className="mt-[8px] text-[25px] leading-none font-semibold opacity-50">{card.english}</p>
-        <span className="mt-auto flex items-center gap-[10px] text-[20px] font-semibold">
+        <h3 className="text-card-title leading-none font-semibold tracking-[-0.02em]">
+          {card.title}
+        </h3>
+        <p className="text-card-sub mt-[8px] leading-none font-semibold opacity-50">
+          {card.english}
+        </p>
+        <span className="text-label-lg mt-auto flex items-center gap-[10px] font-semibold">
           <Image
             src="/images/brand/arrow-card.svg"
             alt=""
             width={42}
             height={42}
-            className="size-[41.86px] shrink-0"
+            className="size-[34px] shrink-0 sm:size-[41.86px]"
           />
           바로가기
         </span>

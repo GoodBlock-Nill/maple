@@ -18,7 +18,7 @@ type AdjacentPostNavProps = {
 const ROW_CLASS =
   'rounded-panel border-line-soft bg-surface shadow-chip flex items-center gap-4 border px-6 py-4'
 
-const LABEL_CLASS = 'text-ink-muted w-16 shrink-0 text-[16px] font-medium sm:w-20'
+const LABEL_CLASS = 'text-ink-muted w-16 shrink-0 text-ui-sm font-medium sm:w-20'
 
 type AdjacentRowProps = {
   label: string
@@ -33,7 +33,7 @@ function AdjacentRow({ label, emptyLabel, basePath, item }: AdjacentRowProps) {
     return (
       <div className={ROW_CLASS}>
         <span className={LABEL_CLASS}>{label}</span>
-        <span className="text-ink-soft min-w-0 flex-1 text-[16px]">{emptyLabel}</span>
+        <span className="text-ink-soft min-w-0 flex-1 text-ui-sm">{emptyLabel}</span>
       </div>
     )
   }
@@ -47,7 +47,7 @@ function AdjacentRow({ label, emptyLabel, basePath, item }: AdjacentRowProps) {
       )}
     >
       <span className={LABEL_CLASS}>{label}</span>
-      <span className="text-ink line-clamp-1 min-w-0 flex-1 text-[16px] font-medium">
+      <span className="text-ink line-clamp-1 min-w-0 flex-1 text-ui-sm font-medium">
         {item.title}
       </span>
     </Link>

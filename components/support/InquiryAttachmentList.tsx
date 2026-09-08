@@ -26,7 +26,7 @@ export function InquiryAttachmentList({ attachments }: InquiryAttachmentListProp
 
   return (
     <section className="flex flex-col gap-2.5">
-      <h3 className="text-ink text-[17px] font-bold">{INQUIRY_ATTACHMENT_HEADING}</h3>
+      <h3 className="text-ink text-ui font-bold">{INQUIRY_ATTACHMENT_HEADING}</h3>
       <ul className="flex flex-wrap gap-3">
         {attachments.map((attachment) => (
           <li key={attachment.path}>

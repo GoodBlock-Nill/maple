@@ -83,7 +83,7 @@ export function RankingRow({ entry }: RankingRowProps) {
         </p>
       </div>
 
-      <dl className="text-ink flex flex-wrap items-center gap-x-4 gap-y-1 text-[16px] font-medium lg:hidden">
+      <dl className="text-ink flex flex-wrap items-center gap-x-4 gap-y-1 text-ui-sm font-medium lg:hidden">
         <MobileStat label="레벨" value={`Lv. ${entry.level}`} />
         <MobileStat label="직업" value={entry.job} />
         <MobileStat label="길드" value={entry.guild ?? '-'} />

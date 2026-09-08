@@ -91,9 +91,9 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
             <span className="truncate">{entry.nickname}</span>
           </h3>
           {entry.guild === null ? (
-            <span className="text-table-body text-[16px]">-</span>
+            <span className="text-table-body text-ui-sm">-</span>
           ) : (
-            <span className="text-table-body flex shrink-0 items-center gap-1 text-[16px]">
+            <span className="text-table-body flex shrink-0 items-center gap-1 text-ui-sm">
               <GuildEmblem className="h-[35px] w-8 shrink-0" />
               {entry.guild}
             </span>
@@ -103,8 +103,8 @@ export function TopThreeCard({ entry, className }: TopThreeCardProps) {
         <dl className="grid grid-cols-3 gap-2 text-center">
           {STAT_LABELS.map((label, index) => (
             <div key={label} className="flex flex-col gap-6">
-              <dt className="text-ink-muted text-[17px] leading-none">{label}</dt>
-              <dd className="text-ink text-[17px] leading-none">{stats[index]}</dd>
+              <dt className="text-ink-muted text-ui leading-none">{label}</dt>
+              <dd className="text-ink text-ui leading-none">{stats[index]}</dd>
             </div>
           ))}
         </dl>

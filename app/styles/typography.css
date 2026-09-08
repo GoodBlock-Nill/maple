@@ -1,0 +1,121 @@
+/* ---------------------------------------------------------------------------
+   반응형 서체 스케일.
+
+   시안(Figma)은 1440 한 폭만 그려져 있어서 본문·UI 글자가 전부 px 고정이었다.
+   그 값을 320~430px 실기기에서 그대로 쓰면 카드 제목(35px)·메뉴 라벨(20px)·
+   칩(17px)이 데스크톱 덩치 그대로 남아 줄바꿈과 가로 넘침을 만든다.
+
+   그래서 **폰 값이 기본이고 `sm`(640px) 이상에서 시안 값으로 복귀**하는
+   유틸리티를 둔다. `min-width: 640px` 쪽 숫자는 전부 기존 하드코딩 px 와
+   같은 값이라 640px 이상 렌더는 한 픽셀도 달라지지 않는다.
+
+   줄 간격은 일부러 넣지 않는다. 사용처가 `leading-none` / `leading-[19px]`
+   같은 값을 이미 갖고 있어서, 여기서 line-height 를 정하면 그 의도를 덮는다.
+   px 줄 간격은 글자만 줄어들 때 여유가 늘 뿐이라 잘림이 생기지 않는다.
+
+   15px 이하(캡션·보조 라벨·에러 문구)는 건드리지 않는다. 폰에서 더 줄이면
+   가독성·접근성만 잃고 얻는 공간은 거의 없다.
+--------------------------------------------------------------------------- */
+
+/* 홈 카테고리 카드 제목 (시안 35) */
+@utility text-card-title {
+  font-size: 24px;
+  @media (min-width: 640px) {
+    font-size: 35px;
+  }
+}
+
+/* 홈 카테고리 카드 영문 부제 (시안 25) */
+@utility text-card-sub {
+  font-size: 16px;
+  @media (min-width: 640px) {
+    font-size: 25px;
+  }
+}
+
+/* 인증 카드 제목 · 준비중 안내 제목 (시안 28) */
+@utility text-title-lg {
+  font-size: 22px;
+  @media (min-width: 640px) {
+    font-size: 28px;
+  }
+}
+
+/* 모달 · 문의 상세 제목 (시안 24) */
+@utility text-title-md {
+  font-size: 20px;
+  @media (min-width: 640px) {
+    font-size: 24px;
+  }
+}
+
+/* 큰 라벨 — 고객지원 메뉴 · 푸터 컬럼 제목 · 카드 "바로가기" (시안 20) */
+@utility text-label-lg {
+  font-size: 17px;
+  @media (min-width: 640px) {
+    font-size: 20px;
+  }
+}
+
+/* 강조 본문 — 푸터 태그라인 · 상세 부제 (시안 18) */
+@utility text-body-lg {
+  font-size: 16px;
+  @media (min-width: 640px) {
+    font-size: 18px;
+  }
+}
+
+/* UI 기본 — 칩 · 정렬 · 말머리 뱃지 · 폼 입력/라벨 · 본문 문단 (시안 17) */
+@utility text-ui {
+  font-size: 15px;
+  @media (min-width: 640px) {
+    font-size: 17px;
+  }
+}
+
+/* UI 보조 — 메타 줄 · 표 · 인접 글 내비 (시안 16) */
+@utility text-ui-sm {
+  font-size: 14px;
+  @media (min-width: 640px) {
+    font-size: 16px;
+  }
+}
+
+/**
+ * 폼 컨트롤 전용 — 시안 17, 폰 16.
+ *
+ * 폰에서 16px 밑으로 내리지 않는 이유는 스타일이 아니라 iOS Safari 동작이다.
+ * `maximum-scale` 을 걸지 않은 문서에서 글자 16px 미만인 input/textarea/select 에
+ * 포커스가 들어가면 Safari 가 페이지를 확대해 버리고, 그 확대는 blur 후에도
+ * 풀리지 않아 레이아웃이 통째로 어긋난 것처럼 보인다.
+ */
+@utility text-input {
+  font-size: 16px;
+  @media (min-width: 640px) {
+    font-size: 17px;
+  }
+}
+
+/**
+ * 읽는 글(기사 본문·댓글·문의 내용·답변) 전용 — 시안 17, 폰 16.
+ * UI 크롬(`text-ui`, 15)보다 한 단계 크게 둔다. 여러 줄을 눈으로 좇는 텍스트는
+ * 폰에서도 16px 아래로 내리면 줄바꿈이 잦아지고 읽는 속도가 눈에 띄게 떨어진다.
+ */
+@utility text-prose {
+  font-size: 16px;
+  @media (min-width: 640px) {
+    font-size: 17px;
+  }
+}
+
+/**
+ * 공용 폼 컨트롤(`Field`) 표면 — 시안 15, 폰 16.
+ * 유일하게 폰에서 **커지는** 값이다. 시안 15px 을 그대로 두면 위 `text-input`
+ * 주석의 iOS Safari 확대에 걸린다. 640px 이상은 시안값 15px 그대로다.
+ */
+@utility text-input-sm {
+  font-size: 16px;
+  @media (min-width: 640px) {
+    font-size: 15px;
+  }
+}

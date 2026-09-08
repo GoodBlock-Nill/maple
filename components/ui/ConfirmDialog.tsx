@@ -47,7 +47,7 @@ export function ConfirmDialog({
       describedBy={description === undefined ? undefined : descriptionId}
       className="max-w-[400px]"
     >
-      <h2 id={titleId} className="text-ink text-[18px] font-semibold">
+      <h2 id={titleId} className="text-ink text-body-lg font-semibold">
         {title}
       </h2>
 

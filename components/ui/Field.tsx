@@ -8,7 +8,7 @@ import type { ReactNode } from 'react'
 
 /** Input/Textarea/Select가 공유하는 컨트롤 표면. */
 export const FIELD_CONTROL_CLASS =
-  'w-full rounded-card border border-line bg-surface px-4 text-[15px] text-ink ' +
+  'w-full rounded-card border border-line bg-surface px-4 text-input-sm text-ink ' +
   'placeholder:text-ink-muted/70 transition-colors duration-150 ' +
   'hover:border-ink-muted/40 focus-visible:border-focus focus-visible:outline-2 ' +
   'focus-visible:outline-offset-0 focus-visible:outline-focus ' +

@@ -37,7 +37,7 @@ export function MetaRow({ date, views, likes, className }: MetaRowProps) {
   return (
     <p
       className={cn(
-        'text-ink flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px] leading-[19px] font-medium',
+        'text-ink flex flex-wrap items-center gap-x-3 gap-y-1 text-ui-sm leading-[19px] font-medium',
         className,
       )}
     >

@@ -22,7 +22,7 @@ export function InquiryDetailCard({ inquiry, attachments }: InquiryDetailCardPro
     <article className="flex flex-col gap-5">
       <header className="flex flex-col gap-3">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <h2 className="text-ink min-w-0 text-[24px] leading-[1.35] font-medium">
+          <h2 className="text-ink min-w-0 text-title-md leading-[1.35] font-medium">
             {inquiry.title}
           </h2>
           {/* 뱃지와 소유자 액션(수정 · 접수 취소)은 한 열로 묶는다. 좁은 화면에서
@@ -47,7 +47,7 @@ export function InquiryDetailCard({ inquiry, attachments }: InquiryDetailCardPro
       <div className="bg-line h-px w-full" aria-hidden />
 
       {/* 사용자가 입력한 평문. 줄바꿈만 살리고 마크업은 해석하지 않는다. */}
-      <p className="text-ink text-[17px] leading-[1.8] break-words whitespace-pre-line">
+      <p className="text-ink text-prose leading-[1.8] break-words whitespace-pre-line">
         {inquiry.content}
       </p>
 

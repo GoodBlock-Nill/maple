@@ -85,8 +85,8 @@ export function ComingSoon({ variant, since, eta }: ComingSoonProps) {
         'lg:mt-[var(--coming-soon-mascot-clearance)]',
       )}
     >
-      <h2 className="text-ink text-[28px] font-bold">서비스 준비 중입니다</h2>
-      <p className="text-ink-muted max-w-[480px] text-[17px] leading-[1.6]">
+      <h2 className="text-ink text-title-lg font-bold">서비스 준비 중입니다</h2>
+      <p className="text-ink-muted max-w-[480px] text-prose leading-[1.6]">
         더 재미있게 준비해서 곧 만나요! 오픈 소식은 뉴스에서 먼저 알려드릴게요.
       </p>
       {metaLine ? <p className="text-ink-muted text-[15px]">{metaLine}</p> : null}

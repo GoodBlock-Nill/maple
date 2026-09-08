@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn'
  */
 const CHIP_CLASS =
   'board-control rounded-pill inline-flex min-w-[78px] items-center justify-center px-[15px] ' +
-  'text-[17px] font-medium transition-colors'
+  'text-ui font-medium transition-colors'
 
 const ACTIVE_CLASS = 'bg-ink border-ink text-white'
 const INACTIVE_CLASS = 'text-ink-muted hover:border-ink/30 hover:text-ink'

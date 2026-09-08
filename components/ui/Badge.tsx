@@ -9,7 +9,7 @@ export type BadgeSize = 'sm' | 'md'
 /** sm: 카드 라벨(12px bold) · md: 게시판 말머리(17px medium, 시안 실측). */
 const SIZE_CLASS: Record<BadgeSize, string> = {
   sm: 'min-w-14 px-2.5 py-1 text-[12px] leading-none font-bold tracking-tight',
-  md: 'px-2.5 py-[5px] text-[17px] leading-none font-medium',
+  md: 'px-2.5 py-[5px] text-ui leading-none font-medium',
 }
 
 type BadgeProps = {

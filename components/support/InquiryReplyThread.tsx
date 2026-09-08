@@ -48,7 +48,7 @@ export function resolveNoReplyNotice(status: InquiryStatus, cancelledAt: string 
 export function InquiryReplyThread({ replies, status, cancelledAt }: InquiryReplyThreadProps) {
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-ink text-[20px] font-medium">
+      <h3 className="text-ink text-label-lg font-medium">
         {INQUIRY_REPLY_HEADING}
         {replies.length > 0 ? <span className="text-ink-muted"> ({replies.length})</span> : null}
       </h3>
@@ -65,13 +65,13 @@ export function InquiryReplyThread({ replies, status, cancelledAt }: InquiryRepl
               className="border-line-soft shadow-chip rounded-[12px] border bg-white px-4 py-4"
             >
               <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                <span className="text-ink text-[17px] font-bold">{reply.authorName}</span>
+                <span className="text-ink text-ui font-bold">{reply.authorName}</span>
                 <span className="text-ink-muted text-[15px]">
                   {formatDateLong(reply.createdAt)}
                 </span>
               </p>
               {/* 답변도 평문이다. 줄바꿈만 살리고 마크업은 해석하지 않는다. */}
-              <p className="text-ink mt-2 text-[17px] leading-[1.7] whitespace-pre-line">
+              <p className="text-ink mt-2 text-prose leading-[1.7] whitespace-pre-line">
                 {reply.content}
               </p>
             </li>

@@ -29,11 +29,11 @@ export const BOARD_ROW_HEAD_TITLE_SLOT_CLASS =
  * 행 2번째 줄의 보조 텍스트(댓글수 · 마스킹된 작성자).
  * MetaRow와 동일한 16px/leading-19px를 써서 한 줄 높이가 어긋나지 않게 한다.
  */
-export const BOARD_ROW_META_CLASS = 'text-ink-muted text-[16px] leading-[19px] font-medium'
+export const BOARD_ROW_META_CLASS = 'text-ink-muted text-ui-sm leading-[19px] font-medium'
 
 /** 목록 하단 pill 액션(더보기 · 목록으로). */
 export const BOARD_PILL_CLASS =
-  'cta-more font-ui rounded-pill inline-flex h-11 items-center px-[17px] text-[16px] font-medium ' +
+  'cta-more font-ui rounded-pill inline-flex h-11 items-center px-[17px] text-ui-sm font-medium ' +
   'transition-[filter] hover:brightness-125'
 
 /**

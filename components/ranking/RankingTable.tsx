@@ -27,7 +27,7 @@ export function RankingTable({ rows }: RankingTableProps) {
         {RANKING_COLUMNS.map((column) => (
           <p
             key={column.key}
-            className="text-ink-muted text-center text-[17px] leading-none font-medium"
+            className="text-ink-muted text-center text-ui leading-none font-medium"
           >
             {column.label}
           </p>

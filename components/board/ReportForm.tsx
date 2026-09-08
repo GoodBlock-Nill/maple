@@ -46,7 +46,7 @@ export function ReportForm({
 
   return (
     <>
-      <h2 id={titleId} className="text-ink text-[18px] font-semibold">
+      <h2 id={titleId} className="text-ink text-body-lg font-semibold">
         {targetLabel} 신고
       </h2>
       <p className="text-ink-muted mt-2 text-[14px] leading-[1.6]">
@@ -98,7 +98,7 @@ export function ReportForm({
               hint={`${detailLength}/${REPORT_DETAIL_MAX}자`}
               error={state.fieldErrors?.detail}
               onChange={(event) => setDetailLength(event.currentTarget.value.length)}
-              className="border-line-soft rounded-[10px] text-[15px] placeholder:text-[#9a9a9a]"
+              className="border-line-soft rounded-[10px] text-input-sm placeholder:text-[#9a9a9a]"
             />
           </>
         )}

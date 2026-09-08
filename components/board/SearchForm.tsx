@@ -40,7 +40,7 @@ export function SearchForm({ action, defaultValue, keep = {}, className }: Searc
         defaultValue={defaultValue}
         aria-label="검색어"
         placeholder={SEARCH_PLACEHOLDER}
-        className="text-ink placeholder:text-ink-muted h-full w-full min-w-0 bg-transparent text-[17px] outline-none"
+        className="text-ink placeholder:text-ink-muted h-full w-full min-w-0 bg-transparent text-input outline-none"
       />
     </form>
   )

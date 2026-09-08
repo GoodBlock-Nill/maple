@@ -15,7 +15,7 @@ type InquirySubmitButtonProps = {
 
 /** 시안 실측: 전폭 h48 pill · bg #2a2a2a · border #505967 · Inter 17px medium #edeef0. */
 const SUBMIT_CLASS =
-  'font-ui rounded-pill h-12 w-full border border-[#505967] bg-[#2a2a2a] text-[17px] font-medium ' +
+  'font-ui rounded-pill h-12 w-full border border-[#505967] bg-[#2a2a2a] text-ui font-medium ' +
   'text-[#edeef0] transition-[filter] hover:brightness-125 focus-visible:outline-2 ' +
   'focus-visible:outline-offset-2 focus-visible:outline-focus disabled:pointer-events-none ' +
   'disabled:opacity-60'

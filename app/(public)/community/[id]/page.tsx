@@ -70,7 +70,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
           likes={post.likes}
           aside={
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-ink-muted text-[18px] font-medium">
+              <span className="text-ink-muted text-body-lg font-medium">
                 {maskNickname(post.author)}
               </span>
               <PostActions

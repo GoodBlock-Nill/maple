@@ -40,7 +40,7 @@ const MENU_CLASS =
   'shadow-menu absolute top-[calc(100%+8px)] right-0 z-30 min-w-[140px] max-w-[calc(100vw-1.5rem)] flex origin-top-left flex-col gap-0.5 rounded-[12px] border border-line-soft bg-white p-2 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0'
 
 const ITEM_CLASS =
-  'flex h-10 items-center gap-2 rounded-lg px-3 text-[17px] whitespace-nowrap transition-colors outline-none hover:bg-sheet focus-visible:bg-sheet'
+  'flex h-10 items-center gap-2 rounded-lg px-3 text-ui whitespace-nowrap transition-colors outline-none hover:bg-sheet focus-visible:bg-sheet'
 
 /**
  * URL 링크로 이동하는 드롭다운. 목록 필터는 전부 searchParams 로 표현하므로 항목은

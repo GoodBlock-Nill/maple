@@ -148,7 +148,10 @@
 }
 
 @layer components {
-  /* 칩·검색창·보기전환이 공유하는 h45 흰 표면 */
+  /* 칩·검색창·보기전환이 공유하는 h45 흰 표면.
+     폰에서 글자만 17→15 로 내리고 높이는 45px 그대로 둔다. 손가락이 입력 수단인
+     화면에서 탭 대상을 줄일 이유가 없고(WCAG 2.5.5 목표 44px), 같은 줄에 서는
+     "글쓰기" 버튼(h47)·랭킹 표 머리(h45)와 밑선이 어긋나기 때문이다. */
   .board-control {
     height: 45px;
     border-radius: 10px;
@@ -167,7 +170,7 @@
 
   /* 마크다운 본문. @tailwindcss/typography 를 새로 넣지 않고 필요한 요소만 정의한다. */
   .prose-board {
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.8;
     color: var(--color-ink);
   }
@@ -176,7 +179,7 @@
   }
   .prose-board h2,
   .prose-board h3 {
-    font-size: 21px;
+    font-size: 19px;
     font-weight: 600;
     line-height: 1.4;
     margin-top: 1.8em;
@@ -210,7 +213,7 @@
   .prose-board table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 16px;
+    font-size: 14px;
   }
   .prose-board th,
   .prose-board td {
@@ -227,6 +230,22 @@
     background-color: var(--color-sheet);
     padding: 2px 6px;
     font-size: 0.9em;
+  }
+
+  /* 640px 이상은 시안(Figma) 실측값 그대로다. 폰 기본값만 한 단계 내려
+     기사 본문이 320~430px 폭에서 지나치게 잦게 줄바꿈하지 않게 한다.
+     본문 16px 은 읽는 글의 하한이라 그 아래로는 내리지 않는다. */
+  @media (min-width: 640px) {
+    .prose-board {
+      font-size: 17px;
+    }
+    .prose-board h2,
+    .prose-board h3 {
+      font-size: 21px;
+    }
+    .prose-board table {
+      font-size: 16px;
+    }
   }
 
   /* 첨부 이미지. 원본이 4000px 이어도 본문 폭을 넘지 않게 눌러 둔다. */

@@ -103,7 +103,7 @@ export default async function CommunityPage(props: PageProps<'/community'>) {
           <Button
             href={WRITE_PATH}
             size="lg"
-            className="w-[110px] gap-1.5 rounded-[10px] px-0 text-[17px]"
+            className="w-[110px] gap-1.5 rounded-[10px] px-0 text-[17px] max-sm:text-[15px]"
           >
             <Image
               src="/images/brand/icon-write.svg"

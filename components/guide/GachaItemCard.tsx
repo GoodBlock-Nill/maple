@@ -46,7 +46,7 @@ export function GachaItemCard({ item, href }: GachaItemCardProps) {
         {item.name}
       </h3>
 
-      <p className="text-ink flex items-center gap-1.5 text-[16px] leading-[19px] font-medium">
+      <p className="text-ink flex items-center gap-1.5 text-ui-sm leading-[19px] font-medium">
         <Image src="/images/brand/icon-clock.svg" alt="" width={12} height={12} aria-hidden />
         <span className="sr-only">갱신일</span>
         {formatDateIso(item.updatedAt)}

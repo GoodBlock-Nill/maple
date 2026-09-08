@@ -31,7 +31,7 @@ export function GachaGradeTable({ rows, caption }: GachaGradeTableProps) {
               <th
                 key={column.key}
                 scope="col"
-                className="text-table-head h-12 px-3 text-[16px] font-medium"
+                className="text-table-head h-12 px-3 text-ui-sm font-medium"
               >
                 {column.label}
               </th>
@@ -42,7 +42,7 @@ export function GachaGradeTable({ rows, caption }: GachaGradeTableProps) {
           {rows.map((row, index) => (
             <tr
               key={`${row.grade}-${row.itemName}-${index}`}
-              className="gacha-table-row text-table-body h-[52px] text-[16px] font-medium"
+              className="gacha-table-row text-table-body h-[52px] text-ui-sm font-medium"
             >
               <td className={cn('px-3 font-semibold', GACHA_GRADE_CLASS[row.grade])}>
                 [{row.grade}등급]

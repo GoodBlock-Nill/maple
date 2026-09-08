@@ -14,7 +14,7 @@ import { COMMENT_CONTENT_MAX } from '@/lib/validation/post'
 import type { FormEvent } from 'react'
 
 const COMMENT_FIELD_CLASS =
-  'rounded-[10px] border-line-soft text-[17px] placeholder:text-[#9a9a9a] disabled:bg-sheet'
+  'rounded-[10px] border-line-soft text-input placeholder:text-[#9a9a9a] disabled:bg-sheet'
 
 type CommentFormProps = {
   postId: string

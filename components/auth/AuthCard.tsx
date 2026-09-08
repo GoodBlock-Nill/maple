@@ -14,7 +14,7 @@ type AuthCardProps = {
 export function AuthCard({ title, description, children, footer }: AuthCardProps) {
   return (
     <section className={AUTH_CARD_CLASS}>
-      <h1 className="text-ink text-[28px] leading-[1.3] font-semibold tracking-[-0.5px]">
+      <h1 className="text-ink text-title-lg leading-[1.3] font-semibold tracking-[-0.5px]">
         {title}
       </h1>
       <p className="text-ink-muted mt-2 text-[15px] leading-[1.6]">{description}</p>

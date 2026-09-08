@@ -57,7 +57,7 @@ export function InquirySubmittedDialog({ detailPath }: InquirySubmittedDialogPro
       <div className="flex flex-col items-center gap-3 text-center">
         <SuccessMark />
 
-        <h2 id={titleId} className="text-ink text-[20px] font-semibold">
+        <h2 id={titleId} className="text-ink text-label-lg font-semibold">
           {INQUIRY_SUBMITTED_TITLE}
         </h2>
 

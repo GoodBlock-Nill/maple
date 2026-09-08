@@ -40,7 +40,7 @@ export function SupportCard({
           <h2 className="font-ui text-ink text-[clamp(24px,3vw,30px)] leading-none font-medium">
             {heading}
           </h2>
-          <p className="text-ink-muted text-[17px] leading-relaxed">{description}</p>
+          <p className="text-ink-muted text-prose leading-relaxed">{description}</p>
         </div>
 
         <nav aria-label="고객지원 메뉴">
@@ -98,7 +98,7 @@ function SupportMenuLink({ item, isActive }: SupportMenuLinkProps) {
           </span>
         )}
       </span>
-      <span className="text-ink text-[20px] font-medium">{item.label}</span>
+      <span className="text-ink text-label-lg font-medium">{item.label}</span>
     </Link>
   )
 }

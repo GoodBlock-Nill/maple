@@ -44,4 +44,45 @@ describe('cn', () => {
     // Assert
     expect(result).toBe('')
   })
+
+  /**
+   * tailwind-merge 는 모르는 `text-*` 를 전부 글자색으로 분류한다.
+   * `extend.theme.text` 에 반응형 서체 유틸리티를 등록하지 않으면 아래 조합에서
+   * 크기 클래스가 색과 충돌한 것으로 판정돼 조용히 사라진다.
+   */
+  it.each([
+    'text-ui',
+    'text-ui-sm',
+    'text-prose',
+    'text-input',
+    'text-input-sm',
+    'text-card-title',
+    'text-card-sub',
+    'text-title-lg',
+    'text-title-md',
+    'text-label-lg',
+    'text-body-lg',
+  ])('should keep %s when a text color is merged after it', (size) => {
+    // Arrange & Act
+    const result = cn(size, 'text-white')
+
+    // Assert
+    expect(result).toBe(`${size} text-white`)
+  })
+
+  it('should drop the earlier size when two responsive sizes collide', () => {
+    // Arrange & Act
+    const result = cn('text-ui', 'text-prose')
+
+    // Assert
+    expect(result).toBe('text-prose')
+  })
+
+  it('should let an arbitrary size override a responsive size utility', () => {
+    // Arrange & Act
+    const result = cn('text-ui', 'text-[13px]')
+
+    // Assert
+    expect(result).toBe('text-[13px]')
+  })
 })
