@@ -156,6 +156,9 @@ additional_redirect_urls = [
   "http://localhost:3000/**",
   "https://maple-web-sigma.vercel.app/auth/callback",
   "https://maple-web-sigma.vercel.app/**",
+  # 관리자 앱(초대 수락 · 비밀번호 재설정 링크)
+  "http://localhost:3100/**",
+  "https://maple-admin.vercel.app/**",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
