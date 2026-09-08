@@ -1,5 +1,5 @@
 import type { BadgeColor } from '@/lib/constants/categories'
-import type { CommunityCategory, CommunitySort, NewsCategory, NewsView } from '@/types/domain'
+import type { CommunityCategory, CommunitySort, NewsCategory } from '@/types/domain'
 
 /** 목록 한 페이지에 추가로 쌓이는 건수. "더보기"는 1~N 페이지를 누적 표시한다. */
 export const BOARD_PAGE_SIZE = 10
@@ -26,19 +26,10 @@ export const COMMUNITY_CATEGORIES = [
   { value: 'info', label: '정보', badge: 'info' },
 ] as const satisfies readonly CategoryOption<CommunityCategory>[]
 
-/** 라벨은 시안(notice.png) 트리거 표기를 따른다 — 기본값이 "카드형". */
-export const NEWS_VIEWS = [
-  { value: 'row', label: '가로형' },
-  { value: 'detail', label: '자세히' },
-  { value: 'tile', label: '카드형' },
-] as const satisfies readonly BoardOption<NewsView>[]
-
-export const DEFAULT_NEWS_VIEW: NewsView = 'tile'
-
 export const COMMUNITY_SORTS = [
   { value: 'latest', label: '최신순' },
+  { value: 'likes', label: '인기순' },
   { value: 'views', label: '조회순' },
-  { value: 'likes', label: '좋아요순' },
 ] as const satisfies readonly BoardOption<CommunitySort>[]
 
 export const DEFAULT_COMMUNITY_SORT: CommunitySort = 'latest'
@@ -54,8 +45,6 @@ export const DEFAULT_COMMUNITY_CATEGORY: CommunityCategory = 'chat'
 export const NEWS_CATEGORY_VALUES = NEWS_CATEGORIES.map((item) => item.value)
 
 export const COMMUNITY_CATEGORY_VALUES = COMMUNITY_CATEGORIES.map((item) => item.value)
-
-export const NEWS_VIEW_VALUES = NEWS_VIEWS.map((item) => item.value)
 
 export const COMMUNITY_SORT_VALUES = COMMUNITY_SORTS.map((item) => item.value)
 
@@ -75,8 +64,6 @@ function toLookup<TOption extends BoardOption<string>>(
 export const NEWS_CATEGORY_MAP = toLookup(NEWS_CATEGORIES)
 
 export const COMMUNITY_CATEGORY_MAP = toLookup(COMMUNITY_CATEGORIES)
-
-export const NEWS_VIEW_MAP = toLookup(NEWS_VIEWS)
 
 export const COMMUNITY_SORT_MAP = toLookup(COMMUNITY_SORTS)
 

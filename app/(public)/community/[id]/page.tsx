@@ -6,11 +6,13 @@ import { BackToListLink } from '@/components/board/BackToListLink'
 import { CommentSection } from '@/components/board/CommentSection'
 import { ListSheet } from '@/components/board/ListSheet'
 import { Markdown } from '@/components/board/Markdown'
+import { PostActions } from '@/components/board/PostActions'
 import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
 import { getPostById } from '@/lib/data/community'
+import { isEdited } from '@/lib/utils/authorship'
 import { maskNickname } from '@/lib/utils/mask'
 
 import type { Metadata } from 'next'
@@ -43,6 +45,8 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
   }
 
   const category = COMMUNITY_CATEGORY_MAP[post.category]
+  const detailPath = `${COMMUNITY_PATH}/${post.id}`
+  const viewerId = user?.id ?? null
 
   return (
     <PageShell variant="community" title={COMMUNITY_TITLE}>
@@ -54,9 +58,22 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
           views={post.views}
           likes={post.likes}
           aside={
-            <span className="text-ink-muted text-[18px] font-medium">
-              {maskNickname(post.author)}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-ink-muted text-[18px] font-medium">
+                {maskNickname(post.author)}
+              </span>
+              <PostActions
+                postId={post.id}
+                authorId={post.authorId}
+                viewerId={viewerId}
+                detailPath={detailPath}
+              />
+            </div>
+          }
+          note={
+            isEdited(post.editedAt) ? (
+              <span className="text-ink-muted text-[14px] font-medium">수정됨</span>
+            ) : null
           }
         >
           <Markdown>{post.body}</Markdown>
@@ -80,6 +97,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
             postId={post.id}
             comments={post.comments}
             isAuthenticated={user !== null}
+            viewerId={viewerId}
           />
         </ArticleCard>
       </ListSheet>

@@ -9,8 +9,9 @@
 -- 생성 기준: lib/mock/* (뉴스 22 · 커뮤니티 30 · FAQ 18 · 가챠 105 · 랭킹 100)
 -- =============================================================================
 
--- 사이트 전역 설정(단일 행). 미수령 자산(월드 ID · 디스코드 · 유튜브 · 크리에이터
--- 사진)은 관리자에서 교체할 수 있도록 null 로 둔다.
+-- 사이트 전역 설정(단일 행). 미수령 자산(월드 ID · 디스코드 · 크리에이터 사진)은
+-- 관리자에서 교체할 수 있도록 null 로 둔다. 유튜브는 확정된 채널(세글자)이 있어
+-- 기본값으로 채워 둔다.
 insert into public.site_settings (
   id, game_name, world_id, discord_url, youtube_url, contact_email,
   ip_notice, copyright, creator_name, creator_slogan, creator_intro, creator_photo_url
@@ -18,9 +19,9 @@ insert into public.site_settings (
   1,
   '글자월드',
   null,
-  null,
-  null,
-  'contact@example.com',
+  'https://discord.com/invite/5Vk9k5pPb',
+  'https://www.youtube.com/@%EC%84%B8%EA%B8%80%EC%9E%90',
+  'contact@글자월드.co.kr',
   '본 사이트는 넥슨(주)의 메이플스토리 월드 플랫폼에서 서비스되는 글자월드 월드의 공식 홈페이지입니다. ''MapleStory'' 및 관련 지식재산권은 NEXON Korea Corp.에 있습니다. ''MapleStory Worlds'' 및 관련 지식재산권은 Toben Studio Inc.에 있습니다.',
   '© 2026 글자월드. All rights reserved.',
   '세글자',

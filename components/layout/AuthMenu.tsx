@@ -9,6 +9,13 @@ type AuthMenuProps = {
   className?: string
 }
 
+/**
+ * 헤더 우측 인증 영역.
+ *
+ * 미로그인일 때는 **버튼 하나**(진한 필 "로그인")만 둔다. 간편로그인에는
+ * "가입"과 "로그인"의 구분이 없어서(첫 로그인이 곧 가입이다) 두 버튼을 나란히
+ * 두면 사용자가 무엇이 다른지 고민하게 된다 — 제품 결정 2026-09-08.
+ */
 export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
   if (user) {
     return (
@@ -23,11 +30,8 @@ export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
 
   return (
     <div id={id} className={cn('items-center gap-3', className)}>
-      <Button href="/login" variant="light" size="sm" className="font-medium">
+      <Button href="/login" variant="dark" size="sm">
         로그인
-      </Button>
-      <Button href="/register" variant="dark" size="sm">
-        회원가입
       </Button>
     </div>
   )

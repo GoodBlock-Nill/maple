@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import { AdjacentPostNav } from '@/components/board/AdjacentPostNav'
 import { ArticleCard } from '@/components/board/ArticleCard'
 import { BackToListLink } from '@/components/board/BackToListLink'
 import { ListSheet } from '@/components/board/ListSheet'
@@ -7,7 +8,7 @@ import { Markdown } from '@/components/board/Markdown'
 import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
 import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
-import { getNewsById } from '@/lib/data/news'
+import { getAdjacentNews, getNewsById } from '@/lib/data/news'
 
 import type { Metadata } from 'next'
 
@@ -38,6 +39,7 @@ export default async function NewsDetailPage(props: PageProps<'/news/[id]'>) {
   }
 
   const category = NEWS_CATEGORY_MAP[item.category]
+  const { prev, next } = await getAdjacentNews(item.id, item.publishedAt)
 
   return (
     <PageShell variant="news" title={NEWS_TITLE}>
@@ -54,6 +56,8 @@ export default async function NewsDetailPage(props: PageProps<'/news/[id]'>) {
 
       {/* 렌더 중에는 쿠키를 쓸 수 없어 마운트 후 서버 액션으로 집계한다. */}
       <ViewCounter postId={item.id} />
+
+      <AdjacentPostNav basePath={NEWS_PATH} prev={prev} next={next} />
 
       <BackToListLink href={NEWS_PATH} />
     </PageShell>

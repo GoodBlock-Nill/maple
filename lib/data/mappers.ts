@@ -15,6 +15,7 @@ import type {
   SiteSettings as SiteSettingsRow,
 } from '@/lib/supabase/types'
 import type {
+  AdjacentNewsItem,
   Comment,
   CommunityCategory,
   FaqItem,
@@ -57,20 +58,28 @@ export type NewsSource = Pick<
   | 'published_at'
 >
 
+/** 이전/다음 글 조회는 목록 컬럼의 부분집합만 읽는다. */
+export type AdjacentNewsSource = Pick<PostRow, 'id' | 'category_key' | 'title' | 'published_at'>
+
 export type PostSource = Pick<
   PostRow,
   | 'id'
   | 'category_key'
   | 'title'
   | 'content'
+  | 'author_id'
   | 'author_name'
   | 'view_count'
   | 'like_count'
   | 'comment_count'
   | 'created_at'
+  | 'edited_at'
 >
 
-export type CommentSource = Pick<CommentRow, 'id' | 'author_name' | 'content' | 'created_at'>
+export type CommentSource = Pick<
+  CommentRow,
+  'id' | 'author_id' | 'author_name' | 'content' | 'created_at'
+>
 
 function toNewsCategory(key: string): NewsCategory {
   return NEWS_CATEGORY_VALUES.find((value) => value === key) ?? DEFAULT_NEWS_CATEGORY
@@ -93,10 +102,20 @@ export function toNewsItem(row: NewsSource): NewsItem {
   }
 }
 
+export function toAdjacentNewsItem(row: AdjacentNewsSource): AdjacentNewsItem {
+  return {
+    id: row.id,
+    category: toNewsCategory(row.category_key),
+    title: row.title,
+    publishedAt: row.published_at,
+  }
+}
+
 export function toComment(row: CommentSource): Comment {
   return {
     id: row.id,
     author: row.author_name,
+    authorId: row.author_id,
     body: row.content,
     createdAt: row.created_at,
   }
@@ -109,9 +128,11 @@ export function toPost(row: PostSource, comments: readonly Comment[] = []): Post
     title: row.title,
     body: row.content,
     author: row.author_name,
+    authorId: row.author_id,
     views: row.view_count,
     likes: row.like_count,
     createdAt: row.created_at,
+    editedAt: row.edited_at,
     commentCount: row.comment_count,
     comments,
   }

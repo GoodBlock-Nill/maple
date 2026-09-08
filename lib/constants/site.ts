@@ -83,14 +83,6 @@ export const SNS_LINKS: readonly SnsLink[] = [
     height: 12.2,
     hasOwnPlate: false,
   },
-  {
-    label: '페이스북',
-    href: '/sns/facebook',
-    icon: '/images/brand/sns-facebook.svg',
-    width: 9,
-    height: 15.75,
-    hasOwnPlate: false,
-  },
 ]
 
 /**

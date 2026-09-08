@@ -12,15 +12,27 @@ vi.mock('next/navigation', () => ({
   },
 }))
 
-vi.mock('next/headers', () => ({
-  headers: async () => new Headers({ host: 'localhost:3000' }),
-}))
-
 let stub: SupabaseStub
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => stub.client }))
 
-const { requestPasswordReset, signIn, signOut, signUp } = await import('@/lib/actions/auth-actions')
+const signInWithStubProvider = vi.fn()
+const markStubProvider = vi.fn()
+vi.mock('@/lib/supabase/stub-social', () => ({
+  signInWithStubProvider: (...args: unknown[]) => signInWithStubProvider(...args),
+  markStubProvider: (...args: unknown[]) => markStubProvider(...args),
+}))
+
+const { completeOnboarding, signOut, socialSignIn, stubSocialSignIn } =
+  await import('@/lib/actions/auth-actions')
 const { EMPTY_FORM_STATE } = await import('@/lib/actions/form-state')
+
+const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001'
+const COMPLETE_PROFILE = {
+  nickname: '모험가',
+  terms_agreed_at: '2026-09-08T00:00:00.000Z',
+  privacy_agreed_at: '2026-09-08T00:00:00.000Z',
+  age_confirmed_at: '2026-09-08T00:00:00.000Z',
+}
 
 function form(values: Record<string, string>): FormData {
   const formData = new FormData()
@@ -34,43 +46,55 @@ function form(values: Record<string, string>): FormData {
 
 beforeEach(() => {
   stub = createSupabaseStub()
+  signInWithStubProvider.mockReset()
+  signInWithStubProvider.mockResolvedValue({ ok: true, userId: USER_ID, isAnonymous: true })
+  markStubProvider.mockReset()
+  delete process.env.SOCIAL_LOGIN_MODE
 })
 
-describe('signIn', () => {
-  it('should return field errors when the email is malformed', async () => {
+describe('socialSignIn', () => {
+  it('should refuse a provider it does not know', async () => {
     // Arrange & Act
-    const result = await signIn(EMPTY_FORM_STATE, form({ email: 'nope', password: 'password1' }))
+    const result = await socialSignIn(EMPTY_FORM_STATE, form({ provider: 'apple' }))
+
+    // Assert — 직접 POST 로 임의 값이 올 수 있다. 500 대신 안내를 준다.
+    expect(result.formError).toBe('아직 준비 중인 로그인 방식입니다.')
+    expect(signInWithStubProvider).not.toHaveBeenCalled()
+  })
+
+  it('should send a first-time user to onboarding', async () => {
+    // Arrange — 프로필 조회 결과가 비어 있으면 온보딩 미완료다.
+    stub = createSupabaseStub([{ data: null, error: null }])
+
+    // Act
+    const promise = socialSignIn(EMPTY_FORM_STATE, form({ provider: 'kakao', next: '/community' }))
 
     // Assert
-    expect(result.fieldErrors?.email).toBeDefined()
-    expect(stub.client.auth.signInWithPassword).not.toHaveBeenCalled()
-  })
-
-  it('should hide whether the account exists when the credentials are wrong', async () => {
-    // Arrange
-    stub.client.auth.signInWithPassword.mockResolvedValue({
-      data: null,
-      error: { message: 'Invalid login credentials' },
-    })
-
-    // Act
-    const result = await signIn(
-      EMPTY_FORM_STATE,
-      form({ email: 'user@example.com', password: 'wrong-password' }),
+    await expect(promise).rejects.toThrow(
+      `${REDIRECT_PREFIX}/auth/onboarding?next=${encodeURIComponent('/community')}`,
     )
-
-    // Assert — "없는 계정"과 "틀린 비밀번호"를 구분해 알리지 않는다.
-    expect(result.formError).toBe('이메일 또는 비밀번호가 올바르지 않습니다.')
+    expect(signInWithStubProvider).toHaveBeenCalledWith(stub.client, 'kakao')
   })
 
-  it('should redirect to the sanitized next path on success', async () => {
+  it('should record which button the user pressed', async () => {
     // Arrange
-    stub.client.auth.signInWithPassword.mockResolvedValue({ data: {}, error: null })
+    stub = createSupabaseStub([{ data: COMPLETE_PROFILE, error: null }])
 
     // Act
-    const promise = signIn(
+    await socialSignIn(EMPTY_FORM_STATE, form({ provider: 'naver' })).catch(() => undefined)
+
+    // Assert
+    expect(markStubProvider).toHaveBeenCalledWith(USER_ID, 'naver')
+  })
+
+  it('should go straight to the destination once onboarding is done', async () => {
+    // Arrange
+    stub = createSupabaseStub([{ data: COMPLETE_PROFILE, error: null }])
+
+    // Act
+    const promise = socialSignIn(
       EMPTY_FORM_STATE,
-      form({ email: 'user@example.com', password: 'password1', next: '/community/write' }),
+      form({ provider: 'google', next: '/community/write' }),
     )
 
     // Assert
@@ -79,105 +103,112 @@ describe('signIn', () => {
 
   it('should ignore an off-origin next path', async () => {
     // Arrange
-    stub.client.auth.signInWithPassword.mockResolvedValue({ data: {}, error: null })
+    stub = createSupabaseStub([{ data: COMPLETE_PROFILE, error: null }])
 
     // Act
-    const promise = signIn(
+    const promise = socialSignIn(
       EMPTY_FORM_STATE,
-      form({ email: 'user@example.com', password: 'password1', next: 'https://evil.example' }),
+      form({ provider: 'google', next: 'https://evil.example' }),
     )
 
     // Assert
     await expect(promise).rejects.toThrow(`${REDIRECT_PREFIX}/`)
   })
+
+  it('should surface a friendly message when sign-in fails', async () => {
+    // Arrange
+    signInWithStubProvider.mockResolvedValue({ ok: false, message: '로그인에 실패했습니다.' })
+
+    // Act
+    const result = await socialSignIn(EMPTY_FORM_STATE, form({ provider: 'kakao' }))
+
+    // Assert
+    expect(result.formError).toBe('로그인에 실패했습니다.')
+  })
 })
 
-describe('signUp', () => {
-  const valid = { email: 'user@example.com', password: 'password1', nickname: '모험가' }
+describe('stubSocialSignIn', () => {
+  it('should answer "준비 중" when the site is switched to real oauth', async () => {
+    // Arrange — 실 OAuth 모드인데 제공자가 아직 연결되지 않은 상태.
+    process.env.SOCIAL_LOGIN_MODE = 'oauth'
 
-  it('should return field errors when the password is too short', async () => {
+    // Act
+    const result = await stubSocialSignIn('google')
+
+    // Assert
+    expect(result.formError).toBe('아직 준비 중인 로그인 방식입니다.')
+    expect(signInWithStubProvider).not.toHaveBeenCalled()
+  })
+})
+
+describe('completeOnboarding', () => {
+  const valid = {
+    nickname: '모험가',
+    termsAgreed: 'on',
+    privacyAgreed: 'on',
+    ageConfirmed: 'on',
+  }
+
+  beforeEach(() => {
+    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
+  })
+
+  it('should send an anonymous visitor to the login page', async () => {
+    // Arrange
+    stub.client.auth.getUser.mockResolvedValue({ data: { user: null }, error: null })
+
+    // Act
+    const promise = completeOnboarding(EMPTY_FORM_STATE, form(valid))
+
+    // Assert
+    await expect(promise).rejects.toThrow(
+      `${REDIRECT_PREFIX}/login?next=${encodeURIComponent('/auth/onboarding')}`,
+    )
+  })
+
+  it('should require every consent before writing anything', async () => {
     // Arrange & Act
-    const result = await signUp(EMPTY_FORM_STATE, form({ ...valid, password: 'short' }))
+    const result = await completeOnboarding(
+      EMPTY_FORM_STATE,
+      form({ nickname: '모험가', termsAgreed: 'on' }),
+    )
 
     // Assert
-    expect(result.fieldErrors?.password).toBeDefined()
-    expect(stub.client.auth.signUp).not.toHaveBeenCalled()
+    expect(result.fieldErrors?.privacyAgreed).toBeDefined()
+    expect(result.fieldErrors?.ageConfirmed).toBeDefined()
+    expect(stub.updates).toHaveLength(0)
   })
 
-  it('should never forward a role so users cannot promote themselves', async () => {
-    // Arrange
-    stub.client.auth.signUp.mockResolvedValue({ data: { session: {} }, error: null })
-
-    // Act
-    await signUp(EMPTY_FORM_STATE, form({ ...valid, role: 'admin' })).catch(() => undefined)
+  it('should stamp all three consent times and the nickname', async () => {
+    // Arrange & Act
+    await completeOnboarding(EMPTY_FORM_STATE, form(valid)).catch(() => undefined)
 
     // Assert
-    const [credentials] = stub.client.auth.signUp.mock.calls[0] as [
-      { options: { data: Record<string, unknown> } },
-    ]
-    expect(credentials.options.data).toEqual({ nickname: '모험가' })
+    const [payload] = stub.updates as [Record<string, string>]
+    expect(payload.nickname).toBe('모험가')
+    expect(payload.terms_agreed_at).toBeDefined()
+    expect(payload.privacy_agreed_at).toBeDefined()
+    expect(payload.age_confirmed_at).toBeDefined()
   })
 
-  it('should ask the user to check their inbox when no session is returned', async () => {
-    // Arrange — 메일 확인이 켜진 프로젝트
-    stub.client.auth.signUp.mockResolvedValue({ data: { session: null }, error: null })
-
-    // Act
-    const result = await signUp(EMPTY_FORM_STATE, form(valid))
-
-    // Assert
-    expect(result.message).toContain('확인 메일')
-  })
-
-  it('should redirect when the project signs the user in immediately', async () => {
-    // Arrange
-    stub.client.auth.signUp.mockResolvedValue({ data: { session: {} }, error: null })
-
-    // Act
-    const promise = signUp(EMPTY_FORM_STATE, form({ ...valid, next: '/community' }))
+  it('should redirect to the sanitized destination on success', async () => {
+    // Arrange & Act
+    const promise = completeOnboarding(EMPTY_FORM_STATE, form({ ...valid, next: '/community' }))
 
     // Assert
     await expect(promise).rejects.toThrow(`${REDIRECT_PREFIX}/community`)
   })
 
-  it('should return a generic message when sign up fails', async () => {
-    // Arrange
-    stub.client.auth.signUp.mockResolvedValue({ data: null, error: { message: 'boom' } })
+  it('should explain a nickname collision instead of leaking the constraint', async () => {
+    // Arrange — 닉네임에는 대소문자 무시 유니크 인덱스가 걸려 있다.
+    stub = createSupabaseStub([{ data: null, error: { code: '23505', message: 'duplicate key' } }])
+    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
 
     // Act
-    const result = await signUp(EMPTY_FORM_STATE, form(valid))
+    const result = await completeOnboarding(EMPTY_FORM_STATE, form(valid))
 
     // Assert
-    expect(result.formError).toBe('가입에 실패했습니다. 잠시 후 다시 시도해 주세요.')
-  })
-})
-
-describe('requestPasswordReset', () => {
-  it('should reject a malformed email before contacting the auth server', async () => {
-    // Arrange & Act
-    const result = await requestPasswordReset(EMPTY_FORM_STATE, form({ email: 'nope' }))
-
-    // Assert
-    expect(result.fieldErrors?.email).toBeDefined()
-    expect(stub.client.auth.resetPasswordForEmail).not.toHaveBeenCalled()
-  })
-
-  it('should answer the same way whether or not the account exists', async () => {
-    // Arrange
-    stub.client.auth.resetPasswordForEmail.mockResolvedValue({
-      data: null,
-      error: { message: 'User not found' },
-    })
-
-    // Act
-    const result = await requestPasswordReset(
-      EMPTY_FORM_STATE,
-      form({ email: 'unknown@example.com' }),
-    )
-
-    // Assert
-    expect(result.message).toContain('가입 내역이 있으면')
-    expect(result.formError).toBeUndefined()
+    expect(result.fieldErrors?.nickname).toBe('이미 사용 중인 닉네임입니다.')
   })
 })
 

@@ -84,6 +84,7 @@ export default async function GuidePage(props: PageProps<'/guide'>) {
               tab: tabParam,
               sort: value === DEFAULT_GACHA_SORT ? null : value,
               q,
+              [GACHA_ITEM_PARAM]: itemId,
             })
           }
         />

@@ -8,7 +8,6 @@ import {
   NEWS_CATEGORIES,
   NEWS_CATEGORY_MAP,
   NEWS_CATEGORY_VALUES,
-  NEWS_VIEW_MAP,
 } from '@/lib/constants/board'
 import { BADGE_CLASS } from '@/lib/constants/categories'
 
@@ -71,14 +70,6 @@ describe('badge class map', () => {
 })
 
 describe('option maps', () => {
-  it('should label the default news view when resolved', () => {
-    // Arrange & Act
-    const result = NEWS_VIEW_MAP.tile.label
-
-    // Assert — 시안(notice.png) 트리거 표기가 "카드형"이다.
-    expect(result).toBe('카드형')
-  })
-
   it('should label the default community sort when resolved', () => {
     // Arrange & Act
     const result = COMMUNITY_SORT_MAP.latest.label

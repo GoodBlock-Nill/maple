@@ -13,6 +13,8 @@ type ArticleCardProps = {
   likes?: number
   /** 제목 우측(데스크톱) 슬롯 — 작성자 표시 등. */
   aside?: ReactNode
+  /** 메타 줄 옆에 붙는 부가 표시 — "수정됨" 등. */
+  note?: ReactNode
   children: ReactNode
   className?: string
 }
@@ -25,6 +27,7 @@ export function ArticleCard({
   views,
   likes,
   aside,
+  note,
   children,
   className,
 }: ArticleCardProps) {
@@ -45,7 +48,10 @@ export function ArticleCard({
         <h2 className="text-ink text-[clamp(22px,3vw,32px)] leading-[1.35] font-semibold tracking-[-0.5px]">
           {title}
         </h2>
-        <MetaRow date={date} views={views} likes={likes} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <MetaRow date={date} views={views} likes={likes} />
+          {note}
+        </div>
       </header>
 
       <div className="pt-8">{children}</div>

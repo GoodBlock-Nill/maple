@@ -15,6 +15,12 @@ export type HeroMascot = {
   top: number
   /** 애니메이션 GIF 는 최적화를 건너뛰어야 움직임이 유지된다. */
   animated: boolean
+  /**
+   * 저해상도 GIF 를 원본보다 크게 표시할 때 `pixel-art` 클래스를 붙인다.
+   * 정지 PNG 장식(fallen-leaves, starfish 등)은 원본 해상도가 높아
+   * 스무딩이 자연스러우므로 지정하지 않는다.
+   */
+  pixelArt?: boolean
 }
 
 /**
@@ -66,6 +72,7 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
         left: 931,
         top: 283,
         animated: true,
+        pixelArt: true,
       },
     ],
   },
@@ -104,6 +111,7 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
         left: 1044,
         top: 307,
         animated: true,
+        pixelArt: true,
       },
     ],
   },
@@ -128,6 +136,7 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
         left: 1085.11,
         top: 330.45,
         animated: true,
+        pixelArt: true,
       },
     ],
   },
@@ -150,6 +159,7 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
         left: 1059.31,
         top: 349.4,
         animated: true,
+        pixelArt: true,
       },
       {
         src: '/images/ranking/deco-right.png',
@@ -193,6 +203,7 @@ export const PAGE_HERO: Record<PageVariant, PageHeroConfig> = {
         left: 979.87,
         top: 264.93,
         animated: true,
+        pixelArt: true,
       },
       {
         src: '/images/support/deco-485.png',

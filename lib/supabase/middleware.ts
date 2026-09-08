@@ -5,6 +5,7 @@ import { requireEnv } from '@/lib/supabase/env'
 
 import type { User } from '@supabase/supabase-js'
 import type { NextRequest } from 'next/server'
+import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { Database } from '@/types/database.types'
 
 export type SessionUpdate = {
@@ -16,6 +17,13 @@ export type SessionUpdate = {
   response: NextResponse
   /** `getUser()` 로 Auth 서버 검증까지 마친 사용자. 미로그인이면 null. */
   user: User | null
+  /**
+   * 방금 만든 요청 스코프 클라이언트.
+   *
+   * 프록시에서 아주 가벼운 조회(온보딩 완료 여부) 하나를 더 하기 위해 돌려준다.
+   * 클라이언트를 다시 만들면 쿠키 동기화가 어긋나므로 재사용해야 한다.
+   */
+  supabase: TypedSupabaseClient
 }
 
 /**
@@ -64,5 +72,5 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
     data: { user },
   } = await supabase.auth.getUser()
 
-  return { response, user }
+  return { response, user, supabase }
 }

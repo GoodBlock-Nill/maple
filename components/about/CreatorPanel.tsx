@@ -24,6 +24,12 @@ export function CreatorPanel() {
 
   return (
     <div className="mx-auto w-full max-w-[1341px]">
+      {/* 시안 제목("세글자")은 모바일/데스크톱 레이아웃에 각각 한 벌씩(반응형
+          CSS 로 둘 중 하나만 보이게) 중복 렌더된다 — 그중 하나를 h1 으로
+          승격하면 뷰포트와 무관하게 DOM 에는 항상 h1 이 두 개 남는다.
+          그래서 시각 제목은 h2 로 유지하고, 화면에는 보이지 않되 항상
+          하나만 존재하는 sr-only h1 을 페이지 대표 제목으로 둔다. */}
+      <h1 className="sr-only">세글자 소개</h1>
       <div className="lg:hidden">
         {hasPhoto ? (
           <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-[12px] bg-[#f7edd7]">
@@ -69,7 +75,12 @@ export function CreatorPanel() {
               height: layer.height,
               transform: layer.isFlipped ? 'scaleX(-1)' : undefined,
             }}
-            className="pointer-events-none absolute max-w-none"
+            /* 젤리 GIF(66×76 → 276.6×318.5)만 업스케일된다 — `isAnimated` 로
+               구분되는 이 목록에서 GIF는 젤리 하나뿐이라 그대로 재사용한다. */
+            className={cn(
+              'pointer-events-none absolute max-w-none',
+              layer.isAnimated && 'pixel-art',
+            )}
           />
         ))}
 
@@ -87,8 +98,9 @@ export function CreatorPanel() {
             height={285}
             unoptimized
             aria-hidden
-            /* 시안: 패널 기준 (1150.58, 356.65) 205.83×285 → 1341×739 대비 %. */
-            className="pointer-events-none absolute top-[48.2612%] left-[85.7999%] w-[15.3490%] max-w-none drop-shadow-[0_8px_10px_rgba(0,0,0,0.35)]"
+            /* 시안: 패널 기준 (1150.58, 356.65) 205.83×285 → 1341×739 대비 %.
+               원본 52×72 를 205.8×285 로 업스케일하므로 pixel-art 를 붙인다. */
+            className="pixel-art pointer-events-none absolute top-[48.2612%] left-[85.7999%] w-[15.3490%] max-w-none drop-shadow-[0_8px_10px_rgba(0,0,0,0.35)]"
           />
         ) : null}
       </div>
@@ -125,9 +137,9 @@ function CreatorText() {
         </p>
 
         <div className="flex flex-col gap-5 lg:gap-[15px]">
-          {CREATOR_INTRO.map((paragraph) => (
+          {CREATOR_INTRO.map((paragraph, index) => (
             <p
-              key={paragraph}
+              key={`${index}-${paragraph.slice(0, 8)}`}
               className="text-[clamp(16px,1.9vw,22px)] leading-[1.36] font-bold whitespace-pre-line text-[#381f1e]"
             >
               {paragraph}

@@ -36,7 +36,7 @@ type HeroCtaProps = {
 function HeroCta({ href, variant, children }: HeroCtaProps) {
   return (
     <span className="glass rounded-pill inline-flex p-1.5">
-      <Button href={href} variant={variant} size="lg" className="gap-4 pr-3">
+      <Button href={href} variant={variant} size="lg" prefetch={false} className="gap-4 pr-3">
         {children}
         <Image
           src="/images/brand/arrow-cta.svg"

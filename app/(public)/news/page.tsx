@@ -3,24 +3,12 @@ import { ListSheet } from '@/components/board/ListSheet'
 import { LoadMoreButton } from '@/components/board/LoadMoreButton'
 import { NewsList } from '@/components/board/NewsList'
 import { SearchForm } from '@/components/board/SearchForm'
-import { ViewToggle } from '@/components/board/ViewToggle'
 import { PageShell } from '@/components/layout/PageShell'
-import {
-  DEFAULT_NEWS_VIEW,
-  NEWS_CATEGORIES,
-  NEWS_CATEGORY_VALUES,
-  NEWS_VIEW_VALUES,
-} from '@/lib/constants/board'
+import { NEWS_CATEGORIES, NEWS_CATEGORY_VALUES } from '@/lib/constants/board'
 import { getNewsList } from '@/lib/data/news'
-import {
-  buildHref,
-  parseOption,
-  parseOptionalOption,
-  parsePage,
-  parseQuery,
-} from '@/lib/utils/list-query'
+import { buildHref, parseOptionalOption, parsePage, parseQuery } from '@/lib/utils/list-query'
 
-import type { NewsCategory, NewsView } from '@/types/domain'
+import type { NewsCategory } from '@/types/domain'
 import type { Metadata } from 'next'
 
 /**
@@ -42,23 +30,12 @@ export const metadata: Metadata = {
 export default async function NewsPage(props: PageProps<'/news'>) {
   const searchParams = await props.searchParams
   const category = parseOptionalOption<NewsCategory>(searchParams.category, NEWS_CATEGORY_VALUES)
-  const view = parseOption<NewsView>(searchParams.view, NEWS_VIEW_VALUES, DEFAULT_NEWS_VIEW)
   const q = parseQuery(searchParams.q)
   const page = parsePage(searchParams.page)
 
   const list = await getNewsList({ category, q, page })
 
-  // 기본 뷰(타일)는 URL에서 생략해 링크를 정규화한다.
-  const viewParam = view === DEFAULT_NEWS_VIEW ? null : view
-
-  const categoryHref = (value: NewsCategory | null) =>
-    buildHref(NEWS_PATH, { category: value, q, view: viewParam })
-  const viewHref = (value: NewsView) =>
-    buildHref(NEWS_PATH, {
-      category,
-      q,
-      view: value === DEFAULT_NEWS_VIEW ? null : value,
-    })
+  const categoryHref = (value: NewsCategory | null) => buildHref(NEWS_PATH, { category: value, q })
 
   return (
     <PageShell variant="news" title={NEWS_TITLE}>
@@ -74,19 +51,18 @@ export default async function NewsPage(props: PageProps<'/news'>) {
           <SearchForm
             action={NEWS_PATH}
             defaultValue={q}
-            keep={{ category, view: viewParam }}
+            keep={{ category }}
             className="w-full lg:w-[300px]"
           />
-          <ViewToggle active={view} hrefFor={viewHref} className="hidden lg:block" />
         </div>
       </div>
 
       <ListSheet className="mt-6">
-        <NewsList items={list.items} view={view} />
+        <NewsList items={list.items} />
       </ListSheet>
 
       <LoadMoreButton
-        href={buildHref(NEWS_PATH, { category, q, view: viewParam, page: page + 1 })}
+        href={buildHref(NEWS_PATH, { category, q, page: page + 1 })}
         shown={list.shown}
         total={list.total}
       />

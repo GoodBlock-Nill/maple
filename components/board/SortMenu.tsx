@@ -30,7 +30,7 @@ export function SortMenu<TValue extends string>({
     <LinkMenu
       className={className}
       label={label}
-      triggerClassName="text-ink-muted flex items-center pl-3 text-[17px] font-medium"
+      triggerClassName="text-ink-muted pl-3 text-[17px] font-medium"
       menuClassName="right-auto left-0"
       trigger={
         <>
@@ -41,7 +41,7 @@ export function SortMenu<TValue extends string>({
             width={25}
             height={25}
             aria-hidden
-            className="rotate-90"
+            className="rotate-90 transition-transform duration-150 ease-out group-data-[state=open]:rotate-[270deg] motion-reduce:transition-none"
           />
         </>
       }

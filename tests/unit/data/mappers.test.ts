@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  toAdjacentNewsItem,
   toComment,
   toFaqItem,
   toGachaItem,
@@ -10,7 +11,7 @@ import {
   toSiteSettings,
 } from '@/lib/data/mappers'
 
-import type { CommentSource, NewsSource, PostSource } from '@/lib/data/mappers'
+import type { AdjacentNewsSource, CommentSource, NewsSource, PostSource } from '@/lib/data/mappers'
 import type { FaqRow, GachaItemRow, RankingRow, SiteSettings } from '@/lib/supabase/types'
 
 const newsRow: NewsSource = {
@@ -29,11 +30,13 @@ const postRow: PostSource = {
   category_key: 'chat',
   title: '오늘 길드 사냥 같이 가실 분',
   content: '본문',
+  author_id: 'aaaaaaaa-0000-4000-8000-000000000001',
   author_name: 'cinnamon',
   view_count: 120,
   like_count: 7,
   comment_count: 3,
   created_at: '2026-05-19T10:00:00.000Z',
+  edited_at: null,
 }
 
 describe('toNewsItem', () => {
@@ -86,6 +89,36 @@ describe('toNewsItem', () => {
   })
 })
 
+describe('toAdjacentNewsItem', () => {
+  const adjacentRow: AdjacentNewsSource = {
+    id: '11111111-0000-4000-8000-000000000002',
+    category_key: 'patch',
+    title: '9월 정기 점검 안내',
+    published_at: '2026-05-12T10:00:00.000Z',
+  }
+
+  it('should map only the columns an adjacent-post link needs', () => {
+    // Arrange & Act
+    const result = toAdjacentNewsItem(adjacentRow)
+
+    // Assert
+    expect(result).toEqual({
+      id: adjacentRow.id,
+      category: 'patch',
+      title: adjacentRow.title,
+      publishedAt: adjacentRow.published_at,
+    })
+  })
+
+  it('should fall back to the first category when the key is unknown', () => {
+    // Arrange & Act — 관리자가 새 말머리를 만들면 프론트 상수보다 먼저 DB 에 생긴다.
+    const result = toAdjacentNewsItem({ ...adjacentRow, category_key: 'unknown' })
+
+    // Assert
+    expect(result.category).toBe('notice')
+  })
+})
+
 describe('toPost', () => {
   it('should carry the denormalized comment count when mapping a list row', () => {
     // Arrange & Act
@@ -100,6 +133,7 @@ describe('toPost', () => {
     // Arrange
     const commentRow: CommentSource = {
       id: '33333333-0000-4000-8000-000000000001',
+      author_id: 'aaaaaaaa-0000-4000-8000-000000000002',
       author_name: 'moonlight',
       content: '좋은 글이네요',
       created_at: '2026-05-19T11:00:00.000Z',

@@ -1,6 +1,7 @@
 import Image from 'next/image'
 
 import { MEDAL_PALETTE } from '@/lib/constants/ranking'
+import { cn } from '@/lib/utils/cn'
 
 type MedalRibbonProps = {
   /** 1 | 2 | 3. */
@@ -10,6 +11,14 @@ type MedalRibbonProps = {
 
 const MEDAL_WIDTH = 60
 const MEDAL_HEIGHT = 80
+/**
+ * 실제 `medal-ribbon.png` 파일 픽셀 크기는 60×81 로 디자인 값(60×80)과 1px
+ * 차이가 있다. Tailwind Preflight 가 모든 `<img>` 에 `height: auto` 를 걸어
+ * 두는 탓에 브라우저가 실제 파일 비율로 렌더링해 Next Image 의 attrs-대비-
+ * 렌더값 불일치 경고가 뜬다 — attrs 를 실측치로 맞춰 경고를 없앤다(렌더
+ * 크기는 이미 auto 로 61×81 이었으므로 화면에는 변화가 없다).
+ */
+const MEDAL_IMAGE_HEIGHT = 81
 
 /**
  * TOP3 카드 좌상단에 걸리는 메달 리본 60×80.
@@ -24,8 +33,8 @@ export function MedalRibbon({ rank, className }: MedalRibbonProps) {
         src="/images/ranking/medal-ribbon.png"
         alt={`${rank}위`}
         width={MEDAL_WIDTH}
-        height={MEDAL_HEIGHT}
-        className={className}
+        height={MEDAL_IMAGE_HEIGHT}
+        className={cn('h-auto', className)}
       />
     )
   }

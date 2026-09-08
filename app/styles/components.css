@@ -26,6 +26,15 @@
 }
 
 @layer components {
+  /* 저해상도 픽셀아트 GIF 를 원본보다 크게 표시할 때 쓴다. 브라우저 기본
+     bilinear 스무딩은 시안이 의도한 또렷한 픽셀 경계를 흐릿하게 뭉갠다.
+     원본 크기 그대로거나 축소 표시하는 GIF 에는 붙이지 않는다(그 경우는
+     스무딩이 그대로 자연스럽다). */
+  .pixel-art {
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+
   /* 시안 공통 표면: 배경 일러스트를 비추는 반투명 유리.
      헤더 바와 히어로 CTA 링이 같은 값을 공유한다. */
   .glass {
@@ -34,6 +43,16 @@
     box-shadow: inset 0 0 33px rgb(255 255 255 / 0.4);
     backdrop-filter: blur(7.5px);
     -webkit-backdrop-filter: blur(7.5px);
+  }
+
+  /* 헤더가 스크롤된 뒤 본문 위에 뜰 때 쓰는 더 불투명한 유리 변형.
+     크기(border-radius/padding)는 `.glass` 와 같고 배경 알파와 그림자만 올려
+     기사 본문 글자가 로고/내비 뒤로 비치지 않게 한다. */
+  .glass-scrolled {
+    background-color: rgb(255 255 255 / 0.88);
+    box-shadow:
+      inset 0 0 33px rgb(255 255 255 / 0.4),
+      0 8px 24px rgb(0 0 0 / 0.08);
   }
 
   /* 푸터 패널 — 잔디 배경 위에서 더 강한 블러와 어두운 그라데이션 */

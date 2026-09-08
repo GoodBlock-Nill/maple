@@ -1,128 +1,176 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { EMPTY_FORM_STATE, readField, toFieldErrors } from '@/lib/actions/form-state'
+import { readField, toFieldErrors } from '@/lib/actions/form-state'
+import { isUniqueViolation } from '@/lib/actions/pg-error'
 import { createClient } from '@/lib/supabase/server'
+import { markStubProvider, signInWithStubProvider } from '@/lib/supabase/stub-social'
 import {
-  forgotPasswordSchema,
-  loginSchema,
-  registerSchema,
-  sanitizeNextPath,
+  isOnboardingComplete,
+  isSocialProvider,
+  onboardingSchema,
+  ONBOARDING_PATH,
+  parseSocialLoginMode,
+  sanitizePostAuthPath,
 } from '@/lib/validation/auth'
 
 import type { FormState } from '@/lib/actions/form-state'
+import type { TypedSupabaseClient } from '@/lib/supabase/types'
+import type { SocialProvider } from '@/lib/validation/auth'
 
 /**
  * 인증 서버 액션.
  *
- * 어떤 액션도 Supabase 의 원문 오류를 그대로 노출하지 않는다. "이 이메일은
- * 등록되지 않았습니다" 같은 응답은 가입 여부를 알려 주는 계정 열거(enumeration)
- * 취약점이 되므로, 로그인 실패와 재설정 요청은 항상 같은 문구로 답한다.
+ * 로그인 수단은 간편로그인(구글·카카오·네이버)뿐이다. 이메일·비밀번호 로그인과
+ * 비밀번호 재설정은 제거되었다.
+ *
+ * TODO(auth): 지금 세 버튼은 **스텁**이다. 누르면 실제 제공자를 거치지 않고 곧바로
+ * 로그인된다. 개발팀이 실 OAuth 를 붙이면 `SOCIAL_LOGIN_MODE=oauth` 로 바꾸고
+ * `signInWithOAuth` 경로를 채운다. UI 는 그대로 둔다.
  */
 
-const RESET_PATH = '/auth/confirm'
-const RESET_NEXT = '/login'
+const LOGIN_PATH = '/login'
 
-/** 이메일 링크에 실을 절대 URL. 프록시 뒤에서도 실제 호스트를 쓰도록 헤더를 본다. */
-async function getSiteOrigin(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL
+const NOT_READY_MESSAGE = '아직 준비 중인 로그인 방식입니다.'
+const GENERIC_FAILURE_MESSAGE = '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.'
 
-  if (configured !== undefined && configured.trim() !== '') {
-    return configured.replace(/\/$/, '')
-  }
-
-  const headerList = await headers()
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host') ?? 'localhost:3000'
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http'
-
-  return `${protocol}://${host}`
+/** 체크박스는 체크했을 때만 FormData 에 담긴다. 값 자체("on")는 보지 않는다. */
+function readCheckbox(formData: FormData, name: string): boolean {
+  return formData.get(name) !== null
 }
 
-export async function signIn(_prevState: FormState, formData: FormData): Promise<FormState> {
-  const nextPath = sanitizeNextPath(readField(formData, 'next'))
-  const parsed = loginSchema.safeParse({
-    email: readField(formData, 'email'),
-    password: readField(formData, 'password'),
-  })
+/**
+ * 간편로그인 버튼의 폼 액션.
+ *
+ * `useActionState` 로 오류를 화면에 그리기 위해 FormData 를 받는 얇은 껍데기다.
+ * 실제 로직은 `stubSocialSignIn` 에 있다.
+ */
+export async function socialSignIn(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const provider = readField(formData, 'provider')
 
-  if (!parsed.success) {
-    return { fieldErrors: toFieldErrors(parsed.error) }
+  if (!isSocialProvider(provider)) {
+    return { formError: NOT_READY_MESSAGE }
+  }
+
+  return stubSocialSignIn(provider, readField(formData, 'next'))
+}
+
+/**
+ * 스텁 간편로그인.
+ *
+ * TODO(auth): 개발팀 실 OAuth 연동 시 교체.
+ *
+ * 성공하면 세션 쿠키가 심긴 채 온보딩(최초 로그인) 또는 `next` 로 이동한다.
+ * 실패는 문구 하나로만 알린다 — 내부 오류를 그대로 노출하지 않는다.
+ */
+export async function stubSocialSignIn(
+  provider: SocialProvider,
+  next?: string,
+): Promise<FormState> {
+  // 서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출된다. 인자를 다시 검증한다.
+  if (!isSocialProvider(provider)) {
+    return { formError: NOT_READY_MESSAGE }
+  }
+
+  if (parseSocialLoginMode(process.env.SOCIAL_LOGIN_MODE) === 'oauth') {
+    // 실 OAuth 모드인데 아직 제공자가 연결되지 않은 상태. 500 대신 안내를 준다.
+    return { formError: NOT_READY_MESSAGE }
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword(parsed.data)
+  const result = await signInWithStubProvider(supabase, provider)
 
-  if (error !== null) {
-    return { formError: '이메일 또는 비밀번호가 올바르지 않습니다.' }
+  if (!result.ok) {
+    return { formError: result.message }
   }
+
+  await markStubProvider(result.userId, provider)
+
+  const destination = await resolvePostAuthPath(supabase, result.userId, next)
 
   // redirect() 는 예외를 던진다. try/catch 바깥에서 호출해야 한다(Next 16 문서).
-  redirect(nextPath)
+  redirect(destination)
 }
 
-export async function signUp(_prevState: FormState, formData: FormData): Promise<FormState> {
-  const nextPath = sanitizeNextPath(readField(formData, 'next'))
-  const parsed = registerSchema.safeParse({
-    email: readField(formData, 'email'),
-    password: readField(formData, 'password'),
-    nickname: readField(formData, 'nickname'),
-  })
+/**
+ * 로그인 직후 갈 곳을 고른다.
+ *
+ * 프로필이 아직 온보딩(닉네임 확정 + 약관 동의)을 마치지 않았으면 어디로 가려
+ * 했든 온보딩을 먼저 통과시킨다.
+ */
+async function resolvePostAuthPath(
+  supabase: TypedSupabaseClient,
+  userId: string,
+  next: string | undefined,
+): Promise<string> {
+  const nextPath = sanitizePostAuthPath(next)
 
-  if (!parsed.success) {
-    return { fieldErrors: toFieldErrors(parsed.error) }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (isOnboardingComplete(profile)) {
+    return nextPath
   }
 
-  const supabase = await createClient()
-  const origin = await getSiteOrigin()
-
-  const { data, error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    options: {
-      /* 닉네임은 handle_new_user() 트리거가 읽어 profiles 를 만든다. 중복이면
-         트리거가 접미 숫자를 붙여 해소하므로 가입 자체는 실패하지 않는다.
-         role 은 절대 싣지 않는다 — 실으면 스스로 관리자가 될 수 있다. */
-      data: { nickname: parsed.data.nickname },
-      emailRedirectTo: `${origin}${RESET_PATH}?next=${encodeURIComponent(nextPath)}`,
-    },
-  })
-
-  if (error !== null) {
-    return { formError: '가입에 실패했습니다. 잠시 후 다시 시도해 주세요.' }
-  }
-
-  // 메일 확인이 켜져 있으면 세션 없이 사용자만 만들어진다.
-  if (data.session === null) {
-    return { message: '가입 확인 메일을 보냈습니다. 메일의 링크를 눌러 인증을 완료해 주세요.' }
-  }
-
-  redirect(nextPath)
+  return `${ONBOARDING_PATH}?next=${encodeURIComponent(nextPath)}`
 }
 
-export async function requestPasswordReset(
+/**
+ * 최초 로그인 온보딩 완료.
+ *
+ * 닉네임을 확정하고 이용약관·개인정보처리방침 동의와 만 14세 이상 확인을 남긴다.
+ * 개인정보처리방침 제11조상 만 14세 미만은 가입할 수 없으므로 세 항목 모두 필수다.
+ */
+export async function completeOnboarding(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const parsed = forgotPasswordSchema.safeParse({ email: readField(formData, 'email') })
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user === null) {
+    redirect(`${LOGIN_PATH}?next=${encodeURIComponent(ONBOARDING_PATH)}`)
+  }
+
+  const nextPath = sanitizePostAuthPath(readField(formData, 'next'))
+  const parsed = onboardingSchema.safeParse({
+    nickname: readField(formData, 'nickname'),
+    termsAgreed: readCheckbox(formData, 'termsAgreed'),
+    privacyAgreed: readCheckbox(formData, 'privacyAgreed'),
+    ageConfirmed: readCheckbox(formData, 'ageConfirmed'),
+  })
 
   if (!parsed.success) {
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
-  const supabase = await createClient()
-  const origin = await getSiteOrigin()
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      nickname: parsed.data.nickname,
+      terms_agreed_at: now,
+      privacy_agreed_at: now,
+      age_confirmed_at: now,
+    })
+    .eq('id', user.id)
 
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${origin}${RESET_PATH}?next=${encodeURIComponent(RESET_NEXT)}`,
-  })
+  if (error !== null) {
+    // 닉네임에는 대소문자 무시 유니크 인덱스가 걸려 있다.
+    if (isUniqueViolation(error)) {
+      return { fieldErrors: { nickname: '이미 사용 중인 닉네임입니다.' } }
+    }
 
-  // 성공·실패를 구분해 알리지 않는다(계정 열거 방지).
-  return {
-    ...EMPTY_FORM_STATE,
-    message: '입력하신 주소로 가입 내역이 있으면 재설정 메일을 보냈습니다.',
+    return { formError: GENERIC_FAILURE_MESSAGE }
   }
+
+  redirect(nextPath)
 }
 
 export async function signOut(): Promise<void> {

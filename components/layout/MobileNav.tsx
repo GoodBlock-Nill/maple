@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
+import { LogoutButton } from '@/components/auth/LogoutButton'
 import { Logo } from '@/components/layout/Logo'
 import { matchesPath } from '@/components/layout/navigation'
 import { useFocusTrap } from '@/components/layout/use-focus-trap'
@@ -24,9 +25,11 @@ const ICON_BUTTON_CLASS =
 
 type MobileNavProps = {
   className?: string
+  /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
+  user?: { nickname: string } | null
 }
 
-export function MobileNav({ className }: MobileNavProps) {
+export function MobileNav({ className, user = null }: MobileNavProps) {
   const pathname = usePathname()
   // 열었던 경로를 상태로 두면 라우팅 시 별도 effect 없이 자동으로 닫힌다.
   const [openedPath, setOpenedPath] = useState<string | null>(null)
@@ -151,15 +154,31 @@ export function MobileNav({ className }: MobileNavProps) {
         </nav>
 
         <div className="border-line flex flex-col gap-2 border-t p-4">
-          <Button href={PLAY_URL} variant="dark" size="md" className="w-full">
+          <Button href={PLAY_URL} prefetch={false} variant="dark" size="md" className="w-full">
             메이플월드 바로가기
           </Button>
-          <Button href={DISCORD_URL} variant="discord" size="md" className="w-full">
+          <Button
+            href={DISCORD_URL}
+            prefetch={false}
+            variant="discord"
+            size="md"
+            className="w-full"
+          >
             디스코드 바로가기
           </Button>
-          <Button href="/login" variant="light" size="md" className="w-full font-medium">
-            로그인
-          </Button>
+          {/* 간편로그인에는 가입/로그인 구분이 없어 버튼 하나만 둔다(제품 결정 2026-09-08). */}
+          {user === null ? (
+            <Button href="/login" variant="dark" size="md" className="w-full">
+              로그인
+            </Button>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-ink-muted truncate text-[15px]">
+                <strong className="text-ink font-semibold">{user.nickname}</strong>님
+              </span>
+              <LogoutButton />
+            </div>
+          )}
         </div>
       </div>
     </div>

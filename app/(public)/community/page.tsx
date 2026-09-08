@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 import { BoardEmpty } from '@/components/board/BoardEmpty'
 import { CategoryChips } from '@/components/board/CategoryChips'
+import { FlashNotice } from '@/components/board/FlashNotice'
 import { ListSheet } from '@/components/board/ListSheet'
 import { LoadMoreButton } from '@/components/board/LoadMoreButton'
 import { PostRow } from '@/components/board/PostRow'
@@ -57,6 +58,8 @@ export default async function CommunityPage(props: PageProps<'/community'>) {
   )
   const q = parseQuery(searchParams.q)
   const page = parsePage(searchParams.page)
+  /* 삭제 직후 리다이렉트(`?deleted=1`)로만 켜지는 1회성 안내. */
+  const isDeleted = searchParams.deleted === '1'
 
   const list = await getCommunityList({ category, sort, q, page })
 
@@ -74,6 +77,8 @@ export default async function CommunityPage(props: PageProps<'/community'>) {
 
   return (
     <PageShell variant="community" title={COMMUNITY_TITLE}>
+      {isDeleted ? <FlashNotice param="deleted" message="게시글을 삭제했습니다." /> : null}
+
       <CategoryChips
         label="커뮤니티 카테고리"
         items={COMMUNITY_CATEGORIES}

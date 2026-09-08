@@ -7,6 +7,12 @@
  */
 export const WRITE_COOLDOWN_SECONDS = 30
 
+/**
+ * 신고는 작성보다 짧게 잡는다. 한 글타래에서 여러 댓글을 연달아 신고하는 것은
+ * 정상 행동인데, 30초 간격을 그대로 적용하면 두 번째 신고가 막힌다.
+ */
+export const REPORT_COOLDOWN_SECONDS = 10
+
 const MS_PER_SECOND = 1000
 
 /** 남은 대기 시간(초). 0 이면 바로 작성할 수 있다. */

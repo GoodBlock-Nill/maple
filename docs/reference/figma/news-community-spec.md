@@ -36,7 +36,7 @@
 | 칩(카테고리) | h 45, px 15, py 10, pill. 활성: bg `#2a2a2a` 글자 white. 비활성: bg white, border 1px `#cdd3db`, 글자 `#727272`. 17px medium. 간격 10. 그림자 `0 .33px .37px rgba(0,0,0,.12), 0 1.5px 1.4px rgba(0,0,0,.07), 0 4px 4.5px rgba(0,0,0,.05)` (= `shadow-chip`) |
 | 검색 | w 300, h 45, radius 10, bg white, border `#cdd3db`, px 12, gap 8, 아이콘 `brand/icon-search.svg` 25px, placeholder "검색어를 입력해주세요" 17px `#727272`, shadow-chip. Enter 시 `?q=` |
 | 보기 전환(뉴스) | 검색 우측 15px. 같은 박스 스타일, 아이콘 25 + 라벨 17px `#2a2a2a`. 드롭다운: white, radius 10, shadow `0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1)`, 항목 px12 py8 radius 8, 활성 bg `#dbdbdb`, 17px `#2a2a2a`. 항목 3개: **가로형**(한 줄 행) / **자세히**(썸네일 카드) / **타일**(2열 카드, 기본). URL `?view=row|detail|tile` |
-| 정렬(커뮤니티) | 좌측. "최신순" 17px `#727272` + `brand/icon-sort-caret.svg` 25px(rotate 90). 옵션 최신순/조회순/좋아요순 → `?sort=latest|views|likes` |
+| 정렬(커뮤니티) | 좌측. "최신순" 17px `#727272` + `brand/icon-sort-caret.svg` 25px(rotate 90, 열림 시 +180°). 옵션 최신순/조회순/인기순(구 좋아요순, URL 값은 `likes` 유지) → `?sort=latest|views|likes`. 드롭다운은 `LinkMenu` 공용 컴포넌트: listbox 역할 + 체크마크, `useTransition`으로 트리거에 대기 상태 표시 |
 | 글쓰기(커뮤니티) | 110×47, radius 10, bg `#2a2a2a`, border `#2a2a2a`, 아이콘 `brand/icon-write.svg` 25 + "글쓰기" 17px semibold white, inset `0 0 14px rgba(255,255,255,.6)`, drop `0 6px 5px rgba(0,0,0,.25)`. 링크 `/community/write` (비로그인 → `/login?next=`) |
 | 목록 시트 | bg `#ededed`, radius 20, p 16, shadow `0 .33px .37px rgba(0,0,0,.12), 0 1.5px 1.4px rgba(0,0,0,.07)` |
 | 뱃지 | pill, px 10, py 5, 17px medium. 공지사항 bg `#f2e5ff` / 글자 `#921cff` · 패치노트 `#fff2e5` / `#ff9728` · 이벤트(시안 미표기) `#e5fff1` / `#00b894` · 잡담 `#f2e5ff` / `#921cff` · 질문 `#e5efff` / `#2e6eff` · 정보 `#e5fff1` / `#00b894` |
@@ -44,6 +44,8 @@
 | 더보기 | h 44, pill, bg `#2a2a2a`, border `#505967`, px 17, 16px medium `#edeef0`, shadow `0 1px 0 rgba(27,31,35,.2)`. 라벨 `더보기(표시수/전체수)`. 클릭 → `?page=N+1` (1~N 누적 표시). 전부 표시되면 숨김 |
 
 ## 뉴스 목록 (`/news`)
+
+> **업데이트(2026-09-08)**: 제품 결정으로 보기 전환(카드형/자세히/가로형 토글)이 제거되었다. 뉴스 목록은 항상 가로형(리스트) 레이아웃으로만 렌더링된다. 아래 타일 뷰·자세히 뷰 설명은 히스토리 참고용이며 더 이상 코드에 존재하지 않는다.
 
 - 칩: 전체 / 공지사항 / 패치노트 / 이벤트 → `?category=notice|patch|event` (없으면 전체). 칩 그룹 폭 365.
 - 툴바 우측: 검색(300) + 보기 전환. 툴바와 시트 사이 24px.

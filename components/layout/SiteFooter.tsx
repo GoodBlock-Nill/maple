@@ -85,9 +85,13 @@ export function SiteFooter({ variant = 'home' }: SiteFooterProps) {
             width={mascot.width}
             height={mascot.height}
             unoptimized
+            loading="eager"
             aria-hidden
             style={mascot.isFlipped === true ? { transform: 'scaleX(-1)' } : undefined}
-            className="drop-shadow-mascot relative z-20 -mb-8 ml-auto block w-[var(--mascot-mobile-width)] xl:absolute xl:top-[var(--mascot-top)] xl:right-[var(--mascot-right)] xl:mb-0 xl:w-[var(--mascot-width)]"
+            className={cn(
+              'drop-shadow-mascot relative z-20 -mb-8 ml-auto block w-[var(--mascot-mobile-width)] xl:absolute xl:top-[var(--mascot-top)] xl:right-[var(--mascot-right)] xl:mb-0 xl:w-[var(--mascot-width)]',
+              mascot.pixelArt !== false && 'pixel-art',
+            )}
           />
         ) : null}
 
@@ -170,6 +174,7 @@ function SnsList() {
         <li key={sns.href}>
           <Link
             href={sns.href}
+            prefetch={false}
             aria-label={sns.label}
             className="flex size-8 items-center justify-center overflow-hidden rounded-[7px] bg-[#edf1f4] transition-opacity hover:opacity-80"
           >

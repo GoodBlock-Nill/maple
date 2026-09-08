@@ -16,14 +16,23 @@ import type { GachaItem, GachaListParams, GachaSort, GachaTab, ListResult } from
  * (`unstable_cache` 안에서는 `cookies()` 를 쓸 수 없다 — Next 16 문서).
  */
 
-/** 정렬 기준 컬럼과 방향. `latest` 는 공시일 역순이다. */
-const SORT_RULE: Record<
+/**
+ * 정렬 기준 컬럼 체인. 1순위가 동률이면 2순위(공시일 역순), 그래도 동률이면
+ * `id` 로 최종 확정한다(아래 `.order('id', ...)` 참고).
+ */
+export const SORT_RULE: Record<
   GachaSort,
-  { column: 'published_at' | 'probability' | 'name'; ascending: boolean }
+  readonly { column: 'published_at' | 'probability'; ascending: boolean }[]
 > = {
-  latest: { column: 'published_at', ascending: false },
-  probability: { column: 'probability', ascending: false },
-  name: { column: 'name', ascending: true },
+  latest: [{ column: 'published_at', ascending: false }],
+  prob_desc: [
+    { column: 'probability', ascending: false },
+    { column: 'published_at', ascending: false },
+  ],
+  prob_asc: [
+    { column: 'probability', ascending: true },
+    { column: 'published_at', ascending: false },
+  ],
 }
 
 async function fetchGachaList(
@@ -35,7 +44,7 @@ async function fetchGachaList(
   const supabase = createPublicClient()
   const { from, to } = accumulatedRange(page, GACHA_PAGE_SIZE)
   const pattern = containsPattern(q)
-  const rule = SORT_RULE[sort]
+  const rules = SORT_RULE[sort]
 
   let query = supabase
     .from('gacha_items')
@@ -47,10 +56,11 @@ async function fetchGachaList(
     query = query.ilike('name', pattern)
   }
 
-  const { data, count, error } = await query
-    .order(rule.column, { ascending: rule.ascending })
-    .order('id', { ascending: true })
-    .range(from, to)
+  for (const rule of rules) {
+    query = query.order(rule.column, { ascending: rule.ascending })
+  }
+
+  const { data, count, error } = await query.order('id', { ascending: true }).range(from, to)
 
   if (error !== null) {
     throw new Error(`확률형 아이템 목록을 불러오지 못했습니다: ${error.message}`)

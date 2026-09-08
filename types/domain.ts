@@ -29,11 +29,23 @@ export type NewsItem = {
   thumbnail?: string
 }
 
+/** 상세의 이전/다음 글 링크에 필요한 최소 필드만 담는다. */
+export type AdjacentNewsItem = Pick<NewsItem, 'id' | 'category' | 'title' | 'publishedAt'>
+
+export type AdjacentNews = {
+  /** 현재 글보다 먼저 발행된, 가장 가까운 글. 없으면 첫 글이다. */
+  prev: AdjacentNewsItem | null
+  /** 현재 글보다 나중에 발행된, 가장 가까운 글. 없으면 최신 글이다. */
+  next: AdjacentNewsItem | null
+}
+
 export type Comment = {
   id: string
   author: string
   body: string
   createdAt: string
+  /** 작성자 uuid. 탈퇴하면 null 이 된다(`on delete set null`). 삭제 버튼 노출 판정에만 쓴다. */
+  authorId: string | null
 }
 
 export type Post = {
@@ -43,9 +55,16 @@ export type Post = {
   body: string
   /** 원본 닉네임. 화면에는 `maskNickname` 을 거쳐 노출한다. */
   author: string
+  /** 작성자 uuid. 탈퇴하면 null 이 된다. 수정·삭제 버튼 노출 판정에만 쓴다. */
+  authorId: string | null
   views: number
   likes: number
   createdAt: string
+  /**
+   * 작성자가 본문을 실제로 고친 시각. 한 번도 고치지 않았으면 null 이다.
+   * `updatedAt` 은 조회수 증가로도 밀리므로 "수정됨" 판정에 쓸 수 없다.
+   */
+  editedAt: string | null
   /**
    * `posts.comment_count` 스냅샷. 목록에서 댓글을 조인하지 않고도 개수를 표시하려고
    * 트리거가 동기화해 주는 값을 그대로 쓴다.
@@ -90,7 +109,7 @@ export type GachaTab = 'premium' | 'cube' | 'scroll'
 /** 확률 표의 등급. 시안은 SS/S/A 만 쓰지만 B/C 까지 확장해 둔다. */
 export type GachaGrade = 'SS' | 'S' | 'A' | 'B' | 'C'
 
-export type GachaSort = 'latest' | 'probability' | 'name'
+export type GachaSort = 'latest' | 'prob_desc' | 'prob_asc'
 
 export type GachaRow = {
   grade: GachaGrade

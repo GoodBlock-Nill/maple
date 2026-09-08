@@ -45,5 +45,17 @@ export const createCommentSchema = z.object({
     .max(COMMENT_CONTENT_MAX, { message: `댓글은 ${COMMENT_CONTENT_MAX}자 이하로 입력해 주세요.` }),
 })
 
+/**
+ * 수정은 작성과 같은 규칙을 쓴다. 같은 폼(`PostForm`)을 재사용하므로 상한이
+ * 갈리면 "쓸 때는 통과했는데 고칠 때는 막히는" 글이 생긴다.
+ */
+export const updatePostSchema = createPostSchema
+
+/** 서버 액션이 bind 로 받는 식별자. 폼 필드가 아니라 URL 세그먼트에서 온다. */
+export const postIdSchema = z.uuid({ message: '잘못된 게시글입니다.' })
+
+export const commentIdSchema = z.uuid({ message: '잘못된 댓글입니다.' })
+
 export type CreatePostInput = z.infer<typeof createPostSchema>
 export type CreateCommentInput = z.infer<typeof createCommentSchema>
+export type UpdatePostInput = z.infer<typeof updatePostSchema>

@@ -1,3 +1,5 @@
+import { notFound } from 'next/navigation'
+
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +29,11 @@ export const metadata: Metadata = {
 }
 
 export default function TokensPage(_props: PageProps<'/dev/tokens'>) {
+  // 내부 확인용 페이지라 운영 배포 대상이 아니다. 프로덕션에서 접근하면 404.
+  if (process.env.NODE_ENV === 'production') {
+    notFound()
+  }
+
   return (
     <>
       <div className="pt-32 pb-16">

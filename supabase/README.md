@@ -5,7 +5,7 @@
 ```
 supabase/
   config.toml                      로컬 스택 설정 (project_id = "maple")
-  migrations/                      마이그레이션 8개 (아래 표)
+  migrations/                      마이그레이션 10개 (아래 표)
   seed.sql                         개발/스테이징 시드 (db reset 시 자동 적용)
   seed-users.md                    테스트 계정 생성 절차 (auth 는 SQL 로 못 만든다)
 ```
@@ -20,6 +20,7 @@ supabase/
 | `20260908000600_functions_triggers.sql`    | `set_updated_at` · `is_admin` · `handle_new_user` · `increment_post_view` · 집계/권한 가드 |
 | `20260908000700_rls_policies.sql`          | 전 테이블 RLS + 정책                                                                       |
 | `20260908000800_storage_buckets.sql`       | 버킷 3종 + `storage.objects` 정책                                                          |
+| `20260908001200_social_auth_profiles.sql`  | 간편로그인 전환 — `profiles.provider`/`provider_id`/동의 시각 3종 + `handle_new_user` 개편 |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -76,10 +77,10 @@ psql "$SUPABASE_DB_URL" -f supabase/seed.sql
 
 ### 타입 생성
 
-`types/database.types.ts` 는 지금 손으로 작성한 임시본이다. 프로젝트가 준비되면 교체한다.
+테이블·enum·함수를 추가하면 반드시 다시 뽑는다.
 
 ```bash
-pnpm dlx supabase gen types typescript --linked --schema public > types/database.types.ts
+supabase gen types typescript --linked > types/database.types.ts
 pnpm typecheck
 ```
 
@@ -101,6 +102,73 @@ pnpm typecheck
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 동일                                  | 클라이언트 (RLS 로 보호)                      |
 | `SUPABASE_SERVICE_ROLE_KEY`     | 동일                                  | **서버 전용. 절대 커밋·클라이언트 노출 금지** |
 | `NEXT_PUBLIC_SITE_URL`          | 배포 도메인                           | 클라이언트                                    |
+| `SOCIAL_LOGIN_MODE`             | `stub`(기본) 또는 `oauth`             | 서버 전용                                     |
+
+---
+
+## 2-1. 간편로그인 설정
+
+로그인 수단은 **간편로그인(구글·카카오·네이버)뿐**이다. 이메일·비밀번호 가입과
+비밀번호 재설정은 제거되었다(`/forgot-password` 는 `/login` 으로 302).
+
+### 현재 상태 — 스텁
+
+> **현재 간편로그인 버튼은 스텁이다. 누르면 실제 제공자를 거치지 않고 즉시 로그인된다.**
+> 구현 위치는 `lib/actions/auth-actions.ts` 의 `stubSocialSignIn()` 과
+> `lib/supabase/stub-social.ts` 다(코드에 `TODO(auth)` 로 표시해 두었다).
+
+동작 순서는 이렇다.
+
+1. `signInAnonymously()` — 테스터마다 독립된 계정이 생긴다. **프로젝트 설정에서
+   익명 로그인이 켜져 있어야 한다.**
+2. 익명 로그인이 꺼져 있으면 제공자별 데모 계정(`demo-<provider>@stub.maple.local`)을
+   서비스 롤로 만들고, 매직링크 토큰을 발급해 세션으로 바꾼다(비밀번호를 쓰지 않는다).
+
+전환 스위치는 환경 변수 하나다. UI 는 건드리지 않는다.
+
+| `SOCIAL_LOGIN_MODE` | 동작                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| 비어 있음 · `stub`  | 버튼을 누르면 즉시 로그인(위 순서)                            |
+| `oauth`             | 실 OAuth. 미구현이라 "아직 준비 중인 로그인 방식입니다." 안내 |
+
+### 익명 로그인 켜기 (운영자 작업)
+
+`supabase/config.toml` 에는 이미 반영해 두었다(`enable_anonymous_sign_ins = true`,
+`site_url`, `additional_redirect_urls`). 원격 프로젝트에 반영하려면 아래 한 줄을 실행한다.
+
+```bash
+supabase config push        # diff 를 보여 주고 [Y/n] 로 확인한다
+```
+
+대시보드로 하려면 Authentication → Sign In / Providers → **Anonymous sign-ins** 를 켠다.
+켜지 않아도 로그인은 데모 계정 폴백으로 동작한다(다만 제공자별로 계정을 공유한다).
+
+### 실 OAuth 로 전환할 때 운영자가 준비할 것
+
+개발팀이 실제 연동을 붙이는 시점에 아래 값이 필요하다. **키는 저장소에 커밋하지 않는다.**
+
+| 제공자 | 발급처               | 준비물                                                                       | 넣는 곳                                                  |
+| ------ | -------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 구글   | Google Cloud Console | OAuth 2.0 클라이언트 ID · 시크릿. 승인된 리디렉션 URI 에 아래 콜백 주소 등록 | Supabase 대시보드 → Authentication → Providers           |
+| 카카오 | Kakao Developers     | REST API 키(=Client ID) · Client Secret, 동일한 콜백 주소                    | 동일                                                     |
+| 네이버 | Naver Developers     | Client ID · Client Secret                                                    | Vercel 환경 변수(네이버는 Supabase 기본 제공자가 아니다) |
+
+- Supabase 콜백 주소(구글·카카오 공통):
+  `https://zafouiovmsfebfkjuyos.supabase.co/auth/v1/callback`
+- 카카오 동의 항목: `account_email`(필수) · `profile_nickname` · `profile_image`
+- 네이버 Callback URL: `http://localhost:3000/auth/naver/callback`,
+  `https://maple-web-sigma.vercel.app/auth/naver/callback`
+- 네이버 제공 항목: 이메일 주소 · 별명 · 프로필 사진
+
+사이트 URL / 허용 리다이렉트는 이미 아래로 맞춰져 있다.
+
+| 항목                      | 값                                                                                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site URL                  | `https://maple-web-sigma.vercel.app`                                                                                                                           |
+| Redirect URLs(allow list) | `http://localhost:3000/auth/callback`, `http://localhost:3000/**`, `https://maple-web-sigma.vercel.app/auth/callback`, `https://maple-web-sigma.vercel.app/**` |
+
+제공자가 아직 연결되지 않아도 버튼은 그대로 보이고, 누르면 500 대신
+"아직 준비 중인 로그인 방식입니다." 안내가 뜬다.
 
 ---
 
@@ -119,6 +187,7 @@ pnpm typecheck
 | `hero_banners`     | 노출기간 내 활성 배너            | 동일                                        | 전체 CRUD             |
 | `gacha_items`      | 공개분 조회                      | 동일                                        | 전체 CRUD             |
 | `rankings`         | 조회                             | 조회                                        | 전체 CRUD             |
+| `reports`          | ✗ (권한 자체를 회수)             | 신고 접수 + 본인 신고 조회                  | 전체 조회 · 상태 변경 |
 
 스토리지
 
@@ -132,6 +201,15 @@ pnpm typecheck
 
 - `guard_post_counters()` — 작성자가 `view_count` / `like_count` / `is_pinned` 를 직접 조작하지 못하게 되돌린다. 조회수 증가는 `increment_post_view(p_id)` RPC 로만 한다.
 - `guard_profile_role()` — 사용자가 자기 `role` 을 `admin` 으로 바꾸지 못하게 되돌린다.
+  간편로그인 전환 이후에는 `email` · `provider` · `provider_id`(신원)도 함께 고정한다.
+  사용자가 바꿀 수 있는 값은 닉네임 · 아바타 · 동의 시각뿐이다.
+- `guard_comment_columns()` — 댓글 작성자가 `post_id` / `author_id` / `author_name` 을 바꿔 사칭하거나 글을 옮기지 못하게 되돌린다. 수정 가능한 컬럼은 `content` 와 `deleted_at` 뿐이다.
+- `mark_post_edited()` — 제목·본문·요약·말머리가 **실제로** 바뀐 UPDATE 에서만 `posts.edited_at` 을 채운다. `updated_at` 은 `increment_post_view()` 의 조회수 UPDATE 로도 밀리므로 "수정됨" 표시에 쓸 수 없다.
+
+신고(`reports`)의 존재·자격 검사는 `can_report_target(target_type, target_id)` 가 맡는다.
+`posts` / `comments` 에 FK 를 걸 수 없는 다형 참조라 INSERT 정책 안에서 확인하며, **SECURITY
+INVOKER** 여야 한다(DEFINER 로 두면 비공개·삭제된 행의 존재가 신고 성공 여부로 드러난다).
+자기 글 신고도 이 함수가 거른다.
 
 ---
 
@@ -249,7 +327,80 @@ begin;
 rollback;
 ```
 
-### 4-4. 조회수 RPC
+### 4-4. 신고
+
+```sql
+begin;
+  select set_config(
+    'request.jwt.claims',
+    json_build_object('sub', '<USER_UUID>', 'role', 'authenticated')::text,
+    true
+  );
+  set local role authenticated;
+
+  -- 기대: 성공 (남의 글)
+  insert into public.reports (target_type, target_id, reporter_id, reason)
+  values ('post', '22222222-0000-4000-8000-000000000001', '<USER_UUID>', 'spam');
+
+  -- 기대: ERROR — 같은 대상을 두 번 신고할 수 없다 (reports_unique_reporter)
+  insert into public.reports (target_type, target_id, reporter_id, reason)
+  values ('post', '22222222-0000-4000-8000-000000000001', '<USER_UUID>', 'abuse');
+
+  -- 기대: ERROR — 자기 글은 신고할 수 없다 (can_report_target)
+  insert into public.reports (target_type, target_id, reporter_id, reason)
+  select 'post', p.id, '<USER_UUID>', 'spam'
+    from public.posts p where p.author_id = '<USER_UUID>' limit 1;
+
+  -- 기대: ERROR — 남의 이름으로는 신고할 수 없다
+  insert into public.reports (target_type, target_id, reporter_id, reason)
+  values ('post', '22222222-0000-4000-8000-000000000002', '<ADMIN_UUID>', 'spam');
+
+  -- 기대: 본인이 넣은 건만 보인다
+  select count(*) from public.reports;
+
+  -- 기대: 0건 갱신 — 상태 변경은 관리자 전용이다
+  update public.reports set status = 'dismissed';
+rollback;
+```
+
+anon 경계는 스크립트로도 확인할 수 있다(권한 회수 · RLS · check 제약 7항목).
+
+```bash
+node --env-file=.env.local tests/manual/reports-rls-check.mjs
+```
+
+### 4-5. 작성자 수정/삭제
+
+```sql
+begin;
+  select set_config(
+    'request.jwt.claims',
+    json_build_object('sub', '<USER_UUID>', 'role', 'authenticated')::text,
+    true
+  );
+  set local role authenticated;
+
+  -- 기대: 제목만 바뀌고 author_name · is_published · view_count 는 그대로,
+  --       edited_at 이 채워진다 (guard_post_counters + mark_post_edited)
+  update public.posts
+     set title = '고친 제목', author_name = '사칭', is_published = false, view_count = 999999
+   where author_id = '<USER_UUID>';
+  select title, author_name, is_published, view_count, edited_at is not null as edited
+    from public.posts where author_id = '<USER_UUID>';
+
+  -- 기대: 소프트 삭제는 통과한다
+  update public.posts set deleted_at = now() where author_id = '<USER_UUID>';
+
+  -- 기대: 0건 갱신 — 삭제한 글은 다시 살릴 수 없다 (posts_update_own 의 USING)
+  update public.posts set deleted_at = null where author_id = '<USER_UUID>';
+
+  -- 기대: 0건 갱신 — 삭제한 댓글도 되살릴 수 없다 (comments_update_own 의 USING)
+  update public.comments set deleted_at = now() where author_id = '<USER_UUID>';
+  update public.comments set deleted_at = null where author_id = '<USER_UUID>';
+rollback;
+```
+
+### 4-6. 조회수 RPC
 
 ```sql
 begin;
@@ -259,7 +410,7 @@ begin;
 rollback;
 ```
 
-### 4-5. 댓글 수 동기화
+### 4-7. 댓글 수 동기화
 
 ```sql
 begin;

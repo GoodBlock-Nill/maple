@@ -1,9 +1,16 @@
 import { BOARD_PAGE_SIZE } from '@/lib/constants/board'
-import { toNewsItem } from '@/lib/data/mappers'
+import { toAdjacentNewsItem, toNewsItem } from '@/lib/data/mappers'
 import { accumulatedRange, containsPattern, toListResult } from '@/lib/data/query'
 import { createClient } from '@/lib/supabase/server'
 
-import type { ListResult, NewsItem, NewsListParams } from '@/types/domain'
+import type { TypedSupabaseClient } from '@/lib/supabase/types'
+import type {
+  AdjacentNews,
+  AdjacentNewsItem,
+  ListResult,
+  NewsItem,
+  NewsListParams,
+} from '@/types/domain'
 
 /**
  * 뉴스 데이터 접근 계층 (`posts` 중 `board = 'news'`).
@@ -73,4 +80,59 @@ export async function getNewsById(id: string): Promise<NewsItem | null> {
   }
 
   return data === null ? null : toNewsItem(data)
+}
+
+const ADJACENT_NEWS_COLUMNS = 'id, category_key, title, published_at'
+
+/**
+ * 상세 페이지의 이전/다음 글.
+ *
+ * 정렬 기준은 `published_at` 뿐이다(목록의 `is_pinned` 정렬은 여기서 관계없다) —
+ * "이전/다음"은 사용자가 읽던 흐름(발행 시각)을 따라가는 내비게이션이라서다.
+ * `id` 를 2차 정렬로 더해, 같은 초에 발행된 글이 있어도 결과가 흔들리지 않게 한다.
+ */
+async function getAdjacentNewsBySide(
+  supabase: TypedSupabaseClient,
+  currentId: string,
+  publishedAt: string,
+  side: 'prev' | 'next',
+): Promise<AdjacentNewsItem | null> {
+  const isPrev = side === 'prev'
+
+  let query = supabase
+    .from('posts')
+    .select(ADJACENT_NEWS_COLUMNS)
+    .eq('board', 'news')
+    .eq('is_published', true)
+    .is('deleted_at', null)
+    .neq('id', currentId)
+
+  query = isPrev ? query.lte('published_at', publishedAt) : query.gte('published_at', publishedAt)
+
+  const { data, error } = await query
+    .order('published_at', { ascending: !isPrev })
+    .order('id', { ascending: !isPrev })
+    .limit(1)
+    .maybeSingle()
+
+  if (error !== null || data === null) {
+    return null
+  }
+
+  return toAdjacentNewsItem(data)
+}
+
+/**
+ * 현재 글의 `publishedAt` 을 이미 알고 있을 때(상세 페이지가 `getNewsById` 로
+ * 미리 읽어 둔 값) 쓴다. 다시 조회하지 않아 왕복이 하나 줄어든다.
+ */
+export async function getAdjacentNews(id: string, publishedAt: string): Promise<AdjacentNews> {
+  const supabase = await createClient()
+
+  const [prev, next] = await Promise.all([
+    getAdjacentNewsBySide(supabase, id, publishedAt, 'prev'),
+    getAdjacentNewsBySide(supabase, id, publishedAt, 'next'),
+  ])
+
+  return { prev, next }
 }

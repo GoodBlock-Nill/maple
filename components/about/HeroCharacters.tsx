@@ -43,7 +43,9 @@ export function HeroCharacters() {
             height: character.height,
             transform: character.isFlipped ? 'scaleX(-1)' : undefined,
           }}
-          className="absolute max-w-none"
+          /* 원본 70~193px 폭 GIF 를 프레임 비례로 최대 2.5배 넘게 키워 표시한다
+             (전부 업스케일) — 브라우저 기본 스무딩 대신 픽셀 경계를 살린다. */
+          className="pixel-art absolute max-w-none"
         />
       ))}
     </div>

@@ -13,6 +13,12 @@ export type FooterMascot = {
   mobileWidth: number
   /** 시안에서 좌우가 뒤집혀 있는 마스코트. */
   isFlipped?: boolean
+  /**
+   * 저해상도 GIF 를 원본보다 크게 표시할 때 `pixel-art` 클래스를 붙일지.
+   * 전 변형이 GIF·업스케일이라 기본값은 true — 향후 원본 크기 정지 이미지로
+   * 바뀌면 개별적으로 false 를 지정한다.
+   */
+  pixelArt?: boolean
 }
 
 export type FooterConfig = {
@@ -70,7 +76,11 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     mascot: {
       src: '/images/news/mascot-footer.gif',
       width: 231,
-      height: 178,
+      /* 원본(164×126) 비율대로 231 폭에 맞춰 계산한 실제 렌더 높이는
+         177.47px(→177) 이다. 디자인값 178 과의 1px 차는 Next Image
+         aspect-ratio 경고를 유발해 렌더 실측치로 맞춘다(화면 크기는 원래도
+         auto 높이라 이 값의 영향을 받지 않는다). */
+      height: 177,
       left: 1172,
       top: 310,
       mobileWidth: 150,
@@ -86,7 +96,11 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     mascot: {
       src: '/images/community/mascot-footer.gif',
       width: 154,
-      height: 199,
+      /* 원본(52×67) 비율대로 154 폭에 맞춰 계산한 실제 렌더 높이는
+         198.42px(→198) 이다. 디자인값 199 와의 1px 차는 Next Image
+         aspect-ratio 경고를 유발해 렌더 실측치로 맞춘다(화면 크기는 원래도
+         auto 높이라 이 값의 영향을 받지 않는다). */
+      height: 198,
       left: 1182,
       top: 319,
       mobileWidth: 110,
@@ -106,6 +120,10 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
       left: 1243,
       top: 240,
       mobileWidth: 120,
+      /* 원본이 290×375 로 다른 변형과 달리 실제로는 다운스케일된다(실측
+         `sips -g pixelWidth -g pixelHeight`) — pixel-art 를 붙이면 오히려
+         계단 현상이 생겨 다른 변형과 달리 기본값을 끈다. */
+      pixelArt: false,
     },
   },
   ranking: {

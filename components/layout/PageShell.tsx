@@ -116,7 +116,10 @@ function PageHeroBackdrop({ hero }: PageHeroBackdropProps) {
               width: mascot.width,
               height: mascot.height,
             }}
-            className="absolute max-w-none object-cover"
+            className={cn(
+              'absolute max-w-none object-cover',
+              mascot.pixelArt === true && 'pixel-art',
+            )}
           />
         ))}
       </div>

@@ -93,7 +93,8 @@ export function NewsCommunitySection() {
           width={379}
           height={379}
           unoptimized
-          className="absolute top-[-60px] left-[1064px]"
+          /* 원본 150px 정사각 캔버스를 379px 로 업스케일한다. */
+          className="pixel-art absolute top-[-60px] left-[1064px]"
         />
       </div>
     </section>
@@ -127,7 +128,8 @@ function DragonLayer() {
           height: percent(DRAGON.height, FRAME.height),
           transform: DRAGON_TRANSFORM,
         }}
-        className="absolute max-w-none object-cover"
+        /* 원본 188px 폭을 프레임 비례로 최대 301px 까지 업스케일한다. */
+        className="pixel-art absolute max-w-none object-cover"
       />
     </div>
   )

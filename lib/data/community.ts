@@ -13,10 +13,13 @@ import type { CommunityListParams, CommunitySort, ListResult, Post } from '@/typ
  * 목록은 단일 테이블 스캔으로 끝나고, 상세에서만 `comments` 를 따로 읽는다.
  */
 
+/* `author_id` · `edited_at` 은 화면에 그리지 않지만, 작성자 본인에게만 수정/삭제를
+   열고 "수정됨"을 표시하려면 필요하다. */
+/* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const POST_COLUMNS =
-  'id, category_key, title, content, author_name, view_count, like_count, comment_count, created_at'
+  'id, category_key, title, content, author_id, author_name, view_count, like_count, comment_count, created_at, edited_at'
 
-const COMMENT_COLUMNS = 'id, author_name, content, created_at'
+const COMMENT_COLUMNS = 'id, author_id, author_name, content, created_at'
 
 /** 정렬 기준 컬럼. 값이 같을 때의 2차 정렬은 항상 최신순이다. */
 const SORT_COLUMN: Record<CommunitySort, 'created_at' | 'view_count' | 'like_count'> = {

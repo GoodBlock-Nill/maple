@@ -1,8 +1,5 @@
-import Link from 'next/link'
+import { permanentRedirect } from 'next/navigation'
 
-import { AUTH_LINK_CLASS } from '@/components/auth/auth-styles'
-import { AuthCard } from '@/components/auth/AuthCard'
-import { RegisterForm } from '@/components/auth/RegisterForm'
 import { firstValue } from '@/lib/utils/list-query'
 import { sanitizeNextPath } from '@/lib/validation/auth'
 
@@ -10,28 +7,19 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '회원가입',
-  description: '글자월드 계정을 만들고 커뮤니티에 참여하세요.',
   robots: { index: false, follow: false },
 }
 
+/**
+ * 가입 경로는 로그인으로 영구 이동한다(308).
+ *
+ * 간편로그인에는 "가입"과 "로그인"의 구분이 없다 — 첫 로그인이 곧 가입이다.
+ * 화면은 하나로 합쳤지만, 밖에 나간 링크(북마크·검색결과·안내 메일)가 깨지지
+ * 않도록 경로 자체는 남겨 둔다. 제품 결정 2026-09-08.
+ */
 export default async function RegisterPage(props: PageProps<'/register'>) {
   const searchParams = await props.searchParams
   const nextPath = sanitizeNextPath(firstValue(searchParams.next))
 
-  return (
-    <AuthCard
-      title="회원가입"
-      description="이메일과 닉네임만으로 가입할 수 있습니다."
-      footer={
-        <>
-          이미 계정이 있으신가요?{' '}
-          <Link href="/login" className={AUTH_LINK_CLASS}>
-            로그인
-          </Link>
-        </>
-      }
-    >
-      <RegisterForm nextPath={nextPath} />
-    </AuthCard>
-  )
+  permanentRedirect(nextPath === '/' ? '/login' : `/login?next=${encodeURIComponent(nextPath)}`)
 }

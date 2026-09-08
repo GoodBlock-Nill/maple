@@ -16,6 +16,7 @@
 ## 가이드 — 확률형 아이템 정보 (496:12103, 상세 496:14385)
 
 - 제목 "확률형 아이템 정보". 툴바 1행: 탭 칩(프리미엄 부화기 / 큐브 / 등급업 / 주문서 부화기 → `?tab=premium|cube|scroll`). 2행: 좌 정렬 드롭다운("최신순"), 우 검색 300.
+  - 정렬 3종: 최신순(`?sort=` 생략, `published_at desc, id`) / 확률 높은순(`prob_desc`, `probability desc, published_at desc, id`) / 확률 낮은순(`prob_asc`, `probability asc, published_at desc, id`). 알 수 없는 `?sort=` 값은 최신순으로 폴백한다(레거시 `probability`/`name` 포함).
 - 시트 안 **3열 grid** gap 16 (내부 폭 1168). 카드: white, border `#cdd3db`, radius 20, p 24, gap 24, h 189, shadow-chip.
   - 1행: 좌 아이콘 박스 48×48 (p 5, radius 10, 아이콘 이미지 52×48 object-cover) / 우 확률 27px medium `#2a2a2a` tracking −0.2 ("0.01%").
   - 2행: 아이템명 27px medium.

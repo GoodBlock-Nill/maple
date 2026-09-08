@@ -12,8 +12,8 @@ export const GACHA_TABS = [
 
 export const GACHA_SORTS = [
   { value: 'latest', label: '최신순' },
-  { value: 'probability', label: '확률순' },
-  { value: 'name', label: '이름순' },
+  { value: 'prob_desc', label: '확률 높은순' },
+  { value: 'prob_asc', label: '확률 낮은순' },
 ] as const satisfies readonly BoardOption<GachaSort>[]
 
 export const GACHA_TAB_VALUES = GACHA_TABS.map((tab) => tab.value)

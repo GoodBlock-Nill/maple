@@ -35,8 +35,8 @@ export const ALL_JOB_LABEL = '전체 직업'
  * 카드 패널(244) 높이에 억지로 맞추면 2위 캐릭터가 시안보다 커진다.
  */
 export const TOP_CHARACTER_SIZE: Record<string, { width: number; height: number }> = {
-  '/images/ranking/top3-char-1.png': { width: 332, height: 243 },
-  '/images/ranking/top3-char-2.png': { width: 234, height: 205 },
+  '/images/ranking/top3-char-1.png': { width: 333, height: 243 },
+  '/images/ranking/top3-char-2.png': { width: 234, height: 206 },
   '/images/ranking/top3-char-3.png': { width: 363, height: 243 },
 }
 

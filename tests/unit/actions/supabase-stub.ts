@@ -15,9 +15,11 @@ export type SupabaseStub = {
     from: (table: string) => unknown
     rpc: (name: string, args: unknown) => Promise<StubResult>
     auth: {
+      /** 기본값은 "미로그인". 필요한 테스트에서 mockResolvedValue 로 덮어쓴다. */
+      getUser: ReturnType<typeof vi.fn>
+      signInAnonymously: ReturnType<typeof vi.fn>
+      verifyOtp: ReturnType<typeof vi.fn>
       signInWithPassword: ReturnType<typeof vi.fn>
-      signUp: ReturnType<typeof vi.fn>
-      resetPasswordForEmail: ReturnType<typeof vi.fn>
       signOut: ReturnType<typeof vi.fn>
     }
   }
@@ -25,6 +27,8 @@ export type SupabaseStub = {
   tables: string[]
   /** `insert()` 에 넘어온 payload 순서. */
   inserts: unknown[]
+  /** `update()` 에 넘어온 payload 순서. */
+  updates: unknown[]
 }
 
 const EMPTY_RESULT: StubResult = { data: null, error: null }
@@ -32,6 +36,7 @@ const EMPTY_RESULT: StubResult = { data: null, error: null }
 export function createSupabaseStub(results: readonly StubResult[] = []): SupabaseStub {
   const tables: string[] = []
   const inserts: unknown[] = []
+  const updates: unknown[] = []
   let cursor = 0
 
   const nextResult = (): StubResult => results[cursor++] ?? EMPTY_RESULT
@@ -45,6 +50,12 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
 
     builder.insert = (payload: unknown) => {
       inserts.push(payload)
+
+      return builder
+    }
+
+    builder.update = (payload: unknown) => {
+      updates.push(payload)
 
       return builder
     }
@@ -67,13 +78,15 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
       },
       rpc: async () => nextResult(),
       auth: {
+        getUser: vi.fn(async () => ({ data: { user: null }, error: null })),
+        signInAnonymously: vi.fn(async () => nextResult()),
+        verifyOtp: vi.fn(async () => nextResult()),
         signInWithPassword: vi.fn(async () => nextResult()),
-        signUp: vi.fn(async () => nextResult()),
-        resetPasswordForEmail: vi.fn(async () => nextResult()),
         signOut: vi.fn(async () => nextResult()),
       },
     },
     tables,
     inserts,
+    updates,
   }
 }

@@ -355,6 +355,7 @@ export type Database = {
           content_format: Database["public"]["Enums"]["content_format"]
           created_at: string
           deleted_at: string | null
+          edited_at: string | null
           id: string
           is_pinned: boolean
           is_published: boolean
@@ -376,6 +377,7 @@ export type Database = {
           content_format?: Database["public"]["Enums"]["content_format"]
           created_at?: string
           deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           is_pinned?: boolean
           is_published?: boolean
@@ -397,6 +399,7 @@ export type Database = {
           content_format?: Database["public"]["Enums"]["content_format"]
           created_at?: string
           deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           is_pinned?: boolean
           is_published?: boolean
@@ -427,30 +430,45 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_confirmed_at: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
           id: string
           nickname: string
+          privacy_agreed_at: string | null
+          provider: string | null
+          provider_id: string | null
           role: Database["public"]["Enums"]["user_role"]
+          terms_agreed_at: string | null
           updated_at: string
         }
         Insert: {
+          age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           id: string
           nickname: string
+          privacy_agreed_at?: string | null
+          provider?: string | null
+          provider_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          terms_agreed_at?: string | null
           updated_at?: string
         }
         Update: {
+          age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
           nickname?: string
+          privacy_agreed_at?: string | null
+          provider?: string | null
+          provider_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          terms_agreed_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -502,6 +520,47 @@ export type Database = {
           snapshot_at?: string
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
@@ -556,6 +615,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_report_target: {
+        Args: { p_target_id: string; p_target_type: string }
+        Returns: boolean
+      }
       increment_post_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
     }
@@ -567,6 +630,7 @@ export type Database = {
       inquiry_status: "pending" | "in_progress" | "answered" | "closed"
       job_group: "adventurer" | "cygnus" | "resistance" | "hero" | "demon"
       ranking_type: "total" | "job" | "guild"
+      report_reason: "spam" | "abuse" | "obscene" | "privacy" | "other"
       user_role: "user" | "admin"
     }
     CompositeTypes: {
@@ -705,6 +769,7 @@ export const Constants = {
       inquiry_status: ["pending", "in_progress", "answered", "closed"],
       job_group: ["adventurer", "cygnus", "resistance", "hero", "demon"],
       ranking_type: ["total", "job", "guild"],
+      report_reason: ["spam", "abuse", "obscene", "privacy", "other"],
       user_role: ["user", "admin"],
     },
   },
