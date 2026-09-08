@@ -42,6 +42,10 @@ const localEnv = readEnvFile(path.join(process.cwd(), '.env.local'))
 export const ADMIN_EMAIL = secrets.ADMIN_BOOTSTRAP_EMAIL ?? ''
 export const ADMIN_PASSWORD = secrets.ADMIN_BOOTSTRAP_PASSWORD ?? ''
 
+/* 사용자 사이트 캐시 무효화 시크릿. 검증 준비 단계에서 캐시를 미리 데울 때만 쓴다
+   (관리자 액션이 실제로 부르는 값과 같아야 의미가 있다). */
+export const REVALIDATE_SECRET = localEnv.REVALIDATE_SECRET ?? ''
+
 const SUPABASE_URL = localEnv.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const ANON_KEY = localEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 const SERVICE_KEY = localEnv.SUPABASE_SERVICE_ROLE_KEY ?? ''

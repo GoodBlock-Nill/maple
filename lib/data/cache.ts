@@ -25,6 +25,12 @@ export const CACHE_TAGS = {
   /** 뉴스 목록(`getNewsList`). 발행 · 숨김 · 삭제를 즉시 반영할 때 태운다. */
   newsList: 'news-list',
   gacha: 'gacha',
+  /**
+   * 약관·정책 본문(`getLegalDocument`). 관리자가 개정본을 발행하면 태운다.
+   * 문서별로 쪼개지 않는다 — 세 문서를 한 번에 비워도 비용이 거의 없고, 태그
+   * 이름을 관리자 쪽에 세 벌 옮겨 적으면 그중 하나가 오타로 죽는다.
+   */
+  legal: 'legal',
   rankings: 'rankings',
   site: 'site',
 } as const

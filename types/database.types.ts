@@ -429,6 +429,84 @@ export type Database = {
           },
         ]
       }
+      legal_document_versions: {
+        Row: {
+          content_html: string
+          created_at: string
+          created_by: string | null
+          document_id: string
+          effective_date: string
+          id: string
+          is_published: boolean
+          published_at: string | null
+          summary: string | null
+          version: string
+        }
+        Insert: {
+          content_html: string
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          effective_date: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          summary?: string | null
+          version: string
+        }
+        Update: {
+          content_html?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          effective_date?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          summary?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_documents: {
+        Row: {
+          created_at: string
+          id: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -767,6 +845,18 @@ export type Database = {
       can_report_target: {
         Args: { p_target_id: string; p_target_type: string }
         Returns: boolean
+      }
+      current_legal_version: {
+        Args: { p_slug: string }
+        Returns: {
+          content_html: string
+          effective_date: string
+          published_at: string
+          slug: string
+          summary: string
+          title: string
+          version: string
+        }[]
       }
       increment_post_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }

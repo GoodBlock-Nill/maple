@@ -16,6 +16,7 @@ describe('NAV_ITEMS', () => {
       '/gacha',
       '/rankings',
       '/settings',
+      '/legal',
       '/admins',
       '/audit',
     ])

@@ -49,6 +49,19 @@
   /* 포커스 링 — 밝은 배경/짙은 사이드바 모두에서 3:1 이상 */
   --color-focus: #1d6fe0;
 
+  /* 약관 미리보기 전용 — 사용자 사이트 `app/styles/tokens.css` 의 값 그대로다.
+     미리보기는 "독자가 볼 화면"을 그대로 보여 줘야 하므로 관리자 팔레트로
+     바꿔치기하지 않는다. 관리자 화면 다른 곳에서는 쓰지 않는다.
+     `--color-ink` 는 관리자에도 같은 이름이 있어(값이 다르다) `.legal-preview`
+     안에서만 사용자 사이트 값으로 덮어쓴다(아래 @layer base). */
+  --color-ink-muted: #737373;
+  --color-ink-soft: #c2c2c2;
+  --color-line-soft: #cdd3db;
+  --color-page-sub: #fafafa;
+  --color-table-head: #9b9b9b;
+  --color-table-body: #505865;
+  --color-table-line: #e0e4e9;
+
   --radius-card: 12px;
   --radius-panel: 8px;
   --radius-pill: 9999px;
@@ -71,5 +84,12 @@
   /* 표 안의 숫자가 자리마다 흔들리지 않게 고정폭 숫자를 쓴다. */
   table {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* 약관 미리보기 안에서만 사용자 사이트의 본문 색을 쓴다. Tailwind v4 의
+     `text-ink` 는 `var(--color-ink)` 를 그대로 참조하므로, 변수 하나만 다시
+     선언하면 그 아래 전체가 사용자 사이트와 같은 색이 된다. */
+  .legal-preview {
+    --color-ink: #2a2a2a;
   }
 }

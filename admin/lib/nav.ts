@@ -16,6 +16,7 @@ export type NavIcon =
   | 'guide'
   | 'ranking'
   | 'settings'
+  | 'legal'
   | 'admin'
   | 'audit'
 
@@ -75,6 +76,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   { label: '랭킹', href: '/rankings', icon: 'ranking' },
   { label: '사이트 설정', href: '/settings', icon: 'settings' },
+  { label: 'Legal', href: '/legal', icon: 'legal' },
   { label: '관리자', href: '/admins', icon: 'admin' },
   { label: '감사 로그', href: '/audit', icon: 'audit' },
 ] as const

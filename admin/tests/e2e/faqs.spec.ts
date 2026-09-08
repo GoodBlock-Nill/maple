@@ -14,14 +14,17 @@ import type { APIRequestContext, Page } from '@playwright/test'
 /**
  * FAQ 인수 검증 — 등록 → 사용자 사이트 노출 → 숨김 → 삭제.
  *
- * 사용자 사이트의 FAQ 목록은 `unstable_cache`(태그 'faqs', 300초)로 감싸여 있고,
- * 관리자 앱은 **다른 프로세스**라 그 태그를 무효화할 수 없다. 그래서 화면 반영은
- * 최대 TTL 만큼 늦다(보고서의 '클라이언트 갭' 1번). 캐시와 무관한 사실(발행/숨김이
- * 공개 권한에서 열리고 닫히는가)은 익명 키로 즉시 확인한다.
+ * 사용자 사이트의 FAQ 목록은 `unstable_cache`(태그 'faqs', 300초)로 감싸여 있다.
+ * 관리자 앱은 **다른 프로세스**라 `revalidateTag()` 가 닿지 않으므로, 저장 뒤
+ * `revalidateClient()` 가 사용자 사이트의 `POST /api/revalidate` 를 부른다
+ * (`lib/revalidate.ts`). 캐시와 무관한 사실(발행/숨김이 공개 권한에서 열리고
+ * 닫히는가)은 익명 키로 즉시 확인한다.
  */
-/* 실측(로컬 dev): 등록 → 노출 258초. 폴링이 캐시를 새로 채우는 시점에 따라 한 번의
-   TTL(300초)을 더 기다릴 수 있어 넉넉히 잡는다. */
-const CLIENT_FAQ_CACHE_BUDGET_MS = 10 * 60 * 1000
+/* 무효화가 붙기 전 실측은 258초(TTL 대기)였고, 지금은 요청 2~4회·1초 안쪽이다
+   (`client-revalidate.spec.ts`). 그래도 폴링을 남기는 이유는 `revalidateTag(tag,
+   'max')` 가 stale-while-revalidate 라서 **무효화 직후 첫 요청은 옛 값**이기
+   때문이다. 무효화가 끊기면 TTL 만큼 늦어지므로 예산은 TTL 한 번으로 줄인다. */
+const CLIENT_FAQ_CACHE_BUDGET_MS = 6 * 60 * 1000
 
 const STAMP = Date.now().toString()
 const FAQ_QUESTION = `[E2E] 질문 ${STAMP}`
@@ -112,7 +115,7 @@ test('FAQ 를 등록하면 사용자 사이트에 보이고, 미발행은 보이
   page,
   request,
 }) => {
-  // 사용자 사이트의 FAQ 캐시(300초)를 한 번 기다릴 여유를 둔다.
+  // 무효화가 끊겼을 때를 대비해 FAQ 캐시(300초) 한 번을 기다릴 여유는 남긴다.
   test.setTimeout(CLIENT_FAQ_CACHE_BUDGET_MS + 120_000)
 
   await signInAsAdmin(page)
