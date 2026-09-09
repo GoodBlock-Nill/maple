@@ -77,7 +77,7 @@ export function RevokeAdminButton({
               취소
             </Button>
             <Button variant="danger" type="submit" disabled={isPending}>
-              {isPending ? '처리 중…' : '권한 회수'}
+              {isPending ? '회수 중…' : '권한 회수'}
             </Button>
           </div>
         </form>

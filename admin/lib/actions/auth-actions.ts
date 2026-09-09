@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 
+import { actionFailure } from '@/lib/actions/action-failure'
 import {
   EMPTY_FORM_STATE,
   readField,
@@ -207,7 +208,16 @@ export async function setPasswordAction(
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
 
   if (error !== null) {
-    return { formError: `비밀번호를 변경하지 못했습니다. ${error.message}` }
+    /* 같은 비밀번호는 운영자가 바로 고칠 수 있는 입력 문제라 필드에 붙여 알린다. */
+    if (error.code === 'same_password') {
+      return { fieldErrors: { password: '이전과 다른 비밀번호를 입력해 주세요.' } }
+    }
+
+    return actionFailure(
+      'auth',
+      '비밀번호를 변경하지 못했습니다. 링크를 다시 받아 처음부터 진행해 주세요.',
+      error,
+    )
   }
 
   const nextPath = sanitizeNextPath(readField(formData, 'next'))

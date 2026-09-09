@@ -4,6 +4,7 @@ import { useActionState, useCallback, useState } from 'react'
 
 import { RankingPreview } from '@/components/rankings/RankingPreview'
 import { Button } from '@/components/ui/Button'
+import { Dialog } from '@/components/ui/Dialog'
 import { FormBanner } from '@/components/ui/FormField'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
@@ -25,11 +26,15 @@ import type { FormState } from '@/lib/actions/form-state'
  * 랭킹은 행 단위로 고치지 않고 스냅샷을 통째로 갈아 끼운다. 그래서 미리보기가
  * 마지막 방어선이다 — 순위가 하나 빠진 표를 올리면 사용자 사이트의 랭킹이 그대로
  * 틀린다. 검증은 서버와 **같은 함수**(validateRankingCsv)로 한다.
+ *
+ * 적용은 확인 다이얼로그를 한 번 거친다. 미리보기를 스쳐 지나가고 버튼을 누르는
+ * 일이 잦은데, 이 버튼 하나가 사용자 사이트의 랭킹 표를 통째로 갈아 끼운다.
  */
 export function RankingUploadPanel({ rankType }: { rankType: RankType }) {
   const [preview, setPreview] = useState<
     (RankingCsvPreview & { fileName: string; csv: string }) | null
   >(null)
+  const [isConfirmOpen, setConfirmOpen] = useState(false)
   const { showToast } = useToast()
 
   const runApply = useCallback(
@@ -39,6 +44,7 @@ export function RankingUploadPanel({ rankType }: { rankType: RankType }) {
       if (result.message !== undefined) {
         showToast(result.message, 'success')
         setPreview(null)
+        setConfirmOpen(false)
       }
 
       return result
@@ -98,16 +104,39 @@ export function RankingUploadPanel({ rankType }: { rankType: RankType }) {
 
           {preview.rows.length > 0 && <RankingPreview rows={preview.rows} />}
 
-          <form action={formAction} className="flex justify-end gap-2">
-            <input type="hidden" name="csv" value={preview.csv} readOnly />
-            <input type="hidden" name="rankType" value={rankType} readOnly />
+          <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setPreview(null)} disabled={isPending}>
               취소
             </Button>
-            <Button type="submit" disabled={!preview.isValid || isPending}>
-              {isPending ? '적용 중…' : `적용 (${preview.rows.length}건)`}
+            <Button disabled={!preview.isValid || isPending} onClick={() => setConfirmOpen(true)}>
+              {`적용 (${preview.rows.length}건)`}
             </Button>
-          </form>
+          </div>
+
+          <Dialog
+            open={isConfirmOpen}
+            onClose={() => setConfirmOpen(false)}
+            title="랭킹 적용"
+            description={`${rankTypeLabel(rankType)} 랭킹을 ${preview.rows.length}건으로 교체합니다. 사용자 사이트에 즉시 반영되며 기존 스냅샷은 이력에 남아 되돌릴 수 있습니다.`}
+          >
+            <form action={formAction} className="flex flex-col gap-4">
+              <input type="hidden" name="csv" value={preview.csv} readOnly />
+              <input type="hidden" name="rankType" value={rankType} readOnly />
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setConfirmOpen(false)}
+                  disabled={isPending}
+                >
+                  취소
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? '적용 중…' : '적용'}
+                </Button>
+              </div>
+            </form>
+          </Dialog>
         </>
       )}
     </div>

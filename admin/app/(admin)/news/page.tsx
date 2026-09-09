@@ -2,8 +2,10 @@ import { NewsFilters } from '@/components/news/NewsFilters'
 import { NewsTable } from '@/components/news/NewsTable'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
+import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
+import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { isNewsCategoryKey, isNewsStatus } from '@/lib/constants/news'
 import { listNews, listNewsCategories, NEWS_DEFAULT_SORT, NEWS_SORT_KEYS } from '@/lib/data/news'
 import { clientSiteUrl } from '@/lib/supabase/env'
@@ -58,6 +60,12 @@ export default async function NewsListPage(props: PageProps<'/news'>) {
         description="뉴스 게시글을 작성·수정하고 발행 상태를 관리합니다."
         action={<Button href={`${NEWS_PATH}/new`}>새 뉴스 작성</Button>}
       />
+
+      {list.hasError && (
+        <div className="mb-3">
+          <FormBanner message={LIST_LOAD_ERROR} />
+        </div>
+      )}
 
       <Card>
         <CardBody className="border-line border-b">

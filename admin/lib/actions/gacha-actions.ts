@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { actionFailure } from '@/lib/actions/action-failure'
 import { readFile, uploadPublicAsset } from '@/lib/actions/asset-upload'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
@@ -10,6 +11,7 @@ import { requireAdmin } from '@/lib/auth/require-admin'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import { parseCsvTable } from '@/lib/utils/csv'
+import { josa } from '@/lib/utils/josa'
 import {
   gachaCsvRowSchema,
   gachaItemSchema,
@@ -111,7 +113,11 @@ export async function saveGachaItemAction(
     : await supabase.from('gacha_items').update(payload).eq('id', id).select('id').single()
 
   if (error !== null) {
-    return { formError: `저장하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'gacha',
+      '확률형 아이템을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -147,7 +153,11 @@ export async function deleteGachaItemAction(
   const { error } = await supabase.from('gacha_items').delete().eq('id', id)
 
   if (error !== null) {
-    return { formError: `삭제하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'gacha',
+      '확률형 아이템을 삭제하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -158,7 +168,7 @@ export async function deleteGachaItemAction(
   })
 
   await revalidateGacha()
-  return { message: `${before.name} 을(를) 삭제했습니다.` }
+  return { message: `${before.name}${josa(before.name, '을')} 삭제했습니다.` }
 }
 
 type ImportRow = {
@@ -253,7 +263,12 @@ export async function importGachaCsvAction(
   const { error } = await supabase.from('gacha_items').upsert(upsertRows, { onConflict: 'id' })
 
   if (error !== null) {
-    return { formError: `적용하지 못했습니다. ${error.message}` }
+    /* upsert 한 번이라 전부 들어가거나 전부 들어가지 않는다. */
+    return actionFailure(
+      'gacha',
+      'CSV를 적용하지 못했습니다. 아무 항목도 바뀌지 않았습니다. 잠시 후 다시 시도해 주세요.',
+      error,
+    )
   }
 
   const updated = upsertRows.length - created

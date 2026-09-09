@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure } from '@/lib/actions/action-failure'
 import { moderateTarget } from '@/lib/actions/moderation-actions'
 import { suspendMember } from '@/lib/actions/members-actions'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
@@ -136,7 +137,12 @@ export async function resolveReportAction(
   const statusError = await setReportStatus(ids, 'resolved', actor.id, note)
 
   if (statusError !== null) {
-    return { formError: `신고 상태를 바꾸지 못했습니다. ${statusError}` }
+    /* 조치(숨김·삭제·정지)는 이미 적용됐다. 되돌리지 않고 어긋난 지점을 알린다. */
+    return actionFailure(
+      'reports',
+      '조치는 적용됐지만 신고 상태를 바꾸지 못했습니다. 목록에서 신고가 미처리로 남아 있는지 확인해 주세요.',
+      statusError,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -219,7 +225,11 @@ export async function dismissReportAction(
   const statusError = await setReportStatus(ids, 'dismissed', actor.id, note)
 
   if (statusError !== null) {
-    return { formError: `신고를 기각하지 못했습니다. ${statusError}` }
+    return actionFailure(
+      'reports',
+      '신고를 기각하지 못했습니다. 신고 상태는 그대로입니다. 다시 시도해 주세요.',
+      statusError,
+    )
   }
 
   await writeAuditLog(actor.id, {

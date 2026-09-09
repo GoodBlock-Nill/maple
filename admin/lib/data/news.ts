@@ -70,6 +70,8 @@ type NewsQueryFilters<TSelf> = {
 export type NewsListResult = {
   items: readonly NewsListItem[]
   total: number
+  /** 조회가 깨졌는지. `true` 면 `rows` 가 비어도 "데이터 없음"이 아니다(빈 표 오독 방지). */
+  hasError: boolean
 }
 
 export type NewsDetail = {
@@ -185,7 +187,7 @@ export async function listNews(params: NewsListParams): Promise<NewsListResult> 
   if (error !== null) {
     console.error('[news] 목록 조회 실패', error.message)
 
-    return { items: [], total: 0 }
+    return { items: [], total: 0, hasError: true }
   }
 
   const items = (data ?? []).map((row) => {
@@ -211,7 +213,7 @@ export async function listNews(params: NewsListParams): Promise<NewsListResult> 
     }
   })
 
-  return { items, total: count ?? 0 }
+  return { items, total: count ?? 0, hasError: false }
 }
 
 /** 작성/수정 화면이 쓰는 단건. 삭제된 글도 읽는다(복구 화면에서 내용을 확인해야 한다). */

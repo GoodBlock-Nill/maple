@@ -5,6 +5,7 @@ import { useActionState, useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
+import { josa } from '@/lib/utils/josa'
 
 import type { FormState } from '@/lib/actions/form-state'
 
@@ -76,7 +77,9 @@ export function BulkHideBar({
   return (
     <div className="border-line flex items-center justify-between gap-3 border-b px-5 py-3">
       <p className="text-muted text-[13px]">
-        {selected === 0 ? `${label}을(를) 선택해 일괄 숨김할 수 있습니다.` : `${selected}건 선택됨`}
+        {selected === 0
+          ? `${label}${josa(label, '을')} 선택해 일괄 숨김할 수 있습니다.`
+          : `${selected}건 선택됨`}
       </p>
 
       <div className="flex items-center gap-2">
@@ -85,7 +88,12 @@ export function BulkHideBar({
         </Button>
         {/* 폼은 비어 있다 — 값은 표 안의 체크박스가 form 속성으로 실어 보낸다. */}
         <form id={BULK_FORM_ID} action={formAction}>
-          <Button type="submit" variant="secondary" size="sm" disabled={isPending || selected === 0}>
+          <Button
+            type="submit"
+            variant="secondary"
+            size="sm"
+            disabled={isPending || selected === 0}
+          >
             {isPending ? '처리 중…' : '선택 숨김'}
           </Button>
         </form>

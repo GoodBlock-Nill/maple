@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
@@ -70,7 +71,13 @@ async function insertSnapshot(
         .eq('rank_type', rankType)
         .eq('snapshot_at', snapshotAt)
 
-      return { error: `적용하지 못했습니다. ${error.message}` }
+      return {
+        error: logFailure(
+          'rankings',
+          '랭킹을 적용하지 못했습니다. 기존 랭킹은 그대로입니다. 다시 시도해 주세요.',
+          error,
+        ),
+      }
     }
   }
 
@@ -178,7 +185,11 @@ export async function rollbackRankingSnapshotAction(
     .order('rank', { ascending: true })
 
   if (error !== null) {
-    return { formError: `스냅샷을 읽지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'rankings',
+      '스냅샷을 읽지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.',
+      error,
+    )
   }
 
   if (data.length === 0) {

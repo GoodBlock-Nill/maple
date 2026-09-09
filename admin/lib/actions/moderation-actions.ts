@@ -2,11 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
+import { josa } from '@/lib/utils/josa'
 import { bulkHideSchema, toggleContentSchema } from '@/lib/validation/moderation'
 
 import type { ContentTable } from '@/lib/validation/moderation'
@@ -99,7 +101,7 @@ export async function moderateTarget(
   const snapshot = (await readSnapshots(table, [id])).get(id)
 
   if (snapshot === undefined) {
-    return `${LABEL[table]}을(를) 찾을 수 없습니다.`
+    return `${LABEL[table]}${josa(LABEL[table], '을')} 찾을 수 없습니다.`
   }
 
   const patch: ContentPatch =
@@ -107,7 +109,11 @@ export async function moderateTarget(
   const error = await applyPatch(table, [id], patch)
 
   if (error !== null) {
-    return error
+    return logFailure(
+      'community',
+      `${LABEL[table]} 처리를 하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.`,
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -142,7 +148,7 @@ async function toggleContent(
   const snapshot = (await readSnapshots(table, [id])).get(id)
 
   if (snapshot === undefined) {
-    return { formError: `${LABEL[table]}을(를) 찾을 수 없습니다.` }
+    return { formError: `${LABEL[table]}${josa(LABEL[table], '을')} 찾을 수 없습니다.` }
   }
 
   const patch: ContentPatch =
@@ -151,7 +157,11 @@ async function toggleContent(
   const error = await applyPatch(table, [id], patch)
 
   if (error !== null) {
-    return { formError: `조치에 실패했습니다. ${error}` }
+    return actionFailure(
+      'community',
+      `${LABEL[table]} 처리를 하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.`,
+      error,
+    )
   }
 
   const verb = field === 'hidden' ? (on ? 'hide' : 'unhide') : on ? 'delete' : 'restore'
@@ -165,7 +175,7 @@ async function toggleContent(
   })
   await revalidateFor(table)
 
-  return { message: `${LABEL[table]}을(를) ${VERB_LABEL[verb]}했습니다.` }
+  return { message: `${LABEL[table]}${josa(LABEL[table], '을')} ${VERB_LABEL[verb]}했습니다.` }
 }
 
 const VERB_LABEL: Record<'hide' | 'unhide' | 'delete' | 'restore', string> = {
@@ -205,7 +215,12 @@ async function bulkHide(table: ContentTable, formData: FormData): Promise<FormSt
   const error = await applyPatch(table, targets, { is_hidden: true })
 
   if (error !== null) {
-    return { formError: `일괄 숨김에 실패했습니다. ${error}` }
+    /* 한 질의로 끝내므로 전부 숨겨지거나 전부 그대로다. */
+    return actionFailure(
+      'community',
+      '선택한 항목을 숨기지 못했습니다. 아무 항목도 바뀌지 않았습니다. 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {

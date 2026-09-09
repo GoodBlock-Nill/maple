@@ -9,11 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_PAGE_SIZE, pageRange } from '@/lib/utils/table-query'
 import { INQUIRY_STATUS_TABS, statusesForTab } from '@/lib/validation/inquiries'
 
-import type {
-  InquiryFilters,
-  InquiryStatus,
-  InquiryStatusTab,
-} from '@/lib/validation/inquiries'
+import type { InquiryFilters, InquiryStatus, InquiryStatusTab } from '@/lib/validation/inquiries'
 
 /**
  * 1:1 문의 조회 계층.
@@ -52,6 +48,8 @@ export type InquiryListItem = {
 export type InquiryListResult = {
   rows: readonly InquiryListItem[]
   count: number
+  /** 조회가 깨졌는지. `true` 면 `rows` 가 비어도 "데이터 없음"이 아니다(빈 표 오독 방지). */
+  hasError: boolean
 }
 
 /** 첨부는 별도 모듈이 소유한다. 화면이 한곳에서 가져다 쓰도록 타입만 다시 내보낸다. */
@@ -168,7 +166,7 @@ export async function getInquiries(
   if (error !== null) {
     console.error('[inquiries] 목록 조회 실패', error.message)
 
-    return { rows: [], count: 0 }
+    return { rows: [], count: 0, hasError: true }
   }
 
   const rows: readonly InquiryListItem[] = (data ?? []).map((row) => ({
@@ -187,7 +185,7 @@ export async function getInquiries(
     updatedAt: row.updated_at,
   }))
 
-  return { rows, count: count ?? 0 }
+  return { rows, count: count ?? 0, hasError: false }
 }
 
 /* 탭별 건수. `head: true` 라 행을 가져오지 않고(응답 0바이트), 탭 수만큼의 왕복은

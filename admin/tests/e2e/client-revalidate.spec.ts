@@ -100,7 +100,7 @@ test('커뮤니티 글을 숨기면 사용자 목록에서 곧바로 사라진�
 
   const row = page.getByRole('row', { name: new RegExp(scenario.suffix) })
   await row.getByRole('button', { name: '숨김', exact: true }).click()
-  await expect(page.getByText(/게시글을\(를\) 숨김 처리했습니다/)).toBeVisible()
+  await expect(page.getByText(/게시글을 숨김 처리했습니다/)).toBeVisible()
 
   const hidden = await waitForClient(request, '/community', scenario.postTitle, 'gone')
   console.log(`[revalidate] 숨김 반영: 요청 ${hidden.requests}회 · ${hidden.ms}ms`)

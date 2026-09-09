@@ -9,7 +9,8 @@ import { Dialog } from '@/components/ui/Dialog'
 import { FormBanner } from '@/components/ui/FormField'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
-import { changeMemberRoleAction, unsuspendMemberAction } from '@/lib/actions/members-actions'
+import { changeMemberRoleAction } from '@/lib/actions/member-role-actions'
+import { unsuspendMemberAction } from '@/lib/actions/members-actions'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { UserRole } from '@/lib/supabase/types'
@@ -65,6 +66,10 @@ export function MemberActions({
   )
 
   const nextRole: UserRole = role === 'admin' ? 'user' : 'admin'
+  /* 확인 버튼에는 무엇을 하는지 그대로 적는다 — '확인' 은 되돌릴 수 없는 조작에서
+     운영자가 무엇에 동의했는지 남기지 못한다. */
+  const verbLabel = role === 'admin' ? '권한 회수' : '권한 부여'
+  const pendingLabel = role === 'admin' ? '회수 중…' : '부여 중…'
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -82,7 +87,7 @@ export function MemberActions({
       <MemberNicknameDialog memberId={memberId} nickname={nickname} />
 
       {isSelf ? (
-        <span className="text-muted text-[12px]">본인 권한은 바꿀 수 없습니다.</span>
+        <span className="text-muted text-[12px]">자기 자신의 권한은 바꿀 수 없습니다.</span>
       ) : (
         <Button variant="ghost" size="sm" onClick={() => setRoleOpen(true)}>
           {role === 'admin' ? '관리자 권한 회수' : '관리자 권한 부여'}
@@ -114,7 +119,7 @@ export function MemberActions({
               variant={role === 'admin' ? 'danger' : 'primary'}
               disabled={isRolePending}
             >
-              {isRolePending ? '처리 중…' : '확인'}
+              {isRolePending ? pendingLabel : verbLabel}
             </Button>
           </div>
         </form>

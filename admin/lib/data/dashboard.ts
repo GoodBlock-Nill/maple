@@ -18,10 +18,11 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 
+/** 집계가 깨진 창은 `null` 이다. 0 으로 눌러 담으면 화면이 "오늘 0건"이라고 거짓말한다. */
 export type MetricWindow = {
-  today: number
-  week: number
-  month: number
+  today: number | null
+  week: number | null
+  month: number | null
 }
 
 export type DashboardMetrics = {
@@ -29,8 +30,8 @@ export type DashboardMetrics = {
   newsPosts: MetricWindow
   communityPosts: MetricWindow
   comments: MetricWindow
-  openReports: number
-  pendingInquiries: number
+  openReports: number | null
+  pendingInquiries: number | null
 }
 
 export type ActivityKind = 'news' | 'community' | 'comment' | 'inquiry' | 'report'
@@ -71,13 +72,13 @@ function boundaries(now: Date): Boundaries {
  */
 type CountQuery = PromiseLike<{ count: number | null; error: { message: string } | null }>
 
-async function runCount(label: string, query: CountQuery): Promise<number> {
+async function runCount(label: string, query: CountQuery): Promise<number | null> {
   const { count, error } = await query
 
   if (error !== null) {
     console.error(`[dashboard] ${label} 집계 실패`, error.message)
 
-    return 0
+    return null
   }
 
   return count ?? 0
@@ -115,12 +116,18 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
 
   const [profiles, newsPosts, communityPosts, comments, reports, inquiries] = await Promise.all([
     windowFor('profiles', bounds, (since) =>
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since),
+      supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', since),
     ),
     windowFor('posts:news', bounds, (since) => countPostsSince(supabase, 'news', since)),
     windowFor('posts:community', bounds, (since) => countPostsSince(supabase, 'community', since)),
     windowFor('comments', bounds, (since) =>
-      supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since),
+      supabase
+        .from('comments')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', since),
     ),
     supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -131,9 +138,23 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
     newsPosts,
     communityPosts,
     comments,
-    openReports: reports.count ?? 0,
-    pendingInquiries: inquiries.count ?? 0,
+    openReports: toCount('reports:open', reports),
+    pendingInquiries: toCount('inquiries:pending', inquiries),
   }
+}
+
+/** 이미 실행된 집계 응답을 지표 값으로 좁힌다. 실패는 `runCount()` 와 같게 null 로 둔다. */
+function toCount(
+  label: string,
+  result: { count: number | null; error: { message: string } | null },
+): number | null {
+  if (result.error !== null) {
+    console.error(`[dashboard] ${label} 집계 실패`, result.error.message)
+
+    return null
+  }
+
+  return result.count ?? 0
 }
 
 const RECENT_LIMIT = 10

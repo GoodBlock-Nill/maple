@@ -68,6 +68,8 @@ export type ListResult<TRow> = {
   rows: readonly TRow[]
   count: number
   page: number
+  /** 조회가 깨졌는지. `true` 면 `rows` 가 비어도 "데이터 없음"이 아니다(빈 표 오독 방지). */
+  hasError: boolean
 }
 
 const POST_SORT_KEYS = ['created_at', 'comment_count', 'like_count', 'view_count'] as const
@@ -153,7 +155,7 @@ export async function getCommunityPosts(params: PostListParams): Promise<ListRes
   if (error !== null) {
     console.error('[community] 게시글 목록 조회 실패', error.message)
 
-    return { rows: [], count: 0, page: params.page }
+    return { rows: [], count: 0, page: params.page, hasError: true }
   }
 
   return {
@@ -172,6 +174,7 @@ export async function getCommunityPosts(params: PostListParams): Promise<ListRes
     })),
     count: count ?? 0,
     page: params.page,
+    hasError: false,
   }
 }
 
@@ -209,7 +212,7 @@ export async function getCommunityComments(
   if (error !== null) {
     console.error('[community] 댓글 목록 조회 실패', error.message)
 
-    return { rows: [], count: 0, page: params.page }
+    return { rows: [], count: 0, page: params.page, hasError: true }
   }
 
   return {
@@ -226,6 +229,7 @@ export async function getCommunityComments(
     })),
     count: count ?? 0,
     page: params.page,
+    hasError: false,
   }
 }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure } from '@/lib/actions/action-failure'
 import { readFile, uploadPublicAsset } from '@/lib/actions/asset-upload'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
@@ -89,7 +90,11 @@ export async function saveSiteSettingsAction(
     .upsert({ id: SITE_SETTINGS_ID, ...payload }, { onConflict: 'id' })
 
   if (error !== null) {
-    return { formError: `저장하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'settings',
+      '사이트 설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -154,7 +159,11 @@ export async function saveHeroBannerAction(
     : await supabase.from('hero_banners').update(payload).eq('id', id).select('id').single()
 
   if (error !== null) {
-    return { formError: `저장하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'settings',
+      '배너를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -193,7 +202,11 @@ export async function deleteHeroBannerAction(
 
   const { error } = await supabase.from('hero_banners').delete().eq('id', id)
   if (error !== null) {
-    return { formError: `삭제하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'settings',
+      '배너를 삭제하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -219,7 +232,11 @@ export async function toggleHeroBannerAction(
   const { error } = await supabase.from('hero_banners').update({ is_active: isActive }).eq('id', id)
 
   if (error !== null) {
-    return { formError: `상태를 바꾸지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'settings',
+      '배너 노출 상태를 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -260,7 +277,12 @@ export async function moveHeroBannerAction(
       .eq('id', banner.id)
 
     if (error !== null) {
-      return { formError: `순서를 바꾸지 못했습니다. ${error.message}` }
+      /* 앞선 행은 이미 저장됐다. 되돌릴 방법이 없으므로 어디까지 반영됐는지 확인하게 한다. */
+      return actionFailure(
+        'settings',
+        '배너 순서를 바꾸지 못했습니다. 일부만 반영됐을 수 있으니 새로고침해 순서를 확인해 주세요.',
+        error,
+      )
     }
   }
 

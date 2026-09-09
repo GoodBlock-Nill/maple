@@ -4,15 +4,12 @@
    사용자 사이트의 정적 경로가 섞여 next/image 의 원격 패턴 밖이다. 관리자 화면의
    썸네일·미리보기라 최적화도 필요 없다. */
 import { BannerActionButton } from '@/components/settings/BannerActionButton'
+import { BannerDeleteButton } from '@/components/settings/BannerDeleteButton'
 import { HeroBannerDialog } from '@/components/settings/HeroBannerDialog'
 import { siteAssetSrc } from '@/components/settings/site-assets'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import {
-  deleteHeroBannerAction,
-  moveHeroBannerAction,
-  toggleHeroBannerAction,
-} from '@/lib/actions/settings-actions'
+import { moveHeroBannerAction, toggleHeroBannerAction } from '@/lib/actions/settings-actions'
 import { formatDateTime } from '@/lib/utils/format-date'
 import { youtubeThumbnailUrl } from '@/lib/utils/youtube'
 
@@ -88,12 +85,7 @@ export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord
               label={banner.isActive ? '숨기기' : '노출'}
             />
             <HeroBannerDialog banner={banner} nextSortOrder={banner.sortOrder} trigger="수정" />
-            <BannerActionButton
-              action={deleteHeroBannerAction}
-              fields={{ id: banner.id }}
-              label="삭제"
-              variant="danger"
-            />
+            <BannerDeleteButton id={banner.id} title={banner.title} />
           </div>
         </li>
       ))}

@@ -57,7 +57,7 @@ export function InquiryCloseButton({ inquiryId }: { inquiryId: string }) {
               취소
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? '처리 중…' : '종료'}
+              {isPending ? '종료 중…' : '종료'}
             </Button>
           </div>
         </form>

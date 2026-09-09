@@ -78,14 +78,12 @@ test('resolving with a 3-day suspension blocks the author from writing', async (
 
   // 실제 제재 확인: 정지된 사용자의 댓글 insert 는 RLS 가 거절해야 한다.
   const author = await userClient(scenario.authorEmail, scenario.authorPassword)
-  const { error } = await author
-    .from('comments')
-    .insert({
-      post_id: scenario.postId,
-      author_id: scenario.authorId,
-      author_name: scenario.authorNickname,
-      content: '정지 중 작성 시도',
-    })
+  const { error } = await author.from('comments').insert({
+    post_id: scenario.postId,
+    author_id: scenario.authorId,
+    author_name: scenario.authorNickname,
+    content: '정지 중 작성 시도',
+  })
 
   expect(error?.code, '정지 중에는 댓글 insert 가 막혀야 한다').toBe(RLS_VIOLATION)
 
@@ -192,7 +190,8 @@ test('granting and revoking admin goes through the invite allow-list', async ({ 
   await page.goto(`/members/${scenario.authorId}`)
 
   await page.getByRole('button', { name: '관리자 권한 부여' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: '확인' }).click()
+  // 확인 버튼에는 동사를 적는다 — '확인' 은 무엇에 동의했는지 남기지 못한다.
+  await page.getByRole('dialog').getByRole('button', { name: '권한 부여' }).click()
   await expect(page.getByText(/관리자 권한을 부여했습니다/)).toBeVisible()
 
   const db = serviceClient()
@@ -215,7 +214,7 @@ test('granting and revoking admin goes through the invite allow-list', async ({ 
 
   await page.reload()
   await page.getByRole('button', { name: '관리자 권한 회수' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: '확인' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: '권한 회수' }).click()
   await expect(page.getByText(/관리자 권한을 회수했습니다/)).toBeVisible()
 
   const { data: revoked } = await db

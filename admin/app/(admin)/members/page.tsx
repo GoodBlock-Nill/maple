@@ -1,9 +1,11 @@
 import { MemberFilters } from '@/components/members/MemberFilters'
 import { MaskedEmail, MemberIdentity, MemberStatusBadge } from '@/components/members/MemberIdentity'
 import { Card } from '@/components/ui/Card'
+import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
+import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { getMembers, type MemberListItem, type MemberListParams } from '@/lib/data/members'
 import { formatDate } from '@/lib/utils/format-date'
 import {
@@ -128,6 +130,12 @@ export default async function MembersPage(props: PageProps<'/members'>) {
       />
 
       <MemberFilters pathname={PATH} params={searchParams} />
+
+      {list.hasError && (
+        <div className="mb-3">
+          <FormBanner message={LIST_LOAD_ERROR} />
+        </div>
+      )}
 
       <Card>
         <Table

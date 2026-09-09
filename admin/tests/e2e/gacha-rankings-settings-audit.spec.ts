@@ -155,6 +155,8 @@ test('가이드: 아이템 생성 · CSV 내보내기 · 가져오기가 사용�
   await page.getByTestId('gacha-csv-input').setInputFiles(csvFile('import.csv', body))
   await expect(page.getByTestId('gacha-import-summary')).toContainText('유효 2건 · 오류 0건')
   await page.getByRole('button', { name: '적용 (2건)' }).click()
+  // 적용은 확인 다이얼로그를 한 번 거친다(기존 항목을 덮어쓰는 조작이다).
+  await page.getByRole('dialog').getByRole('button', { name: '적용', exact: true }).click()
   // 토스트를 기다리지 않고 이동하면 진행 중인 액션이 취소된다.
   await expect(page.getByText('2건을 적용했습니다.')).toBeVisible()
 
@@ -177,7 +179,7 @@ test('가이드: 아이템 생성 · CSV 내보내기 · 가져오기가 사용�
     .getByRole('button', { name: '삭제' })
     .click()
   await page.getByRole('dialog').getByRole('button', { name: '삭제' }).click()
-  await expect(page.getByText(`${E2E_PREFIX} 가져오기2 을(를) 삭제했습니다.`)).toBeVisible()
+  await expect(page.getByText(`${E2E_PREFIX} 가져오기2을 삭제했습니다.`)).toBeVisible()
   await expect(page.getByText(`${E2E_PREFIX} 가져오기2`)).toHaveCount(0)
 })
 
@@ -209,6 +211,8 @@ test('랭킹: CSV 업로드가 현재 스냅샷과 이력, 사용자 사이트�
   await expect(page.getByTestId('ranking-preview-top')).toHaveCount(3)
 
   await page.getByRole('button', { name: '적용 (5건)' }).click()
+  // 랭킹 교체는 사용자 사이트에 즉시 반영돼 확인 다이얼로그를 한 번 거친다.
+  await page.getByRole('dialog').getByRole('button', { name: '적용', exact: true }).click()
   await expect(page.getByText('5건을 새 스냅샷으로 적용했습니다.')).toBeVisible()
 
   await page.goto('/rankings?type=total')

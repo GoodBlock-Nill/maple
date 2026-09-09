@@ -2,10 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { createClient } from '@/lib/supabase/server'
+import { josa } from '@/lib/utils/josa'
 import {
   INQUIRY_STATUS_LABELS,
   canTransitionInquiryStatus,
@@ -79,7 +81,7 @@ async function applyStatusChange(
   to: InquiryStatus,
 ): Promise<string | null> {
   if (!canTransitionInquiryStatus(from, to)) {
-    return `${INQUIRY_STATUS_LABELS[from]} 상태에서는 ${INQUIRY_STATUS_LABELS[to]} 로 바꿀 수 없습니다.`
+    return `${INQUIRY_STATUS_LABELS[from]} 상태에서는 ${INQUIRY_STATUS_LABELS[to]}${josa(INQUIRY_STATUS_LABELS[to], '로')} 바꿀 수 없습니다.`
   }
 
   const supabase = await createClient()
@@ -93,7 +95,11 @@ async function applyStatusChange(
     .eq('status', from)
 
   if (error !== null) {
-    return `상태를 바꾸지 못했습니다. ${error.message}`
+    return logFailure(
+      'inquiries',
+      '상태를 바꾸지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actorId, {
@@ -136,7 +142,7 @@ export async function updateInquiryStatusAction(
   }
 
   if (state.status === status) {
-    return { message: '이미 같은 상태입니다.' }
+    return { formError: '이미 같은 상태입니다. 상태는 바뀌지 않았습니다.' }
   }
 
   const failure = await applyStatusChange(actor.id, inquiryId, state.status, status)
@@ -148,7 +154,9 @@ export async function updateInquiryStatusAction(
   revalidatePath(detailPath(inquiryId))
   revalidatePath(LIST_PATH)
 
-  return { message: `상태를 '${INQUIRY_STATUS_LABELS[status]}' 로 바꿨습니다.` }
+  const label = INQUIRY_STATUS_LABELS[status]
+
+  return { message: `상태를 '${label}'${josa(label, '로')} 바꿨습니다.` }
 }
 
 /**
@@ -207,7 +215,11 @@ export async function replyToInquiryAction(
     .single()
 
   if (error !== null) {
-    return { formError: `답변을 등록하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'inquiries',
+      '답변을 등록하지 못했습니다. 작성한 내용은 그대로 있으니 잠시 후 다시 저장해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -217,6 +229,7 @@ export async function replyToInquiryAction(
     after: { inquiry_id: inquiryId, author_name: authorName, length: content.length },
   })
 
+  const nextLabel = INQUIRY_STATUS_LABELS[nextStatus]
   const statusFailure =
     state.status === nextStatus
       ? null
@@ -227,8 +240,12 @@ export async function replyToInquiryAction(
 
   if (statusFailure !== null) {
     // 답변은 이미 남았다. 되돌리지 않고 상태만 실패했음을 정확히 알린다.
-    return { formError: `답변은 등록했지만 상태를 바꾸지 못했습니다. ${statusFailure}` }
+    return actionFailure(
+      'inquiries',
+      `답변은 등록했지만 상태를 바꾸지 못했습니다. 상태를 직접 ${nextLabel}${josa(nextLabel, '로')} 바꿔 주세요.`,
+      statusFailure,
+    )
   }
 
-  return { message: `답변을 등록하고 상태를 '${INQUIRY_STATUS_LABELS[nextStatus]}' 로 바꿨습니다.` }
+  return { message: `답변을 등록하고 상태를 '${nextLabel}'${josa(nextLabel, '로')} 바꿨습니다.` }
 }

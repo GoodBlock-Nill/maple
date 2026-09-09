@@ -61,12 +61,14 @@ test('hiding a post removes it from the user site list, detail and the author vi
   expect(before.html).toContain(scenario.postTitle)
 
   await toggleHide(page, new RegExp(scenario.suffix), '숨김')
-  await expect(page.getByText(/게시글을\(를\) 숨김 처리했습니다/)).toBeVisible()
+  await expect(page.getByText(/게시글을 숨김 처리했습니다/)).toBeVisible()
   await expect(
     page.getByRole('row', { name: new RegExp(scenario.suffix) }).getByText('숨김', { exact: true }),
   ).toBeVisible()
 
-  const hiddenList = await fetchClient(`/community?q=${encodeURIComponent(`신고대상 게시글 ${scenario.suffix}`)}`)
+  const hiddenList = await fetchClient(
+    `/community?q=${encodeURIComponent(`신고대상 게시글 ${scenario.suffix}`)}`,
+  )
   expect(hiddenList.html, '숨긴 글은 목록에서 사라져야 한다').not.toContain(scenario.postTitle)
 
   const hiddenDetail = await fetchClient(`/community/${scenario.postId}`)
@@ -81,7 +83,9 @@ test('hiding a post removes it from the user site list, detail and the author vi
   await toggleHide(page, new RegExp(scenario.suffix), '숨김 해제')
   await expect(page.getByText(/숨김 해제했습니다/)).toBeVisible()
 
-  const restored = await fetchClient(`/community?q=${encodeURIComponent(`게시글 ${scenario.suffix}`)}`)
+  const restored = await fetchClient(
+    `/community?q=${encodeURIComponent(`게시글 ${scenario.suffix}`)}`,
+  )
   expect(restored.html, '해제하면 다시 보여야 한다').toContain(scenario.postTitle)
 })
 
@@ -94,7 +98,7 @@ test('deleting a post 404s on the user site and can be restored', async ({ page 
     .getByRole('button', { name: '삭제' })
     .click()
   await page.getByRole('dialog').getByRole('button', { name: '삭제' }).click()
-  await expect(page.getByText(/게시글을\(를\) 삭제했습니다/)).toBeVisible()
+  await expect(page.getByText(/게시글을 삭제했습니다/)).toBeVisible()
 
   const deleted = await fetchClient(`/community/${scenario.postId}`)
   expect(deleted.status).toBe(404)
@@ -118,7 +122,7 @@ test('hiding a comment removes it from the user site thread', async ({ page }) =
 
   await page.goto(`/community/comments?author=${encodeURIComponent(scenario.authorNickname)}`)
   await toggleHide(page, new RegExp(scenario.suffix), '숨김')
-  await expect(page.getByText(/댓글을\(를\) 숨김 처리했습니다/)).toBeVisible()
+  await expect(page.getByText(/댓글을 숨김 처리했습니다/)).toBeVisible()
 
   /* 사용자 사이트는 숨긴 댓글을 "삭제된 댓글입니다" 자리 표시로 남기지 않고 통째로
      빼 버린다(components/board/CommentSection.tsx 의 설계와 동일). 삭제와 같은 취급이다. */

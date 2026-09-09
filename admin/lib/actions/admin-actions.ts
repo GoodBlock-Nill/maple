@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure } from '@/lib/actions/action-failure'
 import { readField, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
@@ -38,7 +39,7 @@ export async function revokeAdminAction(
   }
 
   if (targetId === actor.id) {
-    return { formError: '자기 자신의 권한은 회수할 수 없습니다.' }
+    return { formError: '자기 자신의 권한은 바꿀 수 없습니다.' }
   }
 
   const supabase = await createClient()
@@ -55,7 +56,11 @@ export async function revokeAdminAction(
   const { error } = await supabase.from('profiles').update({ role: 'user' }).eq('id', targetId)
 
   if (error !== null) {
-    return { formError: `권한을 회수하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'admins',
+      '관리자 권한을 회수하지 못했습니다. 권한은 그대로입니다. 다시 시도해 주세요.',
+      error,
+    )
   }
 
   // 허용 목록에서도 내린다. 남겨 두면 같은 이메일로 재가입할 때 다시 관리자가 된다.

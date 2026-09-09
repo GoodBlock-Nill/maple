@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { actionFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
@@ -69,7 +70,7 @@ export async function createFaqAction(
     .single()
 
   if (error !== null) {
-    return { formError: `FAQ 를 등록하지 못했습니다. ${error.message}` }
+    return actionFailure('faqs', 'FAQ를 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.', error)
   }
 
   await writeAuditLog(actor.id, {
@@ -81,7 +82,7 @@ export async function createFaqAction(
 
   await revalidateFaqs()
 
-  return { message: 'FAQ 를 등록했습니다.' }
+  return { message: 'FAQ를 등록했습니다.' }
 }
 
 export async function updateFaqAction(
@@ -109,7 +110,7 @@ export async function updateFaqAction(
     .maybeSingle()
 
   if (before === null) {
-    return { formError: 'FAQ 를 찾을 수 없습니다.' }
+    return { formError: 'FAQ를 찾을 수 없습니다.' }
   }
 
   /* 카테고리를 옮기면 옮겨 간 쪽의 맨 뒤로 보낸다. 원래 순번을 그대로 두면
@@ -123,7 +124,7 @@ export async function updateFaqAction(
     .eq('id', faqId)
 
   if (error !== null) {
-    return { formError: `FAQ 를 수정하지 못했습니다. ${error.message}` }
+    return actionFailure('faqs', 'FAQ를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요.', error)
   }
 
   await writeAuditLog(actor.id, {
@@ -136,7 +137,7 @@ export async function updateFaqAction(
 
   await revalidateFaqs()
 
-  return { message: 'FAQ 를 수정했습니다.' }
+  return { message: 'FAQ를 수정했습니다.' }
 }
 
 export async function deleteFaqAction(
@@ -158,13 +159,17 @@ export async function deleteFaqAction(
     .maybeSingle()
 
   if (before === null) {
-    return { formError: 'FAQ 를 찾을 수 없습니다.' }
+    return { formError: 'FAQ를 찾을 수 없습니다.' }
   }
 
   const { error } = await supabase.from('faqs').delete().eq('id', faqId)
 
   if (error !== null) {
-    return { formError: `FAQ 를 삭제하지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'faqs',
+      'FAQ를 삭제하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.',
+      error,
+    )
   }
 
   /* 남은 항목의 sort_order 는 다시 매기지 않는다. 구멍(0,1,3)이 있어도 표시 순서는
@@ -178,7 +183,7 @@ export async function deleteFaqAction(
 
   await revalidateFaqs()
 
-  return { message: 'FAQ 를 삭제했습니다.' }
+  return { message: 'FAQ를 삭제했습니다.' }
 }
 
 /** 발행/미발행 토글. 미발행은 사용자 사이트에서 즉시 사라진다(`faqs_select_published`). */
@@ -201,7 +206,11 @@ export async function toggleFaqPublishAction(
     .eq('id', faqId)
 
   if (error !== null) {
-    return { formError: `발행 상태를 바꾸지 못했습니다. ${error.message}` }
+    return actionFailure(
+      'faqs',
+      'FAQ 발행 상태를 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      error,
+    )
   }
 
   await writeAuditLog(actor.id, {
@@ -214,7 +223,7 @@ export async function toggleFaqPublishAction(
 
   await revalidateFaqs()
 
-  return { message: nextPublished ? 'FAQ 를 발행했습니다.' : 'FAQ 를 숨겼습니다.' }
+  return { message: nextPublished ? 'FAQ를 발행했습니다.' : 'FAQ를 숨겼습니다.' }
 }
 
 /**
@@ -252,7 +261,12 @@ export async function reorderFaqsAction(
   const failed = results.find((result) => result.error !== null)
 
   if (failed?.error != null) {
-    return { formError: `순서를 저장하지 못했습니다. ${failed.error.message}` }
+    /* 행마다 UPDATE 를 던지므로 앞쪽 몇 건은 이미 저장됐을 수 있다. */
+    return actionFailure(
+      'faqs',
+      '순서를 저장하지 못했습니다. 일부만 반영됐을 수 있으니 새로고침해 순서를 확인해 주세요.',
+      failed.error,
+    )
   }
 
   await writeAuditLog(actor.id, {

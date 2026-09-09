@@ -59,6 +59,8 @@ export type ReportListResult = {
   rows: readonly ReportItem[]
   count: number
   page: number
+  /** 조회가 깨졌는지. `true` 면 `rows` 가 비어도 "데이터 없음"이 아니다(빈 표 오독 방지). */
+  hasError: boolean
 }
 
 export type ReportCounts = Record<ReportStatus, number>
@@ -254,7 +256,7 @@ export async function getReports(status: ReportStatus, page: number): Promise<Re
   if (error !== null) {
     console.error('[reports] 목록 조회 실패', error.message)
 
-    return { rows: [], count: 0, page }
+    return { rows: [], count: 0, page, hasError: true }
   }
 
   const rows = data ?? []
@@ -267,6 +269,7 @@ export async function getReports(status: ReportStatus, page: number): Promise<Re
     rows: rows.map((row) => toReportItem(row, targets, history)),
     count: count ?? 0,
     page,
+    hasError: false,
   }
 }
 

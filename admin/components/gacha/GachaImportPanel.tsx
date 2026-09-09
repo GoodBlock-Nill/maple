@@ -2,7 +2,9 @@
 
 import { useActionState, useCallback, useState } from 'react'
 
+import { GachaImportPreviewTable } from '@/components/gacha/GachaImportPreviewTable'
 import { Button } from '@/components/ui/Button'
+import { Dialog } from '@/components/ui/Dialog'
 import { FormBanner } from '@/components/ui/FormField'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
@@ -14,6 +16,7 @@ import {
   GACHA_CSV_REQUIRED_HEADERS,
 } from '@/lib/validation/gacha'
 
+import type { GachaPreviewRow } from '@/components/gacha/gacha-preview-row'
 import type { FormState } from '@/lib/actions/form-state'
 
 /**
@@ -22,18 +25,15 @@ import type { FormState } from '@/lib/actions/form-state'
  * 미리보기는 브라우저에서 **서버와 같은 스키마**로 검사한다(lib/validation/gacha).
  * 그래도 적용 시에는 원본 텍스트를 통째로 서버에 보내 다시 검증한다 — 미리보기는
  * 사용자를 돕기 위한 것이지 신뢰 경계가 아니다.
+ *
+ * 적용 전에 확인을 한 번 받는다. 이름이 같은 기존 항목을 덮어쓰는 조작이고,
+ * 확률 공시는 법적 고지라 잘못 덮어쓴 값이 그대로 사용자 사이트에 걸린다.
  */
-
-type PreviewRow = {
-  line: number
-  values: Record<string, string>
-  error: string | null
-}
 
 type Preview = {
   fileName: string
   csv: string
-  rows: readonly PreviewRow[]
+  rows: readonly GachaPreviewRow[]
   fileError: string | null
 }
 
@@ -50,6 +50,7 @@ const SAMPLE_ROW = [
 
 export function GachaImportPanel({ tab }: { tab: string }) {
   const [preview, setPreview] = useState<Preview | null>(null)
+  const [isConfirmOpen, setConfirmOpen] = useState(false)
   const { showToast } = useToast()
 
   const runImport = useCallback(
@@ -59,6 +60,7 @@ export function GachaImportPanel({ tab }: { tab: string }) {
       if (result.message !== undefined) {
         showToast(result.message, 'success')
         setPreview(null)
+        setConfirmOpen(false)
       }
 
       return result
@@ -133,53 +135,43 @@ export function GachaImportPanel({ tab }: { tab: string }) {
 
           {preview.fileError !== null && <FormBanner message={preview.fileError} />}
 
-          {preview.rows.length > 0 && <PreviewTable rows={preview.rows} />}
+          {preview.rows.length > 0 && <GachaImportPreviewTable rows={preview.rows} />}
 
-          <form action={formAction} className="flex justify-end gap-2">
-            <input type="hidden" name="csv" value={preview.csv} readOnly />
-            <input type="hidden" name="tab" value={tab} readOnly />
+          <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setPreview(null)} disabled={isPending}>
               취소
             </Button>
-            <Button type="submit" disabled={!canApply || isPending}>
-              {isPending ? '적용 중…' : `적용 (${valid}건)`}
+            <Button disabled={!canApply || isPending} onClick={() => setConfirmOpen(true)}>
+              {`적용 (${valid}건)`}
             </Button>
-          </form>
+          </div>
+
+          <Dialog
+            open={isConfirmOpen}
+            onClose={() => setConfirmOpen(false)}
+            title="CSV 적용"
+            description={`${valid}건을 적용합니다. 이름이 같은 기존 항목은 덮어쓰고, 없으면 새로 만듭니다. 덮어쓴 값은 되돌릴 수 없습니다.`}
+          >
+            <form action={formAction} className="flex flex-col gap-4">
+              <input type="hidden" name="csv" value={preview.csv} readOnly />
+              <input type="hidden" name="tab" value={tab} readOnly />
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setConfirmOpen(false)}
+                  disabled={isPending}
+                >
+                  취소
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? '적용 중…' : '적용'}
+                </Button>
+              </div>
+            </form>
+          </Dialog>
         </>
       )}
-    </div>
-  )
-}
-
-function PreviewTable({ rows }: { rows: readonly PreviewRow[] }) {
-  return (
-    <div className="border-line rounded-panel max-h-[420px] overflow-auto border">
-      <table className="w-full min-w-[720px] border-collapse text-[13px]">
-        <thead className="bg-page/70 sticky top-0">
-          <tr className="border-line border-b">
-            <th className="text-muted w-16 px-3 py-2 text-left text-[12px] font-semibold">줄</th>
-            <th className="text-muted px-3 py-2 text-left text-[12px] font-semibold">탭</th>
-            <th className="text-muted px-3 py-2 text-left text-[12px] font-semibold">이름</th>
-            <th className="text-muted px-3 py-2 text-right text-[12px] font-semibold">확률</th>
-            <th className="text-muted px-3 py-2 text-left text-[12px] font-semibold">검증</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.line} className="border-line border-b last:border-b-0">
-              <td className="text-muted px-3 py-2">{row.line}</td>
-              <td className="px-3 py-2">{row.values.tab}</td>
-              <td className="px-3 py-2">{row.values.name}</td>
-              <td className="px-3 py-2 text-right">{row.values.probability}</td>
-              <td
-                className={row.error === null ? 'text-success px-3 py-2' : 'text-danger px-3 py-2'}
-              >
-                {row.error ?? '정상'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   )
 }

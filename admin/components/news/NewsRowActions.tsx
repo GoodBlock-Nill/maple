@@ -105,14 +105,14 @@ export function NewsRowActions({ id, title, status, previewUrl }: NewsRowActions
         open={isConfirmOpen}
         onClose={() => setConfirmOpen(false)}
         title="뉴스 삭제"
-        description={`"${title}" 을(를) 삭제합니다. 목록의 상태 필터에서 "삭제"를 고르면 다시 복구할 수 있습니다.`}
+        description={`"${title}" 뉴스를 삭제합니다. 목록의 상태 필터에서 삭제를 골라 복구할 수 있습니다.`}
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={isPending}>
               취소
             </Button>
             <Button variant="danger" onClick={() => run('delete')} disabled={isPending}>
-              {isPending ? '처리 중…' : '삭제'}
+              {isPending ? '삭제 중…' : '삭제'}
             </Button>
           </>
         }

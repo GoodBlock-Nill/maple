@@ -2,6 +2,7 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatCard } from '@/components/ui/StatCard'
+import { COUNT_FAILED } from '@/lib/constants/messages'
 import { getDashboardMetrics, getRecentActivity, type MetricWindow } from '@/lib/data/dashboard'
 
 import type { Metadata } from 'next'
@@ -53,29 +54,42 @@ export default async function DashboardPage() {
           label="미처리 신고"
           value={format(metrics.openReports)}
           hint="상태 open"
-          tone={metrics.openReports > 0 ? 'danger' : 'default'}
+          tone={isPositive(metrics.openReports) ? 'danger' : 'default'}
           testId="stat-reports"
         />
         <StatCard
           label="대기 문의"
           value={format(metrics.pendingInquiries)}
           hint="상태 pending"
-          tone={metrics.pendingInquiries > 0 ? 'warn' : 'default'}
+          tone={isPositive(metrics.pendingInquiries) ? 'warn' : 'default'}
           testId="stat-inquiries"
         />
       </div>
 
       <Card>
-        <CardHeader title="최근 활동" description="게시글 · 댓글 · 문의 · 신고를 시간순으로 묶었습니다." />
+        <CardHeader
+          title="최근 활동"
+          description="게시글 · 댓글 · 문의 · 신고를 시간순으로 묶었습니다."
+        />
         <RecentActivity items={activity} />
       </Card>
     </>
   )
 }
 
-/** 서식은 서버에서 확정한다. 클라이언트 로캘에 맡기면 하이드레이션이 어긋난다. */
-function format(value: number): string {
-  return value.toLocaleString('ko-KR')
+/**
+ * 서식은 서버에서 확정한다. 클라이언트 로캘에 맡기면 하이드레이션이 어긋난다.
+ *
+ * 집계가 깨진 값은 `null` 로 온다. 0 으로 그리면 운영자가 "오늘 아무 일도 없었다"로
+ * 읽고 넘어가므로, 숫자 자리에 실패했다는 사실을 그대로 적는다.
+ */
+function format(value: number | null): string {
+  return value === null ? COUNT_FAILED : value.toLocaleString('ko-KR')
+}
+
+/** 강조 색은 "센 값이 있을 때"만 쓴다 — 집계 실패를 위험 신호로 물들이지 않는다. */
+function isPositive(value: number | null): boolean {
+  return value !== null && value > 0
 }
 
 function windowHint(window: MetricWindow): string {

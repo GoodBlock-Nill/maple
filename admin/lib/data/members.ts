@@ -1,10 +1,11 @@
 import 'server-only'
 
+import { countActivity } from '@/lib/data/member-activity'
 import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_PAGE_SIZE, pageRange, type SortState } from '@/lib/utils/table-query'
 import { containsPattern, kstDayBoundary } from '@/lib/validation/moderation'
 
-import type { Tables, TypedSupabaseClient, UserRole } from '@/lib/supabase/types'
+import type { Tables, UserRole } from '@/lib/supabase/types'
 import type { MemberProvider, MemberStatusFilter } from '@/lib/validation/members'
 
 /* 회원 조회. `profiles_select_admin` 이 관리자에게만 전체 조회를 열어 주므로 세션
@@ -78,10 +79,11 @@ export type MemberListResult = {
   rows: readonly MemberListItem[]
   count: number
   page: number
+  /** 조회가 깨졌는지. `true` 면 `rows` 가 비어도 "데이터 없음"이 아니다(빈 표 오독 방지). */
+  hasError: boolean
 }
 
 const ACTIVITY_LIMIT = 20
-const IN_CHUNK = 200
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const PROFILE_COLUMNS =
@@ -163,7 +165,7 @@ export async function getMembers(params: MemberListParams): Promise<MemberListRe
   if (error !== null) {
     console.error('[members] 목록 조회 실패', error.message)
 
-    return { rows: [], count: 0, page: params.page }
+    return { rows: [], count: 0, page: params.page, hasError: true }
   }
 
   const rows = data ?? []
@@ -181,72 +183,17 @@ export async function getMembers(params: MemberListParams): Promise<MemberListRe
     })),
     count: count ?? 0,
     page: params.page,
+    hasError: false,
   }
-}
-
-/* 활동 수치 — 회원당 3질의(20명이면 60질의)를 피하려고 페이지 단위로 한 번에 센다.
-   PostgREST 기본 응답 상한(1000행)에 걸리면 수치가 잘린다. 정확한 값이 필요한
-   상세 화면은 `count: 'exact'` 로 다시 센다. */
-async function countActivity(
-  supabase: TypedSupabaseClient,
-  memberIds: readonly string[],
-): Promise<{ posts: Map<string, number>; comments: Map<string, number>; reported: Map<string, number> }> {
-  const posts = new Map<string, number>()
-  const comments = new Map<string, number>()
-  const reported = new Map<string, number>()
-
-  if (memberIds.length === 0) {
-    return { posts, comments, reported }
-  }
-
-  const ids = [...memberIds]
-  const [postRows, commentRows] = await Promise.all([
-    supabase.from('posts').select('id, author_id').eq('board', 'community').in('author_id', ids),
-    supabase.from('comments').select('id, author_id').in('author_id', ids),
-  ])
-
-  /* 신고 집계는 대상 id → 작성자로 되짚어야 한다. 게시글·댓글 id 를 한 배열로 모아
-     신고 테이블을 한 번만 읽는다. */
-  const authorByTarget = new Map<string, string>()
-
-  for (const row of postRows.data ?? []) {
-    if (row.author_id !== null) {
-      posts.set(row.author_id, (posts.get(row.author_id) ?? 0) + 1)
-      authorByTarget.set(row.id, row.author_id)
-    }
-  }
-
-  for (const row of commentRows.data ?? []) {
-    if (row.author_id !== null) {
-      comments.set(row.author_id, (comments.get(row.author_id) ?? 0) + 1)
-      authorByTarget.set(row.id, row.author_id)
-    }
-  }
-
-  const targetIds = [...authorByTarget.keys()]
-
-  for (let index = 0; index < targetIds.length; index += IN_CHUNK) {
-    // URL 길이 제한이 있다. id 를 200개씩 끊어 보낸다.
-    const { data } = await supabase
-      .from('reports')
-      .select('target_id')
-      .in('target_id', targetIds.slice(index, index + IN_CHUNK))
-
-    for (const row of data ?? []) {
-      const author = authorByTarget.get(row.target_id)
-
-      if (author !== undefined) {
-        reported.set(author, (reported.get(author) ?? 0) + 1)
-      }
-    }
-  }
-
-  return { posts, comments, reported }
 }
 
 export async function getMember(id: string): Promise<MemberProfile | null> {
   const supabase = await createClient()
-  const { data } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', id).maybeSingle()
+  const { data } = await supabase
+    .from('profiles')
+    .select(PROFILE_COLUMNS)
+    .eq('id', id)
+    .maybeSingle()
 
   return data === null ? null : toProfile(data)
 }

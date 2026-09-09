@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { parseCsvTable } from '@/lib/utils/csv'
+import { josa } from '@/lib/utils/josa'
 
 import type { Enums } from '@/lib/supabase/types'
 
@@ -105,9 +106,9 @@ const positiveIntSchema = (label: string) =>
   z
     .string()
     .trim()
-    .refine((value) => /^\d+$/.test(value), `${label}은(는) 정수로 입력해 주세요.`)
+    .refine((value) => /^\d+$/.test(value), `${label}${josa(label, '은')} 정수로 입력해 주세요.`)
     .transform((value) => Number.parseInt(value, 10))
-    .refine((value) => value >= 1, `${label}은(는) 1 이상이어야 합니다.`)
+    .refine((value) => value >= 1, `${label}${josa(label, '은')} 1 이상이어야 합니다.`)
 
 export const RANKING_CSV_HEADERS = [
   'rank',
@@ -258,7 +259,10 @@ function rankSequenceIssues(
     const previous = seen.get(row.rank)
 
     if (previous !== undefined) {
-      issues.push({ line, message: `순위 ${row.rank} 이(가) ${previous}번째 줄과 중복됩니다.` })
+      issues.push({
+        line,
+        message: `순위 ${row.rank}${josa(String(row.rank), '이')} ${previous}번째 줄과 중복됩니다.`,
+      })
 
       continue
     }

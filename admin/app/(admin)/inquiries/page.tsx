@@ -2,7 +2,8 @@ import Link from 'next/link'
 
 import { InquiryFilters } from '@/components/inquiries/InquiryFilters'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
-import { Card, PageHeader, Pagination, Table, type Column } from '@/components/ui'
+import { Card, FormBanner, PageHeader, Pagination, Table, type Column } from '@/components/ui'
+import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import {
   INQUIRY_SORT_KEYS,
   getInquiries,
@@ -38,7 +39,7 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
   const sort = parseSort(params.sort, INQUIRY_SORT_KEYS, { key: 'created_at', direction: 'desc' })
   const page = parsePage(params.page)
 
-  const [{ rows, count }, counts] = await Promise.all([
+  const [{ rows, count, hasError }, counts] = await Promise.all([
     getInquiries(filters, { page, sortKey: sort.key, ascending: sort.direction === 'asc' }),
     getInquiryTabCounts(filters),
   ])
@@ -94,7 +95,9 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
       header: '답변',
       align: 'right',
       className: 'w-16',
-      cell: (row) => <span className={row.replyCount === 0 ? 'text-muted' : ''}>{row.replyCount}</span>,
+      cell: (row) => (
+        <span className={row.replyCount === 0 ? 'text-muted' : ''}>{row.replyCount}</span>
+      ),
     },
     {
       key: 'createdAt',
@@ -121,6 +124,12 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
       />
 
       <InquiryFilters params={params} filters={filters} counts={counts} />
+
+      {hasError && (
+        <div className="mb-3">
+          <FormBanner message={LIST_LOAD_ERROR} />
+        </div>
+      )}
 
       <Card>
         <Table

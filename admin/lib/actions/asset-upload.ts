@@ -1,6 +1,8 @@
 import 'server-only'
 
+import { logFailure } from '@/lib/actions/action-failure'
 import { createClient } from '@/lib/supabase/server'
+import { josa } from '@/lib/utils/josa'
 import { ASSET_TYPE_ERROR, PUBLIC_ASSET_EXTENSIONS } from '@/lib/validation/settings'
 
 /**
@@ -47,7 +49,13 @@ export async function uploadPublicAsset(
     .upload(path, file, { contentType: file.type, upsert })
 
   if (error !== null) {
-    return { error: `${label}을(를) 올리지 못했습니다. ${error.message}` }
+    return {
+      error: logFailure(
+        'assets',
+        `${label}${josa(label, '을')} 올리지 못했습니다. 파일 크기를 줄이거나 잠시 후 다시 시도해 주세요.`,
+        error,
+      ),
+    }
   }
 
   const publicUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl

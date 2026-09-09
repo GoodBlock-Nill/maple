@@ -2,9 +2,11 @@ import { ReportDetailDialog } from '@/components/reports/ReportDetailDialog'
 import { ReportTabs } from '@/components/reports/ReportTabs'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
+import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
+import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { getReportCounts, getReports, type ReportItem } from '@/lib/data/reports'
 import { clientSiteUrl } from '@/lib/supabase/env'
 import { formatDateTime } from '@/lib/utils/format-date'
@@ -140,6 +142,12 @@ export default async function ReportsPage(props: PageProps<'/reports'>) {
         counts={counts}
         buildHref={(next) => buildHref(PATH, searchParams, { status: next, page: null })}
       />
+
+      {list.hasError && (
+        <div className="mb-3">
+          <FormBanner message={LIST_LOAD_ERROR} />
+        </div>
+      )}
 
       <Card>
         <Table

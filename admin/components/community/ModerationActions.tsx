@@ -108,7 +108,11 @@ export function ModerationActions({
           <input type="hidden" name="on" value={isDeleted ? '0' : '1'} />
 
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={isDeletePending}>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isDeletePending}
+            >
               취소
             </Button>
             <Button
@@ -116,7 +120,13 @@ export function ModerationActions({
               variant={isDeleted ? 'primary' : 'danger'}
               disabled={isDeletePending}
             >
-              {isDeletePending ? '처리 중…' : isDeleted ? '복구' : '삭제'}
+              {isDeletePending
+                ? isDeleted
+                  ? '복구 중…'
+                  : '삭제 중…'
+                : isDeleted
+                  ? '복구'
+                  : '삭제'}
             </Button>
           </div>
         </form>

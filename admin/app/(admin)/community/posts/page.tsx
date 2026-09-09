@@ -3,10 +3,12 @@ import { CellLink, ContentFilters } from '@/components/community/ContentFilters'
 import { ModerationActions } from '@/components/community/ModerationActions'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
+import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
 import { bulkHidePostsAction } from '@/lib/actions/moderation-actions'
+import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import {
   getCommunityCategoryLabels,
   getCommunityPosts,
@@ -161,6 +163,12 @@ export default async function CommunityPostsPage(props: PageProps<'/community/po
       />
 
       <ContentFilters pathname={PATH} params={searchParams} categories={categories} />
+
+      {list.hasError && (
+        <div className="mb-3">
+          <FormBanner message={LIST_LOAD_ERROR} />
+        </div>
+      )}
 
       <Card>
         <BulkHideBar action={bulkHidePostsAction} label="게시글" />
