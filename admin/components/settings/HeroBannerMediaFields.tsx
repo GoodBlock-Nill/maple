@@ -86,7 +86,7 @@ export function HeroBannerMediaFields({
           required
           defaultValue={defaultVideoUrl}
           placeholder="https://www.youtube.com/watch?v=..."
-          hint="watch?v= · youtu.be · shorts 주소 모두 가능. 사용자 사이트에서는 소리 없이 자동 재생·반복됩니다."
+          hint="watch?v= · youtu.be · shorts 주소 모두 가능. 홈 히어로 카드에 썸네일과 재생 버튼이 표시되고, 누르면 모달에서 재생됩니다."
           error={errors.videoUrl}
         />
       )}
@@ -97,11 +97,7 @@ export function HeroBannerMediaFields({
         required={!isVideo}
         defaultValue={defaultImageUrl}
         placeholder="https://... 또는 /images/..."
-        hint={
-          isVideo
-            ? '포스터입니다. 영상을 재생할 수 없을 때·모바일 절전 시 대신 보여 줍니다. 비워 두어도 됩니다.'
-            : undefined
-        }
+        hint={isVideo ? '카드 썸네일로 쓰입니다. 비우면 유튜브 기본 썸네일을 씁니다.' : undefined}
         error={errors.imageUrl}
       />
       <Input
