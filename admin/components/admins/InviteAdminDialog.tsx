@@ -41,6 +41,7 @@ export function InviteAdminDialog({ roleOptions }: { roleOptions: readonly Selec
   )
 
   const [state, formAction, isPending] = useActionState(run, EMPTY_FORM_STATE)
+  const [email, setEmail] = useState('')
 
   return (
     <>
@@ -54,7 +55,10 @@ export function InviteAdminDialog({ roleOptions }: { roleOptions: readonly Selec
         title="관리자 초대"
         description="입력한 주소로 초대 메일이 갑니다. 받은 사람이 링크에서 비밀번호를 직접 정합니다."
       >
-        <form action={formAction} className="flex flex-col gap-4">
+        {/* noValidate: 브라우저 기본 말풍선 대신 다른 폼과 같은 한국어 필드 오류를 보여 준다.
+            이메일은 제어 입력이다 — 액션이 끝나면 React 가 폼을 초기화하므로 오류가 났을 때
+            운영자가 쓴 주소가 지워지지 않게 값을 붙잡아 둔다. */}
+        <form action={formAction} className="flex flex-col gap-4" noValidate>
           <FormBanner message={state.formError} />
 
           <Input
@@ -65,6 +69,8 @@ export function InviteAdminDialog({ roleOptions }: { roleOptions: readonly Selec
             required
             autoFocus
             maxLength={EMAIL_MAX_LENGTH}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             error={state.fieldErrors?.email}
           />
 

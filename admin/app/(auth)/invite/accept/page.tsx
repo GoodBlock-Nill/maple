@@ -1,5 +1,8 @@
+import Link from 'next/link'
+
 import { AuthCard } from '@/components/auth/AuthCard'
 import { SetPasswordForm } from '@/components/auth/SetPasswordForm'
+import { createClient } from '@/lib/supabase/server'
 
 import type { Metadata } from 'next'
 
@@ -18,7 +21,33 @@ export const metadata: Metadata = {
  * 세운 뒤라 결과가 흔들린다. 세션이 없으면 `setPasswordAction` 이 "링크가
  * 만료되었습니다"로 정확히 안내한다.
  */
-export default function InviteAcceptPage() {
+/**
+ * 초대 링크가 세션을 만들어 준 상태에서만 폼을 그린다. 링크가 만료됐거나 이미 쓰인
+ * 경우(세션 없음) 비밀번호 폼을 보여 주면 제출 뒤에야 실패를 알게 되므로, 먼저
+ * 재발송을 요청하라는 안내로 바꿔 보여 준다.
+ */
+export default async function InviteAcceptPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user === null) {
+    return (
+      <AuthCard
+        title="초대 링크를 확인할 수 없습니다"
+        description="링크가 만료되었거나 이미 사용되었습니다. 슈퍼어드민에게 초대 재발송을 요청해 주세요."
+      >
+        <Link
+          href="/login"
+          className="text-accent-strong focus-visible:outline-focus self-center text-[13px] font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          이미 비밀번호를 정했다면 로그인
+        </Link>
+      </AuthCard>
+    )
+  }
+
   return (
     <AuthCard
       title="관리자 초대 수락"
