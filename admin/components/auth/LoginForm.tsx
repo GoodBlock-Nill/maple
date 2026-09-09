@@ -18,7 +18,10 @@ import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
  * `?error=` 안내는 여기가 아니라 항상 보이는 간편로그인 쪽(`SocialSignInButtons`)이
  * 그린다 — 이 섹션은 접혀 있어서 배너를 넣어도 보이지 않는다.
  */
-export function LoginForm({ nextPath }: { nextPath: string }) {
+/** 로컬 개발용 미리 채움 값. 비어 있으면 빈 칸으로 그린다. */
+export type LoginPrefill = { email: string; password: string }
+
+export function LoginForm({ nextPath, prefill }: { nextPath: string; prefill?: LoginPrefill }) {
   const [state, formAction, isPending] = useActionState(signInAction, EMPTY_FORM_STATE)
 
   return (
@@ -32,6 +35,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         name="email"
         type="email"
         autoComplete="username"
+        defaultValue={prefill?.email ?? ''}
         required
         error={state.fieldErrors?.email}
       />
@@ -40,6 +44,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         name="password"
         type="password"
         autoComplete="current-password"
+        defaultValue={prefill?.password ?? ''}
         required
         error={state.fieldErrors?.password}
       />

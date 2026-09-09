@@ -31,7 +31,16 @@ export default async function LoginPage(props: PageProps<'/login'>) {
       <SocialSignInButtons nextPath={nextPath} initialError={initialError} />
 
       {isPasswordLoginEnabled(process.env.ADMIN_PASSWORD_LOGIN) && (
-        <PasswordLoginSection nextPath={nextPath} />
+        <PasswordLoginSection
+          nextPath={nextPath}
+          /* 로컬 개발 편의용 미리 채움. 값이 있으면 섹션을 펼친 채로 시작한다.
+             운영(Vercel)에는 설정하지 않는다 — 공개 URL 의 HTML 에 관리자 비밀번호가
+             그대로 실리기 때문이다. */
+          prefill={{
+            email: process.env.ADMIN_LOGIN_PREFILL_EMAIL ?? '',
+            password: process.env.ADMIN_LOGIN_PREFILL_PASSWORD ?? '',
+          }}
+        />
       )}
     </AuthCard>
   )
