@@ -58,6 +58,7 @@ export function ReportDismissForm({
         required
         maxLength={MODERATION_NOTE_MAX}
         placeholder="예: 신고 사유에 해당하지 않는 정상 게시물"
+        hint="신고자·작성자에게는 보이지 않습니다. 감사 로그에만 남습니다."
         error={state.fieldErrors?.note}
       />
 

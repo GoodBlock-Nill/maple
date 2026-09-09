@@ -5,6 +5,7 @@ import { useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { NEWS_STATUSES, NEWS_STATUS_LABEL } from '@/lib/constants/news'
 
 import type { NewsCategoryOption } from '@/lib/data/news'
@@ -83,6 +84,8 @@ export function NewsFilters({
         name="q"
         type="search"
         defaultValue={q}
+        maxLength={SEARCH_MAX_LENGTH}
+        countPlacement="label"
         placeholder="제목 · 요약"
         wrapperClassName="w-64"
       />

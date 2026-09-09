@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { SUSPENSION_PERIODS } from '@/lib/validation/members'
+import { SUSPENSION_PERIODS, SUSPENSION_REASON_MAX } from '@/lib/validation/members'
 
 import type { Enums } from '@/lib/supabase/types'
 
@@ -77,10 +77,7 @@ export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
  * 두 값이 동시에 서 있을 수 있는데, 이때 "숨김"으로 보이면 운영자가 복구 버튼을
  * 누르고도 글이 돌아오지 않는 것처럼 느낀다.
  */
-export function contentStatus(row: {
-  isHidden: boolean
-  deletedAt: string | null
-}): ContentStatus {
+export function contentStatus(row: { isHidden: boolean; deletedAt: string | null }): ContentStatus {
   if (row.deletedAt !== null) {
     return 'deleted'
   }
@@ -155,9 +152,7 @@ const noteSchema = z
 
 const optionalNoteSchema = noteSchema.transform((value) => (value === '' ? null : value))
 
-const requiredNoteSchema = noteSchema.pipe(
-  z.string().min(1, { message: '사유를 입력해 주세요.' }),
-)
+const requiredNoteSchema = noteSchema.pipe(z.string().min(1, { message: '사유를 입력해 주세요.' }))
 
 const idSchema = z.uuid({ message: '대상을 찾을 수 없습니다.' })
 
@@ -192,7 +187,8 @@ export const resolveReportSchema = z
     action: z.enum(REPORT_ACTIONS, { message: '조치를 선택해 주세요.' }),
     note: optionalNoteSchema,
     period: z.enum(SUSPENSION_PERIODS).optional(),
-    suspensionReason: z.string().trim().max(200).optional(),
+    /* 회원 정지 다이얼로그와 같은 상한이어야 한다 — 두 화면이 같은 컬럼을 채운다. */
+    suspensionReason: z.string().trim().max(SUSPENSION_REASON_MAX).optional(),
     /** 같은 대상에 열려 있는 다른 신고까지 함께 종결한다. */
     applyToTarget: z.enum(['0', '1']).transform((value) => value === '1'),
   })

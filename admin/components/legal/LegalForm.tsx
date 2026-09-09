@@ -13,6 +13,8 @@ import { EMPTY_FORM_STATE, type FormState } from '@/lib/actions/form-state'
 import { saveLegalVersionAction } from '@/lib/actions/legal-actions'
 
 import type { LegalSlug } from '@/lib/constants/legal'
+import { LEGAL_SUMMARY_MAX_LENGTH } from '@/lib/validation/legal'
+
 import type { LegalPublishMode } from '@/lib/validation/legal'
 
 /**
@@ -78,7 +80,7 @@ export function LegalForm({
               label="변경 요약"
               name="summary"
               rows={2}
-              maxLength={200}
+              maxLength={LEGAL_SUMMARY_MAX_LENGTH}
               defaultValue={defaultSummary}
               hint="사용자 사이트에는 보이지 않습니다. 버전 이력에서 무엇이 바뀌었는지 알아보는 용도입니다."
               error={errors.summary}

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { firstValue, type QueryParams } from '@/lib/utils/table-query'
 import { CONTENT_STATUS_FILTERS, CONTENT_STATUS_LABEL } from '@/lib/validation/moderation'
 
@@ -69,6 +70,8 @@ export function ContentFilters({
         label="작성자"
         name="author"
         defaultValue={firstValue(params.author) ?? ''}
+        maxLength={SEARCH_MAX_LENGTH}
+        countPlacement="label"
         placeholder="닉네임 일부"
         wrapperClassName="w-44"
       />

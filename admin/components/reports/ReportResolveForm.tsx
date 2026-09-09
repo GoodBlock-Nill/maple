@@ -9,8 +9,12 @@ import { Textarea } from '@/components/ui/Textarea'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { resolveReportAction } from '@/lib/actions/reports-actions'
-import { SUSPENSION_PERIOD_OPTIONS } from '@/lib/validation/members'
-import { MODERATION_NOTE_MAX, REPORT_ACTION_LABEL, REPORT_ACTIONS } from '@/lib/validation/moderation'
+import { SUSPENSION_PERIOD_OPTIONS, SUSPENSION_REASON_MAX } from '@/lib/validation/members'
+import {
+  MODERATION_NOTE_MAX,
+  REPORT_ACTION_LABEL,
+  REPORT_ACTIONS,
+} from '@/lib/validation/moderation'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { ReportAction } from '@/lib/validation/moderation'
@@ -67,7 +71,7 @@ export function ReportResolveForm({
         {REPORT_ACTIONS.map((value) => (
           <label
             key={value}
-            className="border-line hover:bg-page flex cursor-pointer items-start gap-2 rounded-panel border px-3 py-2"
+            className="border-line hover:bg-page rounded-panel flex cursor-pointer items-start gap-2 border px-3 py-2"
           >
             <input
               type="radio"
@@ -89,7 +93,7 @@ export function ReportResolveForm({
       </fieldset>
 
       {action === 'suspend' && (
-        <fieldset className="border-line flex flex-col gap-3 rounded-panel border px-3 py-3">
+        <fieldset className="border-line rounded-panel flex flex-col gap-3 border px-3 py-3">
           <legend className="text-ink px-1 text-[13px] font-semibold">정지 설정</legend>
           <div className="flex flex-wrap gap-3">
             {SUSPENSION_PERIOD_OPTIONS.map((option, index) => (
@@ -109,7 +113,9 @@ export function ReportResolveForm({
           <Input
             label="정지 사유"
             name="suspensionReason"
+            maxLength={SUSPENSION_REASON_MAX}
             placeholder="예: 반복적인 욕설"
+            hint="사용자 화면의 정지 안내 배너에 “사유: …” 로 그대로 붙습니다. 40자 이내를 권합니다."
             error={state.fieldErrors?.suspensionReason}
           />
         </fieldset>
@@ -121,7 +127,7 @@ export function ReportResolveForm({
         rows={3}
         maxLength={MODERATION_NOTE_MAX}
         placeholder="판단 근거를 남겨 주세요."
-        hint="메모는 감사 로그에 저장됩니다(신고 테이블에는 메모 컬럼이 없습니다)."
+        hint="사용자에게는 보이지 않습니다. 감사 로그에만 저장됩니다(신고 테이블에 메모 컬럼이 없습니다)."
         error={state.fieldErrors?.note}
       />
 

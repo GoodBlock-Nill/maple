@@ -3,7 +3,11 @@
 import { useState } from 'react'
 
 import { Input } from '@/components/ui/Input'
-import { LEGAL_PUBLISH_MODES, type LegalPublishMode } from '@/lib/validation/legal'
+import {
+  LEGAL_PUBLISH_MODES,
+  LEGAL_VERSION_MAX_LENGTH,
+  type LegalPublishMode,
+} from '@/lib/validation/legal'
 
 /**
  * 발행 설정 — 버전 · 시행일 · 상태.
@@ -55,7 +59,8 @@ export function LegalPublishFields({
         name="version"
         required
         defaultValue={defaultVersion}
-        hint="시행일 기준 YYYYMMDD. 같은 날 두 번 고치면 20260909-2 처럼 씁니다."
+        maxLength={LEGAL_VERSION_MAX_LENGTH}
+        hint="시행일 기준 YYYYMMDD. 같은 날 두 번 고치면 20260909-2 처럼 씁니다. 사용자 사이트 약관 화면의 버전 알약에 그대로 나옵니다."
         error={versionError}
       />
 

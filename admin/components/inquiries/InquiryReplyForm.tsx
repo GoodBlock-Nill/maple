@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useCallback, useRef, useState } from 'react'
+import { useActionState, useCallback, useRef } from 'react'
 
 import { Button, Card, CardBody, CardHeader, FormBanner, Textarea, useToast } from '@/components/ui'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
@@ -32,7 +32,6 @@ export function InquiryReplyForm({
   adminNickname: string
 }) {
   const formRef = useRef<HTMLFormElement>(null)
-  const [length, setLength] = useState(0)
   const { showToast } = useToast()
 
   const run = useCallback(
@@ -41,8 +40,8 @@ export function InquiryReplyForm({
 
       if (result.message !== undefined) {
         showToast(result.message, 'success')
+        /* 글자수는 폼 reset 을 Textarea 가 직접 듣고 0 으로 돌린다(useInputLength). */
         formRef.current?.reset()
-        setLength(0)
       }
 
       return result
@@ -70,10 +69,9 @@ export function InquiryReplyForm({
             rows={7}
             required
             maxLength={INQUIRY_REPLY_MAX_LENGTH}
-            placeholder="사용자가 그대로 읽는 문장입니다. 줄바꿈은 그대로 보입니다."
-            hint={`${length}/${INQUIRY_REPLY_MAX_LENGTH}자`}
+            placeholder="사용자가 그대로 읽는 문장입니다."
+            hint="사용자의 ‘내 문의 내역’ 화면에 평문으로 노출됩니다. 줄바꿈은 유지되고 마크다운은 해석되지 않습니다."
             error={state.fieldErrors?.content}
-            onChange={(event) => setLength(event.target.value.length)}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">

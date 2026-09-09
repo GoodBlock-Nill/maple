@@ -105,6 +105,7 @@ export function FaqFormDialog({
             required
             maxLength={FAQ_QUESTION_MAX_LENGTH}
             defaultValue={faq?.question ?? ''}
+            hint="사용자 사이트 FAQ 아코디언의 접힌 줄에 그대로 보입니다. PC 약 28자 · 폰 약 13자마다 줄이 바뀌므로 한 줄짜리 질문이 읽기 좋습니다."
             error={state.fieldErrors?.question}
           />
 
@@ -116,7 +117,7 @@ export function FaqFormDialog({
             maxLength={FAQ_ANSWER_MAX_LENGTH}
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
-            hint={`${answer.length}/${FAQ_ANSWER_MAX_LENGTH}자 · 사용자 화면은 한 문단으로 이어 붙여 보여 줍니다(줄바꿈 표시 없음).`}
+            hint="사용자 화면은 한 문단으로 이어 붙여 보여 줍니다(줄바꿈 표시 없음)."
             error={state.fieldErrors?.answer}
           />
 

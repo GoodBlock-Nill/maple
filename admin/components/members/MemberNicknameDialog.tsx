@@ -9,7 +9,11 @@ import { Input } from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { changeNicknameAction } from '@/lib/actions/members-actions'
-import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from '@/lib/validation/members'
+import {
+  NICKNAME_MAX_LENGTH,
+  NICKNAME_MIN_LENGTH,
+  SUSPENSION_REASON_MAX,
+} from '@/lib/validation/members'
 
 import type { FormState } from '@/lib/actions/form-state'
 
@@ -69,7 +73,7 @@ export function MemberNicknameDialog({
             required
             minLength={NICKNAME_MIN_LENGTH}
             maxLength={NICKNAME_MAX_LENGTH}
-            hint={`${NICKNAME_MIN_LENGTH}~${NICKNAME_MAX_LENGTH}자, 한글·영문·숫자·밑줄`}
+            hint={`${NICKNAME_MIN_LENGTH}자 이상, 한글·영문·숫자·밑줄. 커뮤니티 목록·랭킹에서는 앞 두 글자만 남기고 가려 보입니다.`}
             error={state.fieldErrors?.nickname}
           />
 
@@ -77,7 +81,9 @@ export function MemberNicknameDialog({
             label="사유"
             name="reason"
             required
+            maxLength={SUSPENSION_REASON_MAX}
             placeholder="예: 부적절한 닉네임 신고 접수"
+            hint="사용자에게는 보이지 않습니다. 감사 로그에만 남는 운영 기록입니다."
             error={state.fieldErrors?.reason}
           />
 

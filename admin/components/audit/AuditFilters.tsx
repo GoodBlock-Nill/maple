@@ -2,6 +2,7 @@ import { auditActionLabel, auditTableLabel } from '@/components/audit/audit-labe
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { UUID_LENGTH } from '@/lib/constants/field-limits'
 
 import type { AuditFilterOptions, AuditFilters as Filters } from '@/lib/data/audit'
 
@@ -55,6 +56,8 @@ export function AuditFilters({
           label="대상 ID"
           name="q"
           defaultValue={filters.q ?? ''}
+          maxLength={UUID_LENGTH}
+          countPlacement="label"
           placeholder="일부만 입력해도 됩니다"
           wrapperClassName="flex-1"
         />

@@ -10,7 +10,14 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { saveGachaItemAction } from '@/lib/actions/gacha-actions'
-import { GACHA_TABS, type GachaDetailRow, type GachaTab } from '@/lib/validation/gacha'
+import {
+  GACHA_ITEM_NAME_MAX,
+  GACHA_TABS,
+  PROBABILITY_INPUT_MAX_LENGTH,
+  type GachaDetailRow,
+  type GachaTab,
+} from '@/lib/validation/gacha'
+import { URL_MAX_LENGTH } from '@/lib/constants/field-limits'
 
 import type { GachaAdminItem } from '@/lib/data/gacha'
 
@@ -62,7 +69,9 @@ export function GachaForm({
           required
           value={name}
           onChange={(event) => setName(event.target.value)}
+          maxLength={GACHA_ITEM_NAME_MAX}
           placeholder="프리미엄 부화기 12차"
+          hint="가이드 카드에 두 줄까지 보입니다. 한 줄이 PC 약 14자 · 폰 약 17자라 28자 안쪽이 잘리지 않습니다."
           error={state.fieldErrors?.name}
         />
         <Input
@@ -72,7 +81,8 @@ export function GachaForm({
           inputMode="decimal"
           value={probability}
           onChange={(event) => setProbability(event.target.value)}
-          hint="0~100, 소수점 셋째 자리까지. 사이트 카드에는 둘째 자리로 반올림해 보입니다."
+          maxLength={PROBABILITY_INPUT_MAX_LENGTH}
+          hint="0~100, 소수점 셋째 자리까지(예: 100.000). 사이트 카드에는 둘째 자리로 반올림해 보입니다."
           error={state.fieldErrors?.probability}
         />
         <Input
@@ -89,8 +99,9 @@ export function GachaForm({
           name="iconUrl"
           value={iconUrl}
           onChange={(event) => setIconUrl(event.target.value)}
+          maxLength={URL_MAX_LENGTH}
           placeholder="/images/guide/icon-item-1.png"
-          hint="비우면 사이트는 확률표 첫 행의 아이콘을 대신 씁니다."
+          hint="비우면 사이트는 확률표 첫 행의 아이콘을 대신 씁니다. 글자수는 표시 제약이 아니라 주소 저장용 상한입니다."
           error={state.fieldErrors?.iconUrl}
         />
         <Input

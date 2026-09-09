@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { suspendMemberAction } from '@/lib/actions/members-actions'
-import { SUSPENSION_PERIOD_OPTIONS } from '@/lib/validation/members'
+import { SUSPENSION_PERIOD_OPTIONS, SUSPENSION_REASON_MAX } from '@/lib/validation/members'
 
 import type { FormState } from '@/lib/actions/form-state'
 
@@ -88,7 +88,9 @@ export function MemberSuspendDialog({
             label="사유"
             name="reason"
             required
+            maxLength={SUSPENSION_REASON_MAX}
             placeholder="예: 반복적인 욕설로 신고 3건 누적"
+            hint="사용자 화면의 정지 안내 배너에 “사유: …” 로 그대로 붙습니다. 한 줄로 읽히도록 40자 이내를 권합니다."
             error={state.fieldErrors?.reason}
           />
 

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
-import { Button } from '@/components/ui'
+import { Button, Input } from '@/components/ui'
+import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { cn } from '@/lib/utils/cn'
 import { buildHref, firstValue, type QueryParams } from '@/lib/utils/table-query'
 import { INQUIRY_CATEGORIES, INQUIRY_STATUS_TABS } from '@/lib/validation/inquiries'
@@ -102,16 +103,16 @@ export function InquiryFilters({
           </span>
         </label>
 
-        <label className="flex min-w-[220px] flex-1 flex-col gap-1.5">
-          <span className="text-ink text-[13px] font-semibold">검색</span>
-          <input
-            type="search"
-            name="q"
-            defaultValue={filters.search ?? ''}
-            placeholder="제목 · 내용 · 계정 ID"
-            className="rounded-panel border-line bg-surface text-ink placeholder:text-muted/70 focus:border-accent focus:outline-accent/40 h-10 border px-3 text-[14px] focus:outline-2"
-          />
-        </label>
+        <Input
+          label="검색"
+          name="q"
+          type="search"
+          defaultValue={filters.search ?? ''}
+          maxLength={SEARCH_MAX_LENGTH}
+          countPlacement="label"
+          placeholder="제목 · 내용 · 계정 ID"
+          wrapperClassName="min-w-[220px] flex-1"
+        />
 
         <div className="flex gap-2">
           <Button type="submit">검색</Button>

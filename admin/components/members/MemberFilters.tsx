@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { firstValue, type QueryParams } from '@/lib/utils/table-query'
 import {
   MEMBER_PROVIDER_LABEL,
@@ -42,6 +43,8 @@ export function MemberFilters({ pathname, params }: { pathname: string; params: 
         label="검색"
         name="q"
         defaultValue={firstValue(params.q) ?? ''}
+        maxLength={SEARCH_MAX_LENGTH}
+        countPlacement="label"
         placeholder="닉네임 또는 이메일"
         wrapperClassName="w-56"
       />

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { EMAIL_MAX_LENGTH } from '@/lib/constants/field-limits'
+
 /**
  * 관리자 인증 폼 스키마.
  *
@@ -10,18 +12,22 @@ import { z } from 'zod'
 /** Supabase Auth 의 기본 최소 길이(6)보다 강하게 잡는다 — 관리자 계정이다. */
 export const ADMIN_PASSWORD_MIN_LENGTH = 10
 
+/** bcrypt 가 73바이트째부터 버린다. 그보다 긴 비밀번호는 뒤가 무시되므로 여기서 끊는다. */
+export const ADMIN_PASSWORD_MAX_LENGTH = 72
+
 /* zod 4 는 `z.string().email()` 을 폐기하고 최상위 `z.email()` 로 옮겼다.
    공백을 먼저 다듬어야 "  a@b.co " 같은 붙여넣기가 반려되지 않으므로 pipe 로 잇는다. */
 const emailSchema = z
   .string()
   .trim()
   .min(1, '이메일을 입력해 주세요.')
+  .max(EMAIL_MAX_LENGTH, `이메일은 ${EMAIL_MAX_LENGTH}자를 넘을 수 없습니다.`)
   .pipe(z.email('이메일 형식이 올바르지 않습니다.'))
 
 const passwordSchema = z
   .string()
   .min(ADMIN_PASSWORD_MIN_LENGTH, `비밀번호는 ${ADMIN_PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`)
-  .max(72, '비밀번호는 72자를 넘을 수 없습니다.')
+  .max(ADMIN_PASSWORD_MAX_LENGTH, `비밀번호는 ${ADMIN_PASSWORD_MAX_LENGTH}자를 넘을 수 없습니다.`)
 
 export const loginSchema = z.object({
   email: emailSchema,

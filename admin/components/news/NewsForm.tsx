@@ -93,7 +93,7 @@ export function NewsForm({ categories, post }: NewsFormProps) {
               required
               maxLength={NEWS_TITLE_MAX}
               defaultValue={post?.title ?? ''}
-              hint={`${NEWS_TITLE_MAX}자까지 입력할 수 있습니다.`}
+              hint="사용자 사이트 목록에 한 줄로 보입니다. PC 약 59자 · 폰 약 18자를 넘으면 말줄임(…) 됩니다(상세 화면에는 전부 나옵니다)."
               error={errors.title}
             />
 
@@ -103,7 +103,7 @@ export function NewsForm({ categories, post }: NewsFormProps) {
               rows={3}
               maxLength={NEWS_SUMMARY_MAX}
               defaultValue={post?.summary ?? ''}
-              hint={`목록에는 보이지 않습니다. 검색 결과·공유 카드 설명으로만 쓰입니다(${NEWS_SUMMARY_MAX}자까지).`}
+              hint="목록에는 보이지 않습니다. 검색 결과·공유 카드 설명으로만 쓰입니다."
               error={errors.summary}
             />
           </CardBody>

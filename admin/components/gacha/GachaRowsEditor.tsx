@@ -3,9 +3,17 @@
 import { useCallback } from 'react'
 
 import { Button } from '@/components/ui/Button'
+import { countCharacters } from '@/components/ui/CharacterCount'
 import { CONTROL_CLASS } from '@/components/ui/FormField'
+import { URL_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { cn } from '@/lib/utils/cn'
-import { GACHA_GRADES, type GachaDetailRow } from '@/lib/validation/gacha'
+import {
+  GACHA_GRADES,
+  GACHA_ROW_ITEM_NAME_MAX,
+  GACHA_ROW_NOTE_MAX,
+  PROBABILITY_INPUT_MAX_LENGTH,
+  type GachaDetailRow,
+} from '@/lib/validation/gacha'
 
 /**
  * 확률표 편집기.
@@ -24,6 +32,55 @@ const EMPTY_ROW: GachaDetailRow = {
 }
 
 const CELL_CLASS = 'h-9 text-[13px]'
+
+/**
+ * 셀 하나 = 입력 + 글자수.
+ *
+ * 표 안이라 라벨을 그릴 자리가 없어 `FormField`(Input)를 쓰지 않는다. 대신 값이
+ * 전부 상위 상태라 셀 수 있는 길이는 prop 으로 바로 계산된다.
+ */
+function RowCell({
+  label,
+  value,
+  max,
+  onChange,
+  placeholder,
+  className,
+  inputMode,
+}: {
+  label: string
+  value: string
+  max: number
+  onChange: (value: string) => void
+  placeholder: string
+  className?: string
+  inputMode?: 'decimal'
+}) {
+  const count = countCharacters(value)
+
+  return (
+    <span className="flex min-w-0 flex-col gap-1">
+      <input
+        aria-label={label}
+        value={value}
+        maxLength={max}
+        inputMode={inputMode}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className={cn(CONTROL_CLASS, CELL_CLASS, className)}
+      />
+      <span
+        className={cn(
+          'text-right text-[11px] tabular-nums',
+          count >= max ? 'text-danger font-semibold' : 'text-muted',
+        )}
+      >
+        <span aria-hidden="true">{`${count} / ${max}`}</span>
+        <span className="sr-only">{`${label} 최대 ${max}자`}</span>
+      </span>
+    </span>
+  )
+}
 
 /** select 의 값은 문자열이다. 목록에서 다시 찾아 등급 타입으로 좁힌다. */
 function toGrade(value: string): GachaDetailRow['grade'] {
@@ -54,7 +111,12 @@ export function GachaRowsEditor({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <p className="text-ink text-[13px] font-semibold">확률표 ({rows.length}행)</p>
+        <p className="text-ink text-[13px] font-semibold">
+          확률표 ({rows.length}행)
+          <span className="text-muted ml-2 font-normal">
+            아이템명·비고는 상세 모달 표에서 한 칸에 약 8~15자마다 줄이 바뀝니다.
+          </span>
+        </p>
         <Button size="sm" variant="secondary" onClick={() => onChange([...rows, EMPTY_ROW])}>
           행 추가
         </Button>
@@ -87,34 +149,35 @@ export function GachaRowsEditor({
                 ))}
               </select>
 
-              <input
-                aria-label={`${index + 1}행 아이템명`}
+              <RowCell
+                label={`${index + 1}행 아이템명`}
                 value={row.itemName}
-                onChange={(event) => update(index, { itemName: event.target.value })}
+                max={GACHA_ROW_ITEM_NAME_MAX}
+                onChange={(itemName) => update(index, { itemName })}
                 placeholder="아이템명"
-                className={cn(CONTROL_CLASS, CELL_CLASS)}
               />
-              <input
-                aria-label={`${index + 1}행 아이콘 주소`}
+              <RowCell
+                label={`${index + 1}행 아이콘 주소`}
                 value={row.itemIcon}
-                onChange={(event) => update(index, { itemIcon: event.target.value })}
+                max={URL_MAX_LENGTH}
+                onChange={(itemIcon) => update(index, { itemIcon })}
                 placeholder="아이콘 주소"
-                className={cn(CONTROL_CLASS, CELL_CLASS)}
               />
-              <input
-                aria-label={`${index + 1}행 확률`}
+              <RowCell
+                label={`${index + 1}행 확률`}
                 value={row.probability}
-                onChange={(event) => update(index, { probability: event.target.value })}
+                max={PROBABILITY_INPUT_MAX_LENGTH}
+                onChange={(probability) => update(index, { probability })}
                 inputMode="decimal"
                 placeholder="0.05"
-                className={cn(CONTROL_CLASS, CELL_CLASS, 'text-right')}
+                className="text-right"
               />
-              <input
-                aria-label={`${index + 1}행 비고`}
+              <RowCell
+                label={`${index + 1}행 비고`}
                 value={row.note}
-                onChange={(event) => update(index, { note: event.target.value })}
+                max={GACHA_ROW_NOTE_MAX}
+                onChange={(note) => update(index, { note })}
                 placeholder="비고"
-                className={cn(CONTROL_CLASS, CELL_CLASS)}
               />
 
               <Button

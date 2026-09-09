@@ -8,6 +8,7 @@ import { FormBanner } from '@/components/ui/FormField'
 import { Input } from '@/components/ui/Input'
 import { requestPasswordResetAction } from '@/lib/actions/auth-actions'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
+import { EMAIL_MAX_LENGTH } from '@/lib/constants/field-limits'
 
 export function ForgotPasswordForm() {
   const [state, formAction, isPending] = useActionState(
@@ -27,6 +28,8 @@ export function ForgotPasswordForm() {
         autoComplete="username"
         autoFocus
         required
+        maxLength={EMAIL_MAX_LENGTH}
+        hint="가입에 쓴 주소로만 재설정 메일이 갑니다. 길이 상한은 메일 규격(RFC 5321)의 값입니다."
         error={state.fieldErrors?.email}
       />
 

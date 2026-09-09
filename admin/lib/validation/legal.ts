@@ -26,6 +26,9 @@ export function defaultLegalVersion(now: Date = new Date()): string {
 
 /** DB 의 `legal_document_versions_version_format` 과 같은 규칙이다. */
 const VERSION_PATTERN = /^\d{8}(-\d{1,2})?$/u
+
+/** 위 규칙이 허용하는 가장 긴 값(`20260909-99`). 입력칸의 `maxLength` 가 이 값을 쓴다. */
+export const LEGAL_VERSION_MAX_LENGTH = 11
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/u
 
 /** 달력에 실제로 있는 날짜인지. `2026-02-31` 같은 오타를 여기서 끊는다. */
@@ -62,6 +65,9 @@ export function formatEffectiveDate(isoDate: string): string {
   return `${match[1]}년 ${Number(match[2])}월 ${Number(match[3])}일`
 }
 
+/** 변경 요약. 사용자 사이트에는 안 나가고 관리자 버전 이력에서만 읽는다. */
+export const LEGAL_SUMMARY_MAX_LENGTH = 200
+
 export const LEGAL_PUBLISH_MODES = ['draft', 'publish', 'schedule'] as const
 
 export type LegalPublishMode = (typeof LEGAL_PUBLISH_MODES)[number]
@@ -71,9 +77,16 @@ export const legalFormSchema = z
     version: z
       .string()
       .trim()
+      .max(LEGAL_VERSION_MAX_LENGTH)
       .regex(VERSION_PATTERN, '버전은 YYYYMMDD 형식입니다(같은 날 재개정은 20260909-2).'),
     effectiveDate: z.string().trim().refine(isCalendarDate, '시행일을 올바르게 입력해 주세요.'),
-    summary: z.string().trim().max(200, '변경 요약은 200자를 넘을 수 없습니다.'),
+    summary: z
+      .string()
+      .trim()
+      .max(
+        LEGAL_SUMMARY_MAX_LENGTH,
+        `변경 요약은 ${LEGAL_SUMMARY_MAX_LENGTH}자를 넘을 수 없습니다.`,
+      ),
     content: z.string().trim().min(1, '본문을 입력해 주세요.'),
     publishMode: z.enum(LEGAL_PUBLISH_MODES, { message: '발행 상태를 선택해 주세요.' }),
   })

@@ -2,6 +2,10 @@
 
 import { useId, useState } from 'react'
 
+import { countCharacters } from '@/components/ui/CharacterCount'
+import { URL_MAX_LENGTH } from '@/lib/constants/field-limits'
+import { cn } from '@/lib/utils/cn'
+
 /**
  * 툴바 아래에 펼쳐지는 URL 입력 줄(링크 · 영상 공용).
  *
@@ -41,6 +45,7 @@ export function InlineUrlField({ label, placeholder, onSubmit, onCancel }: Inlin
         value={value}
         autoFocus
         inputMode="url"
+        maxLength={URL_MAX_LENGTH}
         placeholder={placeholder}
         aria-invalid={error !== null}
         aria-describedby={error === null ? undefined : errorId}
@@ -62,6 +67,16 @@ export function InlineUrlField({ label, placeholder, onSubmit, onCancel }: Inlin
         }}
         className="border-line bg-surface text-ink placeholder:text-muted/70 focus-visible:outline-focus rounded-panel h-8 min-w-0 flex-1 border px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-1"
       />
+      <span
+        className={cn(
+          'shrink-0 text-[12px] tabular-nums',
+          countCharacters(value) >= URL_MAX_LENGTH ? 'text-danger font-semibold' : 'text-muted',
+        )}
+      >
+        <span aria-hidden="true">{`${countCharacters(value)} / ${URL_MAX_LENGTH}`}</span>
+        <span className="sr-only">{`최대 ${URL_MAX_LENGTH}자`}</span>
+      </span>
+
       <button
         type="button"
         onClick={submit}

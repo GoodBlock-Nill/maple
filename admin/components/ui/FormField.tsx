@@ -2,6 +2,7 @@
 
 import { useId } from 'react'
 
+import { CharacterCount } from '@/components/ui/CharacterCount'
 import { cn } from '@/lib/utils/cn'
 
 import type { ReactNode } from 'react'
@@ -14,12 +15,28 @@ export type FieldRenderProps = {
   isInvalid: boolean
 }
 
+/** 글자수 표시에 필요한 두 숫자. 세는 일은 컨트롤(Input · Textarea)이 한다. */
+export type FieldCount = {
+  value: number
+  max: number
+}
+
 type FormFieldProps = {
   label?: string
   hint?: string
   error?: string
   required?: boolean
   className?: string
+  /** 지정하면 `현재 / 최대` 를 그린다. */
+  count?: FieldCount
+  /**
+   * 글자수를 어디에 놓을지.
+   *
+   * `hint`(기본) 는 컨트롤 아래 힌트와 같은 줄 오른쪽이다. `label` 은 라벨 줄
+   * 오른쪽에 붙어 **필드 높이를 늘리지 않는다** — 목록 필터 막대처럼 컨트롤 밑동을
+   * 맞춰 늘어놓은 줄(`items-end`)에서 검색칸만 키가 커지는 것을 막는다.
+   */
+  countPlacement?: 'hint' | 'label'
   children: (props: FieldRenderProps) => ReactNode
 }
 
@@ -44,37 +61,59 @@ export function FormField({
   error,
   required,
   className,
+  count,
+  countPlacement = 'hint',
   children,
 }: FormFieldProps) {
   const controlId = useId()
   const hintId = `${controlId}-hint`
+  const countId = `${controlId}-count`
   const errorId = `${controlId}-error`
   const isInvalid = error !== undefined && error !== ''
+  const hasHint = hint !== undefined && hint !== ''
 
   const describedBy =
-    [hint !== undefined && hint !== '' ? hintId : null, isInvalid ? errorId : null]
+    [hasHint ? hintId : null, count === undefined ? null : countId, isInvalid ? errorId : null]
       .filter((value): value is string => value !== null)
       .join(' ') || undefined
 
+  const counter =
+    count === undefined ? null : <CharacterCount id={countId} count={count.value} max={count.max} />
+  const isCountOnLabel = counter !== null && countPlacement === 'label'
+  const labelNode =
+    label === undefined ? null : (
+      <label htmlFor={controlId} className="text-ink text-[13px] font-semibold">
+        {label}
+        {required === true && (
+          <span className="text-danger ml-0.5" aria-hidden="true">
+            *
+          </span>
+        )}
+      </label>
+    )
+
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      {label !== undefined && (
-        <label htmlFor={controlId} className="text-ink text-[13px] font-semibold">
-          {label}
-          {required === true && (
-            <span className="text-danger ml-0.5" aria-hidden="true">
-              *
-            </span>
-          )}
-        </label>
+      {isCountOnLabel ? (
+        <span className="flex items-baseline gap-2">
+          {labelNode}
+          {counter}
+        </span>
+      ) : (
+        labelNode
       )}
 
       {children({ controlId, describedBy, isInvalid })}
 
-      {hint !== undefined && hint !== '' && (
-        <p id={hintId} className="text-muted text-[12px]">
-          {hint}
-        </p>
+      {(hasHint || (counter !== null && !isCountOnLabel)) && (
+        <span className="flex items-start gap-3">
+          {hasHint && (
+            <p id={hintId} className="text-muted min-w-0 flex-1 text-[12px]">
+              {hint}
+            </p>
+          )}
+          {isCountOnLabel ? null : counter}
+        </span>
       )}
 
       <FormError id={errorId} message={error} />
@@ -101,7 +140,13 @@ export function FormError({ id, message }: { id?: string; message?: string }) {
 }
 
 /** 폼 상단에 그리는 전체 오류 배너. */
-export function FormBanner({ message, tone = 'error' }: { message?: string; tone?: 'error' | 'success' }) {
+export function FormBanner({
+  message,
+  tone = 'error',
+}: {
+  message?: string
+  tone?: 'error' | 'success'
+}) {
   if (message === undefined || message === '') {
     return null
   }

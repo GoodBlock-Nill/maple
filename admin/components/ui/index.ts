@@ -3,8 +3,20 @@
  * 2단계에서 각 모듈이 여기서만 가져다 쓰면 화면 간 표기가 어긋나지 않는다.
  */
 export { Badge, type BadgeTone } from '@/components/ui/Badge'
-export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from '@/components/ui/Button'
+export {
+  Button,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+} from '@/components/ui/Button'
 export { Card, CardBody, CardHeader } from '@/components/ui/Card'
+export {
+  CharacterCount,
+  countCharacters,
+  toCountableText,
+  useInputLength,
+  type InputLength,
+} from '@/components/ui/CharacterCount'
 export { Dialog } from '@/components/ui/Dialog'
 export { EmptyState } from '@/components/ui/EmptyState'
 export {
@@ -13,6 +25,7 @@ export {
   FormBanner,
   FormError,
   FormField,
+  type FieldCount,
   type FieldRenderProps,
 } from '@/components/ui/FormField'
 export { Input } from '@/components/ui/Input'

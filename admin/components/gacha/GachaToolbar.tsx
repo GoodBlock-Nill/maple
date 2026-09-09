@@ -1,6 +1,8 @@
 import Link from 'next/link'
 
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { buildHref, type QueryParams } from '@/lib/utils/table-query'
 import { cn } from '@/lib/utils/cn'
 import { GACHA_TABS, type GachaTab } from '@/lib/validation/gacha'
@@ -46,18 +48,18 @@ export function GachaToolbar({
       </nav>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <form action="/gacha" method="get" className="flex items-center gap-2">
+        <form action="/gacha" method="get" className="flex items-end gap-2">
           <input type="hidden" name="tab" value={tab} />
-          <label htmlFor="gacha-search" className="sr-only">
-            아이템 이름 검색
-          </label>
-          <input
-            id="gacha-search"
-            type="search"
+          <Input
+            label="아이템 이름 검색"
             name="q"
+            type="search"
             defaultValue={q}
+            maxLength={SEARCH_MAX_LENGTH}
+            countPlacement="label"
             placeholder="아이템 이름 검색"
-            className="rounded-panel border-line bg-surface text-ink placeholder:text-muted/70 focus:border-accent focus:outline-accent/40 h-9 w-56 border px-3 text-[13px] focus:outline-2"
+            wrapperClassName="w-64"
+            className="h-9 text-[13px]"
           />
           <Button type="submit" size="sm" variant="secondary">
             검색
