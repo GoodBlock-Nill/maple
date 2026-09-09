@@ -198,8 +198,14 @@ while (true) {
 }
 ```
 
-`deleteUser()` 는 `auth.users` 행을 지우고, `profiles` 는 `on delete cascade`
-(`20260908000200_profiles.sql`)로 함께 지워진다.
+`deleteUser()` 는 `auth.users` 행만 지운다. 회원 탈퇴 마이그레이션
+(`20260909000400_account_withdrawal.sql`)이 `profiles_id_fkey` 를 걷어 냈으므로
+(파기 후에도 글·댓글 작성자 행을 남기기 위해) **`profiles` 행은 따로 지워야 한다.**
+위 루프의 `deleteUser(user.id)` 뒤에 아래를 함께 실행한다.
+
+```js
+await admin.from('profiles').delete().eq('id', user.id)
+```
 
 ### 실 OAuth 로 전환할 때 운영자가 준비할 것
 

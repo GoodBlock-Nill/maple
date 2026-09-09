@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회원 탈퇴 라이프사이클 가이드</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --ink:#1d2230;--ink-2:#4a5268;--ink-3:#7d859a;
+  --paper:#f3f5f9;--surface:#ffffff;--surface-2:#e9edf4;--line:#d7dce7;--line-soft:#e6eaf1;
+  --admin:#ff4fa8;--admin-soft:#ffe3f1;--admin-ink:#b3226f;
+  --client:#178f8a;--client-soft:#dcf3f1;--client-ink:#0f6b67;
+  --db:#4f5bd5;--db-soft:#e6e8fb;--db-ink:#3640a6;
+  --mail:#d97a1a;--mail-soft:#fbe9d6;--mail-ink:#8f4d07;
+  --warn:#c9861a;--warn-soft:#fbefd9;--warn-ink:#8a5a0b;
+  --ok:#1f9d55;--ok-soft:#dff5e7;--ok-ink:#15703c;
+  --danger:#c93a3a;--danger-soft:#fbe3e3;
+  --code-bg:#eef1f7;
+  --sans:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
+    --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
+    --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
+    --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
+    --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
+    --mail:#f0a050;--mail-soft:#3d2a15;--mail-ink:#ffd2a1;
+    --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
+    --ok:#3fbf78;--ok-soft:#173526;--ok-ink:#9be3b8;
+    --danger:#ff7676;--danger-soft:#3d1f1f;
+    --code-bg:#252c3d;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
+  --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
+  --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
+  --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
+  --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
+  --mail:#f0a050;--mail-soft:#3d2a15;--mail-ink:#ffd2a1;
+  --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
+  --ok:#3fbf78;--ok-soft:#173526;--ok-ink:#9be3b8;
+  --danger:#ff7676;--danger-soft:#3d1f1f;
+  --code-bg:#252c3d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+code,pre{font-family:var(--mono)}
+code{background:var(--code-bg);padding:.1em .4em;border-radius:5px;font-size:.88em;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border:1px solid var(--line-soft);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:14px 0}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.25;margin:0}
+h2{font-size:26px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:700;margin-top:36px}
+p{margin:10px 0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1240px;margin:0 auto;padding:40px 28px 96px}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:24px;padding:20px 16px 72px}}
+.index{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto}
+@media (max-width:900px){.index{position:static;max-height:none}}
+.index .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.index .brand b{color:var(--admin);letter-spacing:.1em}
+.index ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--line)}
+.index li{margin:0}
+.index a{display:block;padding:6px 12px;text-decoration:none;color:var(--ink-2);font-size:13.5px;border-left:2px solid transparent;margin-left:-2px}
+.index a:hover{color:var(--ink);border-left-color:var(--ink-3)}
+.index a:focus-visible{outline:2px solid var(--admin);outline-offset:2px;border-radius:4px}
+.index .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:8px}
+.index .meta{margin-top:18px;font-size:12px;color:var(--ink-3);line-height:1.6}
+@media (max-width:900px){.index ol{display:flex;flex-wrap:wrap;gap:4px 10px;border:0}.index a{padding:4px 0;border:0}.index .n{display:none}}
+main{max-width:860px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.title h1{font-size:clamp(30px,4vw,42px);font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
+.title .lede{font-size:16.5px;color:var(--ink-2);max-width:68ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.chip.admin{background:var(--admin-soft);border-color:transparent;color:var(--admin-ink)}.chip.admin .dot{background:var(--admin)}
+.chip.client{background:var(--client-soft);border-color:transparent;color:var(--client-ink)}.chip.client .dot{background:var(--client)}
+.chip.db{background:var(--db-soft);border-color:transparent;color:var(--db-ink)}.chip.db .dot{background:var(--db)}
+.chip.mail{background:var(--mail-soft);border-color:transparent;color:var(--mail-ink)}.chip.mail .dot{background:var(--mail)}
+
+/* status board */
+.board{margin:26px 0 6px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.board>div{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.board .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.board .v{font-size:15px;font-weight:700}
+.board .s{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;width:fit-content;padding:2px 9px;border-radius:999px}
+.s.done{background:var(--ok-soft);color:var(--ok-ink)}.s.done::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.s.todo{background:var(--warn-soft);color:var(--warn-ink)}.s.todo::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.board .d{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+
+section{margin-top:56px;scroll-margin-top:24px}
+.sec-head{display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.sec-head .num{font-family:var(--mono);font-size:13px;color:var(--admin);font-weight:500}
+.src{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin:-8px 0 12px;overflow-wrap:anywhere}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-soft)}
+th{font-weight:700;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.callout{border-radius:var(--radius);padding:12px 16px;margin:16px 0;border:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.callout .icon{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;padding:2px 7px;border-radius:5px;margin-top:3px;white-space:nowrap}
+.callout p{margin:0;font-size:14px;min-width:0;overflow-wrap:anywhere}
+.callout.warn{background:var(--warn-soft);border-color:transparent}.callout.warn .icon{background:var(--warn);color:#fff}
+.callout.rule{background:var(--surface-2);border-color:transparent}.callout.rule .icon{background:var(--ink);color:var(--paper)}
+.callout.mail{background:var(--mail-soft);border-color:transparent}.callout.mail .icon{background:var(--mail);color:#fff}
+.callout.ok{background:var(--ok-soft);border-color:transparent}.callout.ok .icon{background:var(--ok);color:#fff}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:16px 0;overflow-x:auto}
+.diagram .cap{font-size:12.5px;color:var(--ink-3);margin:0 0 8px;font-family:var(--mono)}
+pre.mermaid{background:none;border:0;padding:0;margin:0;overflow:visible;font-size:13px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:14px 0}
+.kv>div{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.kv .k{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.kv .v{font-size:14px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+.steps li{counter-increment:s;position:relative;padding:10px 0 10px 34px;border-bottom:1px solid var(--line-soft)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:13px;width:22px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--admin);font-weight:500}
+.steps li:last-child{border-bottom:0}
+
+/* conveyor */
+.conveyor{display:grid;gap:8px;margin:16px 0}.conveyor>div{min-width:0}
+.stage{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
+.stage .no{font-family:var(--mono);font-size:12px;color:var(--db-ink);background:var(--db-soft);border-radius:6px;text-align:center;padding:2px 0;margin-top:2px}
+.stage .what{font-size:14px;min-width:0;overflow-wrap:anywhere}
+.stage .what b{display:block;font-size:14.5px}
+.stage .out{font-family:var(--mono);font-size:11px;white-space:nowrap;padding:3px 8px;border-radius:6px;margin-top:2px}
+.out.pass{background:var(--ok-soft);color:var(--ok-ink)}
+.out.drop{background:var(--surface-2);color:var(--ink-2)}
+.out.reject{background:var(--danger-soft);color:var(--danger)}
+@media (max-width:600px){.stage{grid-template-columns:36px minmax(0,1fr)}.stage .out{grid-column:2;justify-self:start}}
+.tag{display:inline-block;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:999px}
+.tag.in{background:var(--client-soft);color:var(--client-ink)}
+.tag.outb{background:var(--admin-soft);color:var(--admin-ink)}
+.tag.dbt{background:var(--db-soft);color:var(--db-ink)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="shell">
+<nav class="index" aria-label="목차">
+  <div class="brand">글자월드 <b>ADMIN</b></div>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span>개요 · 결정 사항</a></li>
+    <li><a href="#s2"><span class="n">02</span>상태 모델</a></li>
+    <li><a href="#s3"><span class="n">03</span>데이터베이스</a></li>
+    <li><a href="#s4"><span class="n">04</span>자동 파기 배치</a></li>
+    <li><a href="#s5"><span class="n">05</span>클라이언트 플로우</a></li>
+    <li><a href="#s6"><span class="n">06</span>관리자 콘솔</a></li>
+    <li><a href="#s7"><span class="n">07</span>권한 · 보안</a></li>
+    <li><a href="#s8"><span class="n">08</span>테스트 · 검증</a></li>
+    <li><a href="#s9"><span class="n">09</span>운영 체크리스트</a></li>
+    <li><a href="#s10"><span class="n">10</span>파일 인덱스</a></li>
+  </ol>
+  <p class="meta">최종 갱신 2026-09-09<br>기준 커밋 <code>2e95e92</code><br>설계 원문 <code>docs/admin/ACCOUNT-WITHDRAWAL-PLAN.md</code></p>
+</nav>
+
+<main>
+<header class="title">
+  <div class="eyebrow">New Feature · 회원</div>
+  <h1>회원 탈퇴 라이프사이클</h1>
+  <p class="lede">회원 탈퇴는 <strong>두 단계 소프트 삭제</strong>입니다. 탈퇴 요청은 <code>profiles.deleted_at</code> 을 찍을 뿐이고, 90일이 지나야 개인정보가 실제로 사라집니다(<code>purged_at</code>). 프로필 행은 파기 후에도 남습니다 — 글·댓글의 <code>author_id</code> 가 살아 있어야 게시판이 그대로이기 때문입니다.</p>
+  <div class="chips">
+    <span class="chip db"><span class="dot"></span>DB · 마이그레이션 1개 · 파기 함수</span>
+    <span class="chip client"><span class="dot"></span>사용자 사이트 · 탈퇴 · 복구 · 게이트</span>
+    <span class="chip admin"><span class="dot"></span>관리자 콘솔 · 상태 · 강제 탈퇴 · 즉시 파기</span>
+  </div>
+  <div class="board" aria-label="구성 요소 상태">
+    <div><span class="k">DB</span><span class="v">마이그레이션</span><span class="s done">적용됨</span><span class="d"><code>20260909000400_account_withdrawal.sql</code></span></div>
+    <div><span class="k">Edge Function</span><span class="v">purge-withdrawn</span><span class="s done">배포됨</span><span class="d">인증 없는 POST 401 · GET 405 실호출 확인</span></div>
+    <div><span class="k">Schedule</span><span class="v">purge-withdrawn-daily</span><span class="s done">등록됨</span><span class="d">2026-09-09 운영자가 확장 활성화 후 수동 등록 — 확인 쿼리는 §04-2</span></div>
+    <div><span class="k">Legal</span><span class="v">개인정보처리방침 20260918-2</span><span class="s done">발행됨</span><span class="d">90일 보존·파기 규정 추가</span></div>
+    <div><span class="k">Flag</span><span class="v">월드 연동 필수 글쓰기</span><span class="s todo">OFF</span><span class="d"><code>NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW</code></span></div>
+  </div>
+</header>
+
+<section id="s1">
+  <div class="sec-head"><span class="num">01</span><h2>개요 · 결정 사항</h2></div>
+  <p>오너 피드백 9건을 "탈퇴 기능 + 그 기능이 제재·게시글·재가입과 맞물리는 규칙"으로 정리한 결과입니다. 아래 8개 결정이 코드의 어디에 박혀 있는지가 이 문서의 골자입니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>결정</th><th>구현</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>90일 보존 후 파기</strong></td><td><code>WITHDRAWAL_RETENTION_DAYS = 90</code>(<code>lib/auth/lifecycle.ts</code>) · <code>PURGE_RETENTION_DAYS = 90</code>(<code>admin/lib/validation/member-status.ts</code>) · <code>purge_withdrawn_profiles(p_cutoff interval default interval '90 days')</code></td></tr>
+      <tr><td>2</td><td>탈퇴 대기 중에는 <strong>기존 닉네임 그대로</strong></td><td>파기 전에는 <code>posts/comments.author_name</code> 스냅샷을 건드리지 않습니다. 화면은 평소처럼 <code>maskNickname()</code> 결과를 그립니다</td></tr>
+      <tr><td>3</td><td>파기 후에는 <strong><code>탈퇴한 회원#xxxxxxxx</code></strong></td><td>DB 는 <code>'탈퇴한 회원#' || left(id::text, 8)</code> 을 저장하고, 사용자 사이트는 접두사를 보고 고정 문구 <code>탈퇴한 회원</code> 으로 그립니다(<code>lib/utils/author-display.ts</code>). 관리자 콘솔은 저장값을 그대로 보여 줍니다 — 목록에서 여러 파기 계정을 구분해야 하기 때문입니다</td></tr>
+      <tr><td>4</td><td><strong>글·댓글은 유지</strong></td><td><code>profiles</code> 행을 지우지 않고 익명화합니다. <code>profiles.id → auth.users</code> FK 를 걷어 내 auth 계정만 지워도 행이 남습니다</td></tr>
+      <tr><td>5</td><td>제재는 <strong>탈퇴해도 유지</strong>, <strong>파기 시 소멸</strong></td><td>탈퇴는 <code>suspended_until</code> 을 건드리지 않습니다. 파기 함수가 <code>suspended_until</code>·<code>suspension_reason</code> 을 비웁니다(식별 근거가 사라지므로)</td></tr>
+      <tr><td>6</td><td>90일 뒤 재가입은 <strong>새 계정</strong> — 제재 미적용</td><td>파기 시 <code>auth.users</code> 가 삭제되어 다시 로그인하면 <code>handle_new_user()</code> 가 새 프로필을 만듭니다. 옛 익명화 행과는 무관합니다</td></tr>
+      <tr><td>7</td><td>월드 연동 필수 글쓰기는 <strong>플래그로 준비만, 기본 OFF</strong></td><td><code>FEATURES.postingRequiresMswLink</code> ← <code>NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW === 'true'</code></td></tr>
+      <tr><td>8</td><td>월드 <strong>UID · 프로필 코드 유니크</strong></td><td><code>profiles_msw_uid_key</code> · <code>profiles_msw_profile_code_key</code>(<code>lower(msw_profile_code)</code>). 둘 다 부분 유니크 인덱스</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">해석</span><p><strong>"아이디 중복 불가"</strong> — 서비스에 별도 아이디가 없습니다(간편로그인만 씁니다). 닉네임은 이미 <code>lower(nickname)</code> 유니크였고, 이번에 월드 UID·프로필 코드에 유니크를 걸어 "같은 월드 계정을 두 프로필에 연결"하는 것을 막았습니다. 제재 회피를 막는 실질적 장치가 이것입니다.</p></div>
+  <div class="callout warn"><span class="icon">주의</span><p>다른 간편로그인 계정으로 새로 가입하는 것은 지금도 막을 수단이 없습니다(이메일이 다르면 다른 사람입니다). 이 경로의 제재 회피는 월드 UID 유니크로만 막힙니다.</p></div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="num">02</span><h2>상태 모델</h2></div>
+  <div class="diagram"><p class="cap">active → withdrawn(deleted_at) → purged(purged_at) · 복구 · 강제 탈퇴 · 즉시 파기</p>
+<pre class="mermaid">
+stateDiagram-v2
+    [*] --> active: 가입 · 간편로그인 + 온보딩
+    active --> withdrawn: 본인 탈퇴 · 관리자 강제 탈퇴<br/>deleted_at = now
+    withdrawn --> active: 재로그인 후 계정 복구<br/>deleted_at = null
+    withdrawn --> purged: 90일 경과 · 일일 배치<br/>purged_at = now
+    withdrawn --> purged: 슈퍼어드민 즉시 파기
+    purged --> [*]: 이후 가입은 새 회원
+</pre></div>
+  <div class="tbl"><table>
+    <thead><tr><th>값</th><th>어디에</th><th>뜻</th></tr></thead>
+    <tbody>
+      <tr><td><code>profiles.deleted_at</code></td><td>DB · <code>timestamptz</code></td><td>탈퇴 요청 시각. <code>null</code> 이면 정상 회원. <strong>파기 뒤에도 비우지 않습니다</strong></td></tr>
+      <tr><td><code>profiles.purged_at</code></td><td>DB · <code>timestamptz</code></td><td>개인정보 파기 시각. 값이 있으면 익명화 완료 · 복구 불가</td></tr>
+      <tr><td><code>memberLifecycle()</code></td><td><code>admin/lib/validation/member-status.ts</code></td><td><code>active</code> / <code>withdrawn</code> / <code>purged</code>. <strong>파기가 탈퇴를 이깁니다</strong></td></tr>
+      <tr><td><code>purgeDueAt()</code></td><td>동</td><td><code>deleted_at + 90일</code>(UTC ISO). 탈퇴 전이면 <code>null</code></td></tr>
+      <tr><td><code>daysUntilPurge()</code></td><td>동</td><td>남은 일수. <strong>올림</strong>(<code>Math.ceil</code>), 음수는 <code>0</code> 으로 누릅니다</td></tr>
+      <tr><td><code>purgeCountdownLabel()</code></td><td>동</td><td><code>D-nn</code></td></tr>
+      <tr><td><code>lifecycleLabel()</code></td><td>동</td><td><code>탈퇴 대기 D-nn</code> — 목록·상세 상태 칸 문구</td></tr>
+      <tr><td><code>purgedNickname(id)</code></td><td>동</td><td><code>탈퇴한 회원#&lt;id 앞 8자&gt;</code> — DB 함수와 같은 규칙</td></tr>
+      <tr><td><code>isWithdrawnProfile()</code></td><td><code>lib/auth/lifecycle.ts</code></td><td><code>deleted_at</code> 이 채워졌는가(파기 포함)</td></tr>
+      <tr><td><code>isPurgedProfile()</code></td><td>동</td><td><code>purged_at</code> 이 채워졌는가</td></tr>
+      <tr><td><code>canRestoreProfile()</code></td><td>동</td><td>탈퇴 대기 <strong>이면서</strong> 아직 파기 전</td></tr>
+      <tr><td><code>daysSinceWithdrawal()</code></td><td>동</td><td>탈퇴 후 경과 일수(내림). 복구 화면 문구용</td></tr>
+      <tr><td><code>resolvePostAuthDestination()</code></td><td>동</td><td>로그인 직후 목적지. <strong>탈퇴 판정이 온보딩보다 먼저</strong></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">원칙</span><p><code>purged</code> 인 행에도 <code>deleted_at</code> 이 남아 있습니다(언제 탈퇴했는지가 기록입니다). 그래서 판정 함수는 <strong><code>purged_at</code> 을 먼저 봅니다</strong> — 그러지 않으면 운영자가 "아직 복구할 수 있다"고 읽습니다.</p></div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="num">03</span><h2>데이터베이스</h2></div>
+  <p class="src">supabase/migrations/20260909000400_account_withdrawal.sql · 원격 적용 완료</p>
+
+  <h3>3.1 컬럼 · 인덱스</h3>
+<pre><code>alter table public.profiles
+  add column if not exists deleted_at timestamptz,
+  add column if not exists purged_at  timestamptz;
+
+-- 파기 배치가 "deleted_at &lt;= 기준 시각 and purged_at is null" 로 훑는다.
+create index if not exists profiles_deleted_at_idx
+  on public.profiles (deleted_at) where deleted_at is not null;
+
+create unique index if not exists profiles_msw_uid_key
+  on public.profiles (msw_uid) where msw_uid is not null;
+
+create unique index if not exists profiles_msw_profile_code_key
+  on public.profiles (lower(msw_profile_code)) where msw_profile_code is not null;</code></pre>
+  <p>프로필 코드는 저장 전에 소문자로 정규화되지만(<code>lib/validation/auth.ts</code>), DB 를 직접 고친 값까지 막으려고 <code>lower()</code> 로 겁니다. 적용 시점(2026-09-09) 중복 점검 결과 0건.</p>
+
+  <h3>3.2 auth.users FK 제거 — 왜</h3>
+<pre><code>alter table public.profiles drop constraint if exists profiles_id_fkey;</code></pre>
+  <p>파기 순서는 <strong>프로필 익명화 → <code>auth.users</code> 삭제</strong>입니다. 기존 <code>on delete cascade</code> 가 남아 있으면 auth 삭제 순간 익명화된 프로필까지 사라지고, 글·댓글의 <code>author_id</code> 가 <code>null</code> 로 비워져 "게시판에는 영향이 없다"는 약속이 깨집니다.</p>
+  <p>FK 를 <strong>다시 걸지 않습니다.</strong> 프로필을 만드는 경로는 <code>handle_new_user()</code> 트리거(<code>auth.users AFTER INSERT</code>) 하나뿐이라, auth 없는 프로필은 파기 배치에서만 생기고 그것이 의도한 상태입니다.</p>
+
+  <h3>3.3 is_withdrawn() 과 RLS</h3>
+<pre><code>create or replace function public.is_withdrawn()
+returns boolean language sql stable security invoker set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = (select auth.uid()) and deleted_at is not null
+  );
+$$;
+
+revoke all on function public.is_withdrawn() from public, anon;
+grant execute on function public.is_withdrawn() to authenticated, service_role;</code></pre>
+  <p><code>is_suspended()</code> 와 같은 구조입니다(SECURITY INVOKER · 자기 행만 읽습니다). <code>not public.is_withdrawn()</code> 이 추가된 정책은 8개입니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>테이블</th><th>정책</th><th>위치</th><th>함께 걸린 조건</th></tr></thead>
+    <tbody>
+      <tr><td><code>posts</code></td><td><code>posts_insert_community</code></td><td>INSERT check</td><td><code>not is_suspended()</code> · 자유게시판 · 본인</td></tr>
+      <tr><td><code>posts</code></td><td><code>posts_update_own</code></td><td>UPDATE using</td><td>본인 · community · 미삭제</td></tr>
+      <tr><td><code>comments</code></td><td><code>comments_insert_own</code></td><td>INSERT check</td><td><code>not is_suspended()</code> · 발행된 글</td></tr>
+      <tr><td><code>comments</code></td><td><code>comments_update_own</code></td><td>UPDATE using</td><td>본인 · 미삭제</td></tr>
+      <tr><td><code>post_likes</code></td><td><code>post_likes_insert_own</code></td><td>INSERT check</td><td><code>not is_suspended()</code></td></tr>
+      <tr><td><code>reports</code></td><td><code>reports_insert_own</code></td><td>INSERT check</td><td><code>not is_suspended()</code> · <code>can_report_target()</code></td></tr>
+      <tr><td><code>inquiries</code></td><td><code>inquiries_insert_own</code></td><td>INSERT check</td><td>본인 · <code>status = 'pending'</code></td></tr>
+      <tr><td><code>inquiries</code></td><td><code>inquiries_update_own</code></td><td>UPDATE using</td><td>본인</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><span class="icon">방어선</span><p>화면은 탈퇴 대기 계정을 <code>/auth/restore</code> 로 보내지만, <strong>서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출됩니다.</strong> 최종 방어선은 이 정책들입니다.</p></div>
+
+  <h3>3.4 guard_profile_role() — 상태 컬럼 잠금</h3>
+  <p><code>SECURITY INVOKER</code> 여야 합니다. 순서대로 판정합니다.</p>
+  <ol class="steps">
+    <li><code>current_user</code> 가 <code>postgres</code> · <code>supabase_admin</code> · <code>service_role</code> 이면 그대로 통과합니다.</li>
+    <li><code>new.purged_at := old.purged_at</code> — <strong>관리자를 포함해 누구도 직접 못 씁니다.</strong> 파기 함수(SECURITY DEFINER, 소유자 postgres)와 서비스 롤만 1번 분기로 통과합니다.</li>
+    <li><code>is_admin()</code> 이면 슈퍼어드민이 아닐 때 <code>role</code> · <code>admin_role_id</code> 만 되돌리고 반환합니다. 즉 <strong>관리자는 다른 회원의 <code>deleted_at</code> 을 쓸 수 있습니다</strong>(강제 탈퇴의 근거).</li>
+    <li>일반 사용자는 <code>role</code> · <code>admin_role_id</code> · <code>id</code> · <code>created_at</code> · <code>email</code> · <code>provider</code> · <code>provider_id</code> · <code>suspended_until</code> · <code>suspension_reason</code> 가 전부 <code>old</code> 로 되돌아갑니다.</li>
+    <li>일반 사용자의 <code>deleted_at</code> 변경은 두 가지뿐입니다. <code>null</code> 로 만들기(복구) — 단 <code>old.purged_at</code> 이 있으면 무시합니다. 값 채우기(탈퇴) — 값이 무엇이든 <strong><code>now()</code> 로 고정</strong>합니다. 과거 시각을 넣어 파기를 앞당기거나 먼 미래를 넣어 영원히 보존시키는 요청이 통하지 않습니다.</li>
+  </ol>
+
+  <h3>3.5 감사 로그 트리거 log_profile_lifecycle</h3>
+<pre><code>create trigger log_profile_lifecycle
+  after update of deleted_at on public.profiles
+  for each row execute function public.log_profile_lifecycle();</code></pre>
+  <div class="kv">
+    <div><div class="k">언제</div><div class="v"><code>null → 값</code> 이면 <code>member.withdraw</code>, <code>값 → null</code> 이면 <code>member.restore</code>. 그 밖의 변경은 아무것도 남기지 않습니다</div></div>
+    <div><div class="k">행위자</div><div class="v"><code>auth.uid()</code> — 본인 탈퇴는 본인, 관리자 강제 탈퇴는 관리자, 서비스 롤 경로는 <code>null</code></div></div>
+    <div><div class="k">기록 내용</div><div class="v"><code>before</code> · <code>after</code> 는 <code>{"deleted_at": …}</code> jsonb. 대상은 <code>profiles</code> · 회원 id</div></div>
+    <div><div class="k">왜 트리거인가</div><div class="v"><code>audit_logs_insert_admin</code> 이 관리자만 통과시켜 사용자 사이트는 로그를 직접 쓸 수 없습니다. 함수는 <code>SECURITY DEFINER</code> 이고 실행 권한은 모든 롤에서 회수했습니다(트리거 전용)</div></div>
+  </div>
+
+  <h3>3.6 purge_withdrawn_profiles(interval)</h3>
+  <p><code>returns setof uuid</code> · <code>SECURITY DEFINER</code> · 실행 권한은 <strong><code>service_role</code> 뿐</strong>입니다. 대상은 <code>deleted_at is not null and deleted_at &lt;= now() - p_cutoff and purged_at is null</code>, <code>order by deleted_at</code>, <code>for update skip locked</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>대상</th><th>처리</th></tr></thead>
+    <tbody>
+      <tr><td><code>profiles</code></td><td><code>email = null</code> · <code>nickname = 탈퇴한 회원#&lt;앞 8자&gt;</code> · <code>avatar_url = null</code> · <code>provider_id = null</code> · <code>msw_uid = null</code> · <code>msw_profile_code = null</code> · <code>suspended_until = null</code> · <code>suspension_reason = null</code> · <code>purged_at = now()</code></td></tr>
+      <tr><td><code>posts</code></td><td><code>author_name</code> → 같은 익명 닉네임(<code>author_id</code> 일치 &amp; 값이 다를 때만)</td></tr>
+      <tr><td><code>comments</code></td><td><code>author_name</code> → 같은 익명 닉네임(동일 조건)</td></tr>
+      <tr><td><code>audit_logs</code></td><td><code>member.purge</code> · <code>actor_id = null</code> · <code>after = {"purged_at": …, "cutoff": "…"}</code></td></tr>
+      <tr><td>반환</td><td>처리한 <code>id</code> 를 <code>return next</code> — 호출자가 <code>auth.users</code> 를 지웁니다</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>건드리지 않는 것</strong>: <code>deleted_at</code>, <code>created_at</code>, <code>role</code>·<code>admin_role_id</code>, 약관·개인정보·연령 동의 시각, 글·댓글 본문, <code>auth.users</code>.</p>
+  <div class="callout rule"><span class="icon">충돌</span><p>익명 닉네임은 실제 회원과 충돌하지 않습니다 — 닉네임 규칙(<code>nicknameSchema</code>)상 공백과 <code>#</code> 을 쓸 수 없고, <code>lower(nickname)</code> 유니크는 id 조각으로 만족합니다. <code>auth.users</code> 삭제를 DB 함수에서 하지 않는 이유는 Supabase 가 <code>auth</code> 스키마 직접 조작을 권장하지 않기 때문입니다.</p></div>
+<pre><code>revoke all on function public.purge_withdrawn_profiles(interval) from public, anon, authenticated;
+grant execute on function public.purge_withdrawn_profiles(interval) to service_role;</code></pre>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="num">04</span><h2>자동 파기 배치</h2></div>
+  <p class="src">supabase/functions/purge-withdrawn/index.ts · supabase/config.toml</p>
+  <div class="diagram"><p class="cap">pg_cron → Edge Function → DB 함수 → auth 삭제 · 실패 시 롤백</p>
+<pre class="mermaid">
+flowchart LR
+    C["pg_cron<br/>purge-withdrawn-daily<br/>0 18 * * * UTC"] -->|"net.http_post · x-cron-secret"| EF["Edge Function<br/>purge-withdrawn"]
+    EF -->|"rpc purge_withdrawn_profiles"| FN["DB 함수<br/>SECURITY DEFINER"]
+    FN -->|"익명화 · author_name · member.purge"| DB[("profiles · posts<br/>comments · audit_logs")]
+    FN -->|"처리한 id 목록"| EF
+    EF -->|"auth.admin.deleteUser"| AU[("auth.users")]
+    EF -->|"실패한 id 는 purged_at = null 로 되돌림"| DB
+</pre></div>
+
+  <h3>4.1 Edge Function</h3>
+<pre><code>[functions.purge-withdrawn]
+verify_jwt = false</code></pre>
+  <p>게이트웨이 JWT 검증을 끈 이유는 pg_cron 이 Supabase JWT 없이 <code>x-cron-secret</code> 헤더만 보내기 때문입니다. 인가는 함수 안에서 합니다.</p>
+  <div class="conveyor">
+    <div class="stage"><span class="no">1</span><div class="what"><b>메서드 확인</b><code>POST</code> 가 아니면 즉시 거절합니다.</div><span class="out reject">405</span></div>
+    <div class="stage"><span class="no">2</span><div class="what"><b>설정 확인</b><code>CRON_SECRET</code> 과 <code>SUPABASE_SERVICE_ROLE_KEY</code> 가 <strong>둘 다</strong> 없으면 동작하지 않습니다.</div><span class="out reject">503</span></div>
+    <div class="stage"><span class="no">3</span><div class="what"><b>인가</b><code>x-cron-secret</code> 헤더 == <code>CRON_SECRET</code>(길이 차이까지 감추는 바이트 단위 상수시간 비교), 또는 <code>Authorization: Bearer &lt;SUPABASE_SERVICE_ROLE_KEY&gt;</code>(수동 실행).</div><span class="out reject">401</span></div>
+    <div class="stage"><span class="no">4</span><div class="what"><b>기준 기간</b>본문 <code>{"cutoffDays": n}</code> — 1 이상 3650 이하 정수만 인정하고, 없거나 형식이 틀리면 기본 90일.</div><span class="out pass">계속</span></div>
+    <div class="stage"><span class="no">5</span><div class="what"><b>파기 RPC</b><code>purge_withdrawn_profiles(p_cutoff)</code> 를 서비스 롤로 호출해 처리한 id 목록을 받습니다. 실패는 로그만 남기고 고정 문구로 응답합니다.</div><span class="out reject">500</span></div>
+    <div class="stage"><span class="no">6</span><div class="what"><b>auth 계정 삭제</b>id 마다 <code>auth.admin.deleteUser</code>. <strong>404 는 성공으로 봅니다</strong>(지난 실행에서 이미 지워졌을 수 있습니다).</div><span class="out pass">계속</span></div>
+    <div class="stage"><span class="no">7</span><div class="what"><b>실패 롤백</b>삭제 실패한 건만 <code>purged_at = null</code> 로 되돌려 다음 실행이 다시 태웁니다. 익명화는 멱등이라 두 번 돌아도 같은 값입니다. 한 건이 막혀도 나머지는 계속합니다.</div><span class="out pass">200</span></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>응답</th><th>본문</th><th>언제</th></tr></thead>
+    <tbody>
+      <tr><td>200</td><td><code>{ ok: true, purged, authDeleted, failed: [{ id, reason }] }</code></td><td>정상. <code>purged</code> 는 익명화한 수, <code>authDeleted</code> 는 로그인 계정까지 지운 수</td></tr>
+      <tr><td>401</td><td><code>{"error":"unauthorized"}</code></td><td>secret · 서비스 롤 키 불일치</td></tr>
+      <tr><td>405</td><td><code>{"error":"method_not_allowed"}</code></td><td>POST 가 아님</td></tr>
+      <tr><td>500</td><td><code>{"error":"purge_failed"}</code></td><td>파기 RPC 실패(원문은 함수 로그에만)</td></tr>
+      <tr><td>503</td><td><code>{"error":"not_configured"}</code></td><td>비밀값이 하나도 없음</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>4.2 스케줄</h3>
+  <p>비밀값은 마이그레이션 파일에 적지 않습니다. pg_cron 이 Vault 의 <code>purge_withdrawn_cron_secret</code> 을 읽어 헤더에 싣고, 함수는 자기 secret <code>CRON_SECRET</code> 과 비교합니다. UTC 18:00 = KST 03:00.</p>
+<pre><code>select cron.schedule(
+  'purge-withdrawn-daily',
+  '0 18 * * *',
+  $job$
+    select net.http_post(
+      url := 'https://zafouiovmsfebfkjuyos.supabase.co/functions/v1/purge-withdrawn',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-cron-secret', (
+          select decrypted_secret from vault.decrypted_secrets
+          where name = 'purge_withdrawn_cron_secret' limit 1
+        )
+      ),
+      body := '{}'::jsonb,
+      timeout_milliseconds := 30000
+    );
+  $job$
+);</code></pre>
+  <p>등록 확인과 수동 실행:</p>
+<pre><code>select jobname, schedule, active from cron.job;
+
+curl -X POST https://zafouiovmsfebfkjuyos.supabase.co/functions/v1/purge-withdrawn \
+  -H 'Content-Type: application/json' \
+  -H "x-cron-secret: $CRON_SECRET" \
+  -d '{}'</code></pre>
+  <div class="callout warn"><span class="icon">미완</span><p>마이그레이션 8절의 <code>DO</code> 블록은 <code>pg_cron</code> 과 <code>pg_net</code> 이 <strong>둘 다 켜져 있을 때만</strong> 스케줄을 만듭니다. 적용 시점(2026-09-09) 프로젝트에는 두 확장이 없어 <code>raise notice</code> 만 남기고 지나갔습니다. <strong>지금은 자동 파기가 돌지 않습니다.</strong> 확장을 켠 뒤 위 <code>cron.schedule</code> 을 SQL 편집기에서 그대로 실행하세요(같은 이름이면 갱신됩니다).</p></div>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><span class="num">05</span><h2>클라이언트 플로우</h2></div>
+  <div class="diagram"><p class="cap">/account 탈퇴 → 홈 안내 → 재로그인 → 프록시 게이트 → /auth/restore → 복구</p>
+<pre class="mermaid">
+sequenceDiagram
+    actor U as 회원
+    participant AC as /account
+    participant SA as withdrawAccountAction
+    participant DB as profiles
+    participant PX as proxy.ts
+    participant RS as /auth/restore
+    U->>AC: 회원 탈퇴 · 확인 모달 · 탈퇴
+    AC->>SA: form action
+    SA->>DB: update deleted_at · select 되읽기
+    DB-->>SA: deleted_at
+    Note over DB: 트리거 member.withdraw<br/>행위자 = 본인
+    SA->>SA: auth.signOut
+    SA-->>U: redirect /?notice=withdrawn
+    U->>PX: 같은 간편로그인으로 재로그인
+    PX->>DB: 게이트 프로필 1회 조회
+    PX-->>U: 302 /auth/restore?next=...
+    U->>RS: 계정 복구
+    RS->>DB: update deleted_at = null
+    Note over DB: 트리거 member.restore
+    RS-->>U: redirect next
+</pre></div>
+
+  <h3>5.1 탈퇴</h3>
+  <p class="src">app/(auth)/account/page.tsx · components/auth/WithdrawAccountButton.tsx · lib/actions/account-actions.ts</p>
+  <ul>
+    <li>진입은 <code>/account</code> 맨 아래 "회원 탈퇴" 섹션 — 되돌리기 어려운 조작이라 로그아웃과도 떨어진 자리에 둡니다.</li>
+    <li>확인 모달 3요소는 <code>lib/auth/lifecycle.ts</code> 의 상수입니다. <code>WITHDRAW_DIALOG_TITLE</code>("회원 탈퇴") · <code>WITHDRAW_DIALOG_DESCRIPTION</code>(90일 보존 · 파기 항목 · 글은 남고 "탈퇴한 회원" 표시 · 제재 유지) · 취소 + 위험 버튼.</li>
+    <li><code>withdrawAccountAction</code> 은 <strong>세션 클라이언트</strong>로 자기 행의 <code>deleted_at</code> 만 씁니다. 허용 범위는 DB 가 정합니다(<code>profiles_update_self</code> + <code>guard_profile_role()</code>).</li>
+    <li>갱신 뒤 <code>.select('deleted_at').maybeSingle()</code> 로 <strong>되읽습니다</strong> — 정책에 걸려 0행이 바뀌어도 PostgREST 는 오류를 내지 않기 때문입니다.</li>
+    <li>실패 문구는 <code>탈퇴를 처리하지 못했습니다. 계정은 그대로입니다. 다시 시도해 주세요.</code></li>
+    <li>성공하면 <code>signOut()</code> 후 <code>/?notice=withdrawn</code> 으로 리다이렉트하고, 홈이 <code>WITHDRAWN_NOTICE_MESSAGE</code> 를 한 번 보여 줍니다.</li>
+  </ul>
+
+  <h3>5.2 프록시 게이트</h3>
+  <p class="src">proxy.ts — Next.js 16 에서 middleware.ts 를 대체합니다</p>
+  <div class="tbl"><table>
+    <thead><tr><th>상수</th><th>경로</th><th>동작</th></tr></thead>
+    <tbody>
+      <tr><td><code>WITHDRAWN_READ_PREFIXES</code></td><td><code>/community/write</code> · <code>/account</code> · <code>/auth/onboarding</code> · <code>/support/inquiries</code></td><td>GET·HEAD → <code>302 /auth/restore?next=&lt;원래 경로+쿼리&gt;</code></td></tr>
+      <tr><td><code>WITHDRAWN_MUTATION_PREFIXES</code></td><td><code>/community</code> · <code>/support</code> · <code>/account</code> · <code>/auth/onboarding</code></td><td>비-GET → <code>403 {"error":"account_withdrawn","restorePath":"/auth/restore"}</code></td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><code>/auth/restore</code> 자체와 그 액션은 게이트에서 제외됩니다(가야 하는 곳이므로).</li>
+    <li>프로필 조회는 <strong>로그인 상태 + 게이트 대상 경로</strong>일 때만 한 번 일어납니다. 모든 요청마다 DB 를 때리지 않습니다.</li>
+    <li>리다이렉트에는 <code>updateSession()</code> 이 심은 갱신 쿠키를 옮겨 싣습니다(<code>redirectWithSession</code>). 안 그러면 리프레시 토큰이 유실돼 임의 로그아웃이 납니다.</li>
+    <li>조회 실패는 "정상 회원"으로 봅니다(오탐 차단 방지). 쓰기는 RLS 가 최종적으로 막습니다.</li>
+    <li><strong>탈퇴 대기 중에도 공개 읽기는 그대로 열려 있습니다</strong> — 홈 · 커뮤니티 목록/상세 · 뉴스 · 정책 문서 등.</li>
+  </ul>
+
+  <h3>5.3 복구</h3>
+  <p class="src">app/auth/restore/page.tsx · components/auth/RestoreAccountForm.tsx · components/layout/AuthMenu.tsx · MobileNav.tsx</p>
+  <ul>
+    <li>정상 회원이 주소로 직접 들어오면 <code>next</code> 로 그냥 보냅니다 — 물을 것이 없습니다.</li>
+    <li>복구 가능하면 본문은 <code>restoreNotice()</code> — "탈퇴 후 N일이 지났습니다. 계속하면 계정이 복구됩니다. 이용 제한이 있었다면 그대로 적용됩니다."</li>
+    <li>파기가 끝난 계정은 <code>PURGED_ACCOUNT_MESSAGE</code> 와 <strong>로그아웃 버튼만</strong> 남습니다(복구 버튼 없음).</li>
+    <li>복구는 <code>deleted_at</code> 을 비우는 쓰기라 GET 링크가 아니라 <strong>폼 POST</strong> 여야 합니다(CSRF).</li>
+    <li>헤더는 탈퇴 대기 계정에게 닉네임 메뉴 대신 <strong>"계정 복구" 버튼 하나</strong>만 보입니다. 근거는 <code>getCurrentUser()</code> 의 <code>isWithdrawn</code>.</li>
+    <li>로그인 직후 목적지는 <code>resolvePostAuthDestination()</code> 하나가 소유합니다 — <strong>탈퇴 &gt; 온보딩 &gt; next</strong> 순서. 인증 콜백(<code>app/auth/callback/route.ts</code>)과 스텁 로그인이 같은 함수를 씁니다.</li>
+  </ul>
+  <div class="callout rule"><span class="icon">순서</span><p>탈퇴 판정이 온보딩보다 <strong>먼저</strong>입니다. 탈퇴 대기 중인 사람에게 온보딩 폼을 먼저 보이면 "복구할지"를 묻기 전에 약관 동의를 다시 받는 셈이 됩니다.</p></div>
+
+  <h3>5.4 작성자 표시</h3>
+  <p>공개 조회(anon)는 <code>profiles</code> 를 읽을 수 없습니다. 화면의 유일한 근거는 <code>posts/comments.author_name</code> 스냅샷입니다.</p>
+<pre><code>lib/data/mappers.ts        authorPurged = isPurgedAuthorName(row.author_name)   // '탈퇴한 회원#' 접두사
+lib/utils/author-display.ts
+  PURGED_AUTHOR_LABEL = '탈퇴한 회원'
+  authorLabel({ author, authorPurged }) → authorPurged ? '탈퇴한 회원' : maskNickname(author)</code></pre>
+  <p>탈퇴 대기(90일 보존) 중에는 스냅샷이 그대로라 기존 마스킹 닉네임이 보입니다(오너 결정 2).</p>
+
+  <h3>5.5 월드 계정 유니크 충돌 · 23505</h3>
+  <p><code>lib/actions/pg-error.ts</code> 가 코드 <code>23505</code> 를 판정하고 오류 메시지에서 제약 이름만 뽑습니다(<code>constraint "…"</code>). 원문은 절대 노출하지 않습니다 — 스키마·제약 이름이 그대로 새어 나갑니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>제약 이름 조각</th><th>필드 오류</th><th>문구</th></tr></thead>
+    <tbody>
+      <tr><td><code>nickname</code> 또는 이름을 못 읽음</td><td><code>nickname</code></td><td>이미 사용 중인 닉네임입니다.</td></tr>
+      <tr><td><code>msw_profile_code</code></td><td><code>mswProfileCode</code></td><td>이미 다른 계정에 연결된 프로필 코드입니다.</td></tr>
+      <tr><td><code>msw_uid</code></td><td><code>mswUid</code></td><td>이미 다른 계정에 연결된 월드 계정 UID입니다. 고객지원에 문의해 주세요.</td></tr>
+    </tbody>
+  </table></div>
+  <p>판정 순서가 중요합니다 — <code>msw_profile_code</code> 를 <code>msw_uid</code> 보다 먼저 봅니다. 대표적인 충돌 원인은 <strong>탈퇴 대기 중인 옛 계정이 그 값을 붙잡고 있는 경우</strong>라 사용자가 스스로 풀 수 없어 고객지원으로 안내합니다. <code>completeOnboarding</code> 과 <code>updateAccount</code> 가 같은 헬퍼를 씁니다.</p>
+
+  <h3>5.6 월드 연동 필수 글쓰기 플래그</h3>
+  <div class="kv">
+    <div><div class="k">플래그</div><div class="v"><code>FEATURES.postingRequiresMswLink</code> ← <code>NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW === 'true'</code> · 기본 OFF</div></div>
+    <div><div class="k">판정 · 문구</div><div class="v"><code>lib/utils/msw-link.ts</code> — <code>requiresMswLink()</code> · <code>mswLinkNotice()</code> · "월드 계정을 연동하면 글을 쓸 수 있습니다. 내 정보에서 연동해 주세요."</div></div>
+    <div><div class="k">서버</div><div class="v"><code>createPost</code> · <code>createComment</code>(<code>lib/actions/post-actions.ts</code>)가 정지 검사 <strong>다음에</strong> 같은 조건을 다시 봅니다</div></div>
+    <div><div class="k">화면</div><div class="v"><code>components/board/MswLinkNotice.tsx</code> 배너 — 글쓰기 페이지와 댓글 폼에서 입력을 잠급니다</div></div>
+  </div>
+  <div class="callout warn"><span class="icon">켤 때</span><p><code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> 도 함께 켜야 연동 경로(입력칸)가 열립니다. 두 값 모두 <strong>빌드 타임에 리터럴로 치환</strong>되므로 재배포가 필요합니다. <code>.env.example</code> 에 기본값 <code>false</code> 로 적혀 있습니다.</p></div>
+
+  <h3>5.7 개인정보처리방침</h3>
+  <ul>
+    <li>코드 문안은 <code>lib/content/privacy-policy/section-04-07.ts</code> — §4 보유 기간(90일 보존, 파기 항목 목록, 게시글 비식별화), §7 파기 절차("매일 자동 배치").</li>
+    <li>버전 <code>PRIVACY_POLICY_VERSION = '20260918-2'</code>, 시행일은 그대로 <code>2026년 9월 18일</code>.</li>
+    <li>발행 경로: <code>scripts/seed-legal.mjs</code> 가 코드 문안을 HTML(<code>policy-to-html</code> + <code>sanitizeLegalHtml</code>)로 바꿔 마이그레이션 SEED 구간을 갱신합니다. 이미 심어진 문서에는 <code>legal_document_versions</code> 에 새 버전 행을 <code>is_published = true</code> 로 넣고, <code>current_legal_version('privacy')</code> 로 확인한 뒤 클라이언트 캐시 태그 <code>legal</code> 을 revalidate 합니다.</li>
+    <li>관리자 콘솔에서 발행할 때도 같은 태그를 비웁니다(<code>admin/lib/actions/legal-actions.ts</code>).</li>
+    <li>배포본 확인 결과 <code>version = 20260918-2</code> · <code>effective_date = 2026-09-18</code>.</li>
+  </ul>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><span class="num">06</span><h2>관리자 콘솔</h2></div>
+
+  <h3>6.1 회원 목록</h3>
+  <p class="src">admin/app/(admin)/members/page.tsx · components/members/MemberIdentity.tsx · MemberFilters.tsx · lib/data/members.ts</p>
+  <div class="tbl"><table>
+    <thead><tr><th>생애주기</th><th>상태 칸</th><th>이유</th></tr></thead>
+    <tbody>
+      <tr><td><code>purged</code></td><td><span class="tag dbt">삭제됨</span> 하나만</td><td>제재는 이미 비었고 로그인 계정도 없습니다. 남은 제재가 있는 것처럼 보이면 운영자가 해제할 수 있다고 오해합니다</td></tr>
+      <tr><td><code>active</code></td><td>정상 / 정지 ~날짜 / 관리자</td><td>기존 뱃지 그대로</td></tr>
+      <tr><td><code>withdrawn</code></td><td><span class="tag outb">탈퇴 대기 D-nn</span> + 제재가 있으면 정지 뱃지를 덧붙임</td><td>탈퇴해도 제재가 유지된다는 사실이 목록에서 보여야 "탈퇴하면 제재가 풀린다"는 오해가 생기지 않습니다</td></tr>
+    </tbody>
+  </table></div>
+  <div class="kv">
+    <div><div class="k">?status=</div><div class="v"><code>normal</code> · <code>suspended</code> · <code>withdrawn</code> · <code>purged</code> · <code>admin</code>. 허용 목록 밖의 값은 조용히 "전체"로 떨어집니다(<code>parseMemberListParams</code>)</div></div>
+    <div><div class="k">필터 조건</div><div class="v"><code>withdrawn</code> = <code>deleted_at is not null and purged_at is null</code> · <code>purged</code> = <code>purged_at is not null</code> · <code>normal</code> = <code>role='user'</code> + <code>deleted_at is null</code> + 정지 아님</div></div>
+    <div><div class="k">배타적이지 않음</div><div class="v">뱃지와 달리 필터는 겹칩니다 — "탈퇴 대기이면서 정지"인 회원은 양쪽에서 찾힙니다. 다만 <code>normal</code> 만은 탈퇴·파기를 반드시 제외합니다</div></div>
+    <div><div class="k">?msw=</div><div class="v">월드 UID · 프로필 코드 <strong>정확 일치</strong> 검색(<code>msw_uid.eq</code> / <code>msw_profile_code.ilike</code>, <code>\ % _</code> 이스케이프). 부분 일치는 쓰지 않습니다. 검색 폼이 값을 hidden 으로 보존하고 해제 링크를 따로 둡니다</div></div>
+  </div>
+
+  <h3>6.2 회원 상세</h3>
+  <ul>
+    <li><strong><code>MemberLifecycleCard</code></strong> — <code>active</code> 면 아예 그리지 않습니다. 탈퇴일 · 파기 예정일(<code>D-nn</code>, 위험 톤) · 파기일. 파기된 계정은 남은 일수를 적지 않습니다. <strong>복구 이력은 적지 않습니다</strong> — 복구는 <code>deleted_at</code> 을 비우는 것이라 별도 기록이 없고, 빈 칸을 두면 "복구한 적 없음"으로 읽힙니다. 감사 로그 <code>member.restore</code> 로 안내합니다.</li>
+    <li><strong><code>MemberProfileCard</code></strong> — 파기된 계정은 <strong>이메일 · 공급자 ID · MSW UID · 프로필 코드 칸을 렌더하지 않습니다</strong>. 값이 빈 칸으로 남으면 "조회에 실패했나?"로 읽히고, 혹시 남은 값이 있다면 파기의 취지에 어긋납니다. 가입일 · 동의 시각 · 권한 등 나머지는 그대로입니다.</li>
+    <li><strong><code>MemberActions</code></strong> — <code>purged</code> 면 조치 버튼을 전부 감춥니다(누를 것이 없습니다). <code>active</code> + 자기 자신이 아님 → 강제 탈퇴. <code>withdrawn</code> + 슈퍼어드민 + 자기 자신이 아님 → 개인정보 즉시 파기. 정지 · 정지 해제 · 닉네임 강제 변경은 <strong>탈퇴 대기 중에도 가능</strong>합니다.</li>
+    <li>회원을 관리자로 승격하는 조작과 계정 삭제 버튼은 없습니다 — 삭제는 탈퇴 → 90일 → 파기 두 단계로만 일어납니다.</li>
+  </ul>
+
+  <h3>6.3 개인정보 즉시 파기 · 슈퍼어드민</h3>
+  <p class="src">admin/lib/actions/member-lifecycle-actions.ts · components/members/MemberPurgeDialog.tsx</p>
+  <ol class="steps">
+    <li><code>requireSuperAdmin()</code>. 자기 자신은 막습니다 — 파기는 auth 계정까지 지우므로 진행하는 순간 세션이 끊기고 되돌릴 수단도 사라집니다.</li>
+    <li>상태 확인: <code>purged</code> → "이미 개인정보가 파기된 회원입니다." / <code>active</code> → "탈퇴하지 않은 회원입니다. 먼저 탈퇴 처리를 한 뒤에 파기할 수 있습니다."</li>
+    <li><strong>배치 함수를 쓰지 않습니다.</strong> <code>purge_withdrawn_profiles(p_cutoff)</code> 도 Edge Function 도 대상 지정 인자가 없어(크론이 빈 본문으로 부릅니다) 한 명을 지우려고 부르면 기간이 지난 다른 회원까지 함께 파기됩니다. 그래서 서비스 롤로 <strong>한 명분만</strong> 같은 필드를 지웁니다.</li>
+    <li>순서: 프로필 익명화 → <code>posts</code> · <code>comments</code> 의 <code>author_name</code> 갱신 → <code>auth.admin.deleteUser</code>. 스냅샷 갱신 실패는 파기를 되돌리지 않습니다(개인정보는 이미 지워졌고, 되돌리면 더 나쁜 상태가 됩니다).</li>
+    <li><strong>auth 삭제 실패 시 <code>purged_at</code> 을 되돌립니다</strong> — 로그인 수단이 남았는데 "파기됨"으로 표시되면 다음 배치가 이 회원을 건너뛰어 이메일이 영영 남습니다.</li>
+    <li>감사 로그 <code>member.purge</code> — 행위자는 슈퍼어드민, <code>before</code> 에 닉네임 · 이메일 · MSW 값 · <code>deleted_at</code>, <code>after</code> 에 <code>{ nickname, purged_at, immediate: true }</code>.</li>
+    <li>사용자 사이트 캐시 태그 <code>community-list</code> 를 revalidate 합니다 — 작성자 표시 이름이 바뀌었기 때문입니다.</li>
+  </ol>
+  <div class="callout warn"><span class="icon">동기화</span><p>배치 함수가 지우는 컬럼이 바뀌면 이 액션도 함께 고쳐야 합니다. 어긋나면 관리자 경로로 지운 계정에만 개인정보가 남습니다. <code>admin/tests/unit/member-lifecycle-actions.test.ts</code> 가 필드 목록을 고정합니다.</p></div>
+
+  <h3>6.4 강제 탈퇴 · members:write</h3>
+  <ul>
+    <li>자기 자신 금지. <code>role = 'admin'</code> 계정 금지(관리자는 <code>/admins</code> 에서 다룹니다 — 여기서 탈퇴시키면 역할은 남고 로그인만 막히는 어정쩡한 상태가 됩니다).</li>
+    <li>이미 <code>withdrawn</code> · <code>purged</code> 면 거절합니다.</li>
+    <li>제재는 건드리지 않습니다 — 복구하면 남은 제재가 그대로 적용되어야 "탈퇴로 제재를 피한다"는 길이 막힙니다.</li>
+    <li><strong>세션 클라이언트로 씁니다</strong>(서비스 롤 아님). <code>profiles_update_admin</code> 이 관리자에게 다른 회원의 UPDATE 를 열어 주고 <code>guard_profile_role()</code> 도 관리자 분기에서 <code>deleted_at</code> 을 잠그지 않습니다. 서비스 롤을 쓰면 DB 트리거가 남기는 <code>member.withdraw</code> 의 행위자가 <code>null</code> 이 되어 추적이 끊깁니다.</li>
+    <li>결과적으로 감사 로그에 <strong>두 줄</strong>이 남습니다 — 트리거의 <code>member.withdraw</code>(행위자 = 관리자) + 액션의 <code>member.force_withdraw</code>.</li>
+  </ul>
+
+  <h3>6.5 대시보드 지표</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>지표</th><th>정의</th><th>힌트 문구</th><th>testId</th></tr></thead>
+    <tbody>
+      <tr><td>탈퇴 대기</td><td><code>deleted_at is not null and purged_at is null</code></td><td>파기까지 90일 · 그 안에 재로그인하면 복구</td><td><code>stat-withdrawn</code></td></tr>
+      <tr><td>지난 7일 파기</td><td><code>purged_at &gt;= 주 경계</code></td><td>개인정보 영구 삭제 완료</td><td><code>stat-purged</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>6.6 감사 로그 액션 4종</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>action</th><th>라벨</th><th>남기는 주체</th><th>행위자</th></tr></thead>
+    <tbody>
+      <tr><td><code>member.withdraw</code></td><td>회원 탈퇴(본인)</td><td>DB 트리거 <code>log_profile_lifecycle</code></td><td><code>auth.uid()</code> — 본인 또는 강제 탈퇴한 관리자</td></tr>
+      <tr><td><code>member.restore</code></td><td>탈퇴 복구(본인)</td><td>DB 트리거</td><td><code>auth.uid()</code> — 본인</td></tr>
+      <tr><td><code>member.purge</code></td><td>개인정보 파기</td><td>배치 함수 · 관리자 액션</td><td>배치는 <code>null</code>, 즉시 파기는 슈퍼어드민 id</td></tr>
+      <tr><td><code>member.force_withdraw</code></td><td>강제 탈퇴</td><td><code>forceWithdrawMemberAction</code></td><td>관리자 id</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><span class="num">07</span><h2>권한 · 보안 체크리스트</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>무엇</th><th>누가 할 수 있나</th></tr></thead>
+    <tbody>
+      <tr><td><code>deleted_at</code> 채우기(탈퇴)</td><td>본인(값은 트리거가 <code>now()</code> 로 고정) · 관리자(<code>profiles_update_admin</code> + 가드 관리자 분기) · 서비스 롤</td></tr>
+      <tr><td><code>deleted_at</code> 비우기(복구)</td><td>본인 · 관리자 · 서비스 롤. 단 <code>purged_at</code> 이 있으면 일반 사용자 분기에서 무시됩니다</td></tr>
+      <tr><td><code>purged_at</code> 쓰기</td><td><strong>서비스 롤과 파기 함수(SECURITY DEFINER)만.</strong> 관리자도 직접 못 씁니다 — 가드가 <code>new.purged_at := old.purged_at</code> 으로 되돌립니다</td></tr>
+      <tr><td><code>suspended_until</code> · <code>suspension_reason</code></td><td>관리자 · 서비스 롤만. 파기 함수가 비웁니다</td></tr>
+      <tr><td><code>purge_withdrawn_profiles()</code> 실행</td><td><code>service_role</code> 만(<code>public</code> · <code>anon</code> · <code>authenticated</code> 회수)</td></tr>
+      <tr><td><code>is_withdrawn()</code> 실행</td><td><code>authenticated</code> · <code>service_role</code></td></tr>
+      <tr><td><code>log_profile_lifecycle()</code> 실행</td><td>트리거 전용 — 모든 롤에서 회수</td></tr>
+      <tr><td><code>auth.users</code> 삭제</td><td>서비스 롤 — Edge Function <code>purge-withdrawn</code> 또는 관리자 즉시 파기 액션</td></tr>
+      <tr><td>탈퇴 대기 계정의 쓰기</td><td>전부 차단 — RLS 8개 정책 <code>not is_withdrawn()</code> + 프록시 게이트(302 · 403)</td></tr>
+      <tr><td>배치 호출</td><td><code>x-cron-secret</code> == <code>CRON_SECRET</code> 또는 서비스 롤 Bearer. 비교는 상수시간이며 secret 은 Vault · 함수 secret 에만 있습니다</td></tr>
+      <tr><td>감사에 남는 것</td><td>탈퇴 · 복구 · 파기 · 강제 탈퇴 4종. <code>audit_logs</code> 는 append-only(관리자 insert 정책만 있고 수정 · 삭제 경로가 없습니다)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout ok"><span class="icon">문구</span><p><code>admin/tests/unit/actions-no-raw-error.test.ts</code> 규약대로, 파기 · 강제 탈퇴가 실패해도 사용자에게 보이는 것은 고정 문구뿐입니다. 원문 오류는 <code>logFailure</code> 로 서버 로그에만 남습니다.</p></div>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="num">08</span><h2>테스트 · 검증</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>위치</th><th>수</th><th>무엇을 고정하나</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/unit/auth/lifecycle.test.ts</code></td><td>15</td><td>판정 함수 · 경과 일수 · 복구 문구 · 로그인 후 목적지 순서</td></tr>
+      <tr><td><code>tests/unit/actions/account-actions.test.ts</code></td><td>10</td><td>탈퇴 · 복구 액션의 되읽기, 실패 문구, 파기 계정 거절, 리다이렉트 목적지</td></tr>
+      <tr><td><code>tests/unit/utils/author-display.test.ts</code></td><td>5</td><td><code>탈퇴한 회원#</code> 접두사 판정과 표시 문구</td></tr>
+      <tr><td><code>tests/unit/utils/msw-link.test.ts</code></td><td>6</td><td>플래그 OFF 통과 · UID 없음 판정 · 안내 문구</td></tr>
+      <tr><td><code>admin/tests/unit/member-lifecycle.test.ts</code></td><td>17</td><td><code>memberLifecycle</code> · <code>purgeDueAt</code> · <code>D-nn</code> 올림 · 라벨 · 익명 닉네임</td></tr>
+      <tr><td><code>admin/tests/unit/member-lifecycle-actions.test.ts</code></td><td>15</td><td><strong>파기가 지우는 필드 목록</strong>, 상태 가드, auth 실패 시 <code>purged_at</code> 롤백, 강제 탈퇴가 세션 클라이언트를 쓰는지</td></tr>
+      <tr><td><code>admin/tests/unit/member-list-params.test.ts</code></td><td>11</td><td><code>?status=</code> · <code>?msw=</code> 파싱과 허용 목록 밖 값의 폴백</td></tr>
+    </tbody>
+  </table></div>
+  <p>전체 실행 결과(2026-09-09): <strong>클라이언트 907개(86파일) · 관리자 565개</strong> 통과.</p>
+
+  <h3>E2E 실사 검증</h3>
+  <p>배포된 <code>purge-withdrawn</code> 은 인증 없는 <code>POST</code> → <code>401 unauthorized</code>, <code>GET</code> → <code>405 method_not_allowed</code> 를 실제 호출로 확인했습니다. 브라우저 시나리오(스텁 로그인 + 원격 Supabase 서비스 롤)는 다음을 한 번에 확인합니다.</p>
+  <ol class="steps">
+    <li>로그인 · 온보딩 → 검증용 글 1건 작성</li>
+    <li><code>/account</code> → 탈퇴 모달(제목 · 설명 문구 일치) → 탈퇴 → <code>/?notice=withdrawn</code> 안내 · 헤더가 로그인 상태로 되돌아감 · <code>deleted_at</code> 세팅 · 감사 로그 <code>member.withdraw</code>(행위자 = 본인)</li>
+    <li>같은 계정으로 재로그인 → <code>/auth/restore</code> 로 튕김. <code>/community/write</code> 직접 진입도 복구 화면으로. 헤더에 "계정 복구"</li>
+    <li>복구 → 마지막 <code>next</code>(<code>/community/write</code>)로 착지 · <code>deleted_at</code> 비워짐</li>
+    <li>다시 탈퇴 → <code>purge_withdrawn_profiles('0 seconds')</code> 로 즉시 파기 → 프로필 익명화 · <code>posts.author_name</code> 갱신 · 상세 화면 작성자 "탈퇴한 회원" · 감사 로그 <code>member.purge</code></li>
+    <li><code>auth.admin.deleteUser</code> 뒤에도 <strong>프로필 행이 남는지</strong>(FK 제거 확인)</li>
+  </ol>
+  <div class="callout warn"><span class="icon">주의</span><p>로컬 재현은 서비스 롤 클라이언트로 <code>rpc('purge_withdrawn_profiles', { p_cutoff: '0 seconds' })</code> 를 부르면 됩니다. <strong>기준 기간이 지난 다른 계정도 함께 파기되므로 운영 DB 에서는 절대 쓰지 않습니다.</strong></p></div>
+</section>
+
+<section id="s9">
+  <div class="sec-head"><span class="num">09</span><h2>운영 체크리스트 · 주의사항</h2></div>
+  <ol class="steps">
+    <li><strong>cron 등록</strong> — <code>pg_cron</code> · <code>pg_net</code> 확장을 켜고 §04-2 의 <code>cron.schedule</code> 을 실행한 뒤 <code>select jobname, schedule, active from cron.job;</code> 로 확인합니다. Vault 의 <code>purge_withdrawn_cron_secret</code> 과 함수 secret <code>CRON_SECRET</code> 이 같은 값이어야 합니다. 2026-09-09 운영자가 확장 활성화 후 등록을 마쳤습니다. 새 환경을 만들 때는 같은 절차를 반복합니다.</li>
+    <li><strong>스텁 계정 정리 시 <code>profiles</code> 행도 함께 지웁니다.</strong> FK 를 걷어 냈으므로 <code>auth.admin.deleteUser()</code> 만으로는 프로필이 남습니다. <code>supabase/README.md</code> §"스텁 계정 정리"에 프로필 삭제 단계가 추가돼 있습니다.</li>
+    <li><strong><code>.env.example</code> 에 <code>NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW=false</code> 가 있습니다.</strong> 플래그를 켜기로 하면 배포 환경 변수도 함께 추가합니다.</li>
+    <li><strong>감사 로그는 append-only</strong> 입니다. 탈퇴 · 복구는 트리거가 남기므로 사용자 사이트 코드가 로그를 건너뛸 방법이 없습니다.</li>
+    <li><strong>파기는 되돌릴 수 없습니다.</strong> 즉시 파기는 슈퍼어드민만, 자기 자신에게는 불가. 확인 모달이 "되돌릴 수 없습니다"와 "글 · 댓글은 남습니다"를 모두 적습니다 — 앞을 빼면 가볍게 누르고, 뒤를 빼면 게시판이 통째로 사라진다고 오해합니다.</li>
+    <li><strong>이메일 중복 재가입</strong> — 90일 안에 같은 간편로그인 계정이면 복구(상태값만 변경, 닉네임 · 월드 계정 · 제재 그대로). 다른 간편로그인 계정이면 새 회원(막을 수단 없음). 파기 후에는 <code>auth.users</code> 가 없으므로 <code>handle_new_user()</code> 가 새 프로필을 만들고 제재는 따라오지 않습니다.</li>
+    <li><strong>배치는 여러 번 실행돼도 안전합니다</strong> — 대상 조건에 <code>purged_at is null</code> 이 있고 익명화 결과는 멱등이며, <code>for update skip locked</code> 로 동시 실행도 서로 밟지 않습니다.</li>
+  </ol>
+</section>
+
+<section id="s10">
+  <div class="sec-head"><span class="num">10</span><h2>파일 인덱스</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>경로</th><th>역할</th></tr></thead>
+    <tbody>
+      <tr><td><code>supabase/migrations/20260909000400_account_withdrawal.sql</code></td><td>컬럼 · 인덱스 · FK 제거 · <code>is_withdrawn()</code> · RLS · 가드 · 트리거 · 파기 함수 · cron 블록</td></tr>
+      <tr><td><code>supabase/functions/purge-withdrawn/index.ts</code></td><td>일일 파기 배치 Edge Function(인가 · RPC · auth 삭제 · 롤백)</td></tr>
+      <tr><td><code>supabase/config.toml</code></td><td><code>[functions.purge-withdrawn] verify_jwt = false</code></td></tr>
+      <tr><td><code>lib/auth/lifecycle.ts</code></td><td>판정 순수 함수 · 보존 기간 상수 · 모달/안내 문구 · 로그인 후 목적지</td></tr>
+      <tr><td><code>lib/auth/current-user.ts</code></td><td>헤더 · 서버 액션이 쓰는 <code>isWithdrawn</code> 주입</td></tr>
+      <tr><td><code>lib/actions/account-actions.ts</code></td><td><code>withdrawAccountAction</code> · <code>restoreAccountAction</code></td></tr>
+      <tr><td><code>lib/actions/auth-actions.ts</code></td><td>온보딩 · 내 정보 저장, 23505 → 필드별 문구</td></tr>
+      <tr><td><code>lib/actions/pg-error.ts</code></td><td><code>23505</code> 판정 · 제약 이름 추출</td></tr>
+      <tr><td><code>lib/utils/author-display.ts</code></td><td><code>탈퇴한 회원#</code> 접두사 판정 · <code>authorLabel()</code></td></tr>
+      <tr><td><code>lib/data/mappers.ts</code></td><td>스냅샷 → <code>authorPurged</code> 매핑</td></tr>
+      <tr><td><code>lib/utils/msw-link.ts</code></td><td>월드 연동 필수 글쓰기 판정 · 문구</td></tr>
+      <tr><td><code>lib/constants/features.ts</code></td><td><code>postingRequiresMswLink</code> 등 기능 플래그</td></tr>
+      <tr><td><code>proxy.ts</code></td><td>탈퇴 · 온보딩 상태 게이트(302 · 403)</td></tr>
+      <tr><td><code>app/(auth)/account/page.tsx</code></td><td>내 정보 — 회원 탈퇴 섹션</td></tr>
+      <tr><td><code>app/auth/restore/page.tsx</code></td><td>복구 화면(파기 계정은 사유 + 로그아웃만)</td></tr>
+      <tr><td><code>app/auth/callback/route.ts</code></td><td>로그인 콜백 — 탈퇴 우선 목적지 판정</td></tr>
+      <tr><td><code>app/(public)/page.tsx</code></td><td><code>/?notice=withdrawn</code> 안내</td></tr>
+      <tr><td><code>components/auth/WithdrawAccountButton.tsx</code></td><td>확인 모달 3요소</td></tr>
+      <tr><td><code>components/auth/RestoreAccountForm.tsx</code></td><td>복구 · 로그아웃 폼</td></tr>
+      <tr><td><code>components/layout/AuthMenu.tsx</code> · <code>MobileNav.tsx</code></td><td>탈퇴 대기 계정 헤더의 "계정 복구"</td></tr>
+      <tr><td><code>components/board/MswLinkNotice.tsx</code></td><td>월드 연동 안내 배너</td></tr>
+      <tr><td><code>lib/content/privacy-policy/section-04-07.ts</code></td><td>방침 §4 보유 기간 · §7 파기 절차</td></tr>
+      <tr><td><code>lib/content/privacy-policy.ts</code></td><td><code>PRIVACY_POLICY_VERSION = '20260918-2'</code></td></tr>
+      <tr><td><code>scripts/seed-legal.mjs</code></td><td>코드 문안 → HTML → 마이그레이션 SEED</td></tr>
+      <tr><td><code>admin/lib/validation/member-status.ts</code></td><td>생애주기 판정 · <code>D-nn</code> · 익명 닉네임</td></tr>
+      <tr><td><code>admin/lib/validation/member-list-params.ts</code></td><td><code>?status=</code> · <code>?msw=</code> 파싱</td></tr>
+      <tr><td><code>admin/lib/validation/members.ts</code></td><td>상태 필터 목록 · 라벨, 파기 · 강제 탈퇴 스키마</td></tr>
+      <tr><td><code>admin/lib/actions/member-lifecycle-actions.ts</code></td><td>즉시 파기(서비스 롤) · 강제 탈퇴(세션 클라이언트)</td></tr>
+      <tr><td><code>admin/lib/data/members.ts</code></td><td>목록 상태 · 월드 계정 필터, 상세 조회</td></tr>
+      <tr><td><code>admin/lib/data/dashboard.ts</code></td><td>탈퇴 대기 · 지난 7일 파기 지표</td></tr>
+      <tr><td><code>admin/components/members/MemberLifecycleCard.tsx</code></td><td>탈퇴일 · 파기 예정일 · 파기일</td></tr>
+      <tr><td><code>admin/components/members/MemberIdentity.tsx</code></td><td>상태 뱃지(생애주기 + 제재)</td></tr>
+      <tr><td><code>admin/components/members/MemberProfileCard.tsx</code></td><td>파기 계정 개인정보 칸 숨김 · 월드 계정 중복 검색 링크</td></tr>
+      <tr><td><code>admin/components/members/MemberActions.tsx</code></td><td>조치 노출 규칙</td></tr>
+      <tr><td><code>admin/components/members/MemberPurgeDialog.tsx</code></td><td>즉시 파기 확인 모달</td></tr>
+      <tr><td><code>admin/components/members/MemberForceWithdrawDialog.tsx</code></td><td>강제 탈퇴 확인 모달</td></tr>
+      <tr><td><code>admin/components/members/MemberFilters.tsx</code></td><td>상태 · 가입 방식 · 기간 필터, <code>msw</code> 보존</td></tr>
+      <tr><td><code>admin/components/audit/audit-labels.ts</code></td><td><code>member.*</code> 감사 로그 라벨</td></tr>
+      <tr><td><code>docs/admin/DEVELOPER-GUIDE.md</code> §10-11 · 12</td><td>알려진 제약(즉시 파기 이중 경로 · 감사 로그 두 줄)</td></tr>
+      <tr><td><code>docs/admin/ACCOUNT-WITHDRAWAL-PLAN.md</code></td><td>설계 원문(피드백 · 선택지 · 결정 대기 항목)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>글자월드 회원 탈퇴 라이프사이클 가이드 · 최종 갱신 2026-09-09 · 기준 커밋 2e95e92 · 설계 원문 <code>docs/admin/ACCOUNT-WITHDRAWAL-PLAN.md</code> · 개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §10</footer>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "neutral", fontFamily: "IBM Plex Sans KR, sans-serif" })</script>
+</body>
+</html>
