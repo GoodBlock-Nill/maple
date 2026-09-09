@@ -2,6 +2,7 @@
 
 import { useActionState, useCallback, useState } from 'react'
 
+import { HeroBannerMediaFields } from '@/components/settings/HeroBannerMediaFields'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { FormBanner } from '@/components/ui/FormField'
@@ -19,6 +20,8 @@ import type { HeroBannerRecord } from '@/lib/data/settings'
  *
  * `banner` 가 없으면 추가다. 노출 기간은 비워 두면 "제한 없음"이고, 종료가 시작보다
  * 빠르면 DB 제약(hero_banners_period)에 걸리므로 스키마에서 먼저 거른다.
+ *
+ * 미디어(이미지 · 유튜브)는 유형에 따라 칸이 갈려 `HeroBannerMediaFields` 가 맡는다.
  */
 export function HeroBannerDialog({
   banner,
@@ -64,7 +67,7 @@ export function HeroBannerDialog({
         open={isOpen}
         onClose={() => setOpen(false)}
         title={banner === null ? '배너 추가' : '배너 수정'}
-        description="이미지와 노출 기간을 지정합니다. 기간을 비우면 항상 노출됩니다."
+        description="이미지 또는 유튜브 영상과 노출 기간을 지정합니다. 기간을 비우면 항상 노출됩니다."
       >
         <form action={formAction} className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
           <input type="hidden" name="id" value={banner?.id ?? ''} />
@@ -84,21 +87,16 @@ export function HeroBannerDialog({
             defaultValue={banner?.subtitle ?? ''}
             error={errors.subtitle}
           />
-          <Input
-            label="이미지 주소"
-            name="imageUrl"
-            defaultValue={banner?.imageUrl ?? ''}
-            placeholder="https://... 또는 /images/..."
-            error={errors.imageUrl}
-          />
-          <Input
-            label="이미지 파일"
-            name="imageFile"
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
-            hint="파일을 올리면 위 주소 대신 업로드한 이미지를 씁니다."
-            error={errors.imageFile}
-            className="h-auto py-2"
+          <HeroBannerMediaFields
+            defaultMediaType={banner?.mediaType ?? 'image'}
+            defaultImageUrl={banner?.imageUrl ?? ''}
+            defaultVideoUrl={banner?.videoUrl ?? ''}
+            errors={{
+              mediaType: errors.mediaType,
+              imageUrl: errors.imageUrl,
+              imageFile: errors.imageFile,
+              videoUrl: errors.videoUrl,
+            }}
           />
           <Input
             label="링크"

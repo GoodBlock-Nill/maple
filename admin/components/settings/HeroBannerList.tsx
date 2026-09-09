@@ -14,22 +14,27 @@ import {
   toggleHeroBannerAction,
 } from '@/lib/actions/settings-actions'
 import { formatDateTime } from '@/lib/utils/format-date'
+import { youtubeThumbnailUrl } from '@/lib/utils/youtube'
 
 import type { HeroBannerRecord } from '@/lib/data/settings'
 
 /**
  * 히어로 배너 목록.
  *
- * **사용자 사이트는 아직 이 표를 읽지 않는다** — 홈에 배너 슬라이더가 없다.
- * 그래서 화면도 최소한으로 둔다(추가·수정·순서·노출·삭제). 슬라이더가 붙을 때
- * 필요한 값(제목·부제·이미지·링크·버튼 문구·기간)은 지금 다 받아 둔다.
+ * 사용자 사이트의 홈 히어로는 **노출 중인 배너 중 첫 번째 한 장**을 읽는다 —
+ * `sort_order` 오름차순, 노출 기간 안(`starts_at` ~ `ends_at`), `is_active` 인 것.
+ * 그래서 이 목록의 맨 위가 곧 홈에 걸리는 배너이고, ↑ ↓ 버튼이 그것을 고르는
+ * 수단이다. 아직 슬라이더는 없으므로 두 번째부터는 대기 상태다.
+ *
+ * 미디어 유형에 따라 썸네일이 갈린다 — 영상 배너는 유튜브 썸네일에 "영상" 표를
+ * 달고, 이미지 배너는 등록한 그림을 그대로 보여 준다.
  */
 export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord[] }) {
   if (banners.length === 0) {
     return (
       <EmptyState
         title="등록된 배너가 없습니다."
-        description="배너를 추가해 두면 사용자 사이트에 슬라이더가 붙는 즉시 노출됩니다."
+        description="이미지 한 장 또는 유튜브 영상을 등록할 수 있습니다. 맨 위의 노출 중인 배너가 사용자 사이트 홈 히어로에 걸립니다."
         action={<HeroBannerDialog banner={null} nextSortOrder={0} trigger="배너 추가" />}
       />
     )
@@ -42,7 +47,7 @@ export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord
           key={banner.id}
           className="border-line rounded-panel flex flex-wrap items-center gap-3 border p-3"
         >
-          <BannerThumb url={banner.imageUrl} title={banner.title} />
+          <BannerThumb banner={banner} />
 
           <div className="flex min-w-[200px] flex-1 flex-col gap-0.5">
             <span className="flex items-center gap-2">
@@ -96,16 +101,33 @@ export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord
   )
 }
 
-function BannerThumb({ url, title }: { url: string; title: string }) {
-  if (url === '') {
-    return <span className="bg-page rounded-panel block h-12 w-20" aria-hidden="true" />
-  }
+function BannerThumb({ banner }: { banner: HeroBannerRecord }) {
+  /* 영상 배너는 유튜브 썸네일을 먼저 쓰고, 주소를 알아볼 수 없으면 포스터로 물러난다. */
+  const url =
+    banner.mediaType === 'youtube' && banner.youtubeId !== null
+      ? youtubeThumbnailUrl(banner.youtubeId)
+      : siteAssetSrc(banner.imageUrl ?? '')
 
   return (
-    <img
-      src={siteAssetSrc(url)}
-      alt={`${title} 배너`}
-      className="rounded-panel h-12 w-20 object-cover"
-    />
+    <span className="relative block h-12 w-20 shrink-0">
+      {url === '' ? (
+        <span className="bg-page rounded-panel block h-full w-full" aria-hidden="true" />
+      ) : (
+        <img
+          src={url}
+          alt={`${banner.title} 배너`}
+          className="rounded-panel h-full w-full object-cover"
+        />
+      )}
+
+      {banner.mediaType === 'youtube' && (
+        <Badge
+          tone="accent"
+          className="absolute bottom-0.5 left-0.5 px-1 py-0 text-[10px] leading-4"
+        >
+          영상
+        </Badge>
+      )}
+    </span>
   )
 }

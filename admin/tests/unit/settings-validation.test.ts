@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  heroBannerSchema,
   kstDateTimeLocal,
   kstLocalToIso,
-  movedOrder,
   siteSettingsSchema,
   toSiteSettingsRow,
 } from '@/lib/validation/settings'
@@ -78,50 +76,6 @@ describe('siteSettingsSchema', () => {
   })
 })
 
-describe('heroBannerSchema', () => {
-  const BANNER = {
-    title: '오픈 안내',
-    subtitle: '',
-    imageUrl: '/images/banner.png',
-    linkUrl: '/news',
-    ctaLabel: '자세히',
-    sortOrder: '0',
-    isActive: true,
-    startsAt: '2026-09-08T10:00',
-    endsAt: '2026-09-09T10:00',
-  }
-
-  it('should accept a scheduled banner', () => {
-    const parsed = heroBannerSchema.parse(BANNER)
-
-    expect(parsed.sortOrder).toBe(0)
-    expect(parsed.startsAt).toBe('2026-09-08T01:00:00.000Z')
-  })
-
-  it('should require an image', () => {
-    expect(heroBannerSchema.safeParse({ ...BANNER, imageUrl: '' }).success).toBe(false)
-  })
-
-  it('should reject an end that precedes the start', () => {
-    // DB 의 hero_banners_period 제약과 같은 규칙을 화면에서 먼저 알려 준다.
-    const result = heroBannerSchema.safeParse({ ...BANNER, endsAt: '2026-09-07T10:00' })
-
-    expect(result.success).toBe(false)
-    expect(result.error?.issues[0]?.path).toEqual(['endsAt'])
-  })
-
-  it('should treat an empty period as no limit', () => {
-    const parsed = heroBannerSchema.parse({ ...BANNER, startsAt: '', endsAt: '' })
-
-    expect(parsed.startsAt).toBeNull()
-    expect(parsed.endsAt).toBeNull()
-  })
-
-  it('should reject a non numeric sort order', () => {
-    expect(heroBannerSchema.safeParse({ ...BANNER, sortOrder: '첫번째' }).success).toBe(false)
-  })
-})
-
 describe('kst datetime helpers', () => {
   it('should render an ISO instant as Korean wall clock', () => {
     expect(kstDateTimeLocal('2026-09-08T01:00:00.000Z')).toBe('2026-09-08T10:00')
@@ -145,26 +99,5 @@ describe('kst datetime helpers', () => {
     expect(kstDateTimeLocal(null)).toBe('')
     expect(kstLocalToIso('')).toBeNull()
     expect(kstLocalToIso('어제')).toBeNull()
-  })
-})
-
-describe('movedOrder', () => {
-  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
-
-  it('should move an item up', () => {
-    expect(movedOrder(items, 'b', 'up')?.map((item) => item.id)).toEqual(['b', 'a', 'c'])
-  })
-
-  it('should move an item down', () => {
-    expect(movedOrder(items, 'b', 'down')?.map((item) => item.id)).toEqual(['a', 'c', 'b'])
-  })
-
-  it('should refuse to move past either end', () => {
-    expect(movedOrder(items, 'a', 'up')).toBeNull()
-    expect(movedOrder(items, 'c', 'down')).toBeNull()
-  })
-
-  it('should return null for an unknown id', () => {
-    expect(movedOrder(items, 'zzz', 'up')).toBeNull()
   })
 })

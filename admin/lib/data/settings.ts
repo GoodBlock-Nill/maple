@@ -1,6 +1,9 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { parseYoutubeId } from '@/lib/utils/youtube'
+
+import type { HeroMediaType } from '@/lib/validation/hero-banner'
 
 /**
  * 사이트 설정 · 히어로 배너 조회.
@@ -31,7 +34,12 @@ export type HeroBannerRecord = {
   id: string
   title: string
   subtitle: string | null
-  imageUrl: string
+  mediaType: HeroMediaType
+  /** 이미지 배너의 그림. 영상 배너에서는 포스터(대체 이미지)라 비어 있을 수 있다. */
+  imageUrl: string | null
+  videoUrl: string | null
+  /** `videoUrl` 에서 뽑은 영상 id. 알아볼 수 없는 주소면 null 이라 썸네일을 접는다. */
+  youtubeId: string | null
   linkUrl: string | null
   ctaLabel: string | null
   sortOrder: number
@@ -92,7 +100,12 @@ export async function getHeroBanners(): Promise<readonly HeroBannerRecord[]> {
     id: row.id,
     title: row.title,
     subtitle: row.subtitle,
+    /* media_type 은 text + 체크 제약이라 타입 생성기가 string 으로 내려 준다.
+       제약 밖의 값이 들어올 길은 없지만, 화면이 분기하는 값이라 좁혀서 받는다. */
+    mediaType: row.media_type === 'youtube' ? 'youtube' : 'image',
     imageUrl: row.image_url,
+    videoUrl: row.video_url,
+    youtubeId: row.video_url === null ? null : parseYoutubeId(row.video_url),
     linkUrl: row.link_url,
     ctaLabel: row.cta_label,
     sortOrder: row.sort_order,

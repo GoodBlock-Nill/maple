@@ -13,9 +13,11 @@ import {
   heroBannerSchema,
   HERO_BANNER_TEXT_FIELDS,
   movedOrder,
+  toHeroBannerRow,
+} from '@/lib/validation/hero-banner'
+import {
   siteSettingsSchema,
   SITE_SETTINGS_TEXT_FIELDS,
-  toHeroBannerRow,
   toSiteSettingsRow,
 } from '@/lib/validation/settings'
 
@@ -110,6 +112,8 @@ export async function saveHeroBannerAction(
   const actor = await requireAdmin()
   const id = readField(formData, 'id')
 
+  /* 파일 업로드는 두 종류 모두에서 쓴다 — 이미지 배너의 그림이자 영상 배너의
+     포스터다. 그래서 미디어 유형을 보기 전에 먼저 처리한다. */
   const image = readFile(formData, 'imageFile')
   let imageUrl = readField(formData, 'imageUrl')
 

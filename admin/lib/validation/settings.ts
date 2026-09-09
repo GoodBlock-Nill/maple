@@ -1,11 +1,14 @@
 import { z } from 'zod'
 
 /**
- * 사이트 설정 · 히어로 배너 스키마.
+ * 사이트 설정 스키마 · 일시 변환 · 업로드 규칙.
  *
  * 값이 비어 있는 것과 잘못된 것을 구분한다. 관리자 화면의 설정은 대부분 선택
  * 항목이라 빈 문자열은 "설정하지 않음"(null)으로 저장하고, 값이 들어왔을 때만
  * 형식을 검사한다. 빈 값을 반려하면 항목 하나를 지우는 방법이 없어진다.
+ *
+ * 히어로 배너는 규칙이 따로 놀아 `./hero-banner` 로 나눠 두었다. 여기의 공통
+ * 문자열 스키마와 KST 변환을 그쪽에서 가져다 쓴다.
  */
 
 /** 비어 있으면 null, 값이 있으면 http(s) 절대 URL 이어야 한다. */
@@ -37,7 +40,7 @@ export const optionalEmailSchema = z
   )
   .transform((value) => (value === '' ? null : value))
 
-const optionalTextSchema = (max: number) =>
+export const optionalTextSchema = (max: number) =>
   z
     .string()
     .trim()
@@ -75,48 +78,6 @@ export const SITE_SETTINGS_TEXT_FIELDS = [
   'creatorName',
   'creatorSlogan',
   'creatorIntro',
-] as const
-
-export const heroBannerSchema = z
-  .object({
-    title: z.string().trim().min(1, '제목을 입력해 주세요.').max(100),
-    subtitle: optionalTextSchema(200),
-    imageUrl: z
-      .string()
-      .trim()
-      .min(1, '이미지를 등록하거나 주소를 입력해 주세요.')
-      .refine(
-        (value) => value.startsWith('/') || /^https?:\/\/\S+$/.test(value),
-        'http(s) 주소이거나 `/` 로 시작하는 경로여야 합니다.',
-      ),
-    linkUrl: optionalLinkSchema,
-    ctaLabel: optionalTextSchema(30),
-    sortOrder: z
-      .string()
-      .trim()
-      .refine((value) => /^-?\d+$/.test(value), '정렬 순서는 정수로 입력해 주세요.')
-      .transform((value) => Number.parseInt(value, 10)),
-    isActive: z.boolean(),
-    startsAt: z.string().trim().transform(kstLocalToIso),
-    endsAt: z.string().trim().transform(kstLocalToIso),
-  })
-  /* DB 의 hero_banners_period 제약과 같은 규칙. 여기서 먼저 거르면 운영자가
-     Postgres 오류 문구 대신 필드 옆의 안내를 본다. */
-  .refine(
-    (value) => value.startsAt === null || value.endsAt === null || value.startsAt < value.endsAt,
-    { path: ['endsAt'], message: '종료 시각은 시작 시각보다 뒤여야 합니다.' },
-  )
-
-export type HeroBannerInput = z.infer<typeof heroBannerSchema>
-
-export const HERO_BANNER_TEXT_FIELDS = [
-  'title',
-  'subtitle',
-  'linkUrl',
-  'ctaLabel',
-  'sortOrder',
-  'startsAt',
-  'endsAt',
 ] as const
 
 /* ---------------------------------------------------------------------------
@@ -206,49 +167,4 @@ export function toSiteSettingsRow(input: SiteSettingsInput) {
     creator_intro: input.creatorIntro,
     creator_photo_url: input.creatorPhotoUrl,
   }
-}
-
-/** 검증을 통과한 입력 → `hero_banners` 행. */
-export function toHeroBannerRow(input: HeroBannerInput) {
-  return {
-    title: input.title,
-    subtitle: input.subtitle,
-    image_url: input.imageUrl,
-    link_url: input.linkUrl,
-    cta_label: input.ctaLabel,
-    sort_order: input.sortOrder,
-    is_active: input.isActive,
-    starts_at: input.startsAt,
-    ends_at: input.endsAt,
-  }
-}
-
-/**
- * 목록에서 한 칸 이동한 결과 순서.
- *
- * 이웃과 `sort_order` 를 맞바꾸지 않고 배열을 다시 배열한다. 초기 데이터는
- * `sort_order` 가 전부 0(기본값)이라 맞바꾸기로는 아무 일도 일어나지 않는다.
- */
-export function movedOrder<T extends { id: string }>(
-  items: readonly T[],
-  id: string,
-  direction: 'up' | 'down',
-): readonly T[] | null {
-  const index = items.findIndex((item) => item.id === id)
-  const target = index + (direction === 'up' ? -1 : 1)
-
-  if (index === -1 || target < 0 || target >= items.length) {
-    return null
-  }
-
-  const ordered = [...items]
-  const [moved] = ordered.splice(index, 1)
-
-  if (moved === undefined) {
-    return null
-  }
-
-  ordered.splice(target, 0, moved)
-
-  return ordered
 }
