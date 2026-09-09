@@ -17,6 +17,11 @@ type VideoHeroProps = {
    */
   isDimmed: boolean
   title: string
+  /**
+   * 썸네일이 Storage 공개 URL 등 next.config remotePatterns 밖의 주소일 때 true.
+   * 최적화를 거치면 런타임에서 던지므로 원본을 그대로 쓴다.
+   */
+  isExternalThumbnail?: boolean
 }
 
 /** 시안의 유튜브 재생 버튼(141×100). */
@@ -45,7 +50,13 @@ function PlayMark() {
  * 처음에는 썸네일 + 재생 버튼만 그리고, 클릭 시 iframe 으로 교체한다
  * (lite-youtube 방식 — 초기 로드에 유튜브 스크립트를 싣지 않는다).
  */
-export function VideoHero({ videoId, thumbnail, isDimmed, title }: VideoHeroProps) {
+export function VideoHero({
+  videoId,
+  thumbnail,
+  isDimmed,
+  title,
+  isExternalThumbnail = false,
+}: VideoHeroProps) {
   const [isPlaying, setIsPlaying] = useState(false)
 
   if (isPlaying && videoId !== null) {
@@ -73,6 +84,7 @@ export function VideoHero({ videoId, thumbnail, isDimmed, title }: VideoHeroProp
             fill
             priority
             sizes="100vw"
+            unoptimized={isExternalThumbnail}
             className="object-cover object-center"
           />
           {isDimmed ? <div aria-hidden className="absolute inset-0 bg-black/50" /> : null}

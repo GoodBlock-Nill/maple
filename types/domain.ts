@@ -300,7 +300,7 @@ export type InquiryReply = {
 }
 
 /* -------------------------------------------------------------------------
- * 히어로 배너 — 홈 히어로의 CTA 아래, 캐릭터를 가리지 않는 띠에 한 장만 노출
+ * 히어로 배너 — 소개 페이지 상단 영상 영역(1440×763)에 한 장만 노출
  * ---------------------------------------------------------------------- */
 
 export type HeroBannerMediaType = 'image' | 'youtube'
@@ -310,7 +310,7 @@ export type HeroBanner = {
   title: string
   subtitle: string | null
   mediaType: HeroBannerMediaType
-  /** 이미지 배너의 그림. 유튜브 배너에서는 선택적 포스터(썸네일 대체). */
+  /** 이미지 배너의 그림. 유튜브 배너에서는 선택적 포스터(재생 전 썸네일 대체). */
   imageUrl: string | null
   /** 유튜브 배너일 때만. 주소에서 뽑아낸 영상 id. */
   youtubeId: string | null

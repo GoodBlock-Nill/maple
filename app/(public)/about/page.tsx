@@ -2,13 +2,16 @@ import Image from 'next/image'
 
 import { CreatorPanel } from '@/components/about/CreatorPanel'
 import { HeroCharacters } from '@/components/about/HeroCharacters'
+import { ImageHero } from '@/components/about/ImageHero'
 import { VideoHero } from '@/components/about/VideoHero'
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { getActiveHeroBanner } from '@/lib/data/hero-banner'
 import { getSiteSettings } from '@/lib/data/site'
 import { resolveAboutVideoUrl, resolveCreator } from '@/lib/data/site-view'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { extractYoutubeId, youtubeThumbnail } from '@/lib/utils/youtube'
 
+import type { HeroBanner } from '@/types/domain'
 import type { Metadata } from 'next'
 import type { CSSProperties } from 'react'
 
@@ -83,25 +86,57 @@ export const metadata: Metadata = {
     '메이플스토리의 역사를 함께해 온 2세대 최초 만렙 크리에이터가 만든 글자월드를 소개합니다.',
 }
 
-export default async function AboutPage(_props: PageProps<'/about'>) {
-  const settings = await getSiteSettings()
-  const creator = resolveCreator(settings)
-  /* 히어로 영상은 푸터 `/sns/youtube` 와 같은 칸(`site_settings.youtube_url`)을
-     읽는다. 채널 주소처럼 영상 ID 를 못 뽑는 값이면 null 이 되어 중립 포스터로
-     떨어진다 — 무관한 영상을 자동으로 트는 것보다 안전하다. */
-  const videoId = extractYoutubeId(resolveAboutVideoUrl(settings))
+/**
+ * 상단 영역(1440×763)에 무엇을 그릴지 정한다.
+ *
+ * 1) 관리자 히어로 배너(사이트 설정)가 노출 중이면 그것이 우선한다 — 유튜브면
+ *    영상 히어로, 이미지면 이미지 히어로.
+ * 2) 배너가 없으면 기존처럼 `site_settings.youtube_url` 의 영상을 튼다. 채널
+ *    주소처럼 영상 ID 를 못 뽑는 값이면 null 이 되어 중립 포스터로 떨어진다 —
+ *    무관한 영상을 자동으로 트는 것보다 안전하다.
+ */
+function renderTopMedia(banner: HeroBanner | null, defaultVideoUrl: string, title: string) {
+  if (banner !== null && banner.mediaType === 'image' && banner.imageUrl !== null) {
+    return <ImageHero src={banner.imageUrl} alt={banner.title} href={banner.linkUrl} />
+  }
+
+  if (banner !== null && banner.mediaType === 'youtube' && banner.youtubeId !== null) {
+    return (
+      <VideoHero
+        videoId={banner.youtubeId}
+        thumbnail={banner.imageUrl ?? youtubeThumbnail(banner.youtubeId)}
+        isDimmed
+        title={banner.title}
+        isExternalThumbnail={banner.imageUrl !== null && !banner.imageUrl.startsWith('/')}
+      />
+    )
+  }
+
+  const videoId = extractYoutubeId(defaultVideoUrl)
   const localStill = hasPublicAsset(FALLBACK_STILL) ? FALLBACK_STILL : null
-  const thumbnail = videoId === null ? localStill : youtubeThumbnail(videoId)
+
+  return (
+    <VideoHero
+      videoId={videoId}
+      thumbnail={videoId === null ? localStill : youtubeThumbnail(videoId)}
+      isDimmed={videoId !== null}
+      title={title}
+    />
+  )
+}
+
+export default async function AboutPage(_props: PageProps<'/about'>) {
+  const [settings, banner] = await Promise.all([getSiteSettings(), getActiveHeroBanner()])
+  const creator = resolveCreator(settings)
 
   return (
     <>
       <div style={SCENE_STYLE} className="relative isolate overflow-x-clip bg-[#bfb9ff]">
-        <VideoHero
-          videoId={videoId}
-          thumbnail={thumbnail}
-          isDimmed={videoId !== null}
-          title={`${creator.name} 크리에이터 소개 영상`}
-        />
+        {renderTopMedia(
+          banner,
+          resolveAboutVideoUrl(settings),
+          `${creator.name} 크리에이터 소개 영상`,
+        )}
 
         {/* 보라→시안 돌 질감 밴드. */}
         <div className="relative bg-[linear-gradient(180deg,#bfb9ff_0%,#bfb9ff_50%,#76eaff_100%)]">

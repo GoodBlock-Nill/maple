@@ -8,11 +8,11 @@ import type { Tables } from '@/types/database.types'
 import type { HeroBanner } from '@/types/domain'
 
 /**
- * 홈 히어로 배너 접근 계층 (`hero_banners`).
+ * 히어로 배너 접근 계층 (`hero_banners`).
  *
- * 관리자가 등록한 배너 중 **한 장**만 노출한다 — 히어로의 빈 띠(CTA 아래 ·
- * 구름 위 · 소년과 버섯 사이)는 카드 하나가 들어갈 크기라 슬라이더를 두지 않는다.
- * 선택 규칙은 `pickActiveHeroBanner` 에 순수 함수로 두어 테스트한다.
+ * 노출 위치는 **소개 페이지 상단 영역**(시안의 "영상_플레이 버튼" 1440×763)이다
+ * (제품 결정 2026-09-09 — 홈 히어로가 아니다). 관리자가 등록한 배너 중 **한 장**만
+ * 쓴다. 선택 규칙은 `pickActiveHeroBanner` 에 순수 함수로 두어 테스트한다.
  *
  * 캐시는 `site` 태그 하나로 사이트 설정과 함께 비워진다(관리자 저장 시
  * `POST /api/revalidate`). 기간(starts_at · ends_at) 판정은 캐시 시점 기준이라

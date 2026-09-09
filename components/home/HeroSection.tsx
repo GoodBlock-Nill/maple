@@ -1,17 +1,8 @@
 import Image from 'next/image'
 
-import { HeroBannerCard } from '@/components/home/HeroBannerCard'
 import { HeroCharacterLayer } from '@/components/home/HeroCharacterLayer'
 import { HeroCtaGroup } from '@/components/home/HeroCtaGroup'
 import { SITE_HEADLINE, SITE_TAGLINE } from '@/lib/constants/site'
-import { cn } from '@/lib/utils/cn'
-
-import type { HeroBanner } from '@/types/domain'
-
-type HeroSectionProps = {
-  /** 관리자 히어로 배너(노출 중인 첫 장). 없으면 시안 그대로 그린다. */
-  banner?: HeroBanner | null
-}
 
 /**
  * 히어로. 하늘·맵이 합성된 배경 1장 위에 캐릭터 GIF 레이어와 텍스트를 올린다.
@@ -23,20 +14,10 @@ type HeroSectionProps = {
  * 캐릭터가 같은 배율로 커져 어디도 잘리지 않는다(1440 에서는 정확히 760).
  * 1280 아래에서는 시안보다 글자가 상대적으로 커져 캐릭터와 겹치므로, 기존 고정
  * 높이를 두고 캐릭터 레이어만 폭에 비례해 줄여 아래쪽에 붙인다.
- *
- * 배너 카드(HeroBannerCard)가 있을 때 lg 미만에서는 섹션을 240px 더 키운다(캐릭터 레이어는
- * 하단 고정 · 폭 비례 크기라, 카드 아래에 레이어 윗변이 오도록 실측한 값).
- * 캐릭터 레이어는 하단 고정이라 그만큼 내려가고, CTA 아래 카드 자리가 캐릭터와
- * 겹치지 않는다. lg 이상은 카드가 소년·버섯 사이 빈 띠에 들어가므로 그대로다.
  */
-export function HeroSection({ banner = null }: HeroSectionProps) {
+export function HeroSection() {
   return (
-    <section
-      className={cn(
-        'relative isolate w-full overflow-hidden lg:h-[760px] xl:h-[calc(100vw*0.5277778)]',
-        banner === null ? 'h-[560px] sm:h-[680px]' : 'h-[800px] sm:h-[920px]',
-      )}
-    >
+    <section className="relative isolate h-[560px] w-full overflow-hidden sm:h-[680px] lg:h-[760px] xl:h-[calc(100vw*0.5277778)]">
       <Image
         src="/images/home/hero-bg-v2.jpg"
         alt=""
@@ -60,12 +41,6 @@ export function HeroSection({ banner = null }: HeroSectionProps) {
           {SITE_TAGLINE}
         </p>
         <HeroCtaGroup className="mt-[25px]" />
-        {banner === null ? null : (
-          <HeroBannerCard
-            banner={banner}
-            className="mt-6 max-w-[400px] lg:mt-[25px] lg:max-w-[380px] xl:max-w-[520px]"
-          />
-        )}
       </div>
     </section>
   )

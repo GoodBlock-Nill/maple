@@ -1,14 +1,11 @@
 import { HeroSection } from '@/components/home/HeroSection'
 import { NewsCommunitySection } from '@/components/home/NewsCommunitySection'
 import { SiteFooter } from '@/components/layout/SiteFooter'
-import { getActiveHeroBanner } from '@/lib/data/hero-banner'
 
-export default async function HomePage(_props: PageProps<'/'>) {
-  const banner = await getActiveHeroBanner()
-
+export default function HomePage(_props: PageProps<'/'>) {
   return (
     <>
-      <HeroSection banner={banner} />
+      <HeroSection />
       <NewsCommunitySection />
       <SiteFooter variant="home" />
     </>

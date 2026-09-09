@@ -21,7 +21,7 @@ import type { HeroBannerRecord } from '@/lib/data/settings'
 /**
  * 히어로 배너 목록.
  *
- * 사용자 사이트의 홈 히어로는 **노출 중인 배너 중 첫 번째 한 장**을 읽는다 —
+ * 사용자 사이트의 **소개 화면 상단 영역**은 노출 중인 배너 중 첫 번째 한 장을 읽는다 —
  * `sort_order` 오름차순, 노출 기간 안(`starts_at` ~ `ends_at`), `is_active` 인 것.
  * 그래서 이 목록의 맨 위가 곧 홈에 걸리는 배너이고, ↑ ↓ 버튼이 그것을 고르는
  * 수단이다. 아직 슬라이더는 없으므로 두 번째부터는 대기 상태다.
@@ -34,7 +34,7 @@ export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord
     return (
       <EmptyState
         title="등록된 배너가 없습니다."
-        description="이미지 한 장 또는 유튜브 영상을 등록할 수 있습니다. 맨 위의 노출 중인 배너가 사용자 사이트 홈 히어로에 걸립니다."
+        description="이미지 한 장 또는 유튜브 영상을 등록할 수 있습니다. 맨 위의 노출 중인 배너가 소개 화면 상단(영상 영역)에 걸립니다. 없으면 사이트 설정의 유튜브 영상이 나옵니다."
         action={<HeroBannerDialog banner={null} nextSortOrder={0} trigger="배너 추가" />}
       />
     )
