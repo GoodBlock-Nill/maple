@@ -24,7 +24,7 @@ export function AdminShell({ admin, children }: { admin: AdminUser; children: Re
 
   return (
     <ToastProvider>
-      <Sidebar isOpen={isSidebarOpen} onNavigate={closeSidebar} />
+      <Sidebar isOpen={isSidebarOpen} onNavigate={closeSidebar} permissions={admin.permissions} />
 
       {/* 드로어가 열렸을 때만 존재하는 백드롭. 데스크톱(lg)에서는 아예 렌더하지 않는다. */}
       {isSidebarOpen && (

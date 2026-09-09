@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import {
   NEWS_BOARD,
   newsAuditSnapshot,
@@ -27,7 +27,7 @@ import type { Json } from '@/types/database.types'
 /**
  * 뉴스 작성 · 수정 · 숨김 · 삭제 · 복구.
  *
- * 모든 액션이 스스로 `requireAdmin()` 을 부른다. 레이아웃이 이미 막고 있어도 서버
+ * 모든 액션이 스스로 `requirePermission('news', 'write')` 을 부른다. 레이아웃이 이미 막고 있어도 서버
  * 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있기 때문이다(Next 문서 경고).
  * 쓰기는 전부 세션 클라이언트로 한다 — RLS(`posts_*_admin`)가 다시 검사하게 둔다.
  */
@@ -63,7 +63,7 @@ export async function saveNewsAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('news', 'write')
   const parsed = newsFormSchema.safeParse({
     categoryKey: readField(formData, 'categoryKey'),
     title: readField(formData, 'title'),
@@ -250,7 +250,7 @@ export async function newsStateAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('news', 'write')
   const intent = readField(formData, 'intent')
   const ids = formData.getAll('ids').filter((value): value is string => typeof value === 'string')
 

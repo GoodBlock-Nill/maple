@@ -6,7 +6,7 @@ import { actionFailure } from '@/lib/actions/action-failure'
 import { readFile, uploadPublicAsset } from '@/lib/actions/asset-upload'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getHeroBanners, SITE_SETTINGS_ID } from '@/lib/data/settings'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
@@ -51,7 +51,7 @@ export async function saveSiteSettingsAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('settings', 'write')
   const photo = readFile(formData, 'creatorPhotoFile')
   let creatorPhotoUrl = readField(formData, 'creatorPhotoUrl')
 
@@ -114,7 +114,7 @@ export async function saveHeroBannerAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('settings', 'write')
   const id = readField(formData, 'id')
 
   /* 파일 업로드는 두 종류 모두에서 쓴다 — 이미지 배너의 그림이자 영상 배너의
@@ -182,7 +182,7 @@ export async function deleteHeroBannerAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('settings', 'write')
   const id = readField(formData, 'id')
 
   if (id === '') {
@@ -225,7 +225,7 @@ export async function toggleHeroBannerAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('settings', 'write')
   const id = readField(formData, 'id')
   const isActive = readField(formData, 'isActive') === 'true'
   const supabase = await createClient()
@@ -256,7 +256,7 @@ export async function moveHeroBannerAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('settings', 'write')
   const id = readField(formData, 'id')
   const direction = readField(formData, 'direction') === 'up' ? 'up' : 'down'
   const ordered = movedOrder(await getHeroBanners(), id, direction)

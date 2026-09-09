@@ -1,6 +1,8 @@
 import { FaqCategorySection } from '@/components/faqs/FaqCategorySection'
 import { FaqFormDialog } from '@/components/faqs/FaqFormDialog'
 import { PageHeader } from '@/components/ui'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getFaqGroups } from '@/lib/data/faqs'
 
 import type { Metadata } from 'next'
@@ -14,6 +16,8 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function FaqsPage() {
+  const { permissions } = await requirePermission('faqs', 'read')
+  const canWrite = hasPermission(permissions, 'faqs', 'write')
   const groups = await getFaqGroups()
 
   return (
@@ -21,7 +25,7 @@ export default async function FaqsPage() {
       <PageHeader
         title="FAQ"
         description="카테고리 안에서 ▲▼ 로 순서를 바꾸고 '순서 저장'을 눌러 확정합니다. 미발행 항목은 사용자 사이트에 보이지 않습니다."
-        action={<FaqFormDialog triggerLabel="FAQ 등록" />}
+        action={canWrite ? <FaqFormDialog triggerLabel="FAQ 등록" /> : undefined}
       />
 
       <div className="flex flex-col gap-4">
@@ -31,6 +35,7 @@ export default async function FaqsPage() {
           <FaqCategorySection
             key={`${group.category}:${group.items.map((item) => item.id).join(',')}`}
             group={group}
+            canWrite={canWrite}
           />
         ))}
       </div>

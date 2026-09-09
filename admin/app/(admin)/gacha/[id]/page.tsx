@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { GachaForm } from '@/components/gacha/GachaForm'
 import { Card, CardBody } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getGachaItem } from '@/lib/data/gacha'
 import { formatDateTime } from '@/lib/utils/format-date'
 import { gachaTabLabel } from '@/lib/validation/gacha'
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function EditGachaPage(props: PageProps<'/gacha/[id]'>) {
+  await requirePermission('gacha', 'write')
   const { id } = await props.params
   const item = await getGachaItem(id)
 

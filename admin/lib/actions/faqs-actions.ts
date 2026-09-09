@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { actionFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getNextFaqSortOrder } from '@/lib/data/faqs'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
@@ -14,7 +14,7 @@ import { faqReorderSchema, faqSchema } from '@/lib/validation/faqs'
 /**
  * FAQ CRUD · 발행 토글 · 정렬 저장.
  *
- * 모든 액션이 스스로 `requireAdmin()` 을 부르고(직접 POST 방어), 상태를 바꾼 뒤
+ * 모든 액션이 스스로 `requirePermission('faqs', 'write')` 을 부르고(직접 POST 방어), 상태를 바꾼 뒤
  * 감사 로그를 남긴다. 쓰기는 세션 클라이언트로만 한다 — `faqs_admin_all` 정책이
  * 다시 검사하게 두어야 권한 버그가 조용히 통과하지 않는다.
  */
@@ -45,7 +45,7 @@ export async function createFaqAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('faqs', 'write')
   const parsed = faqSchema.safeParse(readFaqInput(formData))
 
   if (!parsed.success) {
@@ -89,7 +89,7 @@ export async function updateFaqAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('faqs', 'write')
   const faqId = readField(formData, 'faqId')
   const parsed = faqSchema.safeParse(readFaqInput(formData))
 
@@ -144,7 +144,7 @@ export async function deleteFaqAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('faqs', 'write')
   const faqId = readField(formData, 'faqId')
 
   if (faqId === '') {
@@ -191,7 +191,7 @@ export async function toggleFaqPublishAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('faqs', 'write')
   const faqId = readField(formData, 'faqId')
   const nextPublished = readField(formData, 'isPublished') === 'true'
 
@@ -239,7 +239,7 @@ export async function reorderFaqsAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('faqs', 'write')
   const parsed = faqReorderSchema.safeParse({
     category: readField(formData, 'category'),
     ids: readField(formData, 'ids').split(',').filter(Boolean),

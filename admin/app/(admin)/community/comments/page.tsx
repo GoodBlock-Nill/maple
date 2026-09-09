@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
 import { bulkHideCommentsAction } from '@/lib/actions/moderation-actions'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import {
   getCommunityComments,
@@ -38,24 +40,30 @@ const STATUS_TONE: Record<ContentStatus, BadgeTone> = {
 }
 
 export default async function CommunityCommentsPage(props: PageProps<'/community/comments'>) {
+  const { permissions } = await requirePermission('community', 'read')
+  const canWrite = hasPermission(permissions, 'community', 'write')
   const searchParams = await props.searchParams
   const params = parseCommentListParams(searchParams)
   const list = await getCommunityComments(params)
 
-  const columns: readonly Column<CommentListItem>[] = [
-    {
-      key: 'select',
-      header: <span className="sr-only">선택</span>,
-      className: 'w-10',
-      align: 'center',
-      cell: (row) => (
-        <BulkSelectCheckbox
-          id={row.id}
-          label={row.content.slice(0, 20)}
-          disabled={row.isHidden || row.deletedAt !== null}
-        />
-      ),
-    },
+  /* 선택 열은 일괄 조치 전용이다. 읽기 전용 관리자에게는 열 자체를 뺀다 —
+     남겨 두면 체크는 되는데 아무 버튼도 없는 표가 된다. */
+  const columnDefs: (Column<CommentListItem> | null)[] = [
+    canWrite === false
+      ? null
+      : {
+          key: 'select',
+          header: <span className="sr-only">선택</span>,
+          className: 'w-10',
+          align: 'center',
+          cell: (row) => (
+            <BulkSelectCheckbox
+              id={row.id}
+              label={row.content.slice(0, 20)}
+              disabled={row.isHidden || row.deletedAt !== null}
+            />
+          ),
+        },
     {
       key: 'content',
       header: '내용',
@@ -118,10 +126,12 @@ export default async function CommunityCommentsPage(props: PageProps<'/community
           id={row.id}
           isHidden={row.isHidden}
           isDeleted={row.deletedAt !== null}
+          canWrite={canWrite}
         />
       ),
     },
   ]
+  const columns = columnDefs.filter((column): column is Column<CommentListItem> => column !== null)
 
   return (
     <>
@@ -139,7 +149,7 @@ export default async function CommunityCommentsPage(props: PageProps<'/community
       )}
 
       <Card>
-        <BulkHideBar action={bulkHideCommentsAction} label="댓글" />
+        {canWrite && <BulkHideBar action={bulkHideCommentsAction} label="댓글" />}
         <Table
           columns={columns}
           rows={list.rows}

@@ -2,6 +2,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LEGAL_STATUS_LABEL, LEGAL_STATUS_TONE, legalClientPath } from '@/lib/constants/legal'
 import { listLegalDocuments } from '@/lib/data/legal'
 import { clientSiteUrl } from '@/lib/supabase/env'
@@ -24,6 +26,8 @@ export const dynamic = 'force-dynamic'
  * 정렬·검색·페이지를 붙이면 운영자가 매번 같은 세 줄을 훑게 된다.
  */
 export default async function LegalPage() {
+  const { permissions } = await requirePermission('legal', 'read')
+  const canWrite = hasPermission(permissions, 'legal', 'write')
   const documents = await listLegalDocuments()
   const siteUrl = clientSiteUrl()
 
@@ -36,7 +40,12 @@ export default async function LegalPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {documents.map((document) => (
-          <LegalDocumentCard key={document.slug} document={document} siteUrl={siteUrl} />
+          <LegalDocumentCard
+            key={document.slug}
+            document={document}
+            siteUrl={siteUrl}
+            canWrite={canWrite}
+          />
         ))}
       </div>
     </>
@@ -46,9 +55,11 @@ export default async function LegalPage() {
 type LegalDocumentCardProps = {
   document: LegalDocumentSummary
   siteUrl: string
+  /** 편집 화면(`/legal/[slug]`)은 쓰기 권한이 있어야 열린다. 버튼도 함께 감춘다. */
+  canWrite: boolean
 }
 
-function LegalDocumentCard({ document, siteUrl }: LegalDocumentCardProps) {
+function LegalDocumentCard({ document, siteUrl, canWrite }: LegalDocumentCardProps) {
   const { current, latest } = document
   const status = current === null ? null : deriveLegalStatus(current, current.version)
 
@@ -77,9 +88,7 @@ function LegalDocumentCard({ document, siteUrl }: LegalDocumentCardProps) {
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-muted">마지막 수정</dt>
-            <dd className="text-ink">
-              {latest === null ? '-' : formatDateTime(latest.createdAt)}
-            </dd>
+            <dd className="text-ink">{latest === null ? '-' : formatDateTime(latest.createdAt)}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-muted">개정본</dt>
@@ -88,12 +97,16 @@ function LegalDocumentCard({ document, siteUrl }: LegalDocumentCardProps) {
         </dl>
 
         <div className="border-line flex flex-wrap items-center gap-2 border-t pt-3">
-          <Button href={`/legal/${document.slug}`} size="sm">
-            편집
-          </Button>
-          <Button href={`/legal/${document.slug}#history`} variant="secondary" size="sm">
-            버전 이력
-          </Button>
+          {canWrite && (
+            <>
+              <Button href={`/legal/${document.slug}`} size="sm">
+                편집
+              </Button>
+              <Button href={`/legal/${document.slug}#history`} variant="secondary" size="sm">
+                버전 이력
+              </Button>
+            </>
+          )}
           <a
             href={`${siteUrl}${legalClientPath(document.slug)}`}
             target="_blank"

@@ -22,7 +22,7 @@ import type { FaqGroup, FaqItem } from '@/lib/data/faqs'
  * 항목이 추가·삭제되면 부모가 `key` 에 넣은 id 나열이 달라져 이 컴포넌트가 새로
  * 마운트된다. 그래서 순서 상태를 동기화하는 이펙트가 필요 없다.
  */
-export function FaqCategorySection({ group }: { group: FaqGroup }) {
+export function FaqCategorySection({ group, canWrite }: { group: FaqGroup; canWrite: boolean }) {
   const [orderIds, setOrderIds] = useState<readonly string[]>(() =>
     group.items.map((item) => item.id),
   )
@@ -70,21 +70,28 @@ export function FaqCategorySection({ group }: { group: FaqGroup }) {
       <CardHeader
         title={`${group.label} (${items.length})`}
         action={
-          <div className="flex items-center gap-2">
-            <form action={formAction}>
-              <input type="hidden" name="category" value={group.category} />
-              <input type="hidden" name="ids" value={orderIds.join(',')} />
-              <Button type="submit" size="sm" variant="secondary" disabled={!isDirty || isPending}>
-                {isPending ? '저장 중…' : '순서 저장'}
-              </Button>
-            </form>
-            <FaqFormDialog
-              defaultCategory={group.category}
-              triggerLabel="추가"
-              triggerVariant="secondary"
-              triggerSize="sm"
-            />
-          </div>
+          canWrite ? (
+            <div className="flex items-center gap-2">
+              <form action={formAction}>
+                <input type="hidden" name="category" value={group.category} />
+                <input type="hidden" name="ids" value={orderIds.join(',')} />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="secondary"
+                  disabled={!isDirty || isPending}
+                >
+                  {isPending ? '저장 중…' : '순서 저장'}
+                </Button>
+              </form>
+              <FaqFormDialog
+                defaultCategory={group.category}
+                triggerLabel="추가"
+                triggerVariant="secondary"
+                triggerSize="sm"
+              />
+            </div>
+          ) : null
         }
       />
 
@@ -93,7 +100,14 @@ export function FaqCategorySection({ group }: { group: FaqGroup }) {
       ) : (
         <ul>
           {items.map((item, index) => (
-            <FaqRow key={item.id} faq={item} index={index} total={items.length} onMove={move} />
+            <FaqRow
+              key={item.id}
+              faq={item}
+              index={index}
+              total={items.length}
+              onMove={move}
+              canWrite={canWrite}
+            />
           ))}
         </ul>
       )}

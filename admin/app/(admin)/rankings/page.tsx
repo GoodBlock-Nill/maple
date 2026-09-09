@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Table, type Column } from '@/components/ui/Table'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getLatestSnapshotAt, getRankingRows, getRankingSnapshots } from '@/lib/data/rankings'
 import { cn } from '@/lib/utils/cn'
 import { formatDateTime } from '@/lib/utils/format-date'
@@ -22,6 +24,8 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function RankingsPage(props: PageProps<'/rankings'>) {
+  const { permissions } = await requirePermission('rankings', 'read')
+  const canWrite = hasPermission(permissions, 'rankings', 'write')
   const searchParams = await props.searchParams
   const rawType = firstValue(searchParams.type) ?? ''
   const rankType = isRankType(rawType) ? rawType : DEFAULT_RANK_TYPE
@@ -144,6 +148,7 @@ export default async function RankingsPage(props: PageProps<'/rankings'>) {
         snapshots={snapshots}
         currentSnapshot={latest}
         viewing={viewing}
+        canWrite={canWrite}
       />
     </>
   )

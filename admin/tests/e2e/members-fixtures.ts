@@ -185,7 +185,7 @@ export async function destroyScenario(scenario: Scenario): Promise<void> {
   const db = serviceClient()
 
   await db.from('reports').delete().eq('target_id', scenario.postId)
-  /* 권한 부여 테스트가 남긴 초대 행. auth 사용자를 지워도 이 행은 남아, 같은
+  /* 초대 흐름이 남긴 행. auth 사용자를 지워도 이 행은 남아, 같은
      주소로 다시 가입하면 트리거가 관리자로 만들어 버린다. */
   await db.from('admin_invites').delete().ilike('email', scenario.authorEmail)
   await db.from('comments').delete().eq('post_id', scenario.postId)

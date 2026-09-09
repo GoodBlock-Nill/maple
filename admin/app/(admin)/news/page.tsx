@@ -5,6 +5,8 @@ import { Card, CardBody } from '@/components/ui/Card'
 import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { isNewsCategoryKey, isNewsStatus } from '@/lib/constants/news'
 import { listNews, listNewsCategories, NEWS_DEFAULT_SORT, NEWS_SORT_KEYS } from '@/lib/data/news'
@@ -33,6 +35,8 @@ export const dynamic = 'force-dynamic'
 const NEWS_PATH = '/news'
 
 export default async function NewsListPage(props: PageProps<'/news'>) {
+  const { permissions } = await requirePermission('news', 'read')
+  const canWrite = hasPermission(permissions, 'news', 'write')
   const query: QueryParams = await props.searchParams
 
   const categoryParam = firstValue(query.category)
@@ -58,7 +62,7 @@ export default async function NewsListPage(props: PageProps<'/news'>) {
       <PageHeader
         title="뉴스"
         description="뉴스 게시글을 작성·수정하고 발행 상태를 관리합니다."
-        action={<Button href={`${NEWS_PATH}/new`}>새 뉴스 작성</Button>}
+        action={canWrite ? <Button href={`${NEWS_PATH}/new`}>새 뉴스 작성</Button> : undefined}
       />
 
       {list.hasError && (
@@ -89,6 +93,7 @@ export default async function NewsListPage(props: PageProps<'/news'>) {
           sort={sort}
           sortHrefs={sortHrefs}
           clientSiteUrl={clientSiteUrl()}
+          canWrite={canWrite}
         />
 
         <Pagination

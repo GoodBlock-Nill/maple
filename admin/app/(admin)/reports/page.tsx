@@ -6,6 +6,8 @@ import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { getReportCounts, getReports, type ReportItem } from '@/lib/data/reports'
 import { clientSiteUrl } from '@/lib/supabase/env'
@@ -46,6 +48,8 @@ function previewHrefOf(report: ReportItem): string | null {
 }
 
 export default async function ReportsPage(props: PageProps<'/reports'>) {
+  const { permissions } = await requirePermission('reports', 'read')
+  const canWrite = hasPermission(permissions, 'reports', 'write')
   const searchParams = await props.searchParams
   const requested = firstValue(searchParams.status)
   const status: ReportStatus = REPORT_STATUSES.includes(requested as ReportStatus)
@@ -125,6 +129,7 @@ export default async function ReportsPage(props: PageProps<'/reports'>) {
               ? null
               : `/members/${row.target.authorId}`
           }
+          canWrite={canWrite}
         />
       ),
     },

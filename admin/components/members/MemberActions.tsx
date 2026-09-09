@@ -1,50 +1,44 @@
 'use client'
 
-import { useActionState, useCallback, useState } from 'react'
+import { useActionState, useCallback } from 'react'
 
 import { MemberNicknameDialog } from '@/components/members/MemberNicknameDialog'
 import { MemberSuspendDialog } from '@/components/members/MemberSuspendDialog'
 import { Button } from '@/components/ui/Button'
-import { Dialog } from '@/components/ui/Dialog'
-import { FormBanner } from '@/components/ui/FormField'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
-import { changeMemberRoleAction } from '@/lib/actions/member-role-actions'
 import { unsuspendMemberAction } from '@/lib/actions/members-actions'
 
 import type { FormState } from '@/lib/actions/form-state'
-import type { UserRole } from '@/lib/supabase/types'
 
 /**
- * 회원 상세의 조치 모음.
+ * 회원 상세의 조치 모음 — 정지 · 정지 해제 · 닉네임 강제 변경.
  *
- * 계정 삭제 버튼은 두지 않는다(이번 범위 밖). `profiles` 를 지우면 auth 사용자와
- * 작성 이력이 연쇄로 끊기므로, 필요해지면 별도 절차로 다뤄야 한다.
+ * **회원을 관리자로 올리는 조작은 없다**(2026-09-09 제품 결정). 관리자는 `/admins`
+ * 에서 이메일로 초대해 만든다. 회원 화면에 승격 버튼이 남아 있으면 권한이 생기는
+ * 경로가 둘이 되어, 어느 쪽이 역할(admin_role_id)을 정하는지 알 수 없게 된다.
+ *
+ * 계정 삭제 버튼도 두지 않는다. `profiles` 를 지우면 auth 사용자와 작성 이력이
+ * 연쇄로 끊기므로, 필요해지면 별도 절차로 다뤄야 한다.
  */
 export function MemberActions({
   memberId,
   nickname,
-  role,
   isSuspended,
-  isSelf,
 }: {
   memberId: string
   nickname: string
-  role: UserRole
   isSuspended: boolean
-  isSelf: boolean
 }) {
   const { showToast } = useToast()
-  const [isRoleOpen, setRoleOpen] = useState(false)
 
   const withToast = useCallback(
-    (action: (state: FormState, formData: FormData) => Promise<FormState>, onDone?: () => void) =>
+    (action: (state: FormState, formData: FormData) => Promise<FormState>) =>
       async (state: FormState, formData: FormData): Promise<FormState> => {
         const result = await action(state, formData)
 
         if (result.message !== undefined) {
           showToast(result.message, 'success')
-          onDone?.()
         }
 
         if (result.formError !== undefined) {
@@ -60,16 +54,6 @@ export function MemberActions({
     withToast(unsuspendMemberAction),
     EMPTY_FORM_STATE,
   )
-  const [roleState, roleAction, isRolePending] = useActionState(
-    withToast(changeMemberRoleAction, () => setRoleOpen(false)),
-    EMPTY_FORM_STATE,
-  )
-
-  const nextRole: UserRole = role === 'admin' ? 'user' : 'admin'
-  /* 확인 버튼에는 무엇을 하는지 그대로 적는다 — '확인' 은 되돌릴 수 없는 조작에서
-     운영자가 무엇에 동의했는지 남기지 못한다. */
-  const verbLabel = role === 'admin' ? '권한 회수' : '권한 부여'
-  const pendingLabel = role === 'admin' ? '회수 중…' : '부여 중…'
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -85,45 +69,6 @@ export function MemberActions({
       )}
 
       <MemberNicknameDialog memberId={memberId} nickname={nickname} />
-
-      {isSelf ? (
-        <span className="text-muted text-[12px]">자기 자신의 권한은 바꿀 수 없습니다.</span>
-      ) : (
-        <Button variant="ghost" size="sm" onClick={() => setRoleOpen(true)}>
-          {role === 'admin' ? '관리자 권한 회수' : '관리자 권한 부여'}
-        </Button>
-      )}
-
-      <Dialog
-        open={isRoleOpen}
-        onClose={() => setRoleOpen(false)}
-        title={role === 'admin' ? '관리자 권한 회수' : '관리자 권한 부여'}
-        description={
-          role === 'admin'
-            ? `${nickname} 님을 일반 사용자로 되돌립니다. 계정과 작성 이력은 그대로 남습니다.`
-            : `${nickname} 님에게 관리 콘솔 전체 권한을 부여합니다. 관리자 앱 로그인 안내는 별도로 해 주세요.`
-        }
-      >
-        <form action={roleAction} className="flex flex-col gap-4">
-          <input type="hidden" name="memberId" value={memberId} />
-          <input type="hidden" name="role" value={nextRole} />
-
-          <FormBanner message={roleState.formError} />
-
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setRoleOpen(false)} disabled={isRolePending}>
-              취소
-            </Button>
-            <Button
-              type="submit"
-              variant={role === 'admin' ? 'danger' : 'primary'}
-              disabled={isRolePending}
-            >
-              {isRolePending ? pendingLabel : verbLabel}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
     </div>
   )
 }

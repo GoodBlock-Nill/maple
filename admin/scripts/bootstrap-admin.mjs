@@ -11,11 +11,12 @@
  *   (값을 admin/.env.local 에 적어 두고 인자 없이 실행해도 된다)
  *
  * 하는 일
- *   1) admin_invites 에 초대 행을 만든다 — handle_new_user() 트리거가 이 행을
- *      보고 role='admin' 을 준다. **계정 생성보다 먼저** 넣어야 한다.
- *   2) auth 사용자를 만든다(email_confirm: true — 메일 확인 없이 바로 로그인).
- *   3) 이미 있는 계정이면 비밀번호만 재설정하고 권한을 보정한다.
- *   4) profiles.role 이 실제로 admin 인지 확인하고, 아니면 마지막으로 고친다.
+ *   1) admin_roles 에서 super_admin 역할 id 를 읽는다(마이그레이션이 시드한 시스템 역할).
+ *   2) admin_invites 에 그 역할을 실은 초대 행을 만든다 — handle_new_user() 트리거가
+ *      이 행을 보고 role='admin' + admin_role_id 를 준다. **계정 생성보다 먼저** 넣어야 한다.
+ *   3) auth 사용자를 만든다(email_confirm: true — 메일 확인 없이 바로 로그인).
+ *   4) 이미 있는 계정이면 비밀번호만 재설정하고 권한을 보정한다.
+ *   5) profiles 의 role·admin_role_id 가 실제로 슈퍼어드민인지 확인하고, 아니면 고친다.
  *
  * 비밀번호는 절대 표준 출력에 찍지 않는다.
  */
@@ -43,7 +44,8 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 await main()
 
 async function main() {
-  const inviteId = await ensureInvite(email)
+  const superAdminRoleId = await readSuperAdminRoleId()
+  const inviteId = await ensureInvite(email, superAdminRoleId)
   const userId = await ensureUser(email, password)
 
   await supabase
@@ -51,7 +53,7 @@ async function main() {
     .update({ status: 'accepted', accepted_at: new Date().toISOString() })
     .eq('id', inviteId)
 
-  const role = await ensureAdminRole(userId)
+  const role = await ensureSuperAdmin(userId, superAdminRoleId)
 
   console.log('[bootstrap] 완료')
   console.log(`  이메일 : ${email}`)
@@ -60,8 +62,27 @@ async function main() {
   console.log('  비밀번호는 출력하지 않습니다. 실행에 사용한 값을 그대로 쓰세요.')
 }
 
+/** 시스템 역할 super_admin. 마이그레이션 20260909000200 이 시드한다. */
+async function readSuperAdminRoleId() {
+  const { data, error } = await supabase
+    .from('admin_roles')
+    .select('id')
+    .eq('key', 'super_admin')
+    .maybeSingle()
+
+  if (error) {
+    fail(`역할 조회 실패: ${error.message}`)
+  }
+
+  if (!data) {
+    fail('super_admin 역할이 없습니다. supabase db push 로 마이그레이션을 먼저 적용하세요.')
+  }
+
+  return data.id
+}
+
 /** 초대 행이 있으면 pending 으로 되살리고, 없으면 만든다. */
-async function ensureInvite(targetEmail) {
+async function ensureInvite(targetEmail, roleId) {
   const { data: existing, error: selectError } = await supabase
     .from('admin_invites')
     .select('id')
@@ -75,7 +96,7 @@ async function ensureInvite(targetEmail) {
   if (existing) {
     const { error } = await supabase
       .from('admin_invites')
-      .update({ status: 'pending', accepted_at: null })
+      .update({ status: 'pending', accepted_at: null, role_id: roleId, expires_at: null })
       .eq('id', existing.id)
 
     if (error) {
@@ -87,7 +108,7 @@ async function ensureInvite(targetEmail) {
 
   const { data, error } = await supabase
     .from('admin_invites')
-    .insert({ email: targetEmail, status: 'pending' })
+    .insert({ email: targetEmail, status: 'pending', role_id: roleId })
     .select('id')
     .single()
 
@@ -155,11 +176,11 @@ async function findUserIdByEmail(targetEmail) {
   return null
 }
 
-/** 트리거가 이미 admin 을 줬어야 정상이다. 아니면 여기서 마지막으로 고친다. */
-async function ensureAdminRole(userId) {
+/** 트리거가 이미 admin + super_admin 을 줬어야 정상이다. 아니면 여기서 마지막으로 고친다. */
+async function ensureSuperAdmin(userId, roleId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, admin_role_id')
     .eq('id', userId)
     .maybeSingle()
 
@@ -167,22 +188,22 @@ async function ensureAdminRole(userId) {
     fail(`프로필 조회 실패: ${error.message}`)
   }
 
-  if (data?.role === 'admin') {
-    return 'admin'
+  if (data?.role === 'admin' && data?.admin_role_id === roleId) {
+    return 'admin / super_admin'
   }
 
   const { error: updateError } = await supabase
     .from('profiles')
-    .update({ role: 'admin' })
+    .update({ role: 'admin', admin_role_id: roleId })
     .eq('id', userId)
 
   if (updateError) {
     fail(`권한 부여 실패: ${updateError.message}`)
   }
 
-  console.log('[bootstrap] 트리거가 권한을 주지 않아 직접 admin 으로 올렸습니다.')
+  console.log('[bootstrap] 트리거가 권한을 주지 않아 직접 슈퍼어드민으로 올렸습니다.')
 
-  return 'admin'
+  return 'admin / super_admin'
 }
 
 /** 의존성 없이 .env 를 읽는다(dotenv 를 넣자고 패키지를 늘리지 않는다). */

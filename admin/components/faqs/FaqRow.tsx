@@ -23,11 +23,14 @@ export function FaqRow({
   index,
   total,
   onMove,
+  canWrite,
 }: {
   faq: FaqItem
   index: number
   total: number
   onMove: (id: string, direction: 'up' | 'down') => void
+  /** 읽기 전용 관리자에게는 순서·발행·수정·삭제를 그리지 않는다. */
+  canWrite: boolean
 }) {
   const { showToast } = useToast()
 
@@ -52,28 +55,30 @@ export function FaqRow({
 
   return (
     <li className="border-line flex flex-wrap items-center gap-3 border-b px-5 py-3 last:border-b-0">
-      <span className="flex flex-col gap-0.5">
-        <Button
-          size="sm"
-          variant="secondary"
-          aria-label={`${faq.question} 위로`}
-          disabled={index === 0}
-          onClick={() => onMove(faq.id, 'up')}
-          className="h-6 px-2 text-[11px]"
-        >
-          ▲
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          aria-label={`${faq.question} 아래로`}
-          disabled={index === total - 1}
-          onClick={() => onMove(faq.id, 'down')}
-          className="h-6 px-2 text-[11px]"
-        >
-          ▼
-        </Button>
-      </span>
+      {canWrite && (
+        <span className="flex flex-col gap-0.5">
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`${faq.question} 위로`}
+            disabled={index === 0}
+            onClick={() => onMove(faq.id, 'up')}
+            className="h-6 px-2 text-[11px]"
+          >
+            ▲
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`${faq.question} 아래로`}
+            disabled={index === total - 1}
+            onClick={() => onMove(faq.id, 'down')}
+            className="h-6 px-2 text-[11px]"
+          >
+            ▼
+          </Button>
+        </span>
+      )}
 
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-ink line-clamp-1 text-[14px] font-semibold">{faq.question}</span>
@@ -82,16 +87,20 @@ export function FaqRow({
 
       {faq.isPublished ? <Badge tone="success">발행</Badge> : <Badge tone="neutral">미발행</Badge>}
 
-      <form action={formAction}>
-        <input type="hidden" name="faqId" value={faq.id} />
-        <input type="hidden" name="isPublished" value={faq.isPublished ? 'false' : 'true'} />
-        <Button type="submit" variant="ghost" size="sm" disabled={isPending}>
-          {faq.isPublished ? '숨기기' : '발행'}
-        </Button>
-      </form>
+      {canWrite && (
+        <>
+          <form action={formAction}>
+            <input type="hidden" name="faqId" value={faq.id} />
+            <input type="hidden" name="isPublished" value={faq.isPublished ? 'false' : 'true'} />
+            <Button type="submit" variant="ghost" size="sm" disabled={isPending}>
+              {faq.isPublished ? '숨기기' : '발행'}
+            </Button>
+          </form>
 
-      <FaqFormDialog faq={faq} triggerLabel="수정" triggerVariant="secondary" />
-      <FaqDeleteButton faqId={faq.id} question={faq.question} />
+          <FaqFormDialog faq={faq} triggerLabel="수정" triggerVariant="secondary" />
+          <FaqDeleteButton faqId={faq.id} question={faq.question} />
+        </>
+      )}
     </li>
   )
 }

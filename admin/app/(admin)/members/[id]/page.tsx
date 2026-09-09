@@ -10,7 +10,8 @@ import { MemberProfileCard } from '@/components/members/MemberProfileCard'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { StatCard } from '@/components/ui/StatCard'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getMember, getMemberActivity } from '@/lib/data/members'
 import { getReportsFor } from '@/lib/data/reports'
 import { buildHref, firstValue } from '@/lib/utils/table-query'
@@ -27,7 +28,8 @@ export const dynamic = 'force-dynamic'
 
 export default async function MemberDetailPage(props: PageProps<'/members/[id]'>) {
   const [{ id }, searchParams] = await Promise.all([props.params, props.searchParams])
-  const [actor, member] = await Promise.all([requireAdmin(), getMember(id)])
+  const [actor, member] = await Promise.all([requirePermission('members', 'read'), getMember(id)])
+  const canWrite = hasPermission(actor.permissions, 'members', 'write')
 
   if (member === null) {
     notFound()
@@ -48,7 +50,11 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
     <>
       <PageHeader
         title={member.nickname}
-        description="회원 정보와 활동을 확인하고 제재·권한을 적용합니다."
+        description={
+          canWrite
+            ? '회원 정보와 활동을 확인하고 제재를 적용합니다.'
+            : '회원 정보와 활동을 확인합니다(읽기 전용).'
+        }
         action={
           <Button href="/members" variant="secondary" size="sm">
             목록으로
@@ -59,13 +65,13 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
       <MemberProfileCard
         member={member}
         actions={
-          <MemberActions
-            memberId={member.id}
-            nickname={member.nickname}
-            role={member.role}
-            isSuspended={isSuspended(member.suspendedUntil)}
-            isSelf={member.id === actor.id}
-          />
+          canWrite ? (
+            <MemberActions
+              memberId={member.id}
+              nickname={member.nickname}
+              isSuspended={isSuspended(member.suspendedUntil)}
+            />
+          ) : null
         }
       />
 

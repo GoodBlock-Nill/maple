@@ -7,7 +7,7 @@ import { moderateTarget } from '@/lib/actions/moderation-actions'
 import { suspendMember } from '@/lib/actions/members-actions'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { dismissReportSchema, resolveReportSchema } from '@/lib/validation/moderation'
@@ -69,7 +69,7 @@ async function openReportIdsForTarget(report: ReportRow): Promise<string[]> {
  * `grant update on public.reports to authenticated` 를 더하면 이 우회는 지워야 한다.
  *
  * 우회의 범위를 좁히기 위해 처리 컬럼(상태 · 메모 · 처리자 · 처리 시각)만, 그것도
- * 호출부가 `requireAdmin()` 을 통과한 뒤에만 만진다.
+ * 호출부가 `requirePermission('reports', 'write')` 을 통과한 뒤에만 만진다.
  *
  * `note` · `resolved_by` · `resolved_at` 은 20260908002100 이 추가한 컬럼이다.
  * 감사 로그(`audit_logs`)가 처리 기록의 원본이라는 점은 그대로지만, 신고 큐에서
@@ -106,7 +106,7 @@ export async function resolveReportAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('reports', 'write')
   const parsed = resolveReportSchema.safeParse({
     reportId: readField(formData, 'reportId'),
     action: readField(formData, 'action'),
@@ -203,7 +203,7 @@ export async function dismissReportAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('reports', 'write')
   const parsed = dismissReportSchema.safeParse({
     reportId: readField(formData, 'reportId'),
     note: readField(formData, 'note'),

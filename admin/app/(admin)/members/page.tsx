@@ -5,6 +5,7 @@ import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { getMembers, type MemberListItem, type MemberListParams } from '@/lib/data/members'
 import { formatDate } from '@/lib/utils/format-date'
@@ -59,6 +60,7 @@ function parseParams(params: QueryParams): MemberListParams {
 }
 
 export default async function MembersPage(props: PageProps<'/members'>) {
+  await requirePermission('members', 'read')
   const searchParams = await props.searchParams
   const params = parseParams(searchParams)
   const list = await getMembers(params)

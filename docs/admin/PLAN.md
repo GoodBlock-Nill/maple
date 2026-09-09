@@ -8,12 +8,15 @@
 - 공유: `types/database.types.ts`는 `supabase gen types`로 루트와 `admin/types/`에 동시 생성(스크립트). Supabase 클라이언트·검증 스키마는 admin 안에 자체 구현(추후 `packages/shared`로 추출 가능).
 - 권한: `profiles.role = 'admin'`만 접근(`is_admin()`). 관리자 화면의 모든 쓰기는 서버 액션 + RLS(admin 정책) + 서비스 롤은 초대/회원 제재 등 admin API가 필요한 곳만.
 
-## 2. 인증
+## 2. 인증 · 권한 (2026-09-09 재결정)
 
-- 로그인: 이메일/비밀번호(Supabase Auth). `role !== 'admin'`이면 로그인 직후 로그아웃 + 안내.
-- 관리자 만들기: **이메일 초대는 제거(2026-09-09 결정)**. 사용자 사이트에 가입한 회원을 관리자 → 회원 상세 → "관리자 권한 부여"로 승격한다(`admin_invites` 에 accepted 행 기록, 감사 로그). role은 절대 클라이언트 입력으로 채우지 않음.
+- 로그인: **이메일/비밀번호 하나뿐**(Supabase Auth). 간편로그인 버튼은 제거했다. `role !== 'admin'`이면 로그인 직후 로그아웃 + 안내.
+- 관리자 만들기: **이메일 초대**. 슈퍼어드민이 `/admins`에서 이메일 + 역할을 넣으면 `admin_invites`에 pending 행을 먼저 쓰고 초대 메일을 보낸다. 받은 사람이 `/invite/accept`에서 **스스로 비밀번호를 정한다**. 회원 상세의 "관리자 권한 부여"는 제거했다. role·admin_role_id는 절대 클라이언트 입력으로 채우지 않음.
+- 권한 체계: `admin_roles(key, name, permissions jsonb)` — 모듈 13개 × `none|read|write`. 기본 시스템 역할 **슈퍼어드민(`super_admin`)**은 수정·삭제 불가. 슈퍼어드민은 커스텀 역할을 만들고 고치고 지울 수 있다(멤버가 있으면 삭제 불가). `profiles.admin_role_id`가 관리자 한 명의 역할이다.
+- 강제 지점: RLS는 `is_admin()`(role='admin')이라는 **거친 문**만 본다. 모듈별 read/write는 앱 계층(`requirePermission()`)이 강제하고, 사이드바는 `none`인 모듈을 감춘다. 권한을 바꾸는 경로(profiles.role · admin_role_id · admin_roles)만 DB에서 `is_super_admin()`으로 잠근다.
+- 삭제 = 비활성화: role을 내리고 admin_role_id를 비운 뒤 auth 사용자를 ban한다(계정 행과 작성 이력은 남는다). 자기 자신·마지막 슈퍼어드민은 불가.
 - 세션 만료 30분 비활동 시 재로그인(proxy.ts), 비밀번호 재설정 메일.
-- 첫 관리자: 시드 스크립트(`admin/scripts/bootstrap-admin.mjs`, 서비스 롤)로 1명 생성.
+- 첫 슈퍼어드민: 시드 스크립트(`admin/scripts/bootstrap-admin.mjs`, 서비스 롤)로 1명 생성.
 
 ## 3. 정보 구조 (사이드바)
 
@@ -23,18 +26,19 @@
 | 뉴스        | `/news`, `/news/new`, `/news/[id]`        | 목록(카테고리·상태·검색), 작성/수정(Tiptap 에디터, 카테고리 6종, 요약, 발행/예약, 상단고정), 삭제(소프트)                                                                                                        |
 | 커뮤니티    | `/community/posts`, `/community/comments` | 게시글/댓글 목록·검색, 숨김/복구/삭제, 작성자로 이동                                                                                                                                                             |
 | 신고        | `/reports`                                | 큐(open/resolved/dismissed), 대상 미리보기, 처리(숨김+제재 연계), 기각, 메모                                                                                                                                     |
-| 회원        | `/members`, `/members/[id]`               | 목록·검색(닉네임/이메일/공급자), 상세(활동, 신고 이력), 정지(기간·사유)/해제, 관리자 권한 부여/회수, 닉네임 강제 변경                                                                                            |
+| 회원        | `/members`, `/members/[id]`               | 목록·검색(닉네임/이메일/공급자), 상세(활동, 신고 이력), 정지(기간·사유)/해제, 닉네임 강제 변경 (관리자 승격은 2026-09-09 결정으로 제거)                                                                          |
 | 고객지원    | `/inquiries`, `/inquiries/[id]`, `/faqs`  | 문의 목록(상태·카테고리 필터), 상세·첨부, 답변 작성(inquiry_replies), 상태 변경; FAQ CRUD·정렬                                                                                                                   |
 | 가이드      | `/gacha`                                  | 확률형 아이템 CRUD(탭·확률·상세표), 공개 여부                                                                                                                                                                    |
 | 랭킹        | `/rankings`                               | 현재 스냅샷 확인(종합/직업/길드), 스냅샷 이력, 이전 스냅샷으로 되돌리기. 적재는 개발팀 연동(게임 데이터)이 맡고 관리자는 조회·롤백만 한다                                                                        |
 | 사이트 설정 | `/settings`                               | 월드 ID, 디스코드, 유튜브, 연락 이메일, 크리에이터 이름/슬로건/소개/사진(Storage public-assets), 히어로 배너                                                                                                     |
 | Legal       | `/legal`, `/legal/[slug]`                 | 개인정보처리방침·디스코드 운영정책·글자월드 운영정책 문서 관리: 에디터 편집, 버전·시행일, 발행/예약, 미리보기, 버전 이력·비교. 클라이언트 `/policy/[slug]`는 발행본을 DB에서 읽고(코드 내 문안은 초기 시드·폴백) |
-| 관리자      | `/admins`                                 | 관리자 목록, 권한 회수                                                                                                                                                                                           |
+| 관리자      | `/admins`                                 | (슈퍼어드민 전용) 관리자 목록·역할 변경·삭제, 이메일 초대, 수락 대기 초대 재발송/취소, 권한(역할) 추가·수정·삭제                                                                                                 |
 | 감사 로그   | `/audit`                                  | 누가·언제·무엇을(테이블/행/변경 전후), 필터                                                                                                                                                                      |
 
 ## 4. DB 추가 (마이그레이션)
 
-- `admin_invites(email, invited_by, token/status, created_at, accepted_at)`
+- `admin_invites(email, invited_by, token/status, created_at, accepted_at)` + `role_id`, `expires_at` (2026-09-09)
+- `admin_roles(key unique, name, description, permissions jsonb, is_system)` + `profiles.admin_role_id` + `is_super_admin()` + 가드 트리거 (`20260909000200_admin_roles`)
 - `profiles.suspended_until timestamptz`, `profiles.suspension_reason text` + 쓰기 정책에 정지 사용자 차단(글·댓글·신고·좋아요 insert 정책에 `not is_suspended()`)
 - `posts.is_hidden boolean`(운영 숨김; deleted_at과 구분), `comments.is_hidden`
 - `audit_logs(id, actor_id, action, target_table, target_id, before jsonb, after jsonb, created_at)` + 관리자 서버 액션에서 기록

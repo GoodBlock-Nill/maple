@@ -11,6 +11,7 @@ import {
   NEWS_VISIBILITY_LABEL,
   NEWS_VISIBILITY_TONE,
 } from '@/lib/constants/news'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getNewsPost, listNewsCategories } from '@/lib/data/news'
 import { clientSiteUrl } from '@/lib/supabase/env'
 import { formatDateTime } from '@/lib/utils/format-date'
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function EditNewsPage(props: PageProps<'/news/[id]'>) {
+  await requirePermission('news', 'write')
   const { id } = await props.params
   const [post, categories] = await Promise.all([getNewsPost(id), listNewsCategories()])
 

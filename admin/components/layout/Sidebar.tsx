@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useMemo } from 'react'
 
 import { NavIconGlyph } from '@/components/layout/nav-icons'
-import { isNavItemActive, isPathActive, NAV_ITEMS } from '@/lib/nav'
+import { isNavItemActive, isPathActive, visibleNavItems } from '@/lib/nav'
 import { cn } from '@/lib/utils/cn'
+
+import type { ModulePermissions } from '@/lib/auth/permissions'
 
 /**
  * 좌측 내비게이션 — 260px 고정, 사이드바 색(#1f2430).
@@ -13,9 +16,21 @@ import { cn } from '@/lib/utils/cn'
  * 1024px 미만에서는 화면 밖으로 밀어 두고 상단 바의 버튼으로 연다(드로어).
  * `hidden` 이 아니라 `-translate-x-full` 로 숨기는 이유: 트랜지션이 가능하고,
  * 열려 있는 동안 포커스 순서가 자연스럽게 유지된다.
+ *
+ * 메뉴는 역할 권한으로 걸러진다(`visibleNavItems`). 이것은 **편의**이지 인가가
+ * 아니다 — 주소를 직접 쳐도 각 페이지의 `requirePermission()` 이 막는다.
  */
-export function Sidebar({ isOpen, onNavigate }: { isOpen: boolean; onNavigate: () => void }) {
+export function Sidebar({
+  isOpen,
+  onNavigate,
+  permissions,
+}: {
+  isOpen: boolean
+  onNavigate: () => void
+  permissions: ModulePermissions
+}) {
   const pathname = usePathname()
+  const items = useMemo(() => visibleNavItems(permissions), [permissions])
 
   return (
     <nav
@@ -36,7 +51,7 @@ export function Sidebar({ isOpen, onNavigate }: { isOpen: boolean; onNavigate: (
       </Link>
 
       <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-6">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const isActive = isNavItemActive(item, pathname)
 
           return (
@@ -46,11 +61,11 @@ export function Sidebar({ isOpen, onNavigate }: { isOpen: boolean; onNavigate: (
                 onClick={onNavigate}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'relative flex items-center gap-2.5 rounded-panel px-3 py-2.5 text-[14px] font-semibold transition-colors',
+                  'rounded-panel relative flex items-center gap-2.5 px-3 py-2.5 text-[14px] font-semibold transition-colors',
                   'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white',
                   isActive
                     ? 'bg-sidebar-hover text-white'
-                    : 'text-white/60 hover:bg-sidebar-hover hover:text-white',
+                    : 'hover:bg-sidebar-hover text-white/60 hover:text-white',
                 )}
               >
                 {/* 활성 표시는 색만으로 두지 않는다 — 왼쪽 액센트 바가 색각 이상에서도 읽힌다. */}

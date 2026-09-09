@@ -28,10 +28,13 @@ export function ReportDetailDialog({
   report,
   previewHref,
   authorHref,
+  canWrite,
 }: {
   report: ReportItem
   previewHref: string | null
   authorHref: string | null
+  /** 쓰기 권한이 없으면 처리·기각 폼 없이 상세만 보여 준다. */
+  canWrite: boolean
 }) {
   const [isOpen, setOpen] = useState(false)
   const [mode, setMode] = useState<'resolve' | 'dismiss'>('resolve')
@@ -40,7 +43,7 @@ export function ReportDetailDialog({
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)}>
-        {report.status === 'open' ? '처리' : '상세'}
+        {canWrite && report.status === 'open' ? '처리' : '상세'}
       </Button>
 
       <Dialog
@@ -76,7 +79,13 @@ export function ReportDetailDialog({
 
             <div className="flex gap-2">
               {previewHref !== null && (
-                <Button href={previewHref} target="_blank" rel="noreferrer" variant="ghost" size="sm">
+                <Button
+                  href={previewHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="ghost"
+                  size="sm"
+                >
                   원문 보기
                 </Button>
               )}
@@ -102,7 +111,7 @@ export function ReportDetailDialog({
           {report.history.length > 1 && (
             <section className="flex flex-col gap-1.5">
               <h3 className="text-ink text-[13px] font-semibold">같은 대상의 신고 이력</h3>
-              <ul className="border-line divide-line divide-y rounded-panel border">
+              <ul className="border-line divide-line rounded-panel divide-y border">
                 {report.history.map((item) => (
                   <li
                     key={item.id}
@@ -123,23 +132,35 @@ export function ReportDetailDialog({
             </section>
           )}
 
-          <div className="border-line flex gap-1 border-b">
-            <ModeTab isActive={mode === 'resolve'} onClick={() => setMode('resolve')} label="처리" />
-            <ModeTab isActive={mode === 'dismiss'} onClick={() => setMode('dismiss')} label="기각" />
-          </div>
+          {canWrite && (
+            <>
+              <div className="border-line flex gap-1 border-b">
+                <ModeTab
+                  isActive={mode === 'resolve'}
+                  onClick={() => setMode('resolve')}
+                  label="처리"
+                />
+                <ModeTab
+                  isActive={mode === 'dismiss'}
+                  onClick={() => setMode('dismiss')}
+                  label="기각"
+                />
+              </div>
 
-          {mode === 'resolve' ? (
-            <ReportResolveForm
-              reportId={report.id}
-              openCountForTarget={report.openCountForTarget}
-              onDone={() => setOpen(false)}
-            />
-          ) : (
-            <ReportDismissForm
-              reportId={report.id}
-              openCountForTarget={report.openCountForTarget}
-              onDone={() => setOpen(false)}
-            />
+              {mode === 'resolve' ? (
+                <ReportResolveForm
+                  reportId={report.id}
+                  openCountForTarget={report.openCountForTarget}
+                  onDone={() => setOpen(false)}
+                />
+              ) : (
+                <ReportDismissForm
+                  reportId={report.id}
+                  openCountForTarget={report.openCountForTarget}
+                  onDone={() => setOpen(false)}
+                />
+              )}
+            </>
           )}
         </div>
       </Dialog>
@@ -163,7 +184,9 @@ function ModeTab({
       aria-pressed={isActive}
       className={cn(
         'focus-visible:outline-focus -mb-px border-b-2 px-3 py-1.5 text-[13px] font-semibold focus-visible:outline-2 focus-visible:-outline-offset-2',
-        isActive ? 'border-accent text-accent-strong' : 'text-muted hover:text-ink border-transparent',
+        isActive
+          ? 'border-accent text-accent-strong'
+          : 'text-muted hover:text-ink border-transparent',
       )}
     >
       {label}

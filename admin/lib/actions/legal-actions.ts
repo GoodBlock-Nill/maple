@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import {
   isLegalSlug,
   LEGAL_CLIENT_CACHE_TAG,
@@ -15,16 +15,20 @@ import {
 import { revalidateClient } from '@/lib/revalidate'
 import { sanitizeLegalHtml } from '@/lib/sanitize/legal-html'
 import { createClient } from '@/lib/supabase/server'
-import { legalFormSchema, resolveLegalPublishPlan, type LegalFormInput } from '@/lib/validation/legal'
+import {
+  legalFormSchema,
+  resolveLegalPublishPlan,
+  type LegalFormInput,
+} from '@/lib/validation/legal'
 
 import type { Json } from '@/types/database.types'
 
 /**
  * 약관 개정본 저장 · 발행 · 초안 삭제.
  *
- * 모든 액션이 스스로 `requireAdmin()` 을 부른다. 레이아웃이 이미 막고 있어도 서버
- * 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다. 쓰기는 세션 클라이언트로
- * 해서 RLS(`legal_*_admin`)가 다시 검사하게 둔다.
+ * 모든 액션이 스스로 `requirePermission('legal', 'write')` 을 부른다 — 서버 액션은 UI 를
+ * 거치지 않는 직접 POST 로 호출될 수 있다. 쓰기는 세션 클라이언트로 해서
+ * RLS(`legal_*_admin`)가 다시 검사하게 둔다.
  *
  * **발행본은 고치지 않고 쌓는다.** 이미 발행한 개정본의 본문을 덮어쓰면 "그때 그
  * 약관"이 사라진다. 화면도 발행본을 열면 "이 버전으로 새 초안 만들기"만 권한다.
@@ -62,7 +66,8 @@ function snapshotOf(slug: LegalSlug, input: LegalFormInput, isPublished: boolean
  */
 async function ensureDocumentId(slug: LegalSlug): Promise<string | null> {
   const supabase = await createClient()
-  const { data } = await supabase.from('legal_documents').select('id').eq('slug', slug).maybeSingle()
+  const query = supabase.from('legal_documents').select('id').eq('slug', slug)
+  const { data } = await query.maybeSingle()
 
   if (data !== null && data !== undefined) {
     return data.id
@@ -92,7 +97,7 @@ export async function saveLegalVersionAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('legal', 'write')
   const slug = readField(formData, 'slug')
 
   if (!isLegalSlug(slug)) {
@@ -245,7 +250,7 @@ export async function deleteLegalDraftAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('legal', 'write')
   const slug = readField(formData, 'slug')
   const versionId = readField(formData, 'id')
 

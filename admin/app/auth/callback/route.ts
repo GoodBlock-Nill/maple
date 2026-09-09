@@ -8,7 +8,7 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 import type { NextRequest } from 'next/server'
 
 /**
- * 간편로그인(OAuth) · 비밀번호 재설정 링크의 착지점.
+ * 초대 · 비밀번호 재설정 링크의 착지점.
  *
  * 어느 쪽으로 들어오든 세션이 생기고 나면 `profiles.role` 을 확인한다
  * (`rejectNonAdmin`) — 관리자 앱의 문턱은 "로그인에 성공했는가"가 아니라
@@ -22,6 +22,8 @@ import type { NextRequest } from 'next/server'
  * 1·2 는 여기서 끝내고, 3 은 해시를 읽을 수 있는 브라우저에게 넘긴다
  * (`/auth/callback/complete`). 리다이렉트 시 프래그먼트는 브라우저가 그대로
  * 이어 붙이므로 정보가 유실되지 않는다.
+ *
+ * 초대 메일은 `?next=/invite/accept` 로 돌아온다 — 거기서 비밀번호를 정한다.
  */
 
 const ALLOWED_TYPES: readonly EmailOtpType[] = [
@@ -39,12 +41,12 @@ function parseOtpType(value: string | null): EmailOtpType | null {
 }
 
 /**
- * 링크·간편로그인으로 막 만들어진 세션이 **관리자의 것인지** 확인한다.
+ * 링크로 막 만들어진 세션이 **관리자의 것인지** 확인한다.
  *
- * 관리자 계정은 초대가 아니라 회원 승격으로 만들어진다(2026-09-09 제품 결정).
- * 그래서 글자월드 회원이면 누구나 구글·카카오 로그인을 끝까지 통과해 여기까지
- * 올 수 있다. role 이 아니면 세션을 남기지 않고 되돌린다 — 남기면 "로그인은
- * 됐는데 모든 화면이 튕기는" 상태에 갇힌다.
+ * 초대 링크로 들어온 계정은 `handle_new_user()` 가 이미 role='admin' 으로 만들어
+ * 두었으므로 그대로 통과한다. 그 밖의 경로(비밀번호 재설정 메일을 받은 일반
+ * 회원 등)로 세션이 생겼다면 남기지 않고 되돌린다 — 남기면 "로그인은 됐는데 모든
+ * 화면이 튕기는" 상태에 갇힌다.
  *
  * 통과면 `null`, 아니면 로그인으로 되돌릴 응답을 준다.
  */

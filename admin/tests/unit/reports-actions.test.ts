@@ -16,13 +16,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111'
 const REPORT_ID = '22222222-2222-4222-8222-222222222222'
 
+const ACTOR = {
+  id: ADMIN_ID,
+  email: 'admin@stub.local',
+  nickname: '운영자',
+  role: 'admin',
+  roleKey: 'super_admin',
+  roleName: '슈퍼어드민',
+  permissions: { reports: 'write' },
+  isSuperAdmin: true,
+}
+
 vi.mock('@/lib/auth/require-admin', () => ({
-  requireAdmin: vi.fn(async () => ({
-    id: ADMIN_ID,
-    email: 'admin@stub.local',
-    nickname: '운영자',
-    role: 'admin',
-  })),
+  requireAdmin: vi.fn(async () => ACTOR),
+  requirePermission: vi.fn(async () => ACTOR),
+  requireAnyPermission: vi.fn(async () => ACTOR),
+  requireSuperAdmin: vi.fn(async () => ACTOR),
 }))
 
 vi.mock('@/lib/audit', () => ({ writeAuditLog: vi.fn(async () => undefined) }))

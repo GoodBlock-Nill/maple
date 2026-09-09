@@ -1,5 +1,6 @@
 import { NewsForm } from '@/components/news/NewsForm'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { listNewsCategories } from '@/lib/data/news'
 
 import type { Metadata } from 'next'
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function NewNewsPage() {
+  await requirePermission('news', 'write')
   const categories = await listNewsCategories()
 
   return (

@@ -14,6 +14,7 @@ import {
   legalClientPath,
   legalDocumentLabel,
 } from '@/lib/constants/legal'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getLegalDocument } from '@/lib/data/legal'
 import { clientSiteUrl } from '@/lib/supabase/env'
 import { firstValue } from '@/lib/utils/table-query'
@@ -106,6 +107,7 @@ function resolveTarget(
 }
 
 export default async function LegalEditPage(props: PageProps<'/legal/[slug]'>) {
+  await requirePermission('legal', 'write')
   const { slug } = await props.params
 
   if (!isLegalSlug(slug)) {

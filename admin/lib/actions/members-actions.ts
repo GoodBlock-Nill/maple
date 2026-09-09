@@ -4,7 +4,7 @@ import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { readMember, revalidateMember, UNIQUE_VIOLATION } from '@/lib/actions/member-shared'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { createClient } from '@/lib/supabase/server'
 import { josa } from '@/lib/utils/josa'
 import {
@@ -16,7 +16,8 @@ import {
 
 import type { SuspensionPeriod } from '@/lib/validation/members'
 
-/* 회원 제재 · 프로필 강제 변경. 관리자 권한 부여·회수는 `member-role-actions.ts` 다.
+/* 회원 제재 · 프로필 강제 변경. 관리자 계정 관리는 `/admins`(admin-actions.ts) 가 맡는다 —
+   회원을 승격해 관리자를 만드는 경로는 2026-09-09 제품 결정으로 사라졌다.
    쓰기는 세션 클라이언트로 한다 —
    `profiles_update_admin` 이 관리자에게 다른 회원의 UPDATE 를 열어 두므로 서비스
    롤이 필요 없다. 서비스 롤을 일반 경로에 쓰면 권한 버그가 조용히 통과한다. */
@@ -28,7 +29,7 @@ export async function suspendMember(
   period: SuspensionPeriod,
   reason: string,
 ): Promise<string | null> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('members', 'write')
 
   if (memberId === actor.id) {
     return '자기 자신을 정지할 수는 없습니다.'
@@ -98,7 +99,7 @@ export async function unsuspendMemberAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('members', 'write')
   const parsed = unsuspendMemberSchema.safeParse({ memberId: readField(formData, 'memberId') })
 
   if (!parsed.success) {
@@ -147,7 +148,7 @@ export async function changeNicknameAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('members', 'write')
   const parsed = changeNicknameSchema.safeParse({
     memberId: readField(formData, 'memberId'),
     nickname: readField(formData, 'nickname'),

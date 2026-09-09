@@ -34,6 +34,8 @@ type ColumnDeps = {
   onToggleAll: () => void
   /** 사용자 사이트 주소. 미리보기 링크의 접두사. */
   clientSiteUrl: string
+  /** 읽기 전용이면 선택 열과 행 조치를 통째로 뺀다. */
+  canWrite: boolean
 }
 
 export function buildNewsColumns({
@@ -42,8 +44,9 @@ export function buildNewsColumns({
   onToggle,
   onToggleAll,
   clientSiteUrl,
+  canWrite,
 }: ColumnDeps): readonly Column<NewsListItem>[] {
-  return [
+  const columns: Column<NewsListItem>[] = [
     {
       key: 'select',
       className: 'w-10',
@@ -148,4 +151,8 @@ export function buildNewsColumns({
       ),
     },
   ]
+
+  return canWrite
+    ? columns
+    : columns.filter((column) => column.key !== 'select' && column.key !== 'actions')
 }

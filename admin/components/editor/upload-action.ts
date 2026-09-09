@@ -5,7 +5,7 @@ import {
   POST_IMAGE_BUCKET,
   validatePostImage,
 } from '@/components/editor/post-image'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requireAnyPermission } from '@/lib/auth/require-admin'
 import { createClient } from '@/lib/supabase/server'
 
 /**
@@ -26,7 +26,9 @@ import { createClient } from '@/lib/supabase/server'
 export type UploadImageResult = { ok: true; url: string } | { ok: false; message: string }
 
 export async function uploadPostImageAction(formData: FormData): Promise<UploadImageResult> {
-  const actor = await requireAdmin()
+  /* 에디터는 뉴스와 Legal 두 화면이 함께 쓴다. 둘 중 하나라도 쓰기 권한이 있으면
+     본문 이미지를 올릴 수 있다. */
+  const actor = await requireAnyPermission(['news', 'legal'], 'write')
   const file = formData.get('file')
 
   if (!(file instanceof File)) {

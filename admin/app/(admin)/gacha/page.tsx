@@ -10,6 +10,8 @@ import { Card, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import {
   DEFAULT_GACHA_SORT,
   GACHA_SORT_KEYS,
@@ -41,6 +43,8 @@ export const dynamic = 'force-dynamic'
 const PATH = '/gacha'
 
 export default async function GachaPage(props: PageProps<'/gacha'>) {
+  const { permissions } = await requirePermission('gacha', 'read')
+  const canWrite = hasPermission(permissions, 'gacha', 'write')
   const searchParams = await props.searchParams
   const rawTab = firstValue(searchParams.tab) ?? ''
   const tab = isGachaTab(rawTab) ? rawTab : DEFAULT_GACHA_TAB
@@ -50,7 +54,7 @@ export default async function GachaPage(props: PageProps<'/gacha'>) {
 
   const { items, count } = await getGachaList({ tab, q, sort, page })
 
-  const columns: readonly Column<GachaAdminItem>[] = [
+  const columnDefs: (Column<GachaAdminItem> | null)[] = [
     {
       key: 'icon',
       header: '아이콘',
@@ -98,21 +102,25 @@ export default async function GachaPage(props: PageProps<'/gacha'>) {
       className: 'w-40',
       cell: (row) => <span className="text-muted">{formatDateTime(row.updatedAt)}</span>,
     },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      className: 'w-40',
-      cell: (row) => (
-        <span className="flex items-center justify-end gap-1.5">
-          <Button href={`/gacha/${row.id}`} size="sm" variant="secondary">
-            수정
-          </Button>
-          <DeleteGachaButton id={row.id} name={row.name} />
-        </span>
-      ),
-    },
+    canWrite === false
+      ? null
+      : {
+          key: 'actions',
+          header: '',
+          align: 'right',
+          className: 'w-40',
+          cell: (row) => (
+            <span className="flex items-center justify-end gap-1.5">
+              <Button href={`/gacha/${row.id}`} size="sm" variant="secondary">
+                수정
+              </Button>
+              <DeleteGachaButton id={row.id} name={row.name} />
+            </span>
+          ),
+        },
   ]
+
+  const columns = columnDefs.filter((column): column is Column<GachaAdminItem> => column !== null)
 
   return (
     <>

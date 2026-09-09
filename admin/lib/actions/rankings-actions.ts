@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getRankingSnapshots } from '@/lib/data/rankings'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
@@ -125,7 +125,7 @@ export async function rollbackRankingSnapshotAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('rankings', 'write')
   const rankType = readRankType(formData)
   const snapshotAt = readField(formData, 'snapshotAt')
 

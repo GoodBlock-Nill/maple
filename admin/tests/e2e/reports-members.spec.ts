@@ -185,52 +185,6 @@ test('a forced nickname change keeps the author_name snapshot on existing posts'
   scenario.authorNickname = nextNickname
 })
 
-test('granting and revoking admin goes through the invite allow-list', async ({ page }) => {
-  await signInAsAdmin(page)
-  await page.goto(`/members/${scenario.authorId}`)
-
-  await page.getByRole('button', { name: '관리자 권한 부여' }).click()
-  // 확인 버튼에는 동사를 적는다 — '확인' 은 무엇에 동의했는지 남기지 못한다.
-  await page.getByRole('dialog').getByRole('button', { name: '권한 부여' }).click()
-  await expect(page.getByText(/관리자 권한을 부여했습니다/)).toBeVisible()
-
-  const db = serviceClient()
-  const { data: granted } = await db
-    .from('profiles')
-    .select('role')
-    .eq('id', scenario.authorId)
-    .maybeSingle()
-
-  expect(granted?.role).toBe('admin')
-
-  // 승격의 근거(admin_invites accepted)가 함께 남아야 한다 — README §3 의 규칙.
-  const { data: invite } = await db
-    .from('admin_invites')
-    .select('status')
-    .ilike('email', scenario.authorEmail)
-    .maybeSingle()
-
-  expect(invite?.status).toBe('accepted')
-
-  await page.reload()
-  await page.getByRole('button', { name: '관리자 권한 회수' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: '권한 회수' }).click()
-  await expect(page.getByText(/관리자 권한을 회수했습니다/)).toBeVisible()
-
-  const { data: revoked } = await db
-    .from('profiles')
-    .select('role')
-    .eq('id', scenario.authorId)
-    .maybeSingle()
-
-  expect(revoked?.role).toBe('user')
-
-  // 허용 목록에서도 내려가야 같은 주소로 재가입할 때 다시 관리자가 되지 않는다.
-  const { data: revokedInvite } = await db
-    .from('admin_invites')
-    .select('status')
-    .ilike('email', scenario.authorEmail)
-    .maybeSingle()
-
-  expect(revokedInvite?.status).toBe('revoked')
-})
+/* 관리자 승격/회수 테스트는 삭제했다 — 회원 상세에서 관리자를 만드는 경로가
+   2026-09-09 제품 결정으로 사라졌다. 관리자 계정 관리는 `/admins` 의 이메일 초대
+   흐름이 담당하고, 그 검증은 admin.spec.ts 에 있다. */

@@ -14,10 +14,19 @@ const ACTOR = {
   email: 'admin@stub.local',
   nickname: '운영자',
   role: 'admin',
+  roleKey: 'super_admin',
+  roleName: '슈퍼어드민',
+  permissions: { faqs: 'write', settings: 'write' },
+  isSuperAdmin: true,
 }
 
 vi.mock('server-only', () => ({}))
-vi.mock('@/lib/auth/require-admin', () => ({ requireAdmin: vi.fn(async () => ACTOR) }))
+vi.mock('@/lib/auth/require-admin', () => ({
+  requireAdmin: vi.fn(async () => ACTOR),
+  requirePermission: vi.fn(async () => ACTOR),
+  requireAnyPermission: vi.fn(async () => ACTOR),
+  requireSuperAdmin: vi.fn(async () => ACTOR),
+}))
 vi.mock('@/lib/audit', () => ({ writeAuditLog: vi.fn(async () => undefined) }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/lib/revalidate', () => ({

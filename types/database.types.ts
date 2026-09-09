@@ -44,8 +44,10 @@ export type Database = {
           accepted_at: string | null
           created_at: string
           email: string
+          expires_at: string | null
           id: string
           invited_by: string | null
+          role_id: string | null
           status: string
           token_hash: string | null
         }
@@ -53,8 +55,10 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           email: string
+          expires_at?: string | null
           id?: string
           invited_by?: string | null
+          role_id?: string | null
           status?: string
           token_hash?: string | null
         }
@@ -62,8 +66,10 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           email?: string
+          expires_at?: string | null
           id?: string
           invited_by?: string | null
+          role_id?: string | null
           status?: string
           token_hash?: string | null
         }
@@ -75,7 +81,47 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "admin_invites_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "admin_roles"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      admin_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          key: string
+          name: string
+          permissions: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          key: string
+          name: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          key?: string
+          name?: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       audit_logs: {
         Row: {
@@ -635,6 +681,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_role_id: string | null
           age_confirmed_at: string | null
           avatar_url: string | null
           created_at: string
@@ -653,6 +700,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_role_id?: string | null
           age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -671,6 +719,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_role_id?: string | null
           age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -688,7 +737,15 @@ export type Database = {
           terms_agreed_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_admin_role_id_fkey"
+            columns: ["admin_role_id"]
+            isOneToOne: false
+            referencedRelation: "admin_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rankings: {
         Row: {
@@ -866,6 +923,7 @@ export type Database = {
       }
       increment_post_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
       replace_ranking_snapshot: {
         Args: {

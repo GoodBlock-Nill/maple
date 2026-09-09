@@ -7,7 +7,7 @@ import { actionFailure } from '@/lib/actions/action-failure'
 import { readFile, uploadPublicAsset } from '@/lib/actions/asset-upload'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import { josa } from '@/lib/utils/josa'
@@ -19,7 +19,7 @@ import type { Json } from '@/types/database.types'
 /**
  * 확률형 아이템 CRUD.
  *
- * 모든 액션이 스스로 `requireAdmin()` 을 부른다. 레이아웃이 이미 막고 있어도
+ * 모든 액션이 스스로 `requirePermission('gacha', 'write')` 을 부른다. 레이아웃이 이미 막고 있어도
  * 서버 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다.
  */
 
@@ -39,7 +39,7 @@ export async function saveGachaItemAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('gacha', 'write')
   const id = readField(formData, 'id')
 
   const iconFile = readFile(formData, 'iconFile')
@@ -128,7 +128,7 @@ export async function deleteGachaItemAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('gacha', 'write')
   const id = readField(formData, 'id')
 
   if (id === '') {

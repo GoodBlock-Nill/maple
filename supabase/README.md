@@ -653,33 +653,71 @@ E2E 테스트에서 특정 행을 지목할 때 이 값을 쓴다.
 
 ### 6.1 추가된 것
 
-| 대상                                             | 내용                                                |
-| ------------------------------------------------ | --------------------------------------------------- |
-| `admin_invites`                                  | 관리자 초대 허용 목록. 권한 승격의 **유일한** 근거  |
-| `audit_logs`                                     | 관리자 행위 이력(추가 전용). 관리자만 select/insert |
-| `profiles.suspended_until` / `suspension_reason` | 회원 제재. 읽기는 되고 쓰기만 막힌다                |
-| `posts.is_hidden` / `comments.is_hidden`         | 운영 숨김. 작성자 삭제(`deleted_at`)와 구분한다     |
-| `is_suspended()`                                 | SECURITY INVOKER. 쓰기 정책에서만 쓴다              |
+| 대상                                             | 내용                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `admin_invites`                                  | 관리자 초대 허용 목록. 권한 승격의 **유일한** 근거           |
+| `admin_roles` · `profiles.admin_role_id`         | 관리자 권한(역할). 모듈 × none/read/write (`20260909000200`) |
+| `audit_logs`                                     | 관리자 행위 이력(추가 전용). 관리자만 select/insert          |
+| `profiles.suspended_until` / `suspension_reason` | 회원 제재. 읽기는 되고 쓰기만 막힌다                         |
+| `posts.is_hidden` / `comments.is_hidden`         | 운영 숨김. 작성자 삭제(`deleted_at`)와 구분한다              |
+| `is_suspended()`                                 | SECURITY INVOKER. 쓰기 정책에서만 쓴다                       |
 
 ### 6.2 권한 승격 규칙 (중요)
 
 `handle_new_user()` 는 role 을 **사용자 메타데이터에서 절대 읽지 않는다.** 새 계정이
 `admin` 이 되는 조건은 단 하나 — 가입 시각에 같은 이메일의 `admin_invites` 행이
-`pending` 상태로 존재하는 것이다. 승격에 쓰인 초대는 같은 트랜잭션에서 `accepted` 로
-닫히므로 초대장 하나가 두 계정을 관리자로 만들 수 없다.
+`pending` 이고 `expires_at` 이 지나지 않은 것이다. 승격에 쓰인 초대는 같은 트랜잭션에서
+`accepted` 로 닫히므로 초대장 하나가 두 계정을 관리자로 만들 수 없다. 같은 트리거가
+초대의 `role_id` 를 `profiles.admin_role_id` 로 옮겨 **권한까지 함께** 정한다.
 
 `auth.admin.inviteUserByEmail()` 은 **메일을 보내는 순간** `auth.users` 행을 만든다.
 따라서 초대 서버 액션은 반드시 이 순서를 지킨다.
 
-1. `admin_invites` 에 `pending` 행 기록
+1. `admin_invites` 에 `pending` 행 기록(`role_id`, `expires_at` = now()+7d)
 2. `inviteUserByEmail()` 호출
 3. 실패하면 1번 행을 `revoked` 로 되돌린다
 
-첫 관리자는 초대할 사람이 없으므로 서비스 롤 스크립트로 만든다.
+첫 슈퍼어드민은 초대할 사람이 없으므로 서비스 롤 스크립트로 만든다.
 
 ```bash
 ADMIN_BOOTSTRAP_EMAIL=... ADMIN_BOOTSTRAP_PASSWORD=... pnpm --filter @maple/admin bootstrap:admin
 ```
+
+#### 관리자 권한 체계 (`20260909000200_admin_roles`)
+
+`admin_roles.permissions` 는 `{ "<module>": "none" | "read" | "write" }` jsonb 다.
+모듈 13개(dashboard · news · community · reports · members · inquiries · faqs ·
+gacha · rankings · settings · legal · admins · audit)의 의미는 앱의
+`admin/lib/auth/permissions.ts` 가 정한다. 시드 역할은 둘 — `super_admin`
+(슈퍼어드민, `is_system`) 과 `editor`(콘텐츠 편집자, 삭제 가능).
+
+**RLS 는 이 표를 보지 않는다.** 관리자 테이블 접근은 여전히 `is_admin()`
+(role='admin') 하나로 판정하고, 모듈별 read/write 는 앱 계층이 강제한다. 정책에
+역할을 녹이면 정책 수가 모듈 × 역할로 폭발하고 역할을 추가할 때마다 마이그레이션이
+필요해지기 때문이다.
+
+대신 **권한을 바꿀 수 있는 경로만 DB 에서 잠갔다.**
+
+| 대상                                       | 잠금                                                     |
+| ------------------------------------------ | -------------------------------------------------------- |
+| `admin_roles` insert/update/delete         | `is_super_admin()` 정책 (delete 는 `not is_system` 까지) |
+| `profiles.role` · `profiles.admin_role_id` | `guard_profile_role()` — 슈퍼어드민·서비스 롤만 통과     |
+| `super_admin` 행의 수정·삭제               | `guard_admin_roles()` 트리거 — 예외 발생(42501)          |
+| `admin_roles.key` · `is_system`            | `guard_admin_roles()` 가 항상 이전 값으로 되돌린다       |
+
+`is_super_admin()` 은 `is_admin()` 과 같은 이유로 SECURITY **DEFINER** 다(정책에서
+불리므로 RLS 를 타면 재귀한다). `current_user` 를 보지 않으므로 20260908001000 의
+가드 무력화 사고와는 무관하다 — 그쪽은 `guard_profile_role()` 이고 여전히
+SECURITY **INVOKER** 여야 한다(§6.4).
+
+> 정리하면, 모듈 권한은 **운영자가 실수로 남의 영역을 건드리지 않게 하는 경계**이고
+> 신뢰 경계는 여전히 `role='admin'` 이다. 읽기 전용 역할의 계정도 자기 세션으로
+> REST 를 직접 부르면 관리자 테이블을 쓸 수 있다.
+
+관리자 "삭제"는 행을 지우지 않는다. `role='user'` · `admin_role_id=null` 로 내리고,
+그 이메일의 초대를 `revoked` 로 닫고, 서비스 롤로 auth 사용자를 ban 한다
+(`ban_duration: '876600h'`). ban 이 없으면 role 만 내려간 계정이 이메일·비밀번호로
+로그인은 계속 성공하고 화면에서만 튕긴다.
 
 ### 6.3 숨김·제재가 기존 정책에 붙는 방식
 
@@ -715,6 +753,11 @@ id = <본인>` 이 그대로 반영됐다. `20260908001700` 이 다시 `security
 
 > 이 함수의 보안 속성을 바꾸는 변경은 반드시 리뷰 대상이다. `security definer` 로
 > 되돌리는 순간 **누구나 관리자로 승격**할 수 있다.
+
+`20260909000200` 이 같은 함수를 (INVOKER 를 유지한 채) 한 번 더 확장했다: `admin_role_id`
+를 가드 대상에 넣고, **관리자라도 슈퍼어드민이 아니면** `role` · `admin_role_id` 를 바꿀
+수 없게 했다. 이 줄이 없으면 `editor` 역할의 관리자가 REST 로 자기 `admin_role_id` 를
+슈퍼어드민으로 바꿔 권한 체계를 통째로 무력화할 수 있다.
 
 ### 6.5 타입 생성
 

@@ -8,7 +8,8 @@ import { InquiryReplyThread } from '@/components/inquiries/InquiryReplyThread'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { InquiryStatusForm } from '@/components/inquiries/InquiryStatusForm'
 import { Button, Card, CardBody, CardHeader, PageHeader } from '@/components/ui'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { getInquiryDetail, getInquiryReplies } from '@/lib/data/inquiries'
 import { isCancelledInquiry } from '@/lib/validation/inquiries'
 
@@ -24,7 +25,11 @@ export const dynamic = 'force-dynamic'
 
 export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id]'>) {
   const { id } = await props.params
-  const [admin, inquiry] = await Promise.all([requireAdmin(), getInquiryDetail(id)])
+  const [admin, inquiry] = await Promise.all([
+    requirePermission('inquiries', 'read'),
+    getInquiryDetail(id),
+  ])
+  const canWrite = hasPermission(admin.permissions, 'inquiries', 'write')
 
   if (inquiry === null) {
     notFound()
@@ -45,12 +50,14 @@ export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id
             <span data-testid="inquiry-status">
               <InquiryStatusBadge status={inquiry.status} cancelledAt={inquiry.cancelledAt} />
             </span>
-            <InquiryStatusForm
-              inquiryId={inquiry.id}
-              status={inquiry.status}
-              isLocked={isLocked}
-            />
-            {!isLocked && inquiry.status !== 'closed' && (
+            {canWrite && (
+              <InquiryStatusForm
+                inquiryId={inquiry.id}
+                status={inquiry.status}
+                isLocked={isLocked}
+              />
+            )}
+            {canWrite && !isLocked && inquiry.status !== 'closed' && (
               <InquiryCloseButton inquiryId={inquiry.id} />
             )}
             <Button href="/inquiries" variant="ghost" size="sm">
@@ -90,7 +97,7 @@ export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id
 
         <InquiryReplyThread replies={replies} />
 
-        {isLocked ? null : inquiry.status === 'closed' ? (
+        {!canWrite || isLocked ? null : inquiry.status === 'closed' ? (
           <p className="border-line bg-page text-muted rounded-card border px-4 py-3 text-[13px]">
             종료된 문의입니다. 답변을 이어가려면 상태를 &lsquo;처리 중&rsquo;으로 되돌려 주세요.
           </p>

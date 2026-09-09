@@ -1,6 +1,7 @@
 import { GachaForm } from '@/components/gacha/GachaForm'
 import { Card, CardBody } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { firstValue } from '@/lib/utils/table-query'
 import { DEFAULT_GACHA_TAB, isGachaTab } from '@/lib/validation/gacha'
 import { kstDateTimeLocal } from '@/lib/validation/settings'
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function NewGachaPage(props: PageProps<'/gacha/new'>) {
+  await requirePermission('gacha', 'write')
   const searchParams = await props.searchParams
   const rawTab = firstValue(searchParams.tab) ?? ''
   const tab = isGachaTab(rawTab) ? rawTab : DEFAULT_GACHA_TAB

@@ -151,11 +151,6 @@ export const changeNicknameSchema = z.object({
   reason: reasonSchema,
 })
 
-export const changeRoleSchema = z.object({
-  memberId: memberIdSchema,
-  role: z.enum(['user', 'admin'], { message: '잘못된 권한입니다.' }),
-})
-
 /** 목록 필터의 상태 값. `null` 은 "전체". */
 export const MEMBER_STATUS_FILTERS = ['normal', 'suspended', 'admin'] as const
 

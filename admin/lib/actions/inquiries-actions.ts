@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { createClient } from '@/lib/supabase/server'
 import { josa } from '@/lib/utils/josa'
 import {
@@ -20,7 +20,7 @@ import {
 /**
  * 문의 상태 변경 · 답변 등록.
  *
- * 모든 액션이 스스로 `requireAdmin()` 을 부른다. 레이아웃이 이미 막고 있어도
+ * 모든 액션이 스스로 `requirePermission('inquiries', 'write')` 을 부른다. 레이아웃이 이미 막고 있어도
  * 서버 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다.
  *
  * 상태 전이는 화면과 같은 표(`INQUIRY_STATUS_TRANSITIONS`)로 판정한다. select 에
@@ -118,7 +118,7 @@ export async function updateInquiryStatusAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('inquiries', 'write')
   const parsed = inquiryStatusSchema.safeParse({
     inquiryId: readField(formData, 'inquiryId'),
     status: readField(formData, 'status'),
@@ -172,7 +172,7 @@ export async function replyToInquiryAction(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('inquiries', 'write')
   const parsed = inquiryReplySchema.safeParse({
     inquiryId: readField(formData, 'inquiryId'),
     content: readField(formData, 'content'),

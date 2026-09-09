@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
 import { bulkHidePostsAction } from '@/lib/actions/moderation-actions'
+import { hasPermission } from '@/lib/auth/permissions'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import {
   getCommunityCategoryLabels,
@@ -41,6 +43,8 @@ const STATUS_TONE: Record<ContentStatus, BadgeTone> = {
 }
 
 export default async function CommunityPostsPage(props: PageProps<'/community/posts'>) {
+  const { permissions } = await requirePermission('community', 'read')
+  const canWrite = hasPermission(permissions, 'community', 'write')
   const searchParams = await props.searchParams
   const params = parsePostListParams(searchParams)
   const [list, categories] = await Promise.all([
@@ -48,20 +52,24 @@ export default async function CommunityPostsPage(props: PageProps<'/community/po
     getCommunityCategoryLabels(),
   ])
 
-  const columns: readonly Column<PostListItem>[] = [
-    {
-      key: 'select',
-      header: <span className="sr-only">선택</span>,
-      className: 'w-10',
-      align: 'center',
-      cell: (row) => (
-        <BulkSelectCheckbox
-          id={row.id}
-          label={row.title}
-          disabled={row.isHidden || row.deletedAt !== null}
-        />
-      ),
-    },
+  /* 선택 열은 일괄 조치 전용이다. 읽기 전용 관리자에게는 열 자체를 뺀다 —
+     남겨 두면 체크는 되는데 아무 버튼도 없는 표가 된다. */
+  const columnDefs: (Column<PostListItem> | null)[] = [
+    canWrite === false
+      ? null
+      : {
+          key: 'select',
+          header: <span className="sr-only">선택</span>,
+          className: 'w-10',
+          align: 'center',
+          cell: (row) => (
+            <BulkSelectCheckbox
+              id={row.id}
+              label={row.title}
+              disabled={row.isHidden || row.deletedAt !== null}
+            />
+          ),
+        },
     {
       key: 'title',
       header: '제목',
@@ -150,10 +158,12 @@ export default async function CommunityPostsPage(props: PageProps<'/community/po
           id={row.id}
           isHidden={row.isHidden}
           isDeleted={row.deletedAt !== null}
+          canWrite={canWrite}
         />
       ),
     },
   ]
+  const columns = columnDefs.filter((column): column is Column<PostListItem> => column !== null)
 
   return (
     <>
@@ -171,7 +181,7 @@ export default async function CommunityPostsPage(props: PageProps<'/community/po
       )}
 
       <Card>
-        <BulkHideBar action={bulkHidePostsAction} label="게시글" />
+        {canWrite && <BulkHideBar action={bulkHidePostsAction} label="게시글" />}
         <Table
           columns={columns}
           rows={list.rows}

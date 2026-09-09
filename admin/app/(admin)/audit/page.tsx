@@ -3,6 +3,7 @@ import { AuditTable } from '@/components/audit/AuditTable'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { AUDIT_PAGE_SIZE, getAuditFilterOptions, getAuditLogs } from '@/lib/data/audit'
 import { buildHref, firstValue, parsePage, totalPages } from '@/lib/utils/table-query'
 
@@ -18,6 +19,7 @@ export const dynamic = 'force-dynamic'
 const PATH = '/audit'
 
 export default async function AuditPage(props: PageProps<'/audit'>) {
+  await requirePermission('audit', 'read')
   const searchParams = await props.searchParams
 
   const filters: Filters = {

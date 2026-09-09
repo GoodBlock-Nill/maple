@@ -21,11 +21,14 @@ export function SnapshotHistory({
   snapshots,
   currentSnapshot,
   viewing,
+  canWrite,
 }: {
   rankType: RankType
   snapshots: readonly SnapshotSummary[]
   currentSnapshot: string | null
   viewing: string | null
+  /** 되돌리기 버튼은 쓰기 권한이 있을 때만 그린다. */
+  canWrite: boolean
 }) {
   const columns: readonly Column<SnapshotSummary>[] = [
     {
@@ -61,7 +64,7 @@ export function SnapshotHistory({
           >
             보기
           </Link>
-          {row.snapshotAt !== currentSnapshot && (
+          {canWrite && row.snapshotAt !== currentSnapshot && (
             <RollbackSnapshotButton
               rankType={rankType}
               snapshotAt={row.snapshotAt}

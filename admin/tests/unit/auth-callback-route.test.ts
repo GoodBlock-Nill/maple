@@ -6,11 +6,10 @@ import { NOT_ADMIN_MESSAGE } from '@/lib/validation/auth'
 /**
  * `/auth/callback` 의 role 게이트.
  *
- * 관리자 계정은 승격으로 만들어지므로(2026-09-09 제품 결정) 글자월드 회원이면
- * 누구나 구글·카카오 로그인을 끝까지 통과해 이 착지점까지 올 수 있다. 여기서
- * `profiles.role` 을 확인하지 않으면 비관리자가 관리자 도메인의 세션 쿠키를
- * 그대로 들고 다니게 된다 — 화면은 `requireAdmin()` 이 막지만, 세션을 남긴 채
- * 튕기는 상태는 그 자체로 버그다.
+ * 초대 링크와 비밀번호 재설정 메일이 이 착지점을 함께 쓴다. 재설정 메일은 관리자가
+ * 아닌 계정도 받을 수 있으므로, 여기서 `profiles.role` 을 확인하지 않으면 비관리자가
+ * 관리자 도메인의 세션 쿠키를 그대로 들고 다니게 된다 — 화면은 `requireAdmin()` 이
+ * 막지만, 세션을 남긴 채 튕기는 상태는 그 자체로 버그다.
  */
 
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111'
@@ -111,8 +110,10 @@ describe('GET /auth/callback', () => {
 })
 
 describe('not_admin 안내 문구', () => {
-  it('should tell the member to ask for a promotion, not an invite', () => {
-    expect(NOT_ADMIN_MESSAGE).toContain('회원 상세')
-    expect(NOT_ADMIN_MESSAGE).not.toContain('초대')
+  /* 관리자는 초대로만 만들어진다(2026-09-09 제품 결정). "회원 상세에서 권한 부여"로
+     되돌아가면 받는 사람이 존재하지 않는 화면을 찾게 된다. */
+  it('should tell the member to ask for an invite, not a promotion', () => {
+    expect(NOT_ADMIN_MESSAGE).toContain('초대')
+    expect(NOT_ADMIN_MESSAGE).not.toContain('회원 상세')
   })
 })

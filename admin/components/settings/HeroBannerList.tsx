@@ -26,13 +26,23 @@ import type { HeroBannerRecord } from '@/lib/data/settings'
  * 미디어 유형에 따라 썸네일이 갈린다 — 영상 배너는 유튜브 썸네일에 "영상" 표를
  * 달고, 이미지 배너는 등록한 그림을 그대로 보여 준다.
  */
-export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord[] }) {
+export function HeroBannerList({
+  banners,
+  canWrite,
+}: {
+  banners: readonly HeroBannerRecord[]
+  canWrite: boolean
+}) {
   if (banners.length === 0) {
     return (
       <EmptyState
         title="등록된 배너가 없습니다."
         description="이미지 한 장 또는 유튜브 영상을 등록할 수 있습니다. 맨 위의 노출 중인 배너가 소개 화면 상단(영상 영역)에 걸립니다. 없으면 사이트 설정의 유튜브 영상이 나옵니다."
-        action={<HeroBannerDialog banner={null} nextSortOrder={0} trigger="배너 추가" />}
+        action={
+          canWrite ? (
+            <HeroBannerDialog banner={null} nextSortOrder={0} trigger="배너 추가" />
+          ) : undefined
+        }
       />
     )
   }
@@ -64,29 +74,31 @@ export function HeroBannerList({ banners }: { banners: readonly HeroBannerRecord
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <BannerActionButton
-              action={moveHeroBannerAction}
-              fields={{ id: banner.id, direction: 'up' }}
-              label="↑"
-              ariaLabel={`${banner.title} 위로`}
-              disabled={index === 0}
-            />
-            <BannerActionButton
-              action={moveHeroBannerAction}
-              fields={{ id: banner.id, direction: 'down' }}
-              label="↓"
-              ariaLabel={`${banner.title} 아래로`}
-              disabled={index === banners.length - 1}
-            />
-            <BannerActionButton
-              action={toggleHeroBannerAction}
-              fields={{ id: banner.id, isActive: banner.isActive ? 'false' : 'true' }}
-              label={banner.isActive ? '숨기기' : '노출'}
-            />
-            <HeroBannerDialog banner={banner} nextSortOrder={banner.sortOrder} trigger="수정" />
-            <BannerDeleteButton id={banner.id} title={banner.title} />
-          </div>
+          {canWrite && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <BannerActionButton
+                action={moveHeroBannerAction}
+                fields={{ id: banner.id, direction: 'up' }}
+                label="↑"
+                ariaLabel={`${banner.title} 위로`}
+                disabled={index === 0}
+              />
+              <BannerActionButton
+                action={moveHeroBannerAction}
+                fields={{ id: banner.id, direction: 'down' }}
+                label="↓"
+                ariaLabel={`${banner.title} 아래로`}
+                disabled={index === banners.length - 1}
+              />
+              <BannerActionButton
+                action={toggleHeroBannerAction}
+                fields={{ id: banner.id, isActive: banner.isActive ? 'false' : 'true' }}
+                label={banner.isActive ? '숨기기' : '노출'}
+              />
+              <HeroBannerDialog banner={banner} nextSortOrder={banner.sortOrder} trigger="수정" />
+              <BannerDeleteButton id={banner.id} title={banner.title} />
+            </div>
+          )}
         </li>
       ))}
     </ul>

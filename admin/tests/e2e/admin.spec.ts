@@ -146,7 +146,7 @@ test('every sidebar destination responds with 200', async ({ page }) => {
   }
 })
 
-test('the admins page lists the signed-in administrator', async ({ page }) => {
+test('the admins page shows accounts, invites and roles', async ({ page }) => {
   await signIn(page, ADMIN_EMAIL, ADMIN_PASSWORD)
   // 로그인 후 리다이렉트가 끝나기 전에 이동하면 대시보드가 이 방문을 덮어쓴다.
   await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
@@ -155,10 +155,37 @@ test('the admins page lists the signed-in administrator', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '관리자', exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: ADMIN_EMAIL })).toBeVisible()
   await expect(page.getByRole('button', { name: '관리자 초대' })).toBeVisible()
-  // 자기 자신은 회수할 수 없다 — 버튼 대신 "본인" 표시가 나온다.
+
+  // 부트스트랩 계정은 슈퍼어드민이어야 한다(마이그레이션 20260909000200 의 백필).
+  await expect(page.getByRole('cell', { name: '슈퍼어드민' }).first()).toBeVisible()
+
+  // 자기 자신은 지우거나 역할을 바꿀 수 없다 — 버튼 대신 안내 문구가 나온다.
   await expect(page.getByText('본인')).toBeVisible()
+  await expect(page.getByText('자기 역할은 바꿀 수 없습니다.')).toBeVisible()
+
+  // 권한(역할) 관리 — 시스템 역할은 지울 수 없고, 새 역할은 여기서 만든다.
+  await expect(page.getByRole('button', { name: '역할 추가' })).toBeVisible()
+  await expect(page.getByText('시스템 역할')).toBeVisible()
 
   await page.screenshot({ path: path.join(SHOT_DIR, 'admin-admins.png'), fullPage: true })
+})
+
+/* 로그인 화면은 이메일+비밀번호 하나뿐이다(2026-09-09 제품 결정). 간편로그인 버튼이
+   되살아나면 글자월드 회원 누구나 눌러 보고 "권한 없음"으로 튕기는 문이 다시 생긴다. */
+test('the login page offers only the password form', async ({ page }) => {
+  await page.goto('/login')
+
+  await expect(page.getByRole('heading', { name: '관리자 로그인' })).toBeVisible()
+  await expect(page.getByText('초대받은 관리자 계정으로 로그인하세요.')).toBeVisible()
+  await expect(page.getByLabel('이메일')).toBeVisible()
+  await expect(page.getByLabel('비밀번호')).toBeVisible()
+  await expect(page.getByRole('link', { name: '비밀번호 재설정' })).toBeVisible()
+
+  for (const label of ['구글로 시작하기', '카카오로 시작하기', '네이버로 시작하기']) {
+    await expect(page.getByRole('button', { name: label })).toHaveCount(0)
+  }
+
+  await page.screenshot({ path: path.join(SHOT_DIR, 'admin-login.png'), fullPage: true })
 })
 
 test('signing out returns to the login page and locks the console', async ({ page }) => {
@@ -183,7 +210,10 @@ test('a non-admin account is refused', async ({ page }) => {
   await expect(page).toHaveURL(/\/login/)
 })
 
-test('a session idle for more than 30 minutes is expired by the proxy', async ({ page, context }) => {
+test('a session idle for more than 30 minutes is expired by the proxy', async ({
+  page,
+  context,
+}) => {
   await signIn(page, ADMIN_EMAIL, ADMIN_PASSWORD)
   await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
 

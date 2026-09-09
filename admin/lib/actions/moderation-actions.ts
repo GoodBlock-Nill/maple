@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
-import { requireAdmin } from '@/lib/auth/require-admin'
+import { requireAnyPermission, requirePermission } from '@/lib/auth/require-admin'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import { josa } from '@/lib/utils/josa'
@@ -16,7 +16,7 @@ import type { ContentTable } from '@/lib/validation/moderation'
 /**
  * 커뮤니티 조치 — 숨김/해제 · 삭제/복구 · 일괄 숨김.
  *
- * 모든 액션이 스스로 `requireAdmin()` 을 부른다. 레이아웃이 이미 막고 있어도 서버
+ * 모든 액션이 스스로 `requirePermission('community', 'write')` 을 부른다. 레이아웃이 이미 막고 있어도 서버
  * 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다(Next 문서 경고).
  *
  * 쓰기는 전부 세션 클라이언트로 한다. `posts_update_admin` · `comments_admin_all`
@@ -97,7 +97,9 @@ export async function moderateTarget(
   id: string,
   mode: 'hide' | 'delete',
 ): Promise<string | null> {
-  const actor = await requireAdmin()
+  /* 신고 처리도 이 경로로 콘텐츠를 숨긴다. 커뮤니티 쓰기까지 요구하면 '신고 담당'
+     역할이 성립하지 않으므로 두 모듈 중 하나면 통과시킨다. */
+  const actor = await requireAnyPermission(['community', 'reports'], 'write')
   const snapshot = (await readSnapshots(table, [id])).get(id)
 
   if (snapshot === undefined) {
@@ -134,7 +136,7 @@ async function toggleContent(
   field: 'hidden' | 'deleted',
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('community', 'write')
   const parsed = toggleContentSchema.safeParse({
     id: readField(formData, 'id'),
     on: readField(formData, 'on'),
@@ -192,7 +194,7 @@ const VERB_LABEL: Record<'hide' | 'unhide' | 'delete' | 'restore', string> = {
  * 이를 **순차 디스패치**하므로(문서: sequential dispatch) 20건이 20왕복이 된다.
  */
 async function bulkHide(table: ContentTable, formData: FormData): Promise<FormState> {
-  const actor = await requireAdmin()
+  const actor = await requirePermission('community', 'write')
   const parsed = bulkHideSchema.safeParse({ ids: formData.getAll('ids').map(String) })
 
   if (!parsed.success) {

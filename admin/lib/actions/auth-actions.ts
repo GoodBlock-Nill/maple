@@ -13,15 +13,10 @@ import { adminSiteUrl } from '@/lib/supabase/env'
 import { createClient } from '@/lib/supabase/server'
 import {
   forgotPasswordSchema,
-  isNativeSocialProvider,
-  isSocialProvider,
   loginSchema,
   NOT_ADMIN_MESSAGE,
-  parseSocialLoginMode,
   sanitizeNextPath,
   setPasswordSchema,
-  SOCIAL_LOGIN_NAVER_MESSAGE,
-  SOCIAL_LOGIN_STUB_MESSAGE,
 } from '@/lib/validation/auth'
 
 /**
@@ -35,11 +30,6 @@ import {
  */
 
 const ADMIN_ROLE = 'admin'
-
-/** 알 수 없는 제공자 값(직접 POST)으로 들어왔을 때. 내부 사정을 알려 주지 않는다. */
-const UNKNOWN_PROVIDER_MESSAGE = '지원하지 않는 로그인 방식입니다.'
-
-const OAUTH_START_FAILURE_MESSAGE = '간편로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 
 export async function signInAction(_prevState: FormState, formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse({
@@ -76,66 +66,6 @@ export async function signInAction(_prevState: FormState, formData: FormData): P
   }
 
   redirect(nextPath)
-}
-
-/**
- * 간편로그인 버튼의 폼 액션.
- *
- * `useActionState` 로 오류를 그리기 위해 FormData 를 받는 얇은 껍데기다. 버튼
- * 세 개가 폼 하나를 공유하고, 눌린 버튼의 `name="provider"` 값만 실려 온다.
- */
-export async function socialSignInFormAction(
-  _prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  return socialSignInAction(readField(formData, 'provider'), readField(formData, 'next'))
-}
-
-/**
- * 간편로그인(구글·카카오·네이버) 시작.
- *
- * 관리자 앱은 **스텁 로그인을 만들지 않는다.** 사용자 사이트의 스텁은 없는 계정을
- * 즉시 만들어 주는데, 그걸 관리자에 두면 아무나 관리자 후보 계정을 찍어낼 수 있다.
- * 실 OAuth 가 붙기 전(`SOCIAL_LOGIN_MODE` 미설정 = `stub`)에는 안내만 돌려주고
- * 운영자는 아래의 이메일 로그인을 쓴다.
- *
- * 권한 검사는 여기서 하지 않는다 — 제공자를 다녀와야 누구인지 알 수 있다.
- * 돌아온 뒤 `app/auth/callback/route.ts` 가 `profiles.role` 을 확인한다.
- */
-export async function socialSignInAction(provider: string, next?: string): Promise<FormState> {
-  // 서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출된다. 인자를 다시 검증한다.
-  if (!isSocialProvider(provider)) {
-    return { formError: UNKNOWN_PROVIDER_MESSAGE }
-  }
-
-  if (parseSocialLoginMode(process.env.SOCIAL_LOGIN_MODE) !== 'oauth') {
-    return { formError: SOCIAL_LOGIN_STUB_MESSAGE }
-  }
-
-  if (!isNativeSocialProvider(provider)) {
-    // 네이버는 Supabase 기본 제공자가 아니다. 없는 제공자로 호출하면 400 이
-    // 떨어지므로, 흉내 내지 말고 진행 상황을 그대로 알린다.
-    return { formError: SOCIAL_LOGIN_NAVER_MESSAGE }
-  }
-
-  const supabase = await createClient()
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      /* 콜백은 관리자 도메인으로 돌아와야 한다. 이 주소가 Supabase Auth 의
-         Redirect URLs 에 등록돼 있지 않으면 사용자 사이트로 튕긴다. */
-      redirectTo: `${adminSiteUrl()}/auth/callback?next=${encodeURIComponent(sanitizeNextPath(next))}`,
-    },
-  })
-
-  if (error !== null) {
-    console.error('[auth] 간편로그인 시작 실패', provider, error.message)
-
-    return { formError: OAUTH_START_FAILURE_MESSAGE }
-  }
-
-  // redirect() 는 예외를 던진다. try/catch 바깥, 마지막 문장으로만 부른다.
-  redirect(data.url)
 }
 
 export async function signOutAction(): Promise<void> {

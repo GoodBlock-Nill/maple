@@ -34,9 +34,11 @@ type NewsTableProps = {
   /** 정렬 키 → 헤더 링크 URL. */
   sortHrefs: Record<string, string>
   clientSiteUrl: string
+  /** 쓰기 권한이 없으면 일괄 선택·행 조치를 아예 그리지 않는다. */
+  canWrite: boolean
 }
 
-export function NewsTable({ rows, sort, sortHrefs, clientSiteUrl }: NewsTableProps) {
+export function NewsTable({ rows, sort, sortHrefs, clientSiteUrl, canWrite }: NewsTableProps) {
   const [selected, setSelected] = useState<readonly string[]>([])
   const [isConfirmOpen, setConfirmOpen] = useState(false)
   const [isDeleting, startDelete] = useTransition()
@@ -104,38 +106,41 @@ export function NewsTable({ rows, sort, sortHrefs, clientSiteUrl }: NewsTablePro
         onToggle: toggle,
         onToggleAll: toggleAll,
         clientSiteUrl,
+        canWrite,
       }),
-    [allSelected, clientSiteUrl, selected, toggle, toggleAll],
+    [allSelected, canWrite, clientSiteUrl, selected, toggle, toggleAll],
   )
 
   const hasSelection = selected.length > 0
 
   return (
     <form action={formAction}>
-      <div
-        aria-live="polite"
-        className="border-line bg-page/60 flex min-h-11 flex-wrap items-center gap-2 border-b px-4 py-2"
-      >
-        <span className="text-muted text-[13px]">{selected.length}건 선택</span>
-        <Button
-          type="submit"
-          name="intent"
-          value="hide"
-          variant="secondary"
-          size="sm"
-          disabled={!hasSelection || isPending}
+      {canWrite && (
+        <div
+          aria-live="polite"
+          className="border-line bg-page/60 flex min-h-11 flex-wrap items-center gap-2 border-b px-4 py-2"
         >
-          선택 숨김
-        </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          disabled={!hasSelection || isPending || isDeleting}
-          onClick={() => setConfirmOpen(true)}
-        >
-          선택 삭제
-        </Button>
-      </div>
+          <span className="text-muted text-[13px]">{selected.length}건 선택</span>
+          <Button
+            type="submit"
+            name="intent"
+            value="hide"
+            variant="secondary"
+            size="sm"
+            disabled={!hasSelection || isPending}
+          >
+            선택 숨김
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            disabled={!hasSelection || isPending || isDeleting}
+            onClick={() => setConfirmOpen(true)}
+          >
+            선택 삭제
+          </Button>
+        </div>
+      )}
 
       <Table
         columns={columns}

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   changeNicknameSchema,
-  changeRoleSchema,
   isPermanentSuspension,
   isSuspended,
   maskEmail,
@@ -50,10 +49,7 @@ describe('isSuspended', () => {
 describe('memberStatus', () => {
   it('should report an administrator as admin even while suspended', () => {
     // 관리자 쓰기 정책에는 is_suspended() 검사가 없다 — 제재가 실효를 갖지 않는다.
-    const status = memberStatus(
-      { role: 'admin', suspendedUntil: '2026-12-31T00:00:00.000Z' },
-      NOW,
-    )
+    const status = memberStatus({ role: 'admin', suspendedUntil: '2026-12-31T00:00:00.000Z' }, NOW)
 
     expect(status).toBe('admin')
     expect(MEMBER_STATUS_LABEL[status]).toBe('관리자')
@@ -193,13 +189,5 @@ describe('changeNicknameSchema', () => {
       changeNicknameSchema.safeParse({ memberId: MEMBER_ID, nickname: '모험가', reason: '' })
         .success,
     ).toBe(false)
-  })
-})
-
-describe('changeRoleSchema', () => {
-  it('should only allow the two known roles', () => {
-    expect(changeRoleSchema.safeParse({ memberId: MEMBER_ID, role: 'admin' }).success).toBe(true)
-    expect(changeRoleSchema.safeParse({ memberId: MEMBER_ID, role: 'user' }).success).toBe(true)
-    expect(changeRoleSchema.safeParse({ memberId: MEMBER_ID, role: 'owner' }).success).toBe(false)
   })
 })

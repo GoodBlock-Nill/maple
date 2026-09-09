@@ -26,7 +26,16 @@ export function Topbar({ admin, onOpenSidebar }: { admin: AdminUser; onOpenSideb
         aria-label="메뉴 열기"
         className="border-line text-ink hover:bg-page focus-visible:outline-focus rounded-panel inline-flex h-9 w-9 items-center justify-center border focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden"
       >
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        >
           <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
       </button>
@@ -43,7 +52,9 @@ export function Topbar({ admin, onOpenSidebar }: { admin: AdminUser; onOpenSideb
                     /
                   </span>
                 )}
-                <span className={index === crumbs.length - 1 ? 'text-ink font-semibold' : undefined}>
+                <span
+                  className={index === crumbs.length - 1 ? 'text-ink font-semibold' : undefined}
+                >
                   {crumb}
                 </span>
               </li>
@@ -55,7 +66,9 @@ export function Topbar({ admin, onOpenSidebar }: { admin: AdminUser; onOpenSideb
       <div className="flex items-center gap-3">
         <span className="hidden flex-col items-end leading-tight sm:flex">
           <span className="text-ink text-[13px] font-semibold">{admin.nickname}</span>
-          <span className="text-muted text-[12px]">{admin.email}</span>
+          <span className="text-muted text-[12px]">
+            {admin.roleName ?? '역할 미지정'} · {admin.email}
+          </span>
         </span>
         <form action={signOutAction}>
           <button

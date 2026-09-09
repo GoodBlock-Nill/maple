@@ -36,11 +36,14 @@ export function ModerationActions({
   id,
   isHidden,
   isDeleted,
+  canWrite,
 }: {
   kind: Kind
   id: string
   isHidden: boolean
   isDeleted: boolean
+  /** 읽기 전용 관리자에게는 조치 칸을 비워 둔다. 서버 액션도 같은 규칙으로 거절한다. */
+  canWrite: boolean
 }) {
   const { showToast } = useToast()
   const [isConfirmOpen, setConfirmOpen] = useState(false)
@@ -74,6 +77,11 @@ export function ModerationActions({
     withToast(DELETE_ACTION[kind]),
     EMPTY_FORM_STATE,
   )
+
+  /* 훅 호출 뒤에 반환한다 — 조건부로 훅을 건너뛰면 리렌더마다 순서가 달라진다. */
+  if (!canWrite) {
+    return null
+  }
 
   return (
     <div className="flex items-center justify-end gap-1">

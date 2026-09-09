@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { InquiryFilters } from '@/components/inquiries/InquiryFilters'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { Card, FormBanner, PageHeader, Pagination, Table, type Column } from '@/components/ui'
+import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import {
   INQUIRY_SORT_KEYS,
@@ -34,6 +35,7 @@ export const dynamic = 'force-dynamic'
 const LIST_PATH = '/inquiries'
 
 export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
+  await requirePermission('inquiries', 'read')
   const params = await props.searchParams
   const filters = parseInquiryFilters(params)
   const sort = parseSort(params.sort, INQUIRY_SORT_KEYS, { key: 'created_at', direction: 'desc' })
