@@ -79,12 +79,14 @@ export function HeroBannerDialog({
             name="title"
             required
             defaultValue={banner?.title ?? ''}
+            hint="화면에는 표시되지 않습니다. 관리 목록 식별용이며 이미지 대체 텍스트·접근성 라벨로 쓰입니다."
             error={errors.title}
           />
           <Input
             label="부제"
             name="subtitle"
             defaultValue={banner?.subtitle ?? ''}
+            hint="화면에는 표시되지 않습니다. 관리용 메모로만 남습니다."
             error={errors.subtitle}
           />
           <HeroBannerMediaFields
