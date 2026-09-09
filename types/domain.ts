@@ -298,3 +298,22 @@ export type InquiryReply = {
   content: string
   createdAt: string
 }
+
+/* -------------------------------------------------------------------------
+ * 히어로 배너 — 홈 히어로의 CTA 아래, 캐릭터를 가리지 않는 띠에 한 장만 노출
+ * ---------------------------------------------------------------------- */
+
+export type HeroBannerMediaType = 'image' | 'youtube'
+
+export type HeroBanner = {
+  id: string
+  title: string
+  subtitle: string | null
+  mediaType: HeroBannerMediaType
+  /** 이미지 배너의 그림. 유튜브 배너에서는 선택적 포스터(썸네일 대체). */
+  imageUrl: string | null
+  /** 유튜브 배너일 때만. 주소에서 뽑아낸 영상 id. */
+  youtubeId: string | null
+  linkUrl: string | null
+  ctaLabel: string | null
+}

@@ -283,42 +283,48 @@ export type Database = {
           cta_label: string | null
           ends_at: string | null
           id: string
-          image_url: string
+          image_url: string | null
           is_active: boolean
           link_url: string | null
+          media_type: string
           sort_order: number
           starts_at: string | null
           subtitle: string | null
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
           cta_label?: string | null
           ends_at?: string | null
           id?: string
-          image_url: string
+          image_url?: string | null
           is_active?: boolean
           link_url?: string | null
+          media_type?: string
           sort_order?: number
           starts_at?: string | null
           subtitle?: string | null
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
           cta_label?: string | null
           ends_at?: string | null
           id?: string
-          image_url?: string
+          image_url?: string | null
           is_active?: boolean
           link_url?: string | null
+          media_type?: string
           sort_order?: number
           starts_at?: string | null
           subtitle?: string | null
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
