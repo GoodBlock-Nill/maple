@@ -3,12 +3,9 @@ import type { ReactNode } from 'react'
 /**
  * 사용자 사이트 연동 현황.
  *
- * `site_settings` 에는 열이 있지만 사용자 사이트가 아직 **상수를 쓰는 값**이 섞여
- * 있다. 그 사실을 화면에 적어 두지 않으면 운영자는 저장해 놓고 "사이트가 안 바뀐다"
- * 고 계속 되묻게 된다. 각 필드에 어디가 읽는지(또는 어느 파일을 고쳐야 하는지)를
- * 그대로 붙인다.
- *
- * 사용자 사이트 코드를 여기서 고치지는 않는다 — 이 표가 그 작업 목록이다.
+ * 2026-09-09 기준 모든 필드가 사용자 사이트에 연동돼 있다(푸터·소개·정책·메타).
+ * 표는 "어디에 보이는지"를 운영자에게 알려 주는 용도로 남긴다. 새 열을 추가했는데
+ * 사용자 사이트가 아직 읽지 않으면 `isLive: false` 로 넣어 그 사실을 드러낸다.
  */
 
 export type FieldWiring = {
@@ -23,32 +20,15 @@ export const SETTINGS_WIRING: Record<string, FieldWiring> = {
   discordUrl: { isLive: true, where: '/discord · /sns/discord 리다이렉트' },
   youtubeUrl: { isLive: true, where: '/sns/youtube 리다이렉트' },
   contactEmail: {
-    isLive: false,
-    where:
-      '푸터는 components/layout/SiteFooter.tsx 가 lib/constants/site.ts 의 CONTACT_EMAIL 상수를 씁니다.',
+    isLive: true,
+    where: '홈·전체 푸터의 이메일 버튼(components/layout/SiteFooter.tsx)',
   },
-  ipNotice: {
-    isLive: false,
-    where:
-      '약관 화면은 app/(public)/policy/[slug]/page.tsx 가 lib/constants/site.ts 의 IP_NOTICE 상수를 씁니다.',
-  },
-  copyright: {
-    isLive: false,
-    where: '푸터의 저작권 문구는 components/layout/SiteFooter.tsx 에 하드코딩돼 있습니다.',
-  },
-  creatorName: { isLive: false, where: '소개 화면은 lib/mock/site.ts 의 CREATOR_NAME 을 씁니다.' },
-  creatorSlogan: {
-    isLive: false,
-    where: '소개 화면은 lib/mock/site.ts 의 CREATOR_SLOGAN 을 씁니다.',
-  },
-  creatorIntro: {
-    isLive: false,
-    where: '소개 화면은 lib/mock/site.ts 의 CREATOR_INTRO 를 씁니다.',
-  },
-  creatorPhotoUrl: {
-    isLive: false,
-    where: '소개 화면의 사진은 components/about/CreatorPanel.tsx 의 PHOTO_SRC 상수입니다.',
-  },
+  ipNotice: { isLive: true, where: '개인정보처리방침 하단 지식재산권 고지(/policy/privacy)' },
+  copyright: { isLive: true, where: '푸터 하단 저작권 한 줄(components/layout/SiteFooter.tsx)' },
+  creatorName: { isLive: true, where: '소개 화면 양피지 패널의 큰 제목(/about)' },
+  creatorSlogan: { isLive: true, where: '소개 화면 패널의 주황색 한 줄(/about)' },
+  creatorIntro: { isLive: true, where: '소개 화면 패널 본문(/about)' },
+  creatorPhotoUrl: { isLive: true, where: '소개 화면 패널의 크리에이터 사진(/about)' },
 }
 
 /** 필드 오른쪽 위의 작은 태그. 라벨 줄과 같은 높이에 놓인다. */

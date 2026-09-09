@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { Input } from '@/components/ui/Input'
+import { URL_MAX } from '@/lib/validation/settings'
 import { cn } from '@/lib/utils/cn'
 import { HERO_MEDIA_TYPES, type HeroMediaType } from '@/lib/validation/hero-banner'
 
@@ -83,6 +84,7 @@ export function HeroBannerMediaFields({
         <Input
           label="유튜브 주소"
           name="videoUrl"
+          maxLength={300}
           required
           defaultValue={defaultVideoUrl}
           placeholder="https://www.youtube.com/watch?v=..."
@@ -94,6 +96,7 @@ export function HeroBannerMediaFields({
       <Input
         label={isVideo ? '대체 이미지 주소' : '이미지 주소'}
         name="imageUrl"
+        maxLength={URL_MAX}
         required={!isVideo}
         defaultValue={defaultImageUrl}
         placeholder="https://... 또는 /images/..."

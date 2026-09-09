@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { saveHeroBannerAction } from '@/lib/actions/settings-actions'
-import { kstDateTimeLocal } from '@/lib/validation/settings'
+import { URL_MAX, kstDateTimeLocal } from '@/lib/validation/settings'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { HeroBannerRecord } from '@/lib/data/settings'
@@ -79,6 +79,7 @@ export function HeroBannerDialog({
             name="title"
             required
             defaultValue={banner?.title ?? ''}
+            maxLength={100}
             hint="화면에는 표시되지 않습니다. 관리 목록 식별용이며 이미지 대체 텍스트·접근성 라벨로 쓰입니다."
             error={errors.title}
           />
@@ -86,6 +87,7 @@ export function HeroBannerDialog({
             label="부제"
             name="subtitle"
             defaultValue={banner?.subtitle ?? ''}
+            maxLength={200}
             hint="화면에는 표시되지 않습니다. 관리용 메모로만 남습니다."
             error={errors.subtitle}
           />
@@ -104,12 +106,16 @@ export function HeroBannerDialog({
             label="링크"
             name="linkUrl"
             defaultValue={banner?.linkUrl ?? ''}
+            maxLength={URL_MAX}
+            hint="이미지 배너에서만 쓰입니다. 소개 화면 상단 이미지 전체가 이 주소로 이동합니다. 유튜브 배너는 재생만 합니다."
             error={errors.linkUrl}
           />
           <Input
             label="버튼 문구"
             name="ctaLabel"
             defaultValue={banner?.ctaLabel ?? ''}
+            maxLength={30}
+            hint="현재 화면에는 표시되지 않습니다(관리용). 버튼이 필요해지면 그때 노출합니다."
             error={errors.ctaLabel}
           />
           <Input

@@ -12,9 +12,14 @@ import { z } from 'zod'
  */
 
 /** 비어 있으면 null, 값이 있으면 http(s) 절대 URL 이어야 한다. */
+/** 주소 입력의 기술적 상한(표시 제약이 아니라 "이 이상은 주소가 아니다"). */
+export const URL_MAX = 500
+export const EMAIL_MAX = 254
+
 export const optionalUrlSchema = z
   .string()
   .trim()
+  .max(URL_MAX, `${URL_MAX}자를 넘을 수 없습니다.`)
   .refine(
     (value) => value === '' || /^https?:\/\/\S+$/.test(value),
     'http(s) 로 시작하는 주소여야 합니다.',
@@ -25,6 +30,7 @@ export const optionalUrlSchema = z
 export const optionalLinkSchema = z
   .string()
   .trim()
+  .max(URL_MAX, `${URL_MAX}자를 넘을 수 없습니다.`)
   .refine(
     (value) => value === '' || value.startsWith('/') || /^https?:\/\/\S+$/.test(value),
     'http(s) 주소이거나 `/` 로 시작하는 경로여야 합니다.',
@@ -34,6 +40,7 @@ export const optionalLinkSchema = z
 export const optionalEmailSchema = z
   .string()
   .trim()
+  .max(EMAIL_MAX, `${EMAIL_MAX}자를 넘을 수 없습니다.`)
   .refine(
     (value) => value === '' || z.email().safeParse(value).success,
     '이메일 형식이 올바르지 않습니다.',
@@ -55,8 +62,10 @@ export const siteSettingsSchema = z.object({
   contactEmail: optionalEmailSchema,
   ipNotice: optionalTextSchema(500),
   copyright: optionalTextSchema(200),
-  creatorName: optionalTextSchema(50),
-  creatorSlogan: optionalTextSchema(200),
+  /* 소개 화면에 100px 로 크게 찍힌다 — 7자부터 양피지 패널 밖으로 나간다(실측). */
+  creatorName: optionalTextSchema(6),
+  /* 소개 패널 주황 한 줄. PC 약 26자 · 폰 약 17자마다 줄이 바뀐다(실측). */
+  creatorSlogan: optionalTextSchema(40),
   /* 문단 구분은 빈 줄 두 개(마이그레이션 주석). 줄바꿈을 그대로 보존해야 하므로
      trim 은 앞뒤만 하고 내부는 손대지 않는다. */
   creatorIntro: optionalTextSchema(4000),
