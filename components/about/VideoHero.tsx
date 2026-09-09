@@ -11,12 +11,6 @@ type VideoHeroProps = {
   videoId: string | null
   /** 유튜브 썸네일 또는 로컬 스틸. null 이면 중립 포스터로 폴백한다. */
   thumbnail: string | null
-  /**
-   * 배경 포스터 위에 검정 50% 딤을 덧씌울지 여부.
-   * 로컬 스틸(`about/video-still.png`)은 시안 그대로 딤이 이미 구워져 있어
-   * 한 번 더 얹으면 두 배로 어두워진다.
-   */
-  isDimmed: boolean
   title: string
   /**
    * 썸네일이 Storage 공개 URL 등 next.config remotePatterns 밖의 주소일 때 true.
@@ -48,37 +42,20 @@ function PlayMark() {
 /**
  * 소개 페이지 영상 히어로.
  *
- * 배경은 시안처럼 딤 처리한 썸네일이 영역 전체를 채우고, 영상 상자(HeroMediaFrame)
- * 안에 선명한 썸네일 + 재생 버튼을 그린다. 클릭 시 상자 안에서 iframe 으로 교체한다
+ * 배경은 HeroMediaFrame 이 시안 히어로 배경으로 채우고, 영상 상자 안에 썸네일 +
+ * 재생 버튼을 그린다. 클릭 시 상자 안에서 iframe 으로 교체한다
  * (lite-youtube 방식 — 초기 로드에 유튜브 스크립트를 싣지 않는다).
  */
 export function VideoHero({
   videoId,
   thumbnail,
-  isDimmed,
   title,
   isExternalThumbnail = false,
 }: VideoHeroProps) {
   const [isPlaying, setIsPlaying] = useState(false)
 
-  const backdrop =
-    thumbnail === null ? null : (
-      <>
-        <Image
-          src={thumbnail}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          unoptimized={isExternalThumbnail}
-          className="object-cover object-center"
-        />
-        {isDimmed ? <div className="absolute inset-0 bg-black/50" /> : null}
-      </>
-    )
-
   return (
-    <HeroMediaFrame backdrop={backdrop}>
+    <HeroMediaFrame>
       {isPlaying && videoId !== null ? (
         <iframe
           src={youtubeEmbedUrl(videoId)}

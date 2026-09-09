@@ -1,11 +1,14 @@
+import Image from 'next/image'
+
 import type { CSSProperties, ReactNode } from 'react'
 
 /**
  * 소개 페이지 상단(1440×763) 미디어 프레임.
  *
- * 배경(backdrop)은 시안처럼 영역 전체를 채우고, 실제 영상·이미지는 그 위의
- * **상자 하나**에 들어간다(오너 요청 2026-09-09: 영상 가로는 헤더 메뉴바 폭이
- * 최대, 헤더바와 캐릭터를 가리지 않게).
+ * 배경은 항상 **시안의 히어로 배경**(`about/video-still.png`, 50% 딤이 구워진
+ * 1440×763 스틸)이고, 실제 영상·이미지는 그 위의 **상자 하나**에 들어간다
+ * (오너 요청 2026-09-09: 영상 가로는 헤더 메뉴바 폭이 최대, 헤더바와 캐릭터를
+ * 가리지 않게, 배경은 영상 썸네일이 아닌 기존 히어로 배경).
  *
  * 상자 위치(lg 이상, 시안 1440 실측):
  *   - 위: 헤더 바닥(92) + 16 = 108px, 단 프레임이 넓어지면 시안 비례(112/1440)로 내려간다.
@@ -31,19 +34,27 @@ const BOX_VARS = {
   '--box-w': 'calc(var(--box-h) * 16 / 9)',
 } as CSSProperties
 
+/* 시안 히어로 배경(저장소 자산). VideoHero 가 클라이언트 컴포넌트라 이 파일도 클라이언트
+   번들에 들어가므로 fs 를 쓰는 hasPublicAsset 은 여기서 부를 수 없다 — 항상 그린다. */
+const BACKDROP_SRC = '/images/about/video-still.png'
+
 type HeroMediaFrameProps = {
-  /** 영역 전체를 채우는 배경(딤 썸네일 등). aria-hidden 으로 감싼다. */
-  backdrop: ReactNode
   /** 상자 안에 들어가는 영상·이미지. */
   children: ReactNode
 }
 
-export function HeroMediaFrame({ backdrop, children }: HeroMediaFrameProps) {
+export function HeroMediaFrame({ children }: HeroMediaFrameProps) {
   return (
     <div className="relative w-full overflow-hidden bg-[linear-gradient(180deg,#2b2b3d_0%,#0e0e14_100%)] pt-[112px] pb-4 lg:h-[calc(var(--about-w,1440px)*0.5298611)] lg:p-0">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        {backdrop}
-      </div>
+      <Image
+        src={BACKDROP_SRC}
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        aria-hidden
+        className="pointer-events-none object-cover object-center"
+      />
 
       <div
         style={BOX_VARS}

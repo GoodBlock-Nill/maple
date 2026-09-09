@@ -105,7 +105,6 @@ function renderTopMedia(banner: HeroBanner | null, defaultVideoUrl: string, titl
       <VideoHero
         videoId={banner.youtubeId}
         thumbnail={banner.imageUrl ?? youtubeThumbnail(banner.youtubeId)}
-        isDimmed
         title={banner.title}
         isExternalThumbnail={banner.imageUrl !== null && !banner.imageUrl.startsWith('/')}
       />
@@ -119,7 +118,6 @@ function renderTopMedia(banner: HeroBanner | null, defaultVideoUrl: string, titl
     <VideoHero
       videoId={videoId}
       thumbnail={videoId === null ? localStill : youtubeThumbnail(videoId)}
-      isDimmed={videoId !== null}
       title={title}
     />
   )
