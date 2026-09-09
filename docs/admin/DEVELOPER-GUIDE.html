@@ -134,14 +134,14 @@ pre.mermaid{background:none;border:0;padding:0;margin:0;overflow:visible;font-si
 
 /* key/value grid */
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:14px 0}
-.kv div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.kv>div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
 .kv .k{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-bottom:4px}
 .kv .v{font-size:14px}
 
 /* steps */
 .steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
-.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
-.steps li::before{content:counter(s);font-family:var(--mono);font-size:12px;color:var(--admin);font-weight:500;padding-top:3px}
+.steps li{counter-increment:s;position:relative;padding:10px 0 10px 34px;border-bottom:1px solid var(--line-soft)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:13px;width:22px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--admin);font-weight:500}
 .steps li:last-child{border-bottom:0}
 
 .level{font-family:var(--mono);font-size:12px;padding:1px 7px;border-radius:5px;background:var(--surface-2);color:var(--ink-2)}
