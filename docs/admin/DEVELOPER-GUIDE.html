@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>글자월드 관리자 콘솔 개발자 가이드</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --ink:#1d2230;--ink-2:#4a5268;--ink-3:#7d859a;
+  --paper:#f3f5f9;--surface:#ffffff;--surface-2:#e9edf4;--line:#d7dce7;--line-soft:#e6eaf1;
+  --admin:#ff4fa8;--admin-soft:#ffe3f1;--admin-ink:#b3226f;
+  --client:#178f8a;--client-soft:#dcf3f1;--client-ink:#0f6b67;
+  --db:#4f5bd5;--db-soft:#e6e8fb;--db-ink:#3640a6;
+  --warn:#c9861a;--warn-soft:#fbefd9;--warn-ink:#8a5a0b;
+  --danger:#c93a3a;--danger-soft:#fbe3e3;
+  --code-bg:#eef1f7;
+  --sans:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
+    --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
+    --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
+    --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
+    --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
+    --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
+    --danger:#ff7676;--danger-soft:#3d1f1f;
+    --code-bg:#252c3d;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
+  --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
+  --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
+  --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
+  --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
+  --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
+  --danger:#ff7676;--danger-soft:#3d1f1f;
+  --code-bg:#252c3d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+code,pre,.mono{font-family:var(--mono)}
+code{background:var(--code-bg);padding:.1em .4em;border-radius:5px;font-size:.88em;color:var(--ink)}
+pre{background:var(--code-bg);border:1px solid var(--line-soft);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:14px 0}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.25;margin:0}
+h2{font-size:26px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:700;margin-top:36px}
+h4{font-size:15.5px;font-weight:700;margin-top:24px}
+p{margin:10px 0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1240px;margin:0 auto;padding:40px 28px 96px}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:24px;padding:20px 16px 72px}}
+
+/* index */
+.index{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto}
+@media (max-width:900px){.index{position:static;max-height:none}}
+.index .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.index .brand b{color:var(--admin);letter-spacing:.1em}
+.index ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--line)}
+.index li{margin:0}
+.index a{display:block;padding:6px 12px;text-decoration:none;color:var(--ink-2);font-size:13.5px;border-left:2px solid transparent;margin-left:-2px}
+.index a:hover{color:var(--ink);border-left-color:var(--ink-3)}
+.index a:focus-visible{outline:2px solid var(--admin);outline-offset:2px;border-radius:4px}
+.index .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:8px}
+.index .meta{margin-top:18px;font-size:12px;color:var(--ink-3);line-height:1.6}
+.index .meta code{font-size:11px}
+@media (max-width:900px){.index ol{display:flex;flex-wrap:wrap;gap:4px 10px;border:0}.index a{padding:4px 0;border:0}.index .n{display:none}}
+
+/* main */
+main{max-width:860px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.title h1{font-size:clamp(30px,4vw,42px);font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
+.title .lede{font-size:16.5px;color:var(--ink-2);max-width:68ch}
+.title .stamp{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.chip.admin{background:var(--admin-soft);border-color:transparent;color:var(--admin-ink)}.chip.admin .dot{background:var(--admin)}
+.chip.client{background:var(--client-soft);border-color:transparent;color:var(--client-ink)}.chip.client .dot{background:var(--client)}
+.chip.db{background:var(--db-soft);border-color:transparent;color:var(--db-ink)}.chip.db .dot{background:var(--db)}
+
+/* system map */
+.sysmap{margin:28px 0 8px;display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:stretch}
+@media (max-width:760px){.sysmap{grid-template-columns:1fr}.sysmap .arrow{transform:rotate(90deg);justify-self:center}}
+.node{border-radius:14px;padding:16px 18px;border:1px solid var(--line);background:var(--surface);min-width:0}
+.node .k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.node h3{margin:0 0 6px;font-size:16px}
+.node p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.55}
+.node.admin{border-top:4px solid var(--admin)}.node.admin .k{color:var(--admin-ink)}
+.node.db{border-top:4px solid var(--db)}.node.db .k{color:var(--db-ink)}
+.node.client{border-top:4px solid var(--client)}.node.client .k{color:var(--client-ink)}
+.arrow{align-self:center;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--ink-3);font-family:var(--mono);text-align:center;padding:0 2px}
+.arrow svg{width:44px;height:16px;fill:none;stroke:var(--ink-3);stroke-width:1.5}
+.sysmap-note{font-size:13px;color:var(--ink-2);margin:6px 0 0}
+
+section{margin-top:56px;scroll-margin-top:24px}
+.sec-head{display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.sec-head .num{font-family:var(--mono);font-size:13px;color:var(--admin);font-weight:500}
+.src{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin:-8px 0 12px}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-soft)}
+th{font-weight:700;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+.num-col{font-variant-numeric:tabular-nums}
+
+/* callouts */
+.callout{border-radius:var(--radius);padding:12px 16px;margin:16px 0;border:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.callout .icon{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;padding:2px 7px;border-radius:5px;margin-top:3px;white-space:nowrap}
+.callout p{margin:0;font-size:14px}
+.callout.warn{background:var(--warn-soft);border-color:transparent}.callout.warn .icon{background:var(--warn);color:#fff}
+.callout.rule{background:var(--surface-2);border-color:transparent}.callout.rule .icon{background:var(--ink);color:var(--paper)}
+.callout.admin{background:var(--admin-soft);border-color:transparent}.callout.admin .icon{background:var(--admin);color:#fff}
+.callout.db{background:var(--db-soft);border-color:transparent}.callout.db .icon{background:var(--db);color:#fff}
+
+/* mermaid */
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:16px 0;overflow-x:auto}
+.diagram .cap{font-size:12.5px;color:var(--ink-3);margin:0 0 8px;font-family:var(--mono)}
+pre.mermaid{background:none;border:0;padding:0;margin:0;overflow:visible;font-size:13px}
+
+/* key/value grid */
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:14px 0}
+.kv div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.kv .k{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.kv .v{font-size:14px}
+
+/* steps */
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.steps li::before{content:counter(s);font-family:var(--mono);font-size:12px;color:var(--admin);font-weight:500;padding-top:3px}
+.steps li:last-child{border-bottom:0}
+
+.level{font-family:var(--mono);font-size:12px;padding:1px 7px;border-radius:5px;background:var(--surface-2);color:var(--ink-2)}
+.level.write{background:var(--admin-soft);color:var(--admin-ink)}
+.level.super{background:var(--db-soft);color:var(--db-ink)}
+.tag{display:inline-block;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:999px}
+.tag.on{background:var(--client-soft);color:var(--client-ink)}
+.tag.off{background:var(--surface-2);color:var(--ink-3)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="shell">
+<nav class="index" aria-label="목차">
+  <div class="brand">글자월드 <b>ADMIN</b></div>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span>개요</a></li>
+    <li><a href="#s2"><span class="n">02</span>인증</a></li>
+    <li><a href="#s3"><span class="n">03</span>권한 체계(RBAC)</a></li>
+    <li><a href="#s4"><span class="n">04</span>관리자 초대 · 삭제</a></li>
+    <li><a href="#s5"><span class="n">05</span>관리자 ↔ 사용자 사이트</a></li>
+    <li><a href="#s6"><span class="n">06</span>감사 로그</a></li>
+    <li><a href="#s7"><span class="n">07</span>오류 · 예외 처리</a></li>
+    <li><a href="#s8"><span class="n">08</span>입력 한도 · 안내</a></li>
+    <li><a href="#s9"><span class="n">09</span>개발 · 테스트 · 배포</a></li>
+    <li><a href="#s10"><span class="n">10</span>제약 · 후속 과제</a></li>
+  </ol>
+  <p class="meta">최종 갱신 2026-09-09<br>기준 커밋 <code>a7b6c82</code><br>원문 <code>docs/admin/DEVELOPER-GUIDE.md</code></p>
+</nav>
+
+<main>
+<header class="title">
+  <div class="eyebrow">Developer Guide · 글자월드</div>
+  <h1>관리자 콘솔 개발자 가이드</h1>
+  <p class="lede">관리자 콘솔(<code>admin/</code>)과 사용자 사이트의 연동을 유지·확장하는 개발팀을 위한 실무 지도입니다. 기획 의도는 <code>docs/admin/PLAN.md</code>, 코드 배치는 <code>admin/README.md</code>, DB 계약은 <code>supabase/README.md</code>가 각각 단일 출처이며, 이 문서는 그 셋을 잇습니다. 모든 항목에 근거 파일 경로를 붙였습니다.</p>
+  <div class="stamp">
+    <span class="chip admin"><span class="dot"></span>관리자 콘솔 · maple-admin</span>
+    <span class="chip db"><span class="dot"></span>Supabase · 하나의 프로젝트</span>
+    <span class="chip client"><span class="dot"></span>사용자 사이트 · maple-web</span>
+  </div>
+
+  <div class="sysmap" aria-label="시스템 구성">
+    <div class="node admin">
+      <div class="k">admin/ · :3100</div>
+      <h3>관리자 콘솔</h3>
+      <p>이메일+비밀번호 초대제 계정. 세션 클라이언트 + RLS로 쓰기. 저장 후 사용자 사이트 캐시 무효화를 호출.</p>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 44 16"><path d="M2 8h38m-6-5 6 5-6 5"/></svg>RLS 쓰기</div>
+    <div class="node db">
+      <div class="k">supabase · zafouiovmsfebfkjuyos</div>
+      <h3>Supabase</h3>
+      <p>스키마 · RLS · 함수 · 트리거. <code>is_admin()</code>이 거친 문, <code>admin_roles</code>가 세밀한 권한.</p>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 44 16"><path d="M2 8h38m-6-5 6 5-6 5"/></svg>anon 읽기</div>
+    <div class="node client">
+      <div class="k">root · :3000</div>
+      <h3>사용자 사이트</h3>
+      <p><code>unstable_cache</code> + 태그. <code>POST /api/revalidate</code>가 관리자 저장을 즉시 반영.</p>
+    </div>
+  </div>
+  <p class="sysmap-note">저장소 <a href="https://github.com/GoodBlock-Nill/maple">github.com/GoodBlock-Nill/maple</a> · 작업 브랜치 <code>develop</code> → <code>main</code> · 배포 <a href="https://maple-web-sigma.vercel.app">maple-web-sigma.vercel.app</a> · <a href="https://maple-admin.vercel.app">maple-admin.vercel.app</a></p>
+</header>
+
+<!-- 1 -->
+<section id="s1">
+  <div class="sec-head"><span class="num">01</span><h2>개요</h2></div>
+  <p>한 저장소에 <strong>두 개의 Next.js 앱</strong>이 있고 <strong>하나의 Supabase 프로젝트</strong>를 공유합니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>앱</th><th>패키지</th><th>위치</th><th>배포</th><th>로컬 포트</th></tr></thead>
+    <tbody>
+      <tr><td>사용자 사이트</td><td><code>maple</code></td><td>저장소 루트</td><td>Vercel <code>maple-web</code></td><td class="num-col">3000</td></tr>
+      <tr><td>관리자 콘솔</td><td><code>@maple/admin</code></td><td><code>admin/</code></td><td>Vercel <code>maple-admin</code> (Root Directory = <code>admin</code>)</td><td class="num-col">3100</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>pnpm 워크스페이스 정의는 <code>pnpm-workspace.yaml</code>(패키지는 <code>admin</code> 하나)</li>
+    <li>타입은 한 벌만 씁니다. <code>pnpm gen:types</code>가 <code>types/database.types.ts</code>를 만들고 <code>admin/types/database.types.ts</code>로 복사합니다.</li>
+  </ul>
+<pre><code>maple/
+  app/ components/ lib/ types/     사용자 사이트
+  app/api/revalidate/route.ts      관리자가 부르는 캐시 무효화 훅
+  lib/data/cache.ts                CACHE_TAGS · 캐시 수명
+
+  admin/
+    app/(auth)/                    로그인 · 비밀번호 재설정 · 초대 수락 (사이드바 없음)
+    app/(admin)/                   인증된 관리 화면 전부 (layout 이 requireAdmin())
+    app/auth/callback/             초대·재설정 링크 착지점 (role 게이트)
+    components/ui/                 공용 프리미티브 (Button · Table · Dialog · Toast …)
+    lib/nav.ts                     사이드바 정보 구조 = 단일 출처
+    lib/auth/                      requireAdmin · requirePermission · permissions · 세션 만료
+    lib/actions/                   서버 액션 (+ FormState 계약)
+    lib/data/                      읽기 전용 조회
+    lib/revalidate.ts              사용자 사이트 캐시 무효화
+    lib/audit.ts                   writeAuditLog()
+    scripts/bootstrap-admin.mjs    첫 슈퍼어드민
+    proxy.ts                       Next 16 의 구 middleware
+
+  supabase/
+    migrations/                    스키마 · RLS · 함수 · 트리거
+    config.toml                    [auth] redirect URL 등 (supabase config push)</code></pre>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <div class="sec-head"><span class="num">02</span><h2>인증</h2></div>
+  <h3>원칙</h3>
+  <ul>
+    <li>관리자 계정의 로그인 수단은 <strong>이메일 + 비밀번호 하나</strong>입니다. 간편로그인 버튼은 없앴습니다 (<code>admin/app/(auth)/login/page.tsx</code>, 2026-09-09 제품 결정).</li>
+    <li>계정은 <strong>초대로만</strong> 만들어집니다(§04). 사용자 사이트 회원을 승격하는 화면은 없습니다.</li>
+    <li>로그인에 성공해도 <code>profiles.role !== 'admin'</code>이면 <strong>세션을 남기지 않고 즉시 로그아웃</strong>합니다 (<code>signInAction</code>). 세션만 남기면 "로그인은 됐는데 모든 화면이 튕기는" 상태에 갇힙니다.</li>
+    <li>아이디/비밀번호 중 어느 쪽이 틀렸는지 알리지 않습니다(계정 열거 차단).</li>
+    <li>비밀번호는 10자 이상 72자 이하(<code>ADMIN_PASSWORD_MIN_LENGTH</code> · <code>MAX_LENGTH</code>, bcrypt가 73바이트째부터 버립니다).</li>
+  </ul>
+
+  <h3>로그인 시퀀스</h3>
+  <div class="diagram"><p class="cap">admin/proxy.ts → login/page.tsx → signInAction → Supabase Auth → profiles</p>
+<pre class="mermaid">
+sequenceDiagram
+    actor U as 운영자
+    participant P as proxy.ts
+    participant L as login/page.tsx
+    participant A as signInAction
+    participant S as Supabase Auth
+    participant DB as profiles · RLS
+    U->>P: GET /news
+    P->>S: getUser()
+    S-->>P: null
+    P-->>U: 302 /login?next=/news
+    U->>L: 로그인 폼
+    U->>A: submit(email, password, next)
+    A->>S: signInWithPassword()
+    alt 실패
+        S-->>A: error
+        A-->>U: "이메일 또는 비밀번호가 올바르지 않습니다."
+    else 성공
+        S-->>A: session
+        A->>DB: select role from profiles
+        alt role !== 'admin'
+            A->>S: signOut()
+            A-->>U: NOT_ADMIN_MESSAGE
+        else role === 'admin'
+            A-->>U: redirect(sanitizeNextPath(next))
+        end
+    end
+</pre></div>
+
+  <h3>세션 · 쿠키</h3>
+  <p class="src">admin/proxy.ts · admin/lib/supabase/middleware.ts · admin/lib/auth/session.ts</p>
+  <ul>
+    <li><code>proxy.ts</code>가 Next 16의 구 <code>middleware.ts</code>입니다. 세 가지를 합니다: 매 요청 세션 갱신(<code>updateSession()</code>), 미로그인 요청을 <code>/login?next=…</code>로(낙관적 검사), 30분 비활동 만료.</li>
+    <li>검증은 <code>getSession()</code>이 아니라 <strong><code>getUser()</code></strong>입니다. <code>getSession()</code>은 쿠키의 JWT를 그대로 신뢰해 위조 쿠키를 통과시킵니다.</li>
+    <li>리다이렉트를 만들 때 <strong>갱신된 인증 쿠키를 반드시 복사</strong>합니다(<code>redirectWithSession</code>). 빠뜨리면 리프레시 토큰이 저장되지 않아 임의로 로그아웃됩니다.</li>
+    <li>30분 타이머는 <code>admin_last_seen</code> 쿠키입니다(<code>INACTIVITY_LIMIT_MS</code>). 쿠키가 없으면 만료로 보지 않습니다 — 로그인 직후 첫 요청에는 쿠키가 없기 때문입니다. <strong>보안 경계가 아니라 편의 장치</strong>입니다.</li>
+    <li>공개 경로 <code>PUBLIC_PREFIXES</code>: <code>/login</code> <code>/forgot-password</code> <code>/reset-password</code> <code>/invite/accept</code> <code>/auth/callback</code>. 정적 자산은 matcher에서 제외합니다.</li>
+  </ul>
+
+  <h3>비밀번호 재설정</h3>
+  <ol class="steps">
+    <li><code>/forgot-password</code> → <code>requestPasswordResetAction</code> → <code>resetPasswordForEmail(redirectTo: {ADMIN_URL}/auth/callback?next=/reset-password)</code></li>
+    <li>성공/실패를 구분해 답하지 않습니다(계정 열거 차단). 실제 발송 실패는 서버 로그에만 남습니다.</li>
+    <li>링크가 세션을 만들면 <code>/reset-password</code>에서 <code>setPasswordAction</code>이 비밀번호를 바꿉니다. 세션이 없으면 "링크가 만료되었습니다"로 안내합니다.</li>
+    <li>같은 비밀번호(<code>error.code === 'same_password'</code>)만 필드 오류로 되돌립니다.</li>
+  </ol>
+
+  <h3>개발용 로그인 미리 채움</h3>
+  <p><code>ADMIN_LOGIN_PREFILL_EMAIL</code> · <code>ADMIN_LOGIN_PREFILL_PASSWORD</code>가 있으면 로그인 칸이 미리 채워집니다.</p>
+  <div class="callout warn"><span class="icon">주의</span><p>이 값은 공개 로그인 페이지의 HTML에 그대로 실립니다. 개발 기간에만 켜고, 운영 배포에서는 제거 대상입니다.</p></div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <div class="sec-head"><span class="num">03</span><h2>권한 체계(RBAC)</h2></div>
+  <h3>데이터 모델</h3>
+  <p class="src">supabase/migrations/20260909000200_admin_roles.sql</p>
+  <div class="kv">
+    <div><div class="k">admin_roles</div><div class="v"><code>key</code>는 <code>^[a-z][a-z0-9_]{1,30}$</code>, 생성 후 불변. <code>permissions</code>는 <code>{ "&lt;module&gt;": "none"|"read"|"write" }</code> jsonb. 시드: <code>super_admin</code>(전체 write, 시스템) · <code>editor</code>(예시).</div></div>
+    <div><div class="k">profiles.role = 'admin'</div><div class="v"><strong>콘솔에 들어올 수 있는가.</strong> RLS 전체가 쓰는 거친 문 <code>is_admin()</code>의 근거.</div></div>
+    <div><div class="k">profiles.admin_role_id</div><div class="v"><strong>무엇을 할 수 있는가.</strong> <code>on delete set null</code>. 비어 있으면 아무 모듈도 못 봅니다(닫힘 실패).</div></div>
+    <div><div class="k">is_super_admin()</div><div class="v">역할·관리자 관리의 판정. SECURITY DEFINER, <code>search_path</code> 고정.</div></div>
+  </div>
+  <p>가드 트리거 둘. <code>guard_admin_roles()</code>는 시스템 역할의 수정·삭제를 막고 <code>key</code>·<code>is_system</code>·<code>created_at</code>을 불변으로 만듭니다. <code>guard_profile_role()</code>은 <strong>SECURITY INVOKER여야</strong> 합니다 — DEFINER로 두면 <code>current_user</code>가 함수 소유자로 평가되어 가드가 통째로 사라집니다(20260908001000의 사고). 슈퍼어드민이 아닌 관리자는 <code>role</code>·<code>admin_role_id</code>를 바꿀 수 없습니다.</p>
+
+  <h3>모듈 13개</h3>
+  <p class="src">admin/lib/auth/permissions.ts · ADMIN_MODULES</p>
+  <p><code>dashboard</code> · <code>news</code> · <code>community</code> · <code>reports</code> · <code>members</code> · <code>inquiries</code> · <code>faqs</code> · <code>gacha</code> · <code>rankings</code> · <code>settings</code> · <code>legal</code> · <code>admins</code> · <code>audit</code></p>
+  <ul>
+    <li>등급은 <span class="level">none</span> &lt; <span class="level">read</span> &lt; <span class="level write">write</span>. write는 read를 포함합니다.</li>
+    <li>값이 없는 모듈은 <code>none</code>으로 읽습니다 — <strong>닫힘 실패</strong>. 모듈을 새로 추가해도 기존 역할에서 자동으로 열리지 않습니다.</li>
+    <li><code>parsePermissions()</code>는 모르는 키·값을 버립니다. 이 파일에는 <code>server-only</code>를 붙이지 않습니다 — 사이드바(클라이언트)가 같은 판정으로 메뉴를 감춰야 하기 때문입니다.</li>
+  </ul>
+
+  <h3>두 겹 강제 — RLS(거친 문) vs 앱(세밀한 문)</h3>
+  <div class="diagram"><p class="cap">요청이 통과하는 문</p>
+<pre class="mermaid">
+flowchart TD
+    R[요청] --> P["proxy.ts<br/>로그인 여부 · 30분 비활동"]
+    P --> C["app/auth/callback/route.ts<br/>세션 확립 직후 profiles.role"]
+    P --> L["app/(admin)/layout.tsx<br/>requireAdmin()"]
+    L --> PG["page.tsx<br/>requirePermission(모듈,'read')"]
+    L --> SA["*-actions.ts<br/>requirePermission(모듈,'write')"]
+    PG --> UI["canWrite 로 쓰기 컨트롤 게이팅<br/>visibleNavItems 로 메뉴 필터"]
+    SA --> DB["RLS: is_admin() 하나<br/>모듈을 구분하지 않는다"]
+    UI -.편의일 뿐.-> DB
+    SA --> SUP["권한을 바꾸는 경로만<br/>is_super_admin() + 가드 트리거"]
+</pre></div>
+  <p><strong>RLS는 모듈별 권한을 모릅니다.</strong> 정책에 역할을 녹이면 정책 수가 모듈 × 역할로 폭발하고, 역할을 추가할 때마다 마이그레이션이 필요해집니다. 그래서 DB는 "관리자인가"까지만 보고, 모듈별 read/write는 앱이 강제합니다.</p>
+  <div class="callout warn"><span class="icon">신뢰 경계</span><p>모듈 권한만으로는 데이터가 보호되지 않습니다. 읽기 전용 역할의 계정도 anon 키 + 자기 세션으로 REST를 직접 부르면 관리자 테이블을 쓸 수 있습니다. 역할은 "운영자가 실수로 남의 영역을 건드리지 않게 하는 경계"이고, 신뢰 경계는 여전히 <code>role='admin'</code>입니다. 신뢰할 수 없는 사람에게는 관리자 계정을 주지 않습니다.</p></div>
+
+  <div class="tbl"><table>
+    <thead><tr><th>가드 (admin/lib/auth/require-admin.ts)</th><th>실패 시</th><th>쓰는 곳</th></tr></thead>
+    <tbody>
+      <tr><td><code>requireAdmin()</code></td><td><strong>로그아웃</strong> + <code>/login</code></td><td><code>(admin)/layout.tsx</code>, 대시보드</td></tr>
+      <tr><td><code>requirePermission(module, level)</code></td><td><code>/?error=forbidden</code></td><td>각 페이지 · 쓰기 액션 첫 줄</td></tr>
+      <tr><td><code>requireAnyPermission(modules, level)</code></td><td><code>/?error=forbidden</code></td><td>신고 처리의 콘텐츠 숨김</td></tr>
+      <tr><td><code>requireSuperAdmin()</code></td><td><code>/?error=forbidden</code></td><td><code>/admins</code> · 초대 · 삭제 · 역할</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>requireAdmin()</code>만 로그아웃시키는 이유: 관리자가 아니면 계정 자체가 콘솔의 대상이 아닙니다. 모듈 권한 부족은 계정이 정상이고 이 화면만 닫힌 것이라 세션을 끊으면 쓸 수 있는 화면까지 잃습니다. 그래서 대시보드로 되돌리고 배너로 사유를 알립니다. 역할은 <code>requireAdmin()</code>이 프로필과 <strong>같은 질의</strong>로 읽습니다.</p>
+
+  <h3>모듈 × 페이지 × 권한 × 쓰기 액션</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>모듈</th><th>페이지 경로</th><th>페이지 가드</th><th>쓰기 액션 파일</th></tr></thead>
+    <tbody>
+      <tr><td><code>dashboard</code></td><td><code>/</code></td><td><code>requireAdmin()</code> + <code>hasPermission(…,'dashboard','read')</code></td><td>없음</td></tr>
+      <tr><td><code>news</code></td><td><code>/news</code> · <code>/news/new</code> · <code>/news/[id]</code></td><td><span class="level">read</span> · <span class="level write">write</span> · <span class="level write">write</span></td><td><code>news-actions.ts</code></td></tr>
+      <tr><td><code>community</code></td><td><code>/community/posts</code> · <code>/community/comments</code></td><td><span class="level">read</span></td><td><code>moderation-actions.ts</code></td></tr>
+      <tr><td><code>reports</code></td><td><code>/reports</code></td><td><span class="level">read</span></td><td><code>reports-actions.ts</code></td></tr>
+      <tr><td><code>members</code></td><td><code>/members</code> · <code>/members/[id]</code></td><td><span class="level">read</span></td><td><code>members-actions.ts</code></td></tr>
+      <tr><td><code>inquiries</code></td><td><code>/inquiries</code> · <code>/inquiries/[id]</code></td><td><span class="level">read</span></td><td><code>inquiries-actions.ts</code></td></tr>
+      <tr><td><code>faqs</code></td><td><code>/faqs</code></td><td><span class="level">read</span></td><td><code>faqs-actions.ts</code></td></tr>
+      <tr><td><code>gacha</code></td><td><code>/gacha</code> · <code>/gacha/new</code> · <code>/gacha/[id]</code></td><td><span class="level">read</span> · <span class="level write">write</span> · <span class="level write">write</span></td><td><code>gacha-actions.ts</code></td></tr>
+      <tr><td><code>rankings</code></td><td><code>/rankings</code></td><td><span class="level">read</span></td><td><code>rankings-actions.ts</code> (롤백 하나)</td></tr>
+      <tr><td><code>settings</code></td><td><code>/settings</code></td><td><span class="level">read</span></td><td><code>settings-actions.ts</code></td></tr>
+      <tr><td><code>legal</code></td><td><code>/legal</code> · <code>/legal/[slug]</code></td><td><span class="level">read</span> · <span class="level write">write</span></td><td><code>legal-actions.ts</code></td></tr>
+      <tr><td><code>admins</code></td><td><code>/admins</code></td><td><span class="level super">requireSuperAdmin()</span></td><td><code>admin-actions.ts</code> · <code>admin-invite-actions.ts</code> · <code>admin-role-actions.ts</code></td></tr>
+      <tr><td><code>audit</code></td><td><code>/audit</code></td><td><span class="level">read</span></td><td>없음(추가 전용)</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>대시보드는 <code>requirePermission()</code>을 쓰지 않습니다. 권한 없는 화면의 착지점이 대시보드 자신이라 여기서 다시 리다이렉트하면 무한히 튕깁니다. 직접 판정해 지표를 감춥니다.</li>
+    <li>신고 처리의 콘텐츠 숨김·삭제는 <code>requireAnyPermission(['community','reports'], 'write')</code>입니다(<code>moderateTarget</code>). 신고 종결에 커뮤니티 쓰기까지 요구하면 '신고 담당' 역할이 성립하지 않습니다.</li>
+  </ul>
+
+  <h3>UI 게이팅</h3>
+  <ul>
+    <li>사이드바(<code>Sidebar.tsx</code>)는 <code>visibleNavItems(permissions)</code>로 메뉴를 거릅니다. <code>none</code>인 모듈은 <strong>지웁니다</strong>. 하위가 전부 닫힌 부모는 사라지고, 첫 하위가 닫혔으면 부모 링크가 남아 있는 첫 하위로 옮겨 갑니다.</li>
+    <li>쓰기 컨트롤: 페이지가 <code>hasPermission(permissions, '&lt;모듈&gt;', 'write')</code>를 <code>canWrite</code>로 내려 버튼·폼을 감춥니다. 값은 보여 주고 <strong>저장 수단만</strong> 없앱니다.</li>
+    <li>이것은 <strong>편의이지 인가가 아닙니다</strong>. 인가는 페이지와 서버 액션이 합니다.</li>
+  </ul>
+
+  <h3>새 모듈을 추가할 때 체크리스트</h3>
+  <ol class="steps">
+    <li><code>ADMIN_MODULES</code>에 <code>{ key, label }</code> 한 줄. 기존 역할에서는 자동으로 <code>none</code>.</li>
+    <li>시드 역할의 권한을 함께 갱신할지 결정. <code>super_admin</code>은 전체 write를 유지해야 합니다.</li>
+    <li><code>admin/lib/nav.ts</code>의 <code>NAV_ITEMS</code>에 항목 추가. 작성 화면은 <code>level: 'write'</code>.</li>
+    <li>페이지 첫 줄에 <code>requirePermission('&lt;모듈&gt;', 'read')</code>. 작성/편집 전용 화면은 <code>'write'</code>.</li>
+    <li>조회는 <code>lib/data/&lt;모듈&gt;.ts</code>(<code>server-only</code> + 세션 클라이언트), 변경은 <code>lib/actions/&lt;모듈&gt;-actions.ts</code>.</li>
+    <li>쓰기 액션 첫 줄은 항상 <code>const actor = await requirePermission('&lt;모듈&gt;', 'write')</code>. 서버 액션은 직접 POST로도 호출됩니다.</li>
+    <li>상태를 바꾸면 <code>writeAuditLog(actor.id, …)</code>(§06).</li>
+    <li>사용자 사이트에 보이는 변경이면 <code>revalidateClient([...])</code>(§05). 새 태그는 <strong>사용자 사이트 <code>CACHE_TAGS</code>에 먼저</strong> 넣고 <code>CLIENT_CACHE_TAGS</code>에 같은 값을 더합니다. 순서가 반대면 400.</li>
+    <li>RLS 확인. 새 테이블은 <code>revoke all … from anon, authenticated</code> 뒤 필요한 <code>grant</code>를 명시 — <strong>정책은 권한을 주지 않습니다</strong>.</li>
+    <li>목록은 <code>Table</code> + <code>Pagination</code> + <code>table-query.ts</code>. 정렬·페이지는 쿼리스트링에.</li>
+    <li>유닛 테스트 추가. 새 액션은 <code>actions-no-raw-error.test.ts</code> 규약을 지키는지 확인.</li>
+  </ol>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <div class="sec-head"><span class="num">04</span><h2>관리자 초대 · 삭제 플로우</h2></div>
+  <h3>초대</h3>
+  <p class="src">admin/lib/actions/admin-invite-actions.ts · supabase/migrations/20260909000200_admin_roles.sql</p>
+  <div class="diagram"><p class="cap">초대 행 → 메일 → 트리거 → 링크 → 비밀번호 설정</p>
+<pre class="mermaid">
+sequenceDiagram
+    actor SA as 슈퍼어드민
+    participant UI as /admins InviteAdminDialog
+    participant AC as inviteAdminAction
+    participant DB as admin_invites · RLS
+    participant SR as 서비스 롤 · Auth Admin API
+    participant TG as handle_new_user 트리거
+    actor NEW as 초대받은 사람
+    SA->>UI: 이메일 + 역할 선택
+    UI->>AC: submit
+    AC->>AC: requireSuperAdmin()
+    AC->>DB: 역할 존재 확인 · 같은 이메일 계정 확인
+    alt 이미 계정 있음
+        AC-->>SA: "이미 계정이 있는 이메일입니다…" (조용한 승격 거부)
+    else 신규
+        AC->>DB: 1) pending 초대 행 (role_id, expires_at = 7일)
+        AC->>SR: 2) auth.admin.inviteUserByEmail(redirectTo)
+        SR->>TG: auth.users insert (메일 발송 = insert)
+        TG->>DB: 유효한 pending 초대 → profiles.role='admin', admin_role_id
+        TG->>DB: 초대 행 status='accepted'
+        alt 메일 발송 실패
+            AC->>DB: 초대 행 status='revoked' (되돌림)
+            AC-->>SA: "초대 메일을 보내지 못했습니다…"
+        else 성공
+            AC->>DB: audit_logs (admin.invite)
+            SR-->>NEW: 초대 메일
+            NEW->>NEW: 링크 → /auth/callback → /invite/accept
+            NEW->>NEW: 비밀번호 설정 (setPasswordAction) → 콘솔
+        end
+    end
+</pre></div>
+  <div class="callout rule"><span class="icon">순서</span><p><code>inviteUserByEmail()</code>은 메일을 보내는 순간 <code>auth.users</code> 행을 만들고, 그 순간 <code>handle_new_user()</code>가 돕니다. 초대 행 insert가 <strong>먼저</strong>여야 트리거가 그 행을 찾습니다. 발송이 실패하면 <strong>반드시</strong> 초대 행을 <code>revoked</code>로 되돌립니다 — 남겨 두면 그 주소로 가입하는 누구나 관리자가 됩니다.</p></div>
+  <p>트리거의 승격 조건: <code>lower(email)</code> 일치 + <code>status='pending'</code> + <code>expires_at</code> 미경과. 여러 건이면 <code>created_at</code> 오름차순 첫 행. <code>role</code>은 <code>raw_user_meta_data</code>에서 <strong>절대</strong> 읽지 않습니다. 초대에 <code>role_id</code>가 비어 있으면 슈퍼어드민으로 떨어뜨리지 않고 권한 없는 관리자로 만듭니다(안전한 실패).</p>
+
+  <h3>링크 착지 — /auth/callback</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>형태</th><th>언제</th><th>처리</th></tr></thead>
+    <tbody>
+      <tr><td><code>?code=</code></td><td>PKCE</td><td><code>exchangeCodeForSession()</code></td></tr>
+      <tr><td><code>?token_hash=&amp;type=</code></td><td>메일 템플릿이 <code>{{ .TokenHash }}</code></td><td><code>verifyOtp()</code> (허용 타입 5종)</td></tr>
+      <tr><td><code>#access_token=…</code></td><td>암시적 흐름</td><td><code>/auth/callback/complete</code>가 브라우저에서 읽어 <code>establishSessionAction</code>으로 넘김</td></tr>
+    </tbody>
+  </table></div>
+  <p>어느 경로든 세션이 생기면 <code>rejectNonAdmin()</code>이 <code>profiles.role</code>을 확인하고, 관리자가 아니면 <code>signOut()</code> 후 <code>/login?error=not_admin</code>으로 보냅니다. 초대 메일은 <code>?next=/invite/accept</code>로 오며, 세션이 있으면 비밀번호 폼을, 없으면 "초대 재발송을 요청해 주세요" 안내를 그립니다.</p>
+
+  <h3>재발송 · 취소 · 만료</h3>
+  <ul>
+    <li><strong>재발송</strong>: <code>expires_at</code>을 7일 뒤로 갱신한 뒤 같은 API를 다시 부릅니다. 링크만 새로 오고 허용 목록이 만료돼 있으면 트리거가 승격을 거르므로 <strong>둘을 함께 연장</strong>합니다.</li>
+    <li><strong>취소</strong>: <code>status='revoked'</code>. 행은 지우지 않습니다(<code>admin_invites</code>에 DELETE 정책이 없음).</li>
+    <li><strong>만료</strong>: <code>INVITE_TTL_MS = 7일</code>. Supabase 초대 <strong>링크</strong>의 수명(기본 24시간)과 다른 개념으로, "이 주소로 가입하면 관리자가 된다"는 <strong>근거의 수명</strong>입니다. 목록은 만료된 초대도 보여 줍니다 — 재발송 대상이기 때문입니다.</li>
+    <li>같은 이메일 초대는 <code>upsert</code>가 아니라 조회 후 update/insert. 유니크 인덱스가 <code>lower(email)</code> 식이라 <code>on conflict (email)</code>과 맞지 않습니다.</li>
+  </ul>
+
+  <h3>삭제 = 비활성화</h3>
+  <p class="src">deleteAdminAction · admin/lib/actions/admin-actions.ts</p>
+  <ol class="steps">
+    <li><code>profiles.role = 'user'</code>, <code>admin_role_id = null</code></li>
+    <li>그 이메일의 초대를 <code>revoked</code>로 — 같은 주소로 재가입해도 다시 관리자가 되지 않습니다</li>
+    <li>서비스 롤로 <code>auth.admin.updateUserById(id, { ban_duration: '876600h' })</code> (100년; Supabase에 영구 차단 플래그가 없음)</li>
+  </ol>
+  <p>계정 행을 지우지 않는 이유: 그 사람이 쓴 뉴스·답변의 작성자 참조가 끊깁니다. 3번이 없으면 role만 내려간 계정이 <strong>로그인은 계속 성공</strong>하고 화면에서만 튕깁니다. 3번이 실패해도 삭제를 되돌리지 않습니다(로그만).</p>
+
+  <h3>보호 규칙</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>규칙</th><th>역할 변경</th><th>삭제</th></tr></thead>
+    <tbody>
+      <tr><td>자기 자신</td><td>불가 — "자기 자신의 권한은 바꿀 수 없습니다."</td><td>불가 — 버튼 자리에 "본인"</td></tr>
+      <tr><td>마지막 슈퍼어드민</td><td>불가 (<code>countSuperAdmins() &lt;= 1</code>)</td><td>불가</td></tr>
+      <tr><td>시스템 역할(<code>super_admin</code>)</td><td>수정·삭제 불가 (앱 + <code>guard_admin_roles()</code>)</td><td>—</td></tr>
+      <tr><td>멤버가 있는 역할</td><td>삭제 불가 — "…관리자가 N명 있습니다"</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>운영자가 반드시 해야 하는 설정</h3>
+  <div class="callout warn"><span class="icon">SMTP</span><p>Supabase 기본 메일러는 시간당 발송 한도가 매우 낮습니다. 초대와 비밀번호 재설정이 모두 메일에 의존하므로 운영에서 커스텀 SMTP 연결은 선택이 아닙니다.</p></div>
+  <div class="callout db"><span class="icon">Redirect</span><p>관리자 콜백 URL의 단일 출처는 <code>supabase/config.toml</code>의 <code>[auth].additional_redirect_urls</code>이며 <code>http://localhost:3100/**</code>·<code>https://maple-admin.vercel.app/**</code>이 들어 있습니다. <code>supabase config push</code>로 원격에 반영합니다. 초대 링크는 <code>NEXT_PUBLIC_ADMIN_URL</code>(<code>adminSiteUrl()</code>)에서 만들어집니다.</p></div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <div class="sec-head"><span class="num">05</span><h2>관리자 ↔ 사용자 사이트 데이터 흐름</h2></div>
+  <h3>쓰기는 세션 클라이언트로</h3>
+  <ul>
+    <li>관리자의 모든 읽기·쓰기는 <strong>세션 클라이언트</strong>(<code>admin/lib/supabase/server.ts</code>)로 합니다. RLS가 다시 검사하므로 권한이 사라지면 화면도 비는 것이 정상입니다.</li>
+    <li><strong>서비스 롤</strong>(<code>admin/lib/supabase/admin.ts</code>)은 <code>server-only</code>이고 <strong>Auth Admin API에만</strong> 씁니다 — 초대 메일 발송, 계정 차단, 부트스트랩. 일반 경로에 쓰면 권한 버그가 조용히 통과합니다.</li>
+  </ul>
+
+  <h3>캐시 무효화</h3>
+  <div class="diagram"><p class="cap">관리자 저장 → revalidateClient → POST /api/revalidate → revalidateTag(tag, { expire: 0 })</p>
+<pre class="mermaid">
+sequenceDiagram
+    actor A as 운영자
+    participant AC as 관리자 서버 액션
+    participant SB as Supabase (RLS)
+    participant RV as admin/lib/revalidate.ts
+    participant API as 사용자 사이트 POST /api/revalidate
+    participant NX as Next 데이터 캐시
+    A->>AC: 저장
+    AC->>SB: update/insert (세션 클라이언트)
+    SB-->>AC: ok
+    AC->>AC: writeAuditLog + revalidatePath(관리자 경로)
+    AC->>RV: revalidateClient([tag])
+    RV->>API: POST {tags} + x-revalidate-secret (timeout 5s)
+    API->>API: 시크릿 상수시간 비교 · CACHE_TAGS 화이트리스트
+    API->>NX: revalidateTag(tag, { expire: 0 })
+    API-->>RV: 200 {revalidated:[…]}
+    Note over RV,AC: 실패해도 저장은 성공 — ok:false + console.warn
+</pre></div>
+  <div class="kv">
+    <div><div class="k">계약 · app/api/revalidate/route.ts</div><div class="v"><code>POST</code>, 헤더 <code>x-revalidate-secret</code>, 본문 <code>{"tags":[…]}</code>. 200 <code>{revalidated}</code> / 400 알 수 없는 태그 / 401 시크릿 불일치·미설정(<strong>미설정이면 닫힘</strong>).</div></div>
+    <div><div class="k">왜 expire: 0</div><div class="v"><code>'max'</code>(SWR)는 숨긴 직후 첫 요청이 이전 값을 돌려줘 read-your-own-writes가 깨집니다. <code>updateTag()</code>는 Server Action 전용.</div></div>
+    <div><div class="k">호출부 규칙 · admin/lib/revalidate.ts</div><div class="v">절대 던지지 않음(저장의 후처리). 관리자 전용 테이블에는 부르지 않음. 기준 URL은 서버 전용 <code>CLIENT_SITE_URL</code>을 먼저 — 로컬에서 운영 캐시를 태우지 않도록.</div></div>
+  </div>
+
+  <h3>태그 매핑</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>모듈</th><th>태그</th><th>무효화 호출 위치</th><th>사용자 사이트 화면</th></tr></thead>
+    <tbody>
+      <tr><td>뉴스</td><td><code>news-list</code></td><td><code>news-actions.ts</code> <code>revalidateNewsList()</code></td><td><code>/news</code></td></tr>
+      <tr><td>커뮤니티</td><td><code>community-list</code></td><td><code>moderation-actions.ts</code> <code>revalidateFor()</code></td><td><code>/community</code></td></tr>
+      <tr><td>신고</td><td><code>community-list</code></td><td><code>moderateTarget()</code> 경유(직접 부르지 않음)</td><td><code>/community</code></td></tr>
+      <tr><td>FAQ</td><td><code>faqs</code></td><td><code>faqs-actions.ts</code></td><td><code>/support/faq</code></td></tr>
+      <tr><td>가이드</td><td><code>gacha</code></td><td><code>gacha-actions.ts</code></td><td><code>/guide</code></td></tr>
+      <tr><td>랭킹</td><td><code>rankings</code></td><td><code>rankings-actions.ts</code></td><td><code>/ranking</code></td></tr>
+      <tr><td>사이트 설정 · 히어로 배너</td><td><code>site</code></td><td><code>settings-actions.ts</code> <code>revalidateSite()</code></td><td><code>/about</code> · 푸터 · <code>/play</code> <code>/discord</code> <code>/sns/[name]</code> · <code>/policy/[slug]</code> IP 고지</td></tr>
+      <tr><td>Legal</td><td><code>legal</code></td><td><code>legal-actions.ts</code></td><td><code>/policy/[slug]</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>수명은 <code>lib/data/cache.ts</code> — 목록 계열 60초, FAQ·설정 계열 300초. 무효화가 실패하면 그 수명만큼 늦게 반영됩니다.</p>
+
+  <h3>"관리자 화면 표시 ↔ 실제 클라이언트"</h3>
+  <div class="kv">
+    <div><div class="k">히어로 배너</div><div class="v">읽는 자리는 <strong>소개 화면(<code>/about</code>) 상단 영상 영역</strong>. <code>sort_order</code> 오름차순 · 노출 기간 안 · <code>is_active</code> 중 <strong>첫 한 장</strong>. 없으면 사이트 설정의 유튜브 영상. 종류는 <code>media_type</code>(image | youtube), DB 제약 <code>hero_banners_media_shape</code>가 불일치를 차단.</div></div>
+    <div><div class="k">사이트 설정 연동 표시</div><div class="v"><code>/settings</code>의 <span class="tag on">사이트 반영</span> / <span class="tag off">미연동</span> 태그(<code>wiring.tsx</code>). 2026-09-09 기준 전 필드 연동. 새 열이 아직 안 읽히면 <code>isLive: false</code>로 드러냅니다.</div></div>
+    <div><div class="k">Legal</div><div class="v">시행 중 문안은 DB 함수 <code>current_legal_version(slug)</code> 하나가 소유: 시행일 지난 발행본 중 가장 늦은 것 → 없으면 가장 최근 발행본. 임시저장본은 RLS로 비공개, 예약 발행본은 공개. 실패 시 코드 문안 폴백.</div></div>
+    <div><div class="k">뉴스 노출 판정</div><div class="v">RLS <code>posts_select_published</code> = <code>is_published and deleted_at is null and not is_hidden and published_at &lt;= now()</code>. 관리자 뱃지 <code>deriveNewsVisibility()</code>가 같은 조건으로 <code>visible/scheduled/invisible</code>. 숨긴 글은 작성자에게도 안 보입니다.</div></div>
+    <div><div class="k">랭킹</div><div class="v">사용자 사이트는 <code>rank_type</code>별 <strong>가장 최근 <code>snapshot_at</code></strong>만 읽습니다. 새 스냅샷 삽입 = 교체 완료, "지우고 넣기"를 하지 않습니다.</div></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <div class="sec-head"><span class="num">06</span><h2>감사 로그</h2></div>
+  <p class="src">admin/lib/audit.ts · supabase/migrations/20260908001700_admin_foundation.sql</p>
+  <ul>
+    <li><code>audit_logs(actor_id, action, target_table, target_id, before, after, created_at)</code>. <code>target_id</code>는 uuid가 아닌 <strong>text</strong> — 대상이 uuid인 테이블만 있지 않습니다(<code>site_settings</code>는 단일 행 키).</li>
+    <li><strong>추가 전용</strong>. UPDATE/DELETE 정책을 만들지 않았습니다.</li>
+    <li>세션 클라이언트로 넣습니다. <code>audit_logs_insert_admin</code> 정책이 <code>actor_id = auth.uid()</code>를 강제해 남의 이름으로 남길 수 없습니다.</li>
+    <li><strong>기록 실패는 본 작업을 되돌리지 않습니다.</strong> <code>console.error</code>로만 남깁니다.</li>
+  </ul>
+<pre><code>await writeAuditLog(actor.id, {
+  action: 'faq.publish',
+  targetTable: 'faqs',
+  targetId: id,
+  before: { is_published: false },
+  after: { is_published: true },
+})</code></pre>
+  <h3>action 이름 규칙</h3>
+  <p><code>&lt;도메인&gt;.&lt;대상&gt;.&lt;행위&gt;</code>. 도메인은 소문자 단수. 되짚어 볼 일이 잦은 전이는 별도 이름(임시저장 → 공개는 <code>news.publish</code>).</p>
+  <div class="tbl"><table>
+    <thead><tr><th>도메인</th><th>action</th></tr></thead>
+    <tbody>
+      <tr><td>뉴스</td><td><code>news.create</code> <code>news.update</code> <code>news.publish</code> <code>news.hide</code> <code>news.unhide</code> <code>news.delete</code> <code>news.restore</code></td></tr>
+      <tr><td>커뮤니티</td><td><code>community.post.hide</code> <code>…unhide</code> <code>…delete</code> <code>…restore</code> <code>…bulk_hide</code> — <code>community.comment.*</code>도 같은 접미사</td></tr>
+      <tr><td>신고</td><td><code>report.resolve</code> <code>report.dismiss</code></td></tr>
+      <tr><td>회원</td><td><code>member.suspend</code> <code>member.unsuspend</code> <code>member.nickname.force_change</code></td></tr>
+      <tr><td>문의</td><td><code>inquiry.status</code> <code>inquiry.reply</code></td></tr>
+      <tr><td>FAQ</td><td><code>faq.create</code> <code>faq.update</code> <code>faq.delete</code> <code>faq.publish</code> <code>faq.reorder</code></td></tr>
+      <tr><td>가이드</td><td><code>gacha.create</code> <code>gacha.update</code> <code>gacha.delete</code></td></tr>
+      <tr><td>랭킹</td><td><code>rankings.snapshot.rollback</code></td></tr>
+      <tr><td>사이트 설정</td><td><code>settings.update</code> <code>banner.create</code> <code>banner.update</code> <code>banner.delete</code> <code>banner.toggle</code> <code>banner.reorder</code></td></tr>
+      <tr><td>Legal</td><td><code>legal.create</code> <code>legal.update</code> <code>legal.publish</code> <code>legal.delete_draft</code></td></tr>
+      <tr><td>관리자</td><td><code>admin.invite</code> <code>admin.invite.resend</code> <code>admin.invite.revoke</code> <code>admin.role.create</code> <code>admin.role.update</code> <code>admin.role.delete</code> <code>admin.role.change</code> <code>admin.delete</code></td></tr>
+    </tbody>
+  </table></div>
+  <p><code>/audit</code>(권한 <code>audit:read</code>), 페이지 50건. 필터는 쿼리스트링 <code>actor</code> · <code>table</code> · <code>action</code> · <code>from</code> · <code>to</code> · <code>q</code> · <code>page</code>. 날짜는 한국시간 하루 경계. 행위자가 탈퇴하면 <code>(삭제된 계정)</code>으로 표시됩니다.</p>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <div class="sec-head"><span class="num">07</span><h2>오류 · 예외 처리 규약</h2></div>
+  <h3>원문은 로그에만</h3>
+  <p class="src">admin/lib/actions/action-failure.ts · 회귀 테스트 actions-no-raw-error.test.ts</p>
+  <div class="tbl"><table>
+    <thead><tr><th>함수</th><th>반환</th><th>쓰는 곳</th></tr></thead>
+    <tbody>
+      <tr><td><code>logFailure(scope, message, error)</code></td><td><code>string</code></td><td>내부 헬퍼(<code>suspendMember</code> · <code>applyStatusChange</code>)</td></tr>
+      <tr><td><code>actionFailure(scope, message, error)</code></td><td><code>FormState</code></td><td>서버 액션의 <code>return</code> 자리</td></tr>
+    </tbody>
+  </table></div>
+  <p>Supabase·Postgres 원문에는 정책명·제약명·컬럼명이 그대로 들어 있어 운영자가 할 수 있는 일이 없고, 그 자체로 정보 노출입니다. 원문은 <code>console.error</code>로만 남기고 화면에는 <strong>고정 문장</strong>을 돌려줍니다. 예외는 운영자가 고칠 수 있는 제약 위반뿐 — 유니크 <code>23505</code> → "이미 사용 중인 키입니다.", <code>same_password</code> → "이전과 다른 비밀번호를 입력해 주세요."</p>
+
+  <h3>문구 규칙</h3>
+  <p><strong>"…하지 못했습니다" + 다음 행동</strong>을 한 문장에 담고, 가능하면 <strong>현재 상태</strong>도 밝힙니다.</p>
+<pre><code>"역할을 바꾸지 못했습니다. 권한은 그대로입니다. 다시 시도해 주세요."
+"초대를 기록하지 못했습니다. 메일은 보내지 않았습니다. 다시 시도해 주세요."
+"초대 메일을 보내지 못했습니다. 초대는 취소되었습니다. 주소를 확인하고 다시 시도해 주세요."
+"선택한 항목을 숨기지 못했습니다. 아무 항목도 바뀌지 않았습니다. 다시 시도해 주세요."</code></pre>
+  <p>여러 화면이 공유하는 문구는 <code>admin/lib/constants/messages.ts</code>(<code>LIST_LOAD_ERROR</code> · <code>COUNT_FAILED</code>).</p>
+
+  <h3>조사 — josa()</h3>
+  <p><code>admin/lib/utils/josa.ts</code>. <code>을(를)</code> 괄호 표기를 쓰지 않습니다. 대상 이름은 대부분 사용자 입력이라 앞 글자의 받침을 보고 코드가 고릅니다. 지원 조사 <code>을</code> <code>이</code> <code>은</code> <code>과</code> <code>로</code>. 숫자로 끝나면 <strong>한국어 읽기의 받침</strong>을 씁니다("가져오기2를").</p>
+
+  <h3>확인 모달의 3요소</h3>
+  <p>되돌리기 어려운 조작에만 세웁니다(초대 취소·재발송에는 없음). 표준형은 <code>DeleteAdminButton.tsx</code>.</p>
+  <ol class="steps">
+    <li><strong>제목</strong> — 무엇을 하는가. "관리자 삭제"</li>
+    <li><strong>설명</strong> — 실제로 일어나는 일 그대로. "N 관리자를 삭제합니다. 관리자 콘솔에 로그인할 수 없게 되며 작성 이력은 남습니다."</li>
+    <li><strong>취소 + 실행 버튼</strong> — 실행은 <code>variant="danger"</code>, 진행 중 라벨 "삭제 중…", 양쪽 <code>disabled</code>. 상단에 <code>FormBanner</code>로 <code>state.formError</code>.</li>
+  </ol>
+  <p>성공 처리는 <code>useActionState</code> 래퍼 안에서 <code>showToast(result.message,'success')</code> + 모달 닫기. 밖에서 다루면 리다이렉트와 경합합니다.</p>
+
+  <h3>경계 파일</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>파일</th><th>역할</th></tr></thead>
+    <tbody>
+      <tr><td><code>admin/app/(admin)/error.tsx</code></td><td>레이아웃 <strong>안쪽</strong>에서 렌더 — 사이드바가 남습니다. <code>digest</code> 표시. 버튼은 <code>reset()</code>이 아니라 <strong><code>retry()</code></strong>(Next 16.3) — <code>reset()</code>은 다시 가져오지 않아 같은 오류가 곧바로 돌아옵니다.</td></tr>
+      <tr><td><code>admin/app/global-error.tsx</code></td><td>루트 레이아웃을 <strong>대체</strong>. <code>&lt;html&gt;</code>·<code>&lt;body&gt;</code>를 직접 그리고 <strong>인라인 스타일만</strong>.</td></tr>
+      <tr><td><code>admin/app/(admin)/not-found.tsx</code></td><td><code>notFound()</code>의 착지점. 껍데기 유지, 본문만 안내.</td></tr>
+      <tr><td><code>admin/app/(admin)/loading.tsx</code></td><td><code>&lt;Suspense&gt;</code>. <strong>값이 아니라 모양만</strong> — "0"이나 "없음"을 먼저 보여 주면 결과로 읽힙니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>데이터 조회 실패 배너 — hasError</h3>
+  <p>목록 조회가 깨졌을 때 빈 표를 보이면 "데이터가 없다"로 읽힙니다. 조회 함수가 <code>hasError</code>를 함께 돌려주고(<code>news</code>·<code>inquiries</code>·<code>community</code>·<code>reports</code>·<code>members</code>) 페이지가 표 위에 <code>FormBanner message={LIST_LOAD_ERROR}</code>를 세웁니다. 깨진 지표 카드는 0이 아니라 <code>null</code> → "집계 실패".</p>
+
+  <h3>FormState 계약</h3>
+<pre><code>type FormState = {
+  formError?: string                  // 폼 상단 배너
+  fieldErrors?: Record&lt;string, string&gt; // 입력 옆
+  message?: string                    // 리다이렉트하지 않는 액션의 완료 안내 (토스트)
+}</code></pre>
+  <ul>
+    <li><code>toFieldErrors(zodError)</code>는 필드별 <strong>첫 메시지만</strong>. <code>readField()</code>는 파일이 오면 빈 문자열로 좁힙니다.</li>
+    <li><code>redirect()</code>는 예외를 던집니다. <strong>try/catch 안에서 부르지 않습니다.</strong> 항상 마지막 문장으로.</li>
+    <li>서버 액션은 직접 POST로도 호출됩니다. 모든 액션이 입력을 <strong>스스로 다시 검증</strong>하고 권한도 스스로 확인합니다.</li>
+  </ul>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <div class="sec-head"><span class="num">08</span><h2>입력 한도 · 안내</h2></div>
+  <ul>
+    <li>텍스트 필드는 입력 중 <strong><code>현재 / 최대</code></strong>를 보여 줍니다(<code>CharacterCount.tsx</code>, <code>Input.tsx</code> · <code>Textarea.tsx</code>). <code>maxLength</code>가 있으면 자동으로 켜집니다.</li>
+    <li>길이는 <strong>코드 포인트</strong>로 셉니다 — 이모지가 2로 세어지면 화면 숫자와 브라우저 <code>maxLength</code>가 어긋납니다.</li>
+    <li><code>password</code>는 세지 않습니다(어깨너머 길이 노출). 상한에 닿으면 숫자가 위험색으로, 스크린 리더에는 <code>aria-describedby</code>로 한 번만.</li>
+    <li>저장 값의 상한은 zod 스키마가, 스키마 없는 입력의 상한은 <code>admin/lib/constants/field-limits.ts</code>가 쥡니다.</li>
+  </ul>
+  <div class="tbl"><table>
+    <thead><tr><th>상수</th><th>값</th><th>용도</th></tr></thead>
+    <tbody>
+      <tr><td><code>SEARCH_MAX_LENGTH</code></td><td class="num-col">60</td><td>목록 검색어. 문의 목록의 서버 절단 길이와 맞춤</td></tr>
+      <tr><td><code>UUID_LENGTH</code></td><td class="num-col">36</td><td>감사 로그의 대상 ID 검색</td></tr>
+      <tr><td><code>URL_MAX_LENGTH</code></td><td class="num-col">500</td><td>주소·경로 입력의 기술적 상한</td></tr>
+      <tr><td><code>EMAIL_MAX_LENGTH</code></td><td class="num-col">254</td><td>이메일(RFC 5321)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">힌트 원칙</span><p>힌트는 "사용자 사이트 어디에 어떻게 나오는지"를 적습니다. 예: "푸터의 이메일 버튼에 그대로 노출됩니다." / "푸터 하단 한 줄. 30자를 넘으면 폰에서 줄바꿈됩니다." 상한이 표시 제약이 아닐 때는 그 사실을 밝힙니다 — "표시 제약이 아니라 주소 저장용 상한입니다."</p></div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <div class="sec-head"><span class="num">09</span><h2>로컬 개발 · 테스트 · 배포</h2></div>
+  <h3>환경 변수 (admin/.env.example 기준)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>이름</th><th>노출</th><th>설명</th></tr></thead>
+    <tbody>
+      <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>클라이언트</td><td>Supabase 프로젝트 URL</td></tr>
+      <tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>클라이언트</td><td>anon 키(RLS로 보호)</td></tr>
+      <tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td><strong>서버 전용</strong></td><td>Auth Admin API 전용. 절대 커밋·클라이언트 노출 금지</td></tr>
+      <tr><td><code>NEXT_PUBLIC_CLIENT_SITE_URL</code></td><td>클라이언트</td><td>사용자 사이트 주소. "원문 보기" 링크</td></tr>
+      <tr><td><code>NEXT_PUBLIC_ADMIN_URL</code></td><td>클라이언트</td><td>관리자 자기 주소. 초대·재설정 메일의 <code>redirectTo</code></td></tr>
+      <tr><td><code>CLIENT_SITE_URL</code></td><td>서버 전용</td><td>캐시 무효화를 보낼 주소. <strong>로컬에서는 반드시 로컬 서버</strong></td></tr>
+      <tr><td><code>REVALIDATE_SECRET</code></td><td>서버 전용</td><td>사용자 사이트의 같은 이름 변수와 <strong>동일한 값</strong></td></tr>
+      <tr><td><code>ADMIN_BOOTSTRAP_EMAIL</code> / <code>_PASSWORD</code></td><td>스크립트</td><td>부트스트랩 전용. 운영 env에는 넣지 않음</td></tr>
+      <tr><td><code>ADMIN_LOGIN_PREFILL_EMAIL</code> / <code>_PASSWORD</code></td><td>로컬 전용</td><td>로그인 칸 미리 채움. <strong>운영 설정 금지</strong>(HTML에 실림)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Supabase 값 3개와 <code>REVALIDATE_SECRET</code>은 루트 <code>.env.local</code>과 같은 값을 씁니다. <code>requireEnv()</code>는 안내와 함께 던지고, <code>optionalEnv()</code>는 빈 문자열을 "설정하지 않음"으로 봅니다.</p>
+
+  <h3>명령어</h3>
+<pre><code>pnpm install                          # 저장소 루트 (워크스페이스)
+
+pnpm --filter @maple/admin dev        # http://localhost:3100
+pnpm --filter @maple/admin typecheck
+pnpm --filter @maple/admin lint
+pnpm --filter @maple/admin test       # vitest run
+pnpm --filter @maple/admin test:coverage
+pnpm --filter @maple/admin test:e2e   # playwright
+
+pnpm dev                              # 사용자 사이트 :3000 (캐시 무효화 검증에 함께 띄운다)
+pnpm format                           # prettier --write . (루트에만 prettier 가 있다)</code></pre>
+
+  <h3>테스트</h3>
+  <ul>
+    <li>유닛: <code>admin/tests/unit/**</code>(jsdom). 권한·가드 계열은 <code>permissions</code> · <code>require-permission</code> · <code>nav</code> · <code>session</code> · <code>auth-callback-route</code> · <code>members-no-role-actions</code> · <code>actions-no-raw-error</code> · <code>revalidate</code> 테스트를 봅니다.</li>
+    <li>E2E: <code>admin/tests/e2e/**</code>(<code>workers: 1</code>, 직렬). <code>admin</code> · <code>client-revalidate</code> · <code>community-moderation</code> · <code>faqs</code> · <code>gacha-rankings-settings-audit</code> · <code>inquiries</code> · <code>legal</code> · <code>news</code> · <code>reports-members</code>. 기준 주소 <code>ADMIN_E2E_BASE_URL</code>, 브라우저 <code>PLAYWRIGHT_CHROMIUM_PATH</code>.</li>
+  </ul>
+
+  <h3>첫 슈퍼어드민</h3>
+<pre><code>ADMIN_BOOTSTRAP_EMAIL=... ADMIN_BOOTSTRAP_PASSWORD=... pnpm --filter @maple/admin bootstrap:admin</code></pre>
+  <ol class="steps">
+    <li><code>admin_roles</code>에서 <code>super_admin</code> id를 읽습니다(없으면 "마이그레이션을 먼저 적용하세요").</li>
+    <li><code>admin_invites</code>에 그 역할을 실은 초대 행을 만듭니다(<code>expires_at = null</code>) — 계정 생성보다 먼저.</li>
+    <li><code>auth.admin.createUser({ email_confirm: true })</code> — 메일 확인 없이 바로 로그인.</li>
+    <li>이미 있는 계정이면 비밀번호만 재설정.</li>
+    <li><code>profiles.role</code> · <code>admin_role_id</code>가 슈퍼어드민인지 확인하고 아니면 보정.</li>
+  </ol>
+
+  <h3>마이그레이션 · 타입 · 배포</h3>
+<pre><code>pnpm dlx supabase link --project-ref &lt;PROJECT_REF&gt;
+pnpm dlx supabase db push --dry-run    # 적용 전 diff
+pnpm dlx supabase db push              # 원격 반영
+pnpm gen:types                         # types/ 와 admin/types/ 에 동시 생성
+pnpm typecheck && pnpm --filter @maple/admin typecheck
+supabase config push                   # [auth] site_url · redirect URLs 반영</code></pre>
+  <ul>
+    <li>시드(<code>supabase/seed.sql</code>)는 <strong>운영 DB에 넣지 않습니다</strong> — 목업 게시글·랭킹이 노출됩니다.</li>
+    <li>Vercel 프로젝트 <code>maple-admin</code>, Root Directory <code>admin</code>. 환경 변수는 위 표에서 <code>ADMIN_BOOTSTRAP_*</code>·<code>ADMIN_LOGIN_PREFILL_*</code>을 뺀 나머지.</li>
+    <li><code>REVALIDATE_SECRET</code>이 <code>maple-web</code>과 다르면 무효화가 401로 반려되어 사용자 사이트 반영이 태그 수명만큼 늦어집니다.</li>
+    <li>배포 후 체크: 로그인 → 사이드바 전 화면 200 → 설정 저장 후 사용자 사이트 반영 → 초대 메일 수신(SMTP 필요).</li>
+  </ul>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <div class="sec-head"><span class="num">10</span><h2>알려진 제약 · 후속 과제</h2></div>
+  <p>코드와 README에서 확인된 것만 적었습니다.</p>
+  <ol class="steps">
+    <li><strong>역할 변경은 다음 요청부터 적용됩니다.</strong> 권한은 요청마다 <code>requireAdmin()</code>이 읽으므로 이미 열린 화면은 그대로입니다.</li>
+    <li><strong>마지막 로그인 시각은 표시하지 않습니다.</strong> <code>auth.users</code>에만 있어 서비스 롤 전수 조회가 필요합니다. 이력은 <code>/audit</code>가 더 정확합니다.</li>
+    <li><strong>실제 초대 메일 E2E는 SMTP 연결 후에 가능합니다.</strong> <code>admin.spec.ts</code>는 화면과 버튼 존재까지만 확인합니다.</li>
+    <li><strong>랭킹 스냅샷은 관리자가 적재하지 않습니다.</strong> 개발팀 연동이 <code>rankings</code>에 스냅샷 단위로 넣고, 관리자는 확인과 되돌리기만. 원자적 교체 RPC <code>public.replace_ranking_snapshot(p_rank_type, p_rows jsonb)</code>가 있으며 첫 줄에서 <code>is_admin()</code>을 확인하고 <code>rank</code>는 1..n 연속이어야 합니다.</li>
+    <li><strong>Legal 초안 삭제는 서버 액션만 있고 UI가 없습니다.</strong> <code>deleteLegalDraftAction</code>은 감사 로그까지 갖췼지만 호출 컴포넌트가 없습니다.</li>
+    <li><strong>히어로 배너는 한 장만 노출됩니다.</strong> 슬라이더가 없어 목록 두 번째부터는 대기 상태입니다.</li>
+    <li><code>admin_invites.token_hash</code>는 비어 있습니다. 자체 초대 링크로 전환할 때를 위한 자리입니다.</li>
+    <li><strong>역할이 비어 있는 관리자는 아무 모듈도 보지 못합니다</strong>(닫힘 실패). 그래서 멤버가 있는 역할의 삭제를 막습니다.</li>
+    <li><code>docs/admin/PLAN.md</code> §5.1과 <code>client-revalidate.spec.ts</code> 주석은 <code>revalidateTag(tag,'max')</code> 기준으로 쓰여 있으나 현재 코드는 <code>{ expire: 0 }</code>입니다.</li>
+  </ol>
+</section>
+
+<footer>글자월드 관리자 콘솔 개발자 가이드 · 최종 갱신 2026-09-09 · 기준 커밋 a7b6c82 · 원문 <code>docs/admin/DEVELOPER-GUIDE.md</code></footer>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "neutral", fontFamily: "IBM Plex Sans KR, sans-serif" })</script>
+</body>
+</html>
