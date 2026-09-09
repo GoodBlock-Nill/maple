@@ -69,10 +69,10 @@ export default async function SettingsPage() {
           title={
             <span className="flex items-center gap-2">
               히어로 배너
-              <Badge tone="warn">클라이언트 미연동</Badge>
+              <Badge tone="success">사이트 반영</Badge>
             </span>
           }
-          description="사용자 사이트 홈에는 아직 배너 슬라이더가 없습니다. 여기 등록한 값은 슬라이더가 붙는 즉시 그대로 쓰입니다."
+          description="소개 화면(/about) 상단 영상 영역에 노출 중인 첫 번째 배너 한 장이 걸립니다. 배너가 없으면 위 기본 정보의 유튜브 주소 영상이 나옵니다. 저장 즉시 사용자 사이트에 반영됩니다."
           action={
             banners.length === 0 ? undefined : (
               <HeroBannerDialog banner={null} nextSortOrder={banners.length} trigger="배너 추가" />
