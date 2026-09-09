@@ -99,7 +99,7 @@ export function MemberSuspendDialog({
               취소
             </Button>
             <Button type="submit" variant="danger" disabled={isPending}>
-              {isPending ? '처리 중…' : '정지'}
+              {isPending ? '정지 중…' : '정지'}
             </Button>
           </div>
         </form>

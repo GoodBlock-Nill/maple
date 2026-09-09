@@ -15,6 +15,15 @@ describe('josa', () => {
     expect(josa('게시글', '과')).toBe('과')
   })
 
+  it('should read a trailing digit in Korean when choosing the particle', () => {
+    expect(josa('가져오기2', '을')).toBe('를')
+    expect(josa('시즌3', '을')).toBe('을')
+    expect(josa('시즌 1', '이')).toBe('이')
+    expect(josa('버전 10', '로')).toBe('으로')
+    expect(josa('7', '로')).toBe('로')
+    expect(josa('9', '은')).toBe('는')
+  })
+
   it('should pick the open-syllable form after a vowel ending', () => {
     expect(josa('댓글', '을')).toBe('을')
     expect(josa('배너', '을')).toBe('를')
@@ -30,8 +39,7 @@ describe('josa', () => {
     expect(josa('답변 완료', '로')).toBe('로')
   })
 
-  it('should fall back to the first form for digits and latin endings', () => {
-    expect(josa('아이템2', '을')).toBe('을')
+  it('should fall back to the first form for latin endings', () => {
     expect(josa('MSW', '이')).toBe('이')
     expect(josa('event', '로')).toBe('으로')
   })

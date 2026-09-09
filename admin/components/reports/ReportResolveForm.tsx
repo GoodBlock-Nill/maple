@@ -149,7 +149,7 @@ export function ReportResolveForm({
           닫기
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? '처리 중…' : '처리 완료'}
+          {isPending ? '완료 처리 중…' : '처리 완료'}
         </Button>
       </div>
     </form>

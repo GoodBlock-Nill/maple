@@ -80,7 +80,7 @@ export function ReportDismissForm({
           닫기
         </Button>
         <Button type="submit" variant="danger" disabled={isPending}>
-          {isPending ? '처리 중…' : '기각'}
+          {isPending ? '기각 중…' : '기각'}
         </Button>
       </div>
     </form>

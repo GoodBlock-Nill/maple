@@ -94,7 +94,7 @@ export function BulkHideBar({
             size="sm"
             disabled={isPending || selected === 0}
           >
-            {isPending ? '처리 중…' : '선택 숨김'}
+            {isPending ? '숨기는 중…' : '선택 숨김'}
           </Button>
         </form>
       </div>
