@@ -3,11 +3,16 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizeNextPath } from '@/lib/validation/auth'
 
+import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import type { NextRequest } from 'next/server'
 
 /**
- * 초대 · 비밀번호 재설정 메일 링크의 착지점.
+ * 간편로그인(OAuth) · 비밀번호 재설정 링크의 착지점.
+ *
+ * 어느 쪽으로 들어오든 세션이 생기고 나면 `profiles.role` 을 확인한다
+ * (`rejectNonAdmin`) — 관리자 앱의 문턱은 "로그인에 성공했는가"가 아니라
+ * "관리자로 승격된 계정인가"다.
  *
  * Supabase 는 링크 종류와 프로젝트 설정에 따라 세 가지 방식으로 돌려보낸다.
  *   1) `?code=`                — PKCE. 서버에서 세션으로 교환한다.
@@ -19,10 +24,48 @@ import type { NextRequest } from 'next/server'
  * 이어 붙이므로 정보가 유실되지 않는다.
  */
 
-const ALLOWED_TYPES: readonly EmailOtpType[] = ['invite', 'recovery', 'magiclink', 'signup', 'email']
+const ALLOWED_TYPES: readonly EmailOtpType[] = [
+  'invite',
+  'recovery',
+  'magiclink',
+  'signup',
+  'email',
+]
+
+const ADMIN_ROLE = 'admin'
 
 function parseOtpType(value: string | null): EmailOtpType | null {
   return ALLOWED_TYPES.find((type) => type === value) ?? null
+}
+
+/**
+ * 링크·간편로그인으로 막 만들어진 세션이 **관리자의 것인지** 확인한다.
+ *
+ * 관리자 계정은 초대가 아니라 회원 승격으로 만들어진다(2026-09-09 제품 결정).
+ * 그래서 글자월드 회원이면 누구나 구글·카카오 로그인을 끝까지 통과해 여기까지
+ * 올 수 있다. role 이 아니면 세션을 남기지 않고 되돌린다 — 남기면 "로그인은
+ * 됐는데 모든 화면이 튕기는" 상태에 갇힌다.
+ *
+ * 통과면 `null`, 아니면 로그인으로 되돌릴 응답을 준다.
+ */
+async function rejectNonAdmin(
+  supabase: TypedSupabaseClient,
+  userId: string,
+  origin: string,
+): Promise<NextResponse | null> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (profile !== null && profile.role === ADMIN_ROLE) {
+    return null
+  }
+
+  await supabase.auth.signOut()
+
+  return NextResponse.redirect(new URL('/login?error=not_admin', origin))
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -38,13 +81,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (code !== null) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error !== null) {
       return NextResponse.redirect(new URL('/login?error=link_expired', origin))
     }
 
-    return NextResponse.redirect(new URL(nextPath, origin))
+    const rejected = await rejectNonAdmin(supabase, data.user.id, origin)
+
+    return rejected ?? NextResponse.redirect(new URL(nextPath, origin))
   }
 
   const tokenHash = searchParams.get('token_hash')
@@ -52,13 +97,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (tokenHash !== null && type !== null) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
+    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
 
-    if (error !== null) {
+    if (error !== null || data.user === null) {
       return NextResponse.redirect(new URL('/login?error=link_expired', origin))
     }
 
-    return NextResponse.redirect(new URL(nextPath, origin))
+    // 메일 링크로 들어온 세션도 같은 잣대로 잰다. 링크 하나로 비관리자가
+    // 관리자 쿠키를 얻는 우회로를 남기지 않는다.
+    const rejected = await rejectNonAdmin(supabase, data.user.id, origin)
+
+    return rejected ?? NextResponse.redirect(new URL(nextPath, origin))
   }
 
   const complete = new URL('/auth/callback/complete', origin)

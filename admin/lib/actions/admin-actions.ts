@@ -82,13 +82,3 @@ async function revokeInviteByEmail(email: string | null): Promise<void> {
   const supabase = await createClient()
   await supabase.from('admin_invites').update({ status: 'revoked' }).ilike('email', email)
 }
-
-/** 이미 가입된 계정을 관리자로 올린다. 트리거가 돌지 않는 경로의 보정. */
-async function promoteExistingUser(userId: string, inviteId: string): Promise<void> {
-  const supabase = await createClient()
-  await supabase.from('profiles').update({ role: 'admin' }).eq('id', userId)
-  await supabase
-    .from('admin_invites')
-    .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-    .eq('id', inviteId)
-}

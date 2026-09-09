@@ -3,10 +3,16 @@ import { describe, expect, it } from 'vitest'
 import {
   ADMIN_PASSWORD_MIN_LENGTH,
   forgotPasswordSchema,
+  isNativeSocialProvider,
+  isPasswordLoginEnabled,
+  isSocialProvider,
   loginErrorMessage,
   loginSchema,
+  parseSocialLoginMode,
   sanitizeNextPath,
   setPasswordSchema,
+  SOCIAL_PROVIDER_LABEL,
+  SOCIAL_PROVIDERS,
 } from '@/lib/validation/auth'
 
 describe('loginSchema', () => {
@@ -97,8 +103,62 @@ describe('loginErrorMessage', () => {
     expect(loginErrorMessage('not_admin')).toContain('관리자 권한')
   })
 
+  /* 초대 흐름은 2026-09-09 제품 결정으로 사라졌다. 문구가 "담당자에게 초대를
+     요청" 으로 되돌아가면 받는 사람이 존재하지 않는 절차를 밟게 된다. */
+  it('should tell a non-admin to ask for a promotion on the member page', () => {
+    expect(loginErrorMessage('not_admin')).toBe(
+      '관리자 권한이 없는 계정입니다. 관리자에게 회원 상세에서 권한 부여를 요청해 주세요.',
+    )
+  })
+
   it('should return null for an unknown code', () => {
     expect(loginErrorMessage('whatever')).toBeNull()
     expect(loginErrorMessage(null)).toBeNull()
+  })
+})
+
+describe('간편로그인 제공자', () => {
+  it('should keep the same three providers as the client site', () => {
+    expect(SOCIAL_PROVIDERS).toEqual(['google', 'kakao', 'naver'])
+    expect(SOCIAL_PROVIDER_LABEL.kakao).toBe('카카오')
+  })
+
+  it('should narrow only known provider values', () => {
+    expect(isSocialProvider('google')).toBe(true)
+    expect(isSocialProvider('facebook')).toBe(false)
+    expect(isSocialProvider(null)).toBe(false)
+  })
+
+  // 네이버는 Supabase 기본 제공자 목록에 없어 별도 연동이 끝나야 열린다.
+  it('should exclude naver from supabase native providers', () => {
+    expect(isNativeSocialProvider('google')).toBe(true)
+    expect(isNativeSocialProvider('kakao')).toBe(true)
+    expect(isNativeSocialProvider('naver')).toBe(false)
+  })
+})
+
+describe('parseSocialLoginMode', () => {
+  it('should accept oauth in any casing', () => {
+    expect(parseSocialLoginMode('oauth')).toBe('oauth')
+    expect(parseSocialLoginMode(' OAuth ')).toBe('oauth')
+  })
+
+  it('should fall back to stub for missing or unknown values', () => {
+    expect(parseSocialLoginMode(undefined)).toBe('stub')
+    expect(parseSocialLoginMode('')).toBe('stub')
+    expect(parseSocialLoginMode('real')).toBe('stub')
+  })
+})
+
+describe('isPasswordLoginEnabled', () => {
+  it('should stay on by default so the bootstrap admin can get in', () => {
+    expect(isPasswordLoginEnabled(undefined)).toBe(true)
+    expect(isPasswordLoginEnabled('')).toBe(true)
+    expect(isPasswordLoginEnabled('enabled')).toBe(true)
+  })
+
+  it('should only close on the exact disabled switch', () => {
+    expect(isPasswordLoginEnabled('disabled')).toBe(false)
+    expect(isPasswordLoginEnabled(' DISABLED ')).toBe(false)
   })
 })

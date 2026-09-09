@@ -18,6 +18,7 @@ pnpm --filter @maple/admin test:e2e
 Supabase 값 3개와 `REVALIDATE_SECRET` 을 **같은 값으로** 쓰고, 여기에
 `NEXT_PUBLIC_CLIENT_SITE_URL` · `NEXT_PUBLIC_ADMIN_URL` · `CLIENT_SITE_URL`
 (캐시 무효화를 보낼 사용자 사이트, 로컬은 `http://localhost:3000`)을 더한다.
+로그인 방식 스위치 두 개(`SOCIAL_LOGIN_MODE` · `ADMIN_PASSWORD_LOGIN`)는 §4 에 있다.
 
 ---
 
@@ -28,7 +29,7 @@ admin/
   app/
     (auth)/        로그인 · 비밀번호 재설정                 (사이드바 없음)
     (admin)/       인증된 관리 화면 전부                  (layout 이 requireAdmin())
-    auth/callback/ 재설정 메일 링크 착지점
+    auth/callback/ 간편로그인·재설정 링크 착지점(role 게이트)
   components/
     ui/            공용 프리미티브 (Button · Table · Dialog · Toast …)
     layout/        AdminShell · Sidebar · Topbar · ComingSoon
@@ -85,20 +86,57 @@ admin/
 
 ## 4. 인증 흐름
 
-| 경로                     | 하는 일                                                               |
-| ------------------------ | --------------------------------------------------------------------- |
-| `proxy.ts`               | 토큰 갱신 · 미로그인 리다이렉트 · 30분 비활동 만료(낙관적 검사)       |
-| `app/(admin)/layout.tsx` | `requireAdmin()` — role 이 아니면 로그아웃 + `/login?error=not_admin` |
-| RLS                      | 최종 방어선. 화면을 우회해도 데이터는 열리지 않는다                   |
+관리자 계정은 **이메일 초대로 만들지 않는다**(2026-09-09 제품 결정). 사용자
+사이트에 간편로그인(구글·카카오·네이버)으로 가입한 회원을 회원 상세의
+`changeMemberRoleAction` 으로 승격시킨 것이 관리자다. 그래서 관리자 로그인도
+같은 간편로그인이고, 문턱은 "로그인에 성공했는가"가 아니라 **`profiles.role`
+이 `admin` 인가**다.
+
+| 경로                         | 하는 일                                                               |
+| ---------------------------- | --------------------------------------------------------------------- |
+| `proxy.ts`                   | 토큰 갱신 · 미로그인 리다이렉트 · 30분 비활동 만료(낙관적 검사)       |
+| `app/auth/callback/route.ts` | 세션 확립 직후 role 확인 — 아니면 로그아웃 + `/login?error=not_admin` |
+| `app/(admin)/layout.tsx`     | `requireAdmin()` — role 이 아니면 로그아웃 + `/login?error=not_admin` |
+| RLS                          | 최종 방어선. 화면을 우회해도 데이터는 열리지 않는다                   |
+
+로그인 화면의 수단은 환경 변수 두 개로 바뀐다.
+
+| 변수                   | 값                        | 뜻                                                                |
+| ---------------------- | ------------------------- | ----------------------------------------------------------------- |
+| `SOCIAL_LOGIN_MODE`    | `stub`(기본) · `oauth`    | `stub` 은 간편로그인 버튼이 안내만 돌려준다. `oauth` 는 실제 연동 |
+| `ADMIN_PASSWORD_LOGIN` | 미설정(기본) · `disabled` | `disabled` 면 "운영 계정 로그인(이메일)" 섹션을 그리지 않는다     |
+
+**관리자 앱에는 스텁 로그인이 없다.** 사용자 사이트의 스텁은 없는 계정을 즉시
+만들어 주는데, 같은 것을 관리자에 두면 아무나 관리자 후보 계정을 찍어낼 수 있다.
+그래서 `stub` 동안 실제로 들어오는 문은 접혀 있는 이메일 로그인 하나뿐이고,
+부트스트랩 관리자(`scripts/bootstrap-admin.mjs`)가 그 문을 쓴다. 실 OAuth 로
+전환이 끝나면 `SOCIAL_LOGIN_MODE=oauth` 로 열고 `ADMIN_PASSWORD_LOGIN=disabled`
+로 닫는다.
+
+네이버는 Supabase 의 기본 제공자 목록에 없어 `oauth` 모드에서도 버튼을 누르면
+안내만 나온다(§5). 흉내 낸 스텁을 붙이지 않은 이유는, 실 연동 시점에 "이미
+동작하는 것처럼 보이는 코드"가 어디까지 가짜인지 되짚기 어렵기 때문이다.
 
 메일 링크는 Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=`
 세 가지로 돌아온다. `app/auth/callback/` 이 셋 다 처리한다(해시는 서버로 전송되지
-않으므로 `complete` 페이지가 브라우저에서 읽어 서버 액션으로 넘긴다).
+않으므로 `complete` 페이지가 브라우저에서 읽어 서버 액션으로 넘긴다). OAuth 도
+`?code=` 로 같은 착지점에 돌아온다.
 
 ## 5. 운영자가 해야 할 일
 
-- Supabase Auth → URL Configuration 의 **Redirect URLs** 에 관리자 도메인
-  (`http://localhost:3100/**`, 배포 후 `https://<admin-domain>/**`)을 추가한다.
-  등록하지 않으면 비밀번호 재설정 링크가 `redirectTo` 를 무시하고 사용자 사이트로 간다.
+- Supabase Auth → **Providers** 에서 Google · Kakao 를 켜고 각 콘솔에서 받은
+  Client ID / Client Secret 을 넣는다. 각 제공자 콘솔의 승인 리다이렉트 URI 에는
+  Supabase 가 보여 주는 콜백(`https://<project-ref>.supabase.co/auth/v1/callback`)을
+  등록한다.
+- Supabase Auth → URL Configuration 의 **Redirect URLs** 에 관리자 콜백
+  `https://maple-admin.vercel.app/auth/callback` 과 로컬 개발용
+  `http://localhost:3100/**` 을 추가한다(배포 도메인이 다르면 그 도메인으로).
+  등록하지 않으면 간편로그인·비밀번호 재설정 링크가 `redirectTo` 를 무시하고
+  사용자 사이트로 간다.
+- 위 두 가지가 끝나면 관리자 배포 환경 변수에 `SOCIAL_LOGIN_MODE=oauth` 를 넣는다.
+  넣기 전까지 간편로그인 버튼은 안내만 돌려준다(§4).
+- **네이버는 개발팀 작업 대기 중이다.** Supabase 기본 제공자에 없어서 별도 연동
+  (커스텀 OAuth 또는 프록시)이 필요하다. 연동 전까지 네이버 버튼은 눌러도
+  "개발팀 OAuth 연동 후 사용할 수 있습니다" 안내만 나온다.
 - Supabase 기본 메일러는 **시간당 발송 한도가 매우 낮다**. 비밀번호 재설정 메일을
   실제로 운영하려면 커스텀 SMTP 를 연결해야 한다.
