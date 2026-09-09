@@ -122,22 +122,3 @@ export async function getGachaItem(id: string): Promise<GachaAdminItem | null> {
 
   return toItem(data)
 }
-
-/** CSV 내보내기용 전량 조회. 탭 하나의 공시 목록은 수백 건 규모라 페이지를 나누지 않는다. */
-export async function getGachaItemsForExport(tab: GachaTab): Promise<readonly GachaAdminItem[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('gacha_items')
-    .select(COLUMNS)
-    .eq('tab', tab)
-    .order('published_at', { ascending: false })
-    .order('id', { ascending: true })
-
-  if (error !== null) {
-    console.error('[gacha] 내보내기 조회 실패', error.message)
-
-    return []
-  }
-
-  return data.map(toItem)
-}

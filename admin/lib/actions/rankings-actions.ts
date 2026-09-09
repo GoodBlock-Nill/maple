@@ -12,13 +12,15 @@ import { createClient } from '@/lib/supabase/server'
 import {
   isRankType,
   SNAPSHOT_RETENTION,
-  validateRankingCsv,
   type RankingUploadRow,
   type RankType,
 } from '@/lib/validation/rankings'
 
 /**
- * 랭킹 스냅샷 적용 · 롤백.
+ * 랭킹 스냅샷 되돌리기.
+ *
+ * 스냅샷 적재는 개발팀 연동(게임 데이터)이 맡는다. 관리자에서 남은 쓰기는
+ * **이전 스냅샷으로 되돌리기** 하나뿐이다.
  *
  * **중요 — 원자성.** 스냅샷 교체는 "지우고 넣기"가 아니라 "새 스냅샷을 넣고 오래된
  * 것을 정리하기"로 구현했다. PostgREST 에는 여러 문장을 한 트랜잭션으로 묶는 방법이
@@ -33,8 +35,8 @@ import {
 const LIST_PATH = '/rankings'
 
 /**
- * 사용자 사이트의 랭킹 표는 `unstable_cache`(60초)다. 새 스냅샷을 넣거나 되돌린
- * 직후 태우지 않으면 관리자 화면과 사용자 화면이 최대 1분간 다른 표를 보여 준다.
+ * 사용자 사이트의 랭킹 표는 `unstable_cache`(60초)다. 되돌린 직후 태우지 않으면
+ * 관리자 화면과 사용자 화면이 최대 1분간 다른 표를 보여 준다.
  */
 async function revalidateRankings(): Promise<void> {
   revalidatePath(LIST_PATH)
@@ -111,51 +113,6 @@ function readRankType(formData: FormData): RankType | null {
   const value = readField(formData, 'rankType')
 
   return isRankType(value) ? value : null
-}
-
-/**
- * CSV 적용.
- *
- * 브라우저의 미리보기와 **같은 검증 함수**를 서버가 다시 돌린다. 미리보기 결과를
- * 그대로 믿으면 조작된 요청 하나로 검증이 통째로 사라진다.
- */
-export async function applyRankingCsvAction(
-  _prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const actor = await requireAdmin()
-  const rankType = readRankType(formData)
-
-  if (rankType === null) {
-    return { formError: '랭킹 종류를 확인할 수 없습니다.' }
-  }
-
-  const preview = validateRankingCsv(readField(formData, 'csv'))
-
-  if (!preview.isValid) {
-    const first = preview.issues.slice(0, 3).map((issue) => issue.message)
-
-    return {
-      formError: `${preview.issues.length}개 오류가 있어 적용하지 않았습니다. ${first.join(' / ')}`,
-    }
-  }
-
-  const result = await insertSnapshot(rankType, preview.rows)
-
-  if ('error' in result) {
-    return { formError: result.error }
-  }
-
-  await writeAuditLog(actor.id, {
-    action: 'rankings.snapshot.apply',
-    targetTable: 'rankings',
-    targetId: `${rankType}@${result.snapshotAt}`,
-    after: { rank_type: rankType, snapshot_at: result.snapshotAt, rows: result.inserted },
-  })
-
-  await revalidateRankings()
-
-  return { message: `${result.inserted}건을 새 스냅샷으로 적용했습니다.` }
 }
 
 /**

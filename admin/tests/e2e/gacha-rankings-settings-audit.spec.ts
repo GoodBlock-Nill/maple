@@ -29,6 +29,15 @@ const E2E_ITEM_NAME = `${E2E_PREFIX} 아이템`
 const E2E_CHARACTER_PREFIX = 'E2E테스터'
 const E2E_SLOGAN = `${E2E_PREFIX} 슬로건`
 
+/** 스냅샷 한 벌(5행). 직업군은 DB enum 그대로 넣는다 — 추정 로직은 관리자에 없다. */
+const RANKING_SEED = [
+  { level: 212, job: '비숍', jobGroup: 'adventurer' as const, guild: '글자월드', exp: '98.7B' },
+  { level: 211, job: '플레임위자드', jobGroup: 'cygnus' as const, guild: '글자월드', exp: '98.4B' },
+  { level: 210, job: '배틀메이지', jobGroup: 'resistance' as const, guild: null, exp: '98.1B' },
+  { level: 209, job: '아란', jobGroup: 'hero' as const, guild: '달빛단', exp: '97.8B' },
+  { level: 208, job: '데몬슬레이어', jobGroup: 'demon' as const, guild: null, exp: '97.5B' },
+]
+
 function readEnvFile(filePath: string): Record<string, string> {
   const result: Record<string, string> = {}
 
@@ -67,8 +76,29 @@ async function signIn(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()
 }
 
-function csvFile(name: string, body: string) {
-  return { name, mimeType: 'text/csv', buffer: Buffer.from(`﻿${body}`, 'utf8') }
+/**
+ * 랭킹 스냅샷 적재를 흉내 낸다.
+ *
+ * 스냅샷은 개발팀 연동(게임 데이터)이 넣는다 — 관리자 화면에는 적재 수단이 없다.
+ * 그래서 되돌리기를 검사하려면 테스트가 연동 자리를 대신해 두 벌을 심어야 한다.
+ */
+async function seedSnapshot(snapshotAt: string, suffix: string): Promise<void> {
+  const rows = RANKING_SEED.map((seed, index) => ({
+    rank_type: 'total' as const,
+    snapshot_at: snapshotAt,
+    rank: index + 1,
+    character_name: `${E2E_CHARACTER_PREFIX}${suffix}${index + 1}`,
+    level: seed.level,
+    job: seed.job,
+    job_group: seed.jobGroup,
+    guild: seed.guild,
+    exp: seed.exp,
+    avatar_url: null,
+  }))
+
+  const { error } = await serviceClient().from('rankings').insert(rows)
+
+  expect(error, '랭킹 스냅샷을 심지 못했습니다').toBeNull()
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -108,9 +138,7 @@ test.afterAll(async () => {
   await supabase.from('site_settings').update({ creator_slogan: originalSlogan }).eq('id', 1)
 })
 
-test('가이드: 아이템 생성 · CSV 내보내기 · 가져오기가 사용자 사이트까지 이어진다', async ({
-  page,
-}) => {
+test('가이드: 아이템 생성이 사용자 사이트까지 이어지고 삭제까지 돌아온다', async ({ page }) => {
   await signIn(page)
   await page.goto('/gacha?tab=premium')
   // 사이드바에도 같은 이름의 링크가 있다. 본문 도구 모음의 버튼을 눌러야 탭이 유지된다.
@@ -136,34 +164,6 @@ test('가이드: 아이템 생성 · CSV 내보내기 · 가져오기가 사용�
   await expect(page.getByText('1.234')).toBeVisible()
   await page.screenshot({ path: path.join(SHOT_DIR, 'admin-gacha.png'), fullPage: true })
 
-  // 내보내기: 방금 만든 행이 파일에 들어 있어야 한다.
-  const exported = await page.request.get('/gacha/export?tab=premium')
-  expect(exported.status()).toBe(200)
-  const csv = await exported.text()
-  expect(csv.startsWith('﻿')).toBe(true)
-  expect(csv).toContain(E2E_ITEM_NAME)
-  expect(csv).toContain('1.234')
-
-  // 가져오기: 2행 미리보기 → 적용
-  await page.goto('/gacha/import?tab=premium')
-  const body = [
-    'id,tab,name,icon_url,probability,is_published,published_at,rows',
-    `,premium,${E2E_PREFIX} 가져오기1,,2.500,true,,[]`,
-    `,premium,${E2E_PREFIX} 가져오기2,,3.750,true,,[]`,
-  ].join('\r\n')
-
-  await page.getByTestId('gacha-csv-input').setInputFiles(csvFile('import.csv', body))
-  await expect(page.getByTestId('gacha-import-summary')).toContainText('유효 2건 · 오류 0건')
-  await page.getByRole('button', { name: '적용 (2건)' }).click()
-  // 적용은 확인 다이얼로그를 한 번 거친다(기존 항목을 덮어쓰는 조작이다).
-  await page.getByRole('dialog').getByRole('button', { name: '적용', exact: true }).click()
-  // 토스트를 기다리지 않고 이동하면 진행 중인 액션이 취소된다.
-  await expect(page.getByText('2건을 적용했습니다.')).toBeVisible()
-
-  await page.goto('/gacha?tab=premium&q=' + encodeURIComponent(E2E_PREFIX))
-  await expect(page.getByText(`${E2E_PREFIX} 가져오기1`)).toBeVisible()
-  await expect(page.getByText(`${E2E_PREFIX} 가져오기2`)).toBeVisible()
-
   /* 사용자 사이트 확인. 목록은 60초 캐시(unstable_cache)라 방금 만든 항목이 바로
      보이지 않을 수 있는데, 검색어가 캐시 키에 들어가므로 새 검색어는 항상 DB 를
      다시 읽는다. */
@@ -174,66 +174,30 @@ test('가이드: 아이템 생성 · CSV 내보내기 · 가져오기가 사용�
   expect(await guide.text()).toContain(E2E_ITEM_NAME)
 
   // 삭제: 확인 다이얼로그를 한 번 거친 뒤 목록에서 사라진다.
-  await page
-    .locator('tr', { hasText: `${E2E_PREFIX} 가져오기2` })
-    .getByRole('button', { name: '삭제' })
-    .click()
+  await page.goto('/gacha?tab=premium&q=' + encodeURIComponent(E2E_PREFIX))
+  await page.locator('tr', { hasText: E2E_ITEM_NAME }).getByRole('button', { name: '삭제' }).click()
   await page.getByRole('dialog').getByRole('button', { name: '삭제' }).click()
-  await expect(page.getByText(`${E2E_PREFIX} 가져오기2을 삭제했습니다.`)).toBeVisible()
-  await expect(page.getByText(`${E2E_PREFIX} 가져오기2`)).toHaveCount(0)
+  await expect(page.getByText(`${E2E_ITEM_NAME}을 삭제했습니다.`)).toBeVisible()
+  await expect(page.getByText(E2E_ITEM_NAME)).toHaveCount(0)
 })
 
-test('랭킹: CSV 업로드가 현재 스냅샷과 이력, 사용자 사이트에 반영된다', async ({ page }) => {
+test('랭킹: 현재 스냅샷 확인과 이전 스냅샷 되돌리기가 동작한다', async ({ page }) => {
+  /* 적재는 개발팀 연동의 몫이라 화면에 수단이 없다. 두 벌을 심어 "지금 사이트에
+     보이는 표"와 "되돌릴 수 있는 표"를 만든다. */
+  const olderAt = new Date(Date.now() - 60_000).toISOString()
+  const newerAt = new Date().toISOString()
+
+  await seedSnapshot(olderAt, 'A')
+  await seedSnapshot(newerAt, 'B')
+
   await signIn(page)
   await page.goto('/rankings?type=total')
 
-  const { data: before } = await serviceClient()
-    .from('rankings')
-    .select('snapshot_at')
-    .eq('rank_type', 'total')
-    .order('snapshot_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const rows = [
-    'rank,character_name,level,job,job_group,guild,exp,avatar_url',
-    `1,${E2E_CHARACTER_PREFIX}1,212,비숍,adventurer,글자월드,98.7B,`,
-    `2,${E2E_CHARACTER_PREFIX}2,211,플레임위자드,cygnus,글자월드,98.4B,`,
-    `3,${E2E_CHARACTER_PREFIX}3,210,배틀메이지,resistance,,98.1B,`,
-    `4,${E2E_CHARACTER_PREFIX}4,209,아란,hero,달빛단,97.8B,`,
-    `5,${E2E_CHARACTER_PREFIX}5,208,데몬슬레이어,demon,,97.5B,`,
-  ].join('\r\n')
-
-  await page.getByTestId('ranking-csv-input').setInputFiles(csvFile('ranking.csv', rows))
-  await expect(page.getByTestId('ranking-import-summary')).toContainText('유효 5건 · 오류 0건')
-
-  // 미리보기는 사용자 사이트처럼 TOP3 + 나머지로 나뉜다.
-  await expect(page.getByTestId('ranking-preview-top')).toHaveCount(3)
-
-  await page.getByRole('button', { name: '적용 (5건)' }).click()
-  // 랭킹 교체는 사용자 사이트에 즉시 반영돼 확인 다이얼로그를 한 번 거친다.
-  await page.getByRole('dialog').getByRole('button', { name: '적용', exact: true }).click()
-  await expect(page.getByText('5건을 새 스냅샷으로 적용했습니다.')).toBeVisible()
-
-  await page.goto('/rankings?type=total')
-  for (let rank = 1; rank <= 5; rank += 1) {
-    await expect(page.getByText(`${E2E_CHARACTER_PREFIX}${rank}`)).toBeVisible()
-  }
+  // 최신 스냅샷이 곧 사용자 사이트가 읽는 표다.
   await expect(page.getByRole('heading', { name: '현재 스냅샷' })).toBeVisible()
-
-  // 이력에 새 스냅샷이 "현재"로 올라와 있어야 한다.
-  const history = page.getByRole('table', { name: '랭킹 스냅샷 이력' })
-  await expect(history.getByText('현재')).toBeVisible()
-
-  const { data: after } = await serviceClient()
-    .from('rankings')
-    .select('snapshot_at')
-    .eq('rank_type', 'total')
-    .order('snapshot_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  expect(after?.snapshot_at).not.toBe(before?.snapshot_at)
+  for (let rank = 1; rank <= 5; rank += 1) {
+    await expect(page.getByText(`${E2E_CHARACTER_PREFIX}B${rank}`)).toBeVisible()
+  }
   await page.screenshot({ path: path.join(SHOT_DIR, 'admin-rankings.png'), fullPage: true })
 
   /* 사용자 사이트는 최신 스냅샷만 읽는다. 닉네임은 앞 3자만 남기고 마스킹된다. */
@@ -242,6 +206,38 @@ test('랭킹: CSV 업로드가 현재 스냅샷과 이력, 사용자 사이트�
   )
   expect(ranking.status()).toBe(200)
   expect(await ranking.text()).toContain('E2E***')
+
+  /* 이력의 첫 줄은 현재 스냅샷이라 되돌리기 버튼이 없다. 그 다음 줄이 방금 심은
+     이전 스냅샷이다. */
+  const history = page.getByRole('table', { name: '랭킹 스냅샷 이력' })
+  await expect(history.getByText('현재')).toBeVisible()
+
+  // 과거 스냅샷을 열면 "사이트에 보이는 표가 아니다"라고 알려 준다.
+  await history.getByRole('link', { name: '보기' }).nth(1).click()
+  await expect(page.getByRole('heading', { name: '과거 스냅샷' })).toBeVisible()
+  await expect(page.getByText(`${E2E_CHARACTER_PREFIX}A1`)).toBeVisible()
+  await page.getByRole('link', { name: '현재 스냅샷 보기' }).click()
+
+  await history.getByRole('button', { name: '되돌리기' }).first().click()
+  await page.getByRole('dialog').getByRole('button', { name: '되돌리기' }).click()
+  await expect(page.getByText('5건을 되돌렸습니다.')).toBeVisible()
+
+  /* 되돌리기는 이력을 고쳐 쓰지 않는다 — 같은 내용의 **새 스냅샷**이 최신이 된다. */
+  await page.goto('/rankings?type=total')
+  await expect(page.getByRole('heading', { name: '현재 스냅샷' })).toBeVisible()
+  for (let rank = 1; rank <= 5; rank += 1) {
+    await expect(page.getByText(`${E2E_CHARACTER_PREFIX}A${rank}`)).toBeVisible()
+  }
+
+  const { data: latest } = await serviceClient()
+    .from('rankings')
+    .select('snapshot_at')
+    .eq('rank_type', 'total')
+    .order('snapshot_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  expect(latest?.snapshot_at).not.toBe(newerAt)
 })
 
 test('사이트 설정: 저장과 연동 표시가 함께 동작한다', async ({ page }) => {
@@ -285,8 +281,8 @@ test('감사 로그: 앞선 조작이 한국어 행동명으로 남는다', asyn
      실제로 확인하는 검사가 된다. */
   const logs = page.getByRole('table', { name: '감사 로그 목록' })
   await expect(logs.getByText('확률형 아이템 등록').first()).toBeVisible()
-  await expect(logs.getByText('확률형 아이템 CSV 적용').first()).toBeVisible()
-  await expect(logs.getByText('랭킹 스냅샷 적용').first()).toBeVisible()
+  await expect(logs.getByText('확률형 아이템 삭제').first()).toBeVisible()
+  await expect(logs.getByText('랭킹 스냅샷 되돌리기').first()).toBeVisible()
   await expect(logs.getByText('사이트 설정 수정').first()).toBeVisible()
 
   // 펼치면 변경 전후 전체가 보인다.

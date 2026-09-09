@@ -10,22 +10,14 @@ import { writeAuditLog } from '@/lib/audit'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
-import { parseCsvTable } from '@/lib/utils/csv'
 import { josa } from '@/lib/utils/josa'
-import {
-  gachaCsvRowSchema,
-  gachaItemSchema,
-  gachaRowsJsonSchema,
-  GACHA_CSV_REQUIRED_HEADERS,
-  type GachaTab,
-} from '@/lib/validation/gacha'
+import { gachaItemSchema, gachaRowsJsonSchema } from '@/lib/validation/gacha'
 import { kstLocalToIso } from '@/lib/validation/settings'
 
-import type { TablesInsert } from '@/lib/supabase/types'
 import type { Json } from '@/types/database.types'
 
 /**
- * 확률형 아이템 CRUD · CSV 가져오기.
+ * 확률형 아이템 CRUD.
  *
  * 모든 액션이 스스로 `requireAdmin()` 을 부른다. 레이아웃이 이미 막고 있어도
  * 서버 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다.
@@ -169,118 +161,4 @@ export async function deleteGachaItemAction(
 
   await revalidateGacha()
   return { message: `${before.name}${josa(before.name, '을')} 삭제했습니다.` }
-}
-
-type ImportRow = {
-  id: string
-  tab: GachaTab
-  name: string
-  /* 행 모양을 DB 삽입 타입에 묶어 둔다. Record<string, Json> 으로 두면 열 이름을
-     오타 내도 upsert 호출까지 타입 오류가 드러나지 않는다. */
-  payload: Omit<TablesInsert<'gacha_items'>, 'id'>
-}
-
-/**
- * CSV 가져오기.
- *
- * 브라우저에서 이미 미리보기를 거쳤더라도 **서버가 원본 텍스트를 다시 파싱한다**.
- * 미리보기 결과를 그대로 믿으면 조작된 요청 하나로 검증을 통째로 건너뛸 수 있다.
- *
- * 한 행이라도 틀리면 전체를 반려한다. 부분 적용은 "어디까지 들어갔는지" 모르는
- * 상태를 만들고, 운영자는 같은 파일을 다시 올릴 수 없게 된다.
- */
-export async function importGachaCsvAction(
-  _prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const actor = await requireAdmin()
-  const table = parseCsvTable(readField(formData, 'csv'), GACHA_CSV_REQUIRED_HEADERS)
-
-  if (table.error !== null) {
-    return { formError: table.error }
-  }
-
-  if (table.records.length === 0) {
-    return { formError: '데이터 행이 없습니다.' }
-  }
-
-  const issues: string[] = []
-  const parsedRows: ImportRow[] = []
-
-  for (const record of table.records) {
-    const parsed = gachaCsvRowSchema.safeParse(record.values)
-
-    if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? '값이 올바르지 않습니다.'
-      issues.push(`${record.line}번째 줄: ${message}`)
-
-      continue
-    }
-
-    const row = parsed.data
-
-    parsedRows.push({
-      id: row.id,
-      tab: row.tab,
-      name: row.name,
-      payload: {
-        tab: row.tab,
-        name: row.name,
-        icon_url: row.icon_url === '' ? null : row.icon_url,
-        probability: row.probability,
-        rows: row.rows as unknown as Json,
-        is_published: row.is_published,
-        published_at: row.published_at ?? new Date().toISOString(),
-      },
-    })
-  }
-
-  if (issues.length > 0) {
-    return {
-      formError: `${issues.length}개 행에 오류가 있어 적용하지 않았습니다. ${issues.slice(0, 3).join(' / ')}`,
-    }
-  }
-
-  const supabase = await createClient()
-  const tabs = [...new Set(parsedRows.map((row) => row.tab))]
-  const { data: existing } = await supabase
-    .from('gacha_items')
-    .select('id, tab, name')
-    .in('tab', tabs)
-
-  /* id 열이 비어 있으면 (tab, name) 으로 기존 행을 찾는다. 운영자가 엑셀에서 새 줄을
-     추가할 때 id 를 채우지 않는 것이 자연스러운데, 그때마다 중복이 생기면 안 된다. */
-  const idByName = new Map((existing ?? []).map((row) => [`${row.tab}/${row.name}`, row.id]))
-  const known = new Set((existing ?? []).map((row) => row.id))
-
-  const upsertRows = parsedRows.map((row) => {
-    const matched = known.has(row.id) ? row.id : idByName.get(`${row.tab}/${row.name}`)
-
-    return { id: matched ?? crypto.randomUUID(), ...row.payload }
-  })
-
-  const created = upsertRows.filter((row) => !known.has(row.id)).length
-  const { error } = await supabase.from('gacha_items').upsert(upsertRows, { onConflict: 'id' })
-
-  if (error !== null) {
-    /* upsert 한 번이라 전부 들어가거나 전부 들어가지 않는다. */
-    return actionFailure(
-      'gacha',
-      'CSV를 적용하지 못했습니다. 아무 항목도 바뀌지 않았습니다. 잠시 후 다시 시도해 주세요.',
-      error,
-    )
-  }
-
-  const updated = upsertRows.length - created
-
-  await writeAuditLog(actor.id, {
-    action: 'gacha.import',
-    targetTable: 'gacha_items',
-    after: { total: upsertRows.length, created, updated, tabs },
-  })
-
-  await revalidateGacha()
-  return {
-    message: `${upsertRows.length}건을 적용했습니다. (신규 ${created}건 · 수정 ${updated}건)`,
-  }
 }

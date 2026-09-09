@@ -1,9 +1,8 @@
 import Link from 'next/link'
 
-import { RankingUploadPanel } from '@/components/rankings/RankingUploadPanel'
 import { SnapshotHistory } from '@/components/rankings/SnapshotHistory'
 import { Badge } from '@/components/ui/Badge'
-import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Card, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Table, type Column } from '@/components/ui/Table'
 import { getLatestSnapshotAt, getRankingRows, getRankingSnapshots } from '@/lib/data/rankings'
@@ -19,7 +18,7 @@ export const metadata: Metadata = {
   title: '랭킹',
 }
 
-/* 적용 직후 옛 스냅샷이 보이면 운영자가 같은 파일을 다시 올린다. */
+/* 되돌린 직후 옛 스냅샷이 보이면 운영자가 같은 조작을 다시 한다. */
 export const dynamic = 'force-dynamic'
 
 export default async function RankingsPage(props: PageProps<'/rankings'>) {
@@ -82,7 +81,7 @@ export default async function RankingsPage(props: PageProps<'/rankings'>) {
     <>
       <PageHeader
         title="랭킹"
-        description="CSV 를 올려 스냅샷을 통째로 갈아 끼웁니다. 사용자 사이트는 가장 최근 스냅샷만 읽습니다."
+        description="사용자 사이트는 가장 최근 스냅샷만 읽습니다. 스냅샷은 개발팀 연동(게임 데이터)으로 적재되며, 이 화면에서는 현재 표를 확인하고 이전 스냅샷으로 되돌릴 수 있습니다."
       />
 
       <nav aria-label="랭킹 종류" className="border-line mb-4 flex gap-1 border-b">
@@ -106,16 +105,6 @@ export default async function RankingsPage(props: PageProps<'/rankings'>) {
           )
         })}
       </nav>
-
-      <Card className="mb-6">
-        <CardHeader
-          title="CSV 업로드"
-          description="필수 열: rank, character_name, level, job. 선택 열: job_group, guild, exp, avatar_url."
-        />
-        <CardBody>
-          <RankingUploadPanel rankType={rankType} />
-        </CardBody>
-      </Card>
 
       <Card className="mb-6">
         <CardHeader

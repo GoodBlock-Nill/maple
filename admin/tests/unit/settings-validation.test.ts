@@ -91,7 +91,7 @@ describe('kst datetime helpers', () => {
     expect(kstLocalToIso(kstDateTimeLocal(iso))).toBe(iso)
   })
 
-  it('should pass through an ISO string that arrives from CSV', () => {
+  it('should pass through an ISO string that already carries a timezone', () => {
     expect(kstLocalToIso('2026-04-16T10:00:00Z')).toBe('2026-04-16T10:00:00.000Z')
   })
 

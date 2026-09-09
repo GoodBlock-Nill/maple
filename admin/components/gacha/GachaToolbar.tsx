@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn'
 import { GACHA_TABS, type GachaTab } from '@/lib/validation/gacha'
 
 /**
- * 탭 · 검색 · CSV 도구.
+ * 탭 · 검색 · 새 아이템.
  *
  * 상태를 갖지 않는 서버 컴포넌트다. 탭은 `<Link>`, 검색은 GET `<form>` 이라
  * 자바스크립트 없이도 목록이 완전히 움직이고 뒤로가기가 그대로 동작한다.
@@ -66,22 +66,9 @@ export function GachaToolbar({
           </Button>
         </form>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* 다운로드는 클라이언트 라우팅 대상이 아니다. `<Link>` 로 두면 라우터가
-              RSC 응답을 기대하다 실패한다 — 평범한 앵커로 브라우저에 넘긴다. */}
-          <a
-            href={`/gacha/export?tab=${tab}`}
-            className="rounded-panel border-line bg-surface text-ink hover:bg-page focus-visible:outline-focus inline-flex h-8 items-center justify-center border px-3 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            CSV 내보내기
-          </a>
-          <Button href={`/gacha/import?tab=${tab}`} size="sm" variant="secondary">
-            CSV 가져오기
-          </Button>
-          <Button href={`/gacha/new?tab=${tab}`} size="sm">
-            새 아이템
-          </Button>
-        </div>
+        <Button href={`/gacha/new?tab=${tab}`} size="sm">
+          새 아이템
+        </Button>
       </div>
     </div>
   )

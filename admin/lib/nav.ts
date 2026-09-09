@@ -71,7 +71,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
     children: [
       { label: '목록', href: '/gacha' },
       { label: '새 아이템', href: '/gacha/new' },
-      { label: 'CSV 가져오기', href: '/gacha/import' },
     ],
   },
   { label: '랭킹', href: '/rankings', icon: 'ranking' },

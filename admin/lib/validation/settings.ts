@@ -131,7 +131,7 @@ export function kstLocalToIso(value: string): string | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(:\d{2}(\.\d+)?)?$/.exec(trimmed)
 
   if (match === null) {
-    // 이미 ISO(Z 포함)로 들어온 값은 그대로 통과시킨다 — CSV 가져오기 경로.
+    // 이미 ISO(Z 포함)로 들어온 값은 그대로 통과시킨다 — DB 에서 온 값을 되돌려받는 경로.
     const parsed = Date.parse(trimmed)
 
     return Number.isNaN(parsed) ? null : new Date(parsed).toISOString()

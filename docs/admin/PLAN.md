@@ -25,8 +25,8 @@
 | 신고        | `/reports`                                | 큐(open/resolved/dismissed), 대상 미리보기, 처리(숨김+제재 연계), 기각, 메모                                                                                                                                     |
 | 회원        | `/members`, `/members/[id]`               | 목록·검색(닉네임/이메일/공급자), 상세(활동, 신고 이력), 정지(기간·사유)/해제, 관리자 권한 부여/회수, 닉네임 강제 변경                                                                                            |
 | 고객지원    | `/inquiries`, `/inquiries/[id]`, `/faqs`  | 문의 목록(상태·카테고리 필터), 상세·첨부, 답변 작성(inquiry_replies), 상태 변경; FAQ CRUD·정렬                                                                                                                   |
-| 가이드      | `/gacha`                                  | 확률형 아이템 CRUD(탭·확률·상세표), CSV 가져오기/내보내기, 공개 여부                                                                                                                                             |
-| 랭킹        | `/rankings`                               | CSV 업로드(종합/직업/길드), 스냅샷 이력, 미리보기                                                                                                                                                                |
+| 가이드      | `/gacha`                                  | 확률형 아이템 CRUD(탭·확률·상세표), 공개 여부                                                                                                                                                                    |
+| 랭킹        | `/rankings`                               | 현재 스냅샷 확인(종합/직업/길드), 스냅샷 이력, 이전 스냅샷으로 되돌리기. 적재는 개발팀 연동(게임 데이터)이 맡고 관리자는 조회·롤백만 한다                                                                        |
 | 사이트 설정 | `/settings`                               | 월드 ID, 디스코드, 유튜브, 연락 이메일, 크리에이터 이름/슬로건/소개/사진(Storage public-assets), 히어로 배너                                                                                                     |
 | Legal       | `/legal`, `/legal/[slug]`                 | 개인정보처리방침·디스코드 운영정책·글자월드 운영정책 문서 관리: 에디터 편집, 버전·시행일, 발행/예약, 미리보기, 버전 이력·비교. 클라이언트 `/policy/[slug]`는 발행본을 DB에서 읽고(코드 내 문안은 초기 시드·폴백) |
 | 관리자      | `/admins`                                 | 관리자 목록, 권한 회수                                                                                                                                                                                           |
@@ -39,7 +39,7 @@
 - `posts.is_hidden boolean`(운영 숨김; deleted_at과 구분), `comments.is_hidden`
 - `audit_logs(id, actor_id, action, target_table, target_id, before jsonb, after jsonb, created_at)` + 관리자 서버 액션에서 기록
 - `legal_documents(slug unique, title)` + `legal_document_versions(document_id, version, effective_date, content_html, is_published, published_at, created_by)` — 클라이언트는 최신 발행본 조회, 공개 읽기 정책
-- `rankings` 스냅샷 컬럼 확인(snapshot_at) / CSV 업로드용 `ranking_snapshots`
+- `rankings` 스냅샷 컬럼 확인(snapshot_at) — 적재는 개발팀 연동(게임 데이터)이 하고 관리자는 읽기·롤백만 한다
 - 기존 admin RLS 정책 점검(posts/comments/reports/inquiries/faqs/gacha/rankings/site_settings/hero_banners) — 누락 시 추가
 
 ## 5. 기술
@@ -51,7 +51,7 @@
 ### 5.1 사용자 사이트 캐시 무효화 (관리자 → 클라이언트)
 
 - 사용자 사이트의 공개 목록은 `unstable_cache`(커뮤니티·뉴스·확률·랭킹 60초, FAQ·설정 300초)로 캐시된다. 관리자는 **별도 배포**라 `revalidateTag()` 가 닿지 않으므로, 쓰기가 끝나면 `admin/lib/revalidate.ts` 의 `revalidateClient(tags)` 가 사용자 사이트 `POST /api/revalidate`(헤더 `x-revalidate-secret`)를 부른다.
-- 태그 매핑: 뉴스 발행/숨김/삭제/복구 → `news-list` · 커뮤니티/댓글 숨김·삭제·복구, 신고 처리의 숨김·삭제 → `community-list` · FAQ CRUD/발행/정렬 → `faqs` · 확률형 아이템 저장·삭제·CSV → `gacha` · 랭킹 스냅샷 적용·롤백 → `rankings` · 사이트 설정·히어로 배너 → `site`. 관리자 전용 테이블(감사 로그·관리자 계정·신고 상태)은 부르지 않는다. 회원 정지는 RLS 로 즉시 적용되므로 태그가 없다.
+- 태그 매핑: 뉴스 발행/숨김/삭제/복구 → `news-list` · 커뮤니티/댓글 숨김·삭제·복구, 신고 처리의 숨김·삭제 → `community-list` · FAQ CRUD/발행/정렬 → `faqs` · 확률형 아이템 저장·삭제 → `gacha` · 랭킹 스냅샷 롤백 → `rankings` · 사이트 설정·히어로 배너 → `site`. 관리자 전용 테이블(감사 로그·관리자 계정·신고 상태)은 부르지 않는다. 회원 정지는 RLS 로 즉시 적용되므로 태그가 없다.
 - 실패해도 관리자 쓰기는 성공한다(경고 로그 + `{ ok: false }`). 그때는 태그 수명만큼 반영이 늦어질 뿐이다.
 - 반영 시점: 사용자 사이트가 `revalidateTag(tag, 'max')`(stale-while-revalidate)를 쓰므로 **무효화 직후 첫 요청은 옛 값**이고 그 요청이 갱신을 띄운다. 실측 요청 2~~4회·0.2~~0.9초(`admin/tests/e2e/client-revalidate.spec.ts`). 첫 요청부터 새 값이 필요하면 사용자 사이트 라우트가 `updateTag()` 또는 `revalidateTag(tag, { expire: 0 })` 를 써야 한다.
 

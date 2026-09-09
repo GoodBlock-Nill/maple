@@ -7,8 +7,8 @@ import type { Enums } from '@/lib/supabase/types'
 /**
  * 확률형 아이템(가이드) 스키마.
  *
- * 폼과 CSV 가 같은 규칙을 쓴다. 화면에서 통과한 값이 CSV 로는 반려되면(또는 그
- * 반대면) 운영자가 두 벌의 규칙을 외워야 한다.
+ * 등록 화면과 사용자 사이트가 같은 규칙을 쓴다. 관리자에서 통과한 값이 사이트에서
+ * 다르게 보이면 운영자가 두 벌의 규칙을 외워야 한다.
  */
 
 /* `satisfies` 로 DB enum(gacha_tab)에 묶어 둔다. 스키마가 바뀌어 값이 사라지면
@@ -141,72 +141,3 @@ export const gachaItemSchema = z.object({
 })
 
 export type GachaItemInput = z.infer<typeof gachaItemSchema>
-
-/* ---------------------------------------------------------------------------
- * CSV
- * ------------------------------------------------------------------------ */
-
-/**
- * 내보내기/가져오기 열 순서. 내보낸 파일을 그대로 고쳐 다시 올릴 수 있어야 하므로
- * 두 방향이 같은 목록을 쓴다. `id` 가 채워져 있으면 그 행을 수정하고, 비어 있으면
- * (tab, name) 으로 찾아 없을 때만 새로 만든다.
- */
-export const GACHA_CSV_HEADERS = [
-  'id',
-  'tab',
-  'name',
-  'icon_url',
-  'probability',
-  'is_published',
-  'published_at',
-  'rows',
-] as const
-
-/** 가져오기에 최소한 있어야 하는 열. */
-export const GACHA_CSV_REQUIRED_HEADERS = ['tab', 'name', 'probability'] as const
-
-const BOOLEAN_TRUE = new Set(['true', '1', 'y', 'yes', '공개', 'o'])
-const BOOLEAN_FALSE = new Set(['false', '0', 'n', 'no', '비공개', 'x', ''])
-
-export const csvBooleanSchema = z
-  .string()
-  .trim()
-  .transform((value) => value.toLowerCase())
-  .refine(
-    (value) => BOOLEAN_TRUE.has(value) || BOOLEAN_FALSE.has(value),
-    '공개 여부는 true/false 로 입력해 주세요.',
-  )
-  .transform((value) => BOOLEAN_TRUE.has(value))
-
-/** 빈 값이면 null, 값이 있으면 파싱 가능한 시각이어야 한다. */
-export const csvDateSchema = z
-  .string()
-  .trim()
-  .transform((value) => (value === '' ? null : value))
-  .refine(
-    (value) => value === null || !Number.isNaN(Date.parse(value)),
-    '날짜 형식이 올바르지 않습니다. (예: 2026-09-08T10:00:00Z)',
-  )
-  .transform((value) => (value === null ? null : new Date(value).toISOString()))
-
-export const gachaCsvRowSchema = z.object({
-  id: z
-    .string()
-    .trim()
-    .refine(
-      (value) => value === '' || z.uuid().safeParse(value).success,
-      'id 가 UUID 가 아닙니다.',
-    ),
-  tab: z
-    .string()
-    .trim()
-    .refine(isGachaTab, `tab 은 ${GACHA_TAB_VALUES.join(' / ')} 중 하나여야 합니다.`),
-  name: z.string().trim().min(1, '이름이 비어 있습니다.').max(GACHA_ITEM_NAME_MAX),
-  icon_url: assetPathSchema.default(''),
-  probability: probabilitySchema,
-  is_published: csvBooleanSchema.default(true),
-  published_at: csvDateSchema.default(null),
-  rows: gachaRowsJsonSchema.default([]),
-})
-
-export type GachaCsvRow = z.infer<typeof gachaCsvRowSchema>

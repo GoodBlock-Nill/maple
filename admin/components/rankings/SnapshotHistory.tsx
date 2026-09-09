@@ -78,7 +78,7 @@ export function SnapshotHistory({
     <Card>
       <CardHeader
         title={`스냅샷 이력 ${snapshots.length}벌`}
-        description={`적용할 때마다 새 스냅샷이 쌓이고, 최근 ${SNAPSHOT_RETENTION}벌까지 보관합니다.`}
+        description={`적재하거나 되돌릴 때마다 새 스냅샷이 쌓이고, 최근 ${SNAPSHOT_RETENTION}벌까지 보관합니다.`}
       />
       <Table
         columns={columns}

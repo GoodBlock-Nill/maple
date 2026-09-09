@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   title: '가이드',
 }
 
-/* 목록은 매 요청 최신 상태여야 한다. 공개 전환·CSV 적용 직후 옛 목록이 보이면
+/* 목록은 매 요청 최신 상태여야 한다. 공개 전환·삭제 직후 옛 목록이 보이면
    운영자가 같은 작업을 반복한다. */
 export const dynamic = 'force-dynamic'
 
@@ -118,7 +118,7 @@ export default async function GachaPage(props: PageProps<'/gacha'>) {
     <>
       <PageHeader
         title="가이드"
-        description="확률형 아이템 공시를 관리하고 CSV 로 주고받습니다."
+        description="확률형 아이템 공시를 등록·수정합니다. 저장 즉시 사용자 사이트 가이드에 반영됩니다."
       />
 
       <GachaToolbar tab={tab} q={q} searchParams={searchParams} />
