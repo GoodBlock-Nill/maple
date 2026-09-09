@@ -396,6 +396,11 @@ sequenceDiagram
 
 수명은 `lib/data/cache.ts` — 목록 계열 `LIST_REVALIDATE_SECONDS = 60`, FAQ·설정 계열 `STATIC_REVALIDATE_SECONDS = 300`. 무효화가 실패하면 그 수명만큼 늦게 반영된다.
 
+**문의(1:1 · 이메일)에는 태그가 없다.** 사용자 사이트의 "내 문의 내역"은 `user_id` 로 세션마다 직접 읽고
+캐시하지 않으므로, 관리자 답변·상태 변경 뒤에 `revalidateClient()` 를 부르지 않는다. 이메일 문의
+(`inquiries.source = 'email'`, 2026-09-09)는 `user_id` 가 null 이라 사용자 사이트에 아예 보이지 않는다 —
+발송은 Edge Function `email-outbound` 가 한다(`docs/admin/EMAIL-INQUIRY-PLAN.md`).
+
 ### 5.4 "관리자 화면 표시 ↔ 실제 클라이언트"
 
 **히어로 배너.** 사용자 사이트가 읽는 자리는 홈이 아니라 **소개 화면(`/about`) 상단 영상 영역** 이다(`lib/data/hero-banner.ts` 헤더 · 2026-09-09 제품 결정). 규칙은 `sort_order` 오름차순 · 노출 기간(`starts_at`~`ends_at`) 안 · `is_active` 인 것들 중 **첫 한 장** 이다(`admin/components/settings/HeroBannerList.tsx`). 배너가 없으면 사이트 설정의 유튜브 주소 영상이 나온다. 기간 판정은 캐시 시점 기준이라 최대 300초 늦게 바뀔 수 있다. 배너 종류는 `hero_banners.media_type`(`image` | `youtube`)이고, DB 제약 `hero_banners_media_shape` 가 종류와 주소의 불일치를 원천 차단한다 (`supabase/migrations/20260909000100_hero_banner_media.sql`).
@@ -665,3 +670,10 @@ pnpm typecheck && pnpm --filter @maple/admin typecheck
 7. **`admin_invites.token_hash` 는 비어 있다.** Supabase 초대 메일을 쓰는 동안에는 쓰지 않고, 자체 초대 링크로 전환할 때를 위한 자리다(`20260908001700_admin_foundation.sql`).
 8. **역할이 비어 있는 관리자는 아무 모듈도 보지 못한다**(닫힘 실패). 역할을 삭제하면 FK 가 `on delete set null` 이라 그 관리자들이 그 상태가 된다. 그래서 화면에서 멤버가 있는 역할의 삭제를 막는다(`admin-role-actions.ts`).
 9. **`docs/admin/PLAN.md` §5.1 과 `admin/tests/e2e/client-revalidate.spec.ts` 의 주석은 `revalidateTag(tag, 'max')` 기준으로 쓰여 있다.** 현재 코드는 `revalidateTag(tag, { expire: 0 })` 다(`app/api/revalidate/route.ts`). 반영 지연 서술을 읽을 때 이 차이를 감안한다.
+10. **이메일 문의의 실제 메일 왕복 E2E 는 활성화 뒤에 가능하다.** 코드·마이그레이션·Edge Function
+    (`email-inbound` · `email-outbound`)은 배포돼 있지만 메일함·Resend 계정·웹훅·secret 이 아직 없다
+    (`docs/admin/EMAIL-INQUIRY-ACTIVATION.md`). 그때까지는 순수 로직 유닛 테스트(`tests/unit/email/**`)와
+    관리자 액션 테스트(`admin/tests/unit/inquiry-email-actions.test.ts`)만 있다. secret 이 없는 동안
+    답신은 저장되고 `이메일 발송 설정이 아직 없습니다` 안내가 뜨며, 설정 후 스레드의 "다시 보내기"로 발송한다.
+    SPF/DKIM/DMARC 판정은 Resend 문서에 필드가 없어 `Authentication-Results` 헤더에서 읽는다 — 실제
+    페이로드로 확인이 필요하다.

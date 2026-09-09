@@ -5,11 +5,18 @@ import {
   toAttachments,
   type InquiryAttachment,
 } from '@/lib/data/inquiry-attachments'
+import { hasEmailAuthFailure, parseEmailAuth } from '@/lib/data/inquiry-email'
 import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_PAGE_SIZE, pageRange } from '@/lib/utils/table-query'
-import { INQUIRY_STATUS_TABS, statusesForTab } from '@/lib/validation/inquiries'
+import { INQUIRY_STATUS_TABS, statusesForTab, toInquirySource } from '@/lib/validation/inquiries'
 
-import type { InquiryFilters, InquiryStatus, InquiryStatusTab } from '@/lib/validation/inquiries'
+import type { InquiryEmailAuth } from '@/lib/data/inquiry-email'
+import type {
+  InquiryFilters,
+  InquirySource,
+  InquiryStatus,
+  InquiryStatusTab,
+} from '@/lib/validation/inquiries'
 
 /**
  * 1:1 문의 조회 계층.
@@ -21,13 +28,12 @@ import type { InquiryFilters, InquiryStatus, InquiryStatusTab } from '@/lib/vali
 
 /* 목록은 본문(content)을 읽지 않는다 — 20건의 긴 본문은 화면에 쓰이지도 않으면서
    응답만 키운다. 검색은 서버 쪽 ilike 로 하므로 본문이 없어도 된다. */
-/* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
-const LIST_COLUMNS = 'id, title, account_id, category, type, status, cancelled_at, created_at, updated_at, user_id, author:profiles!inquiries_user_id_fkey(nickname), inquiry_replies(count)'
+/* 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
+/* prettier-ignore */
+const LIST_COLUMNS = 'id, title, account_id, category, type, status, cancelled_at, created_at, updated_at, user_id, source, email_from, email_auth, author:profiles!inquiries_user_id_fkey(nickname), inquiry_replies(count)'
 
 /* prettier-ignore */
-const DETAIL_COLUMNS = 'id, title, content, account_id, category, type, status, contact_email, attachments, answered_at, cancelled_at, created_at, updated_at, user_id, author:profiles!inquiries_user_id_fkey(nickname, email)'
-
-const REPLY_COLUMNS = 'id, author_id, author_name, content, created_at'
+const DETAIL_COLUMNS = 'id, title, content, account_id, category, type, status, contact_email, attachments, answered_at, cancelled_at, created_at, updated_at, user_id, source, email_from, email_from_name, email_message_id, email_auth, email_thread_key, author:profiles!inquiries_user_id_fkey(nickname, email)'
 
 export type InquiryListItem = {
   id: string
@@ -40,6 +46,11 @@ export type InquiryListItem = {
   status: InquiryStatus
   /** 사용자가 접수를 취소한 시각. 상태가 closed 이면서 이 값이 있으면 '접수 취소'다. */
   cancelledAt: string | null
+  source: InquirySource
+  /** 이메일 문의의 발신자 주소. 목록에서 계정 대신 이 값을 보여 준다. */
+  emailFrom: string | null
+  /** SPF · DKIM · DMARC 중 하나라도 실패. 목록에 '인증 실패' 뱃지를 세운다. */
+  emailAuthFailed: boolean
   replyCount: number
   createdAt: string
   updatedAt: string
@@ -52,8 +63,17 @@ export type InquiryListResult = {
   hasError: boolean
 }
 
-/** 첨부는 별도 모듈이 소유한다. 화면이 한곳에서 가져다 쓰도록 타입만 다시 내보낸다. */
+/* 첨부 · 스레드 · 이메일 인증은 별도 모듈이 소유한다. 화면이 한곳(`@/lib/data/inquiries`)에서
+   가져다 쓰도록 여기서 다시 내보낸다 — 기존 임포트 경로가 그대로 동작한다. */
 export type { InquiryAttachment }
+export type { InquiryEmailAuth }
+export { hasEmailAuthFailure, parseEmailAuth } from '@/lib/data/inquiry-email'
+export { getInquiryReplies } from '@/lib/data/inquiry-replies'
+export type {
+  InquiryReplyDeliveryStatus,
+  InquiryReplyDirection,
+  InquiryReplyItem,
+} from '@/lib/data/inquiry-replies'
 
 export type InquiryDetail = {
   id: string
@@ -72,13 +92,14 @@ export type InquiryDetail = {
   nickname: string
   email: string | null
   attachments: readonly InquiryAttachment[]
-}
-
-export type InquiryReplyItem = {
-  id: string
-  authorName: string
-  content: string
-  createdAt: string
+  source: InquirySource
+  emailFrom: string | null
+  emailFromName: string | null
+  /** 원본 메일의 Message-ID. 답신의 In-Reply-To 로 쓰이므로 상세에 그대로 보여 준다. */
+  emailMessageId: string | null
+  emailAuth: InquiryEmailAuth | null
+  /** `reply+<key>@` 회신 주소에 쓰는 토큰. 화면에는 노출하지 않는다. */
+  emailThreadKey: string | null
 }
 
 /** 상태 탭 옆에 붙는 건수. 상태 외의 필터(카테고리·검색·기간)는 그대로 적용된 값이다. */
@@ -119,10 +140,14 @@ function applyCommonFilters<TQuery extends FilterableQuery<TQuery>>(
     next = next.eq('category', filters.category)
   }
 
+  if (filters.source !== null) {
+    next = next.eq('source', filters.source)
+  }
+
   if (filters.search !== null) {
     // 검색어는 parseInquiryFilters 가 이미 or() 문법·LIKE 와일드카드를 걷어냈다.
     next = next.or(
-      `title.ilike.%${filters.search}%,content.ilike.%${filters.search}%,account_id.ilike.%${filters.search}%`,
+      `title.ilike.%${filters.search}%,content.ilike.%${filters.search}%,account_id.ilike.%${filters.search}%,email_from.ilike.%${filters.search}%`,
     )
   }
 
@@ -180,6 +205,9 @@ export async function getInquiries(
     type: row.type,
     status: row.status,
     cancelledAt: row.cancelled_at,
+    source: toInquirySource(row.source),
+    emailFrom: row.email_from,
+    emailAuthFailed: hasEmailAuthFailure(row.email_auth),
     replyCount: toReplyCount(row.inquiry_replies),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -227,6 +255,7 @@ export async function getInquiryDetail(id: string): Promise<InquiryDetail | null
   }
 
   const author = data.author as { nickname: string; email: string | null } | null
+  const source = toInquirySource(data.source)
 
   return {
     id: data.id,
@@ -242,30 +271,20 @@ export async function getInquiryDetail(id: string): Promise<InquiryDetail | null
     createdAt: data.created_at,
     updatedAt: data.updated_at,
     userId: data.user_id,
-    nickname: author?.nickname ?? '(탈퇴한 회원)',
+    /* 이메일 문의에는 회원이 없다(`user_id` 를 일부러 채우지 않는다 — 발신자 위조로
+       회원을 사칭할 수 있어서다). '(탈퇴한 회원)'으로 보이면 운영자가 오해하므로
+       발신자 이름을 대신 쓴다. */
+    nickname:
+      source === 'email'
+        ? (data.email_from_name ?? data.email_from ?? '(발신자 없음)')
+        : (author?.nickname ?? '(탈퇴한 회원)'),
     email: author?.email ?? null,
     attachments: await signInquiryAttachments(toAttachments(data.attachments)),
+    source,
+    emailFrom: data.email_from,
+    emailFromName: data.email_from_name,
+    emailMessageId: data.email_message_id,
+    emailAuth: parseEmailAuth(data.email_auth),
+    emailThreadKey: data.email_thread_key,
   }
-}
-
-export async function getInquiryReplies(inquiryId: string): Promise<readonly InquiryReplyItem[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('inquiry_replies')
-    .select(REPLY_COLUMNS)
-    .eq('inquiry_id', inquiryId)
-    .order('created_at', { ascending: true })
-
-  if (error !== null) {
-    console.error('[inquiries] 답변 조회 실패', error.message)
-
-    return []
-  }
-
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    authorName: row.author_name,
-    content: row.content,
-    createdAt: row.created_at,
-  }))
 }

@@ -4,12 +4,22 @@ import { Button, Input } from '@/components/ui'
 import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { cn } from '@/lib/utils/cn'
 import { buildHref, firstValue, type QueryParams } from '@/lib/utils/table-query'
-import { INQUIRY_CATEGORIES, INQUIRY_STATUS_TABS } from '@/lib/validation/inquiries'
+import {
+  INQUIRY_CATEGORIES,
+  INQUIRY_SOURCES,
+  INQUIRY_SOURCE_LABELS,
+  INQUIRY_STATUS_TABS,
+} from '@/lib/validation/inquiries'
 
 import type { InquiryTabCounts } from '@/lib/data/inquiries'
 import type { InquiryFilters as Filters } from '@/lib/validation/inquiries'
 
 const LIST_PATH = '/inquiries'
+
+/* select 는 공용 프리미티브(`Select`)가 아니라 여기서 직접 그린다 — 이 폼은
+   자바스크립트 없이 동작해야 하는 GET 폼이라 이름(name)이 그대로 쿼리 키가 된다. */
+const CONTROL_CLASS =
+  'rounded-panel border-line bg-surface text-ink focus:border-accent focus:outline-accent/40 h-10 border px-3 text-[14px] focus:outline-2'
 
 /**
  * 목록 필터 — 상태 탭 + 조건 폼.
@@ -29,11 +39,21 @@ export function InquiryFilters({
   counts: InquiryTabCounts
 }) {
   const sort = firstValue(params.sort)
+  const isEmail = filters.source === 'email'
+  /* 이메일 문의는 사용자가 접수를 취소할 수단이 없다 — 언제나 0 인 탭을 두면
+     운영자가 "취소가 안 잡히나" 하고 의심하게 된다. */
+  const tabs = isEmail
+    ? INQUIRY_STATUS_TABS.filter((tab) => tab.value !== 'cancelled')
+    : INQUIRY_STATUS_TABS
+  const resetHref =
+    filters.source === null
+      ? `${LIST_PATH}?status=${filters.tab}`
+      : `${LIST_PATH}?status=${filters.tab}&source=${filters.source}`
 
   return (
     <div className="mb-4 flex flex-col gap-3">
       <nav aria-label="상태" className="flex flex-wrap gap-1.5">
-        {INQUIRY_STATUS_TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = tab.value === filters.tab
 
           return (
@@ -67,20 +87,31 @@ export function InquiryFilters({
         {sort !== null && <input type="hidden" name="sort" value={sort} />}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-ink text-[13px] font-semibold">카테고리</span>
-          <select
-            name="category"
-            defaultValue={filters.category ?? ''}
-            className="rounded-panel border-line bg-surface text-ink focus:border-accent focus:outline-accent/40 h-10 border px-3 text-[14px] focus:outline-2"
-          >
+          <span className="text-ink text-[13px] font-semibold">출처</span>
+          <select name="source" defaultValue={filters.source ?? ''} className={CONTROL_CLASS}>
             <option value="">전체</option>
-            {INQUIRY_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {category}
+            {INQUIRY_SOURCES.map((source) => (
+              <option key={source} value={source}>
+                {INQUIRY_SOURCE_LABELS[source]}
               </option>
             ))}
           </select>
         </label>
+
+        {/* 이메일 문의의 카테고리는 수신 함수가 'email' 로 고정한다. 고를 것이 없다. */}
+        {!isEmail && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-ink text-[13px] font-semibold">카테고리</span>
+            <select name="category" defaultValue={filters.category ?? ''} className={CONTROL_CLASS}>
+              <option value="">전체</option>
+              {INQUIRY_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-ink text-[13px] font-semibold">등록일</span>
@@ -90,7 +121,7 @@ export function InquiryFilters({
               name="from"
               aria-label="시작일"
               defaultValue={filters.from ?? ''}
-              className="rounded-panel border-line bg-surface text-ink focus:border-accent focus:outline-accent/40 h-10 border px-3 text-[14px] focus:outline-2"
+              className={CONTROL_CLASS}
             />
             <span className="text-muted text-[13px]">~</span>
             <input
@@ -98,7 +129,7 @@ export function InquiryFilters({
               name="to"
               aria-label="종료일"
               defaultValue={filters.to ?? ''}
-              className="rounded-panel border-line bg-surface text-ink focus:border-accent focus:outline-accent/40 h-10 border px-3 text-[14px] focus:outline-2"
+              className={CONTROL_CLASS}
             />
           </span>
         </label>
@@ -110,13 +141,13 @@ export function InquiryFilters({
           defaultValue={filters.search ?? ''}
           maxLength={SEARCH_MAX_LENGTH}
           countPlacement="label"
-          placeholder="제목 · 내용 · 계정 ID"
+          placeholder="제목 · 내용 · 계정 ID · 발신자 주소"
           wrapperClassName="min-w-[220px] flex-1"
         />
 
         <div className="flex gap-2">
           <Button type="submit">검색</Button>
-          <Button href={`${LIST_PATH}?status=${filters.tab}`} variant="secondary">
+          <Button href={resetHref} variant="secondary">
             초기화
           </Button>
         </div>

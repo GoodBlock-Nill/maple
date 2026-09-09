@@ -6,6 +6,7 @@ import { actionFailure, logFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
 import { writeAuditLog } from '@/lib/audit'
 import { requirePermission } from '@/lib/auth/require-admin'
+import { EMAIL_NOT_CONFIGURED_MESSAGE, sendInquiryReplyEmail } from '@/lib/email/send-inquiry-reply'
 import { createClient } from '@/lib/supabase/server'
 import { josa } from '@/lib/utils/josa'
 import {
@@ -14,6 +15,8 @@ import {
   inquiryReplySchema,
   inquiryStatusSchema,
   isCancelledInquiry,
+  toInquirySource,
+  type InquirySource,
   type InquiryStatus,
 } from '@/lib/validation/inquiries'
 
@@ -39,13 +42,15 @@ type InquiryState = {
   status: InquiryStatus
   /** 사용자가 접수를 취소한 시각. 있으면 운영자 조작을 모두 막는다. */
   cancelledAt: string | null
+  /** 답변을 메일로도 보내야 하는지 가른다(`email`). 화면 값이 아니라 DB 를 다시 읽는다. */
+  source: InquirySource
 }
 
 async function readInquiryState(inquiryId: string): Promise<InquiryState | null> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('inquiries')
-    .select('status, cancelled_at')
+    .select('status, cancelled_at, source')
     .eq('id', inquiryId)
     .maybeSingle()
 
@@ -53,7 +58,11 @@ async function readInquiryState(inquiryId: string): Promise<InquiryState | null>
     return null
   }
 
-  return { status: data.status, cancelledAt: data.cancelled_at }
+  return {
+    status: data.status,
+    cancelledAt: data.cancelled_at,
+    source: toInquirySource(data.source),
+  }
 }
 
 /**
@@ -203,6 +212,7 @@ export async function replyToInquiryAction(
 
   const supabase = await createClient()
   const authorName = useOperatorName ? OPERATOR_NAME : actor.nickname
+  const isEmail = state.source === 'email'
   const { data: reply, error } = await supabase
     .from('inquiry_replies')
     .insert({
@@ -210,6 +220,11 @@ export async function replyToInquiryAction(
       author_id: actor.id,
       author_name: authorName,
       content,
+      // 콘솔에서 쓴 글은 언제나 '보낸' 쪽이다. 받은 메일은 수신 함수만 넣는다.
+      direction: 'outbound',
+      /* 발송은 저장 뒤에 따로 일어난다. 먼저 'queued' 로 적어 두면 발송이 실패해도
+         스레드에 "대기"로 남아 다시 보내기를 누를 수 있다. */
+      ...(isEmail ? { delivery_status: 'queued' } : {}),
     })
     .select('id')
     .single()
@@ -223,7 +238,7 @@ export async function replyToInquiryAction(
   }
 
   await writeAuditLog(actor.id, {
-    action: 'inquiry.reply',
+    action: isEmail ? 'inquiry.email.reply' : 'inquiry.reply',
     targetTable: 'inquiry_replies',
     targetId: reply.id,
     after: { inquiry_id: inquiryId, author_name: authorName, length: content.length },
@@ -247,5 +262,37 @@ export async function replyToInquiryAction(
     )
   }
 
-  return { message: `답변을 등록하고 상태를 '${nextLabel}'${josa(nextLabel, '로')} 바꿨습니다.` }
+  if (!isEmail) {
+    return { message: `답변을 등록하고 상태를 '${nextLabel}'${josa(nextLabel, '로')} 바꿨습니다.` }
+  }
+
+  return sendReplyMail(reply.id, nextLabel)
+}
+
+/**
+ * 이메일 문의의 발송 결과를 운영자 문구로 옮긴다.
+ *
+ * 이 함수가 불릴 때 **답신은 이미 저장됐고 상태도 옮겨졌다.** 그러니 실패 문구는
+ * "보내지 못했다"만 말하지 말고 지금 상태(저장됨)와 다음 행동(다시 보내기)을 함께 적는다 —
+ * 그러지 않으면 운영자가 같은 답신을 한 번 더 쓴다.
+ */
+async function sendReplyMail(replyId: string, nextLabel: string): Promise<FormState> {
+  const result = await sendInquiryReplyEmail(replyId)
+
+  if (result.ok) {
+    return {
+      message: `답신을 이메일로 보내고 상태를 '${nextLabel}'${josa(nextLabel, '로')} 바꿨습니다.`,
+    }
+  }
+
+  if (result.reason === 'not_configured') {
+    // 운영 설정이 아직 없는 정상적인 상태다. 개발자 로그를 남길 실패가 아니다.
+    return { formError: EMAIL_NOT_CONFIGURED_MESSAGE }
+  }
+
+  return actionFailure(
+    'inquiries',
+    '답신은 저장했지만 메일을 보내지 못했습니다. 스레드에서 다시 보내기를 눌러 주세요.',
+    result.detail,
+  )
 }

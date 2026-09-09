@@ -69,11 +69,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: '회원', href: '/members', icon: 'member', module: 'members' },
   {
     label: '고객지원',
-    href: '/inquiries',
+    href: '/inquiries?source=web',
     icon: 'support',
     module: 'inquiries',
     children: [
-      { label: '1:1 문의', href: '/inquiries' },
+      /* 이메일 문의는 새 라우트가 아니라 목록의 출처 필터 프리셋이다(EMAIL-INQUIRY-PLAN §7).
+         부모 링크는 첫 하위와 같아야 하므로 부모도 `?source=web` 을 가리킨다. */
+      { label: '1:1 문의', href: '/inquiries?source=web' },
+      { label: '이메일 문의', href: '/inquiries?source=email' },
       { label: 'FAQ', href: '/faqs', module: 'faqs' },
     ],
   },
@@ -95,38 +98,84 @@ export const NAV_ITEMS: readonly NavItem[] = [
 ] as const
 
 /**
+ * 현재 위치의 쿼리스트링. `useSearchParams()` 의 반환값을 그대로 받거나
+ * `'source=email'` 같은 문자열을 받는다(서버·테스트에서 쓰기 쉽게).
+ */
+export type NavSearch = URLSearchParams | string | null | undefined
+
+/** `/inquiries?source=email` → `['/inquiries', 'source=email']`. */
+function splitHref(href: string): [string, string] {
+  const mark = href.indexOf('?')
+
+  return mark === -1 ? [href, ''] : [href.slice(0, mark), href.slice(mark + 1)]
+}
+
+function toSearchParams(search: NavSearch): URLSearchParams {
+  if (search === null || search === undefined) {
+    return new URLSearchParams()
+  }
+
+  return typeof search === 'string' ? new URLSearchParams(search) : search
+}
+
+/**
  * 활성 메뉴 판정.
  *
  * 대시보드(`/`)만 완전 일치로 본다. 접두사 일치로 두면 모든 경로에서 대시보드가
  * 활성으로 남는다. 커뮤니티처럼 `/community/posts` 를 대표 경로로 쓰는 항목은
  * 한 단계 위(`/community`)까지 활성으로 인정해야 하위 메뉴 이동 시 강조가 유지된다.
+ *
+ * 부모는 하위의 **경로 부분만** 본다. 그래야 `/inquiries`(출처 필터 없음)나
+ * `/inquiries/<id>`(상세)에서도 고객지원이 열린 채로 남는다 — 프리셋 하위 두 개가
+ * 모두 꺼져 메뉴가 접히면 운영자가 상세에서 목록으로 돌아갈 길을 잃는다.
  */
-export function isNavItemActive(item: NavItem, pathname: string): boolean {
+export function isNavItemActive(item: NavItem, pathname: string, search?: NavSearch): boolean {
   if (item.href === '/') {
     return pathname === '/'
   }
 
   if (item.children !== undefined) {
-    return item.children.some((child) => isPathActive(child.href, pathname))
+    return item.children.some((child) => isPathActive(splitHref(child.href)[0], pathname))
   }
 
-  return isPathActive(item.href, pathname)
+  return isPathActive(item.href, pathname, search)
 }
 
-export function isPathActive(href: string, pathname: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`)
+/**
+ * 경로(+ 쿼리 프리셋) 일치.
+ *
+ * `href` 에 쿼리가 붙어 있으면 **적힌 키가 모두** 현재 값과 같아야 활성이다.
+ * 정렬·페이지 같은 다른 파라미터는 보지 않는다 — 2페이지를 보고 있어도 '이메일 문의'는
+ * 여전히 그 화면이기 때문이다.
+ */
+export function isPathActive(href: string, pathname: string, search?: NavSearch): boolean {
+  const [path, query] = splitHref(href)
+
+  if (pathname !== path && !pathname.startsWith(`${path}/`)) {
+    return false
+  }
+
+  if (query === '') {
+    return true
+  }
+
+  const current = toSearchParams(search)
+
+  return Array.from(new URLSearchParams(query).entries()).every(
+    ([key, value]) => current.get(key) === value,
+  )
 }
 
 /** 경로 → 브레드크럼(상위 메뉴 · 현재 메뉴). 매칭되지 않으면 빈 배열. */
-export function navBreadcrumb(pathname: string): readonly string[] {
+export function navBreadcrumb(pathname: string, search?: NavSearch): readonly string[] {
   for (const item of NAV_ITEMS) {
-    const child = item.children?.find((candidate) => isPathActive(candidate.href, pathname))
+    const child = item.children?.find((candidate) => isPathActive(candidate.href, pathname, search))
 
     if (child !== undefined) {
       return [item.label, child.label]
     }
 
-    if (isNavItemActive(item, pathname)) {
+    if (isNavItemActive(item, pathname, search)) {
       return [item.label]
     }
   }

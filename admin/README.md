@@ -205,3 +205,17 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
   (프로젝트 기본값 기준 몇 통 수준) 관리자 몇 명을 연달아 초대하면 조용히 막힌다.
   초대와 비밀번호 재설정이 모두 메일에 의존하므로, 운영에서는 SMTP 연결이 선택이 아니다.
 - 첫 슈퍼어드민은 §4.5 의 스크립트로 만든다. 그 뒤로는 화면에서 초대한다.
+
+## 6. 이메일 문의 (고객지원 › 이메일 문의)
+
+`contact@` 로 들어온 메일을 1:1 문의와 같은 화면에서 처리한다. 설계는
+`docs/admin/EMAIL-INQUIRY-PLAN.md`, 켜는 순서는 `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` 다.
+
+- 수신·발신은 Supabase Edge Function 둘(`supabase/functions/email-inbound` · `email-outbound`)이
+  맡고, 제공자(Resend) API 키·웹훅 서명 키는 **함수 secret 에만** 있다. 관리자 앱에는 새 환경 변수가
+  없다 — 답신 액션(`lib/actions/inquiries-actions.ts` · `inquiry-email-actions.ts`)은 운영자의
+  JWT 로 `email-outbound` 를 호출할 뿐이다(`lib/email/send-inquiry-reply.ts`).
+- 제공자 어댑터·서명 검증·본문 정제 같은 순수 로직은 `supabase/functions/_shared/email/*.ts` 에 있고
+  루트 vitest(`tests/unit/email/**`)가 검증한다. Deno 전용 코드는 `_shared/deno/` 와 각 함수 폴더에만 둔다.
+- 사이드바의 `1:1 문의` · `이메일 문의` 는 `/inquiries?source=web|email` 프리셋이다. 새 라우트가 아니다.
+- 이메일 문의는 `user_id` 가 항상 null 이다(메일 주소로 회원을 연결하지 않는다 — 사칭 위험).

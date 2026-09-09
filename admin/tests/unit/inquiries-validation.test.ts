@@ -7,10 +7,12 @@ import {
   inquiryReplySchema,
   inquiryStatusSchema,
   isCancelledInquiry,
+  isInquirySource,
   maskAccountId,
   parseInquiryFilters,
   sanitizeInquirySearch,
   statusesForTab,
+  toInquirySource,
 } from '@/lib/validation/inquiries'
 
 const INQUIRY_ID = '11111111-2222-4333-8444-555555555555'
@@ -107,9 +109,9 @@ describe('inquiryReplySchema', () => {
 
 describe('inquiryStatusSchema', () => {
   it('enum 밖의 상태를 거부한다', () => {
-    expect(inquiryStatusSchema.safeParse({ inquiryId: INQUIRY_ID, status: 'deleted' }).success).toBe(
-      false,
-    )
+    expect(
+      inquiryStatusSchema.safeParse({ inquiryId: INQUIRY_ID, status: 'deleted' }).success,
+    ).toBe(false)
     expect(inquiryStatusSchema.safeParse({ inquiryId: INQUIRY_ID, status: 'closed' }).success).toBe(
       true,
     )
@@ -182,6 +184,21 @@ describe('parseInquiryFilters', () => {
     expect(parseInquiryFilters({ category: 'DROP TABLE' }).category).toBeNull()
   })
 
+  it('출처는 web · email 만 받는다', () => {
+    expect(parseInquiryFilters({ source: 'web' }).source).toBe('web')
+    expect(parseInquiryFilters({ source: 'email' }).source).toBe('email')
+  })
+
+  it('출처가 없거나 모르는 값이면 전체(null)다', () => {
+    expect(parseInquiryFilters({}).source).toBeNull()
+    expect(parseInquiryFilters({ source: 'sms' }).source).toBeNull()
+    expect(parseInquiryFilters({ source: '' }).source).toBeNull()
+  })
+
+  it('같은 키가 반복되면 첫 값만 쓴다', () => {
+    expect(parseInquiryFilters({ source: ['email', 'web'] }).source).toBe('email')
+  })
+
   it('날짜는 YYYY-MM-DD 만 받는다', () => {
     expect(parseInquiryFilters({ from: '2026-09-08' }).from).toBe('2026-09-08')
     expect(parseInquiryFilters({ from: '2026/09/08' }).from).toBeNull()
@@ -192,5 +209,25 @@ describe('parseInquiryFilters', () => {
 describe('statusesForTab', () => {
   it('전체 탭은 네 상태를 모두 담는다', () => {
     expect(statusesForTab('all')).toEqual(['pending', 'in_progress', 'answered', 'closed'])
+  })
+})
+
+describe('isInquirySource', () => {
+  it('알려진 출처만 통과시킨다', () => {
+    expect(isInquirySource('web')).toBe(true)
+    expect(isInquirySource('email')).toBe(true)
+    expect(isInquirySource('EMAIL')).toBe(false)
+    expect(isInquirySource(null)).toBe(false)
+    expect(isInquirySource(undefined)).toBe(false)
+  })
+})
+
+/* DB 열이 text 라 제약 밖의 값이 들어올 여지가 있다. 화면이 비는 것보다 '웹'으로
+   보이는 편이 안전하다 — 운영자가 목록에서 그 문의를 놓치지 않는다. */
+describe('toInquirySource', () => {
+  it('모르는 값은 웹으로 떨어뜨린다', () => {
+    expect(toInquirySource('email')).toBe('email')
+    expect(toInquirySource('kakao')).toBe('web')
+    expect(toInquirySource(null)).toBe('web')
   })
 })

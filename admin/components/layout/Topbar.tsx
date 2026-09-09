@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 import { signOutAction } from '@/lib/actions/auth-actions'
 import { navBreadcrumb } from '@/lib/nav'
@@ -16,7 +16,9 @@ import type { AdminUser } from '@/lib/auth/require-admin'
  */
 export function Topbar({ admin, onOpenSidebar }: { admin: AdminUser; onOpenSidebar: () => void }) {
   const pathname = usePathname()
-  const crumbs = navBreadcrumb(pathname)
+  /* 프리셋 메뉴(`/inquiries?source=email`)는 쿼리로만 구분된다 — 브레드크럼도 같이 본다. */
+  const search = useSearchParams()
+  const crumbs = navBreadcrumb(pathname, search)
 
   return (
     <header className="border-line bg-surface/95 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur lg:px-8">

@@ -251,6 +251,21 @@ export type Database = {
           },
         ]
       }
+      email_inbound_events: {
+        Row: {
+          id: string
+          received_at: string
+        }
+        Insert: {
+          id: string
+          received_at?: string
+        }
+        Update: {
+          id?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer: string
@@ -384,8 +399,14 @@ export type Database = {
           contact_email: string | null
           content: string
           created_at: string
+          email_auth: Json | null
+          email_from: string | null
+          email_from_name: string | null
+          email_message_id: string | null
+          email_thread_key: string | null
           id: string
           privacy_consent: boolean
+          source: string
           status: Database["public"]["Enums"]["inquiry_status"]
           title: string
           type: string
@@ -401,8 +422,14 @@ export type Database = {
           contact_email?: string | null
           content: string
           created_at?: string
+          email_auth?: Json | null
+          email_from?: string | null
+          email_from_name?: string | null
+          email_message_id?: string | null
+          email_thread_key?: string | null
           id?: string
           privacy_consent?: boolean
+          source?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
           title: string
           type: string
@@ -418,8 +445,14 @@ export type Database = {
           contact_email?: string | null
           content?: string
           created_at?: string
+          email_auth?: Json | null
+          email_from?: string | null
+          email_from_name?: string | null
+          email_message_id?: string | null
+          email_thread_key?: string | null
           id?: string
           privacy_consent?: boolean
+          source?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
           title?: string
           type?: string
@@ -442,6 +475,9 @@ export type Database = {
           author_name: string
           content: string
           created_at: string
+          delivery_status: string | null
+          direction: string
+          email_message_id: string | null
           id: string
           inquiry_id: string
           updated_at: string
@@ -451,6 +487,9 @@ export type Database = {
           author_name?: string
           content: string
           created_at?: string
+          delivery_status?: string | null
+          direction?: string
+          email_message_id?: string | null
           id?: string
           inquiry_id: string
           updated_at?: string
@@ -460,6 +499,9 @@ export type Database = {
           author_name?: string
           content?: string
           created_at?: string
+          delivery_status?: string | null
+          direction?: string
+          email_message_id?: string | null
           id?: string
           inquiry_id?: string
           updated_at?: string

@@ -13,7 +13,7 @@ describe('NAV_ITEMS', () => {
       '/community/posts',
       '/reports',
       '/members',
-      '/inquiries',
+      '/inquiries?source=web',
       '/gacha',
       '/rankings',
       '/settings',
@@ -106,11 +106,33 @@ describe('isPathActive', () => {
   it('should not match a path that merely shares a prefix', () => {
     expect(isPathActive('/news', '/newsletter')).toBe(false)
   })
+
+  /* 고객지원의 두 하위는 같은 라우트를 가리키는 필터 프리셋이다 — 쿼리를 보지 않으면
+     '1:1 문의'와 '이메일 문의'가 언제나 동시에 활성으로 보인다. */
+  it('should require every query param of a preset href to match', () => {
+    expect(isPathActive('/inquiries?source=email', '/inquiries', 'source=email')).toBe(true)
+    expect(isPathActive('/inquiries?source=email', '/inquiries', 'source=web')).toBe(false)
+    expect(isPathActive('/inquiries?source=email', '/inquiries', '')).toBe(false)
+    expect(isPathActive('/inquiries?source=email', '/inquiries')).toBe(false)
+  })
+
+  it('should ignore query params the href does not mention', () => {
+    expect(
+      isPathActive('/inquiries?source=email', '/inquiries', 'page=3&source=email&status=all'),
+    ).toBe(true)
+  })
+
+  it('should accept URLSearchParams as well as a string', () => {
+    const search = new URLSearchParams({ source: 'email' })
+
+    expect(isPathActive('/inquiries?source=email', '/inquiries', search)).toBe(true)
+  })
 })
 
 describe('isNavItemActive', () => {
   const dashboard = NAV_ITEMS[0]
   const community = NAV_ITEMS[2]
+  const support = NAV_ITEMS[5]
 
   it('should treat the dashboard as active only on the exact root path', () => {
     expect(dashboard).toBeDefined()
@@ -121,6 +143,17 @@ describe('isNavItemActive', () => {
   it('should stay active while a child route is open', () => {
     expect(community).toBeDefined()
     expect(isNavItemActive(community!, '/community/comments')).toBe(true)
+  })
+
+  /* 상세 화면과 "출처 없는 목록"에서 부모가 접히면 운영자가 목록으로 돌아갈 길을 잃는다. */
+  it('should keep the parent open when no source preset is selected', () => {
+    expect(support).toBeDefined()
+    expect(isNavItemActive(support!, '/inquiries')).toBe(true)
+    expect(support!.children?.some((child) => isPathActive(child.href, '/inquiries'))).toBe(false)
+  })
+
+  it('should keep the parent open on a detail route', () => {
+    expect(isNavItemActive(support!, '/inquiries/11111111-2222-4333-8444-555555555555')).toBe(true)
   })
 })
 
@@ -135,5 +168,14 @@ describe('navBreadcrumb', () => {
 
   it('should return an empty array for an unknown route', () => {
     expect(navBreadcrumb('/nowhere')).toEqual([])
+  })
+
+  it('should name the source preset when the query says so', () => {
+    expect(navBreadcrumb('/inquiries', 'source=email')).toEqual(['고객지원', '이메일 문의'])
+    expect(navBreadcrumb('/inquiries', 'source=web')).toEqual(['고객지원', '1:1 문의'])
+  })
+
+  it('should fall back to the parent label when no preset matches', () => {
+    expect(navBreadcrumb('/inquiries')).toEqual(['고객지원'])
   })
 })

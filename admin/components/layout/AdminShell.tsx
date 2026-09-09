@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
@@ -24,7 +24,13 @@ export function AdminShell({ admin, children }: { admin: AdminUser; children: Re
 
   return (
     <ToastProvider>
-      <Sidebar isOpen={isSidebarOpen} onNavigate={closeSidebar} permissions={admin.permissions} />
+      {/* 사이드바·상단 바는 `useSearchParams()` 로 프리셋 메뉴(출처 필터)를 구분한다.
+          관리자 라우트는 레이아웃의 `requireAdmin()`(쿠키) 때문에 모두 동적이라 실제로
+          폴백까지 가지 않지만, Next 문서가 요구하는 경계를 명시해 빌드가 정적 렌더를
+          시도할 때 깨지지 않게 한다. */}
+      <Suspense fallback={null}>
+        <Sidebar isOpen={isSidebarOpen} onNavigate={closeSidebar} permissions={admin.permissions} />
+      </Suspense>
 
       {/* 드로어가 열렸을 때만 존재하는 백드롭. 데스크톱(lg)에서는 아예 렌더하지 않는다. */}
       {isSidebarOpen && (
@@ -37,7 +43,9 @@ export function AdminShell({ admin, children }: { admin: AdminUser; children: Re
       )}
 
       <div className="lg:pl-[260px]">
-        <Topbar admin={admin} onOpenSidebar={openSidebar} />
+        <Suspense fallback={null}>
+          <Topbar admin={admin} onOpenSidebar={openSidebar} />
+        </Suspense>
         <main className="mx-auto w-full max-w-[1440px] px-4 py-6 lg:px-8">{children}</main>
       </div>
     </ToastProvider>

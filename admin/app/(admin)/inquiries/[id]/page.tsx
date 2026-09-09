@@ -11,7 +11,11 @@ import { Button, Card, CardBody, CardHeader, PageHeader } from '@/components/ui'
 import { hasPermission } from '@/lib/auth/permissions'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { getInquiryDetail, getInquiryReplies } from '@/lib/data/inquiries'
-import { isCancelledInquiry } from '@/lib/validation/inquiries'
+import {
+  inquiryCategoryLabel,
+  inquiryTypeLabel,
+  isCancelledInquiry,
+} from '@/lib/validation/inquiries'
 
 import type { Metadata } from 'next'
 
@@ -38,12 +42,19 @@ export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id
   const replies = await getInquiryReplies(inquiry.id)
   // 사용자가 스스로 취소한 접수는 읽기 전용이다(액션도 같은 규칙으로 거절한다).
   const isLocked = isCancelledInquiry(inquiry.cancelledAt)
+  /* 이메일 문의에는 취소할 사용자가 없으므로 위 잠금은 항상 false 다 — 그래도 규칙을
+     한 줄로 유지한다. 출처는 화면 곳곳(메타·스레드·답신 폼)의 문구를 가른다. */
+  const isEmail = inquiry.source === 'email'
 
   return (
     <>
       <PageHeader
         title={inquiry.title}
-        description={`${inquiry.category} · ${inquiry.type}`}
+        description={
+          isEmail
+            ? `이메일 · ${inquiry.emailFrom ?? '(발신자 없음)'}`
+            : `${inquiryCategoryLabel(inquiry.category)} · ${inquiryTypeLabel(inquiry.type)}`
+        }
         action={
           <div className="flex flex-wrap items-center gap-2">
             {/* 상태 문구는 화면 곳곳(선택 상자·토스트)에 다시 나오므로 검증용 표식을 둔다. */}
@@ -95,14 +106,18 @@ export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id
           </CardBody>
         </Card>
 
-        <InquiryReplyThread replies={replies} />
+        <InquiryReplyThread replies={replies} isEmail={isEmail} canWrite={canWrite} />
 
         {!canWrite || isLocked ? null : inquiry.status === 'closed' ? (
           <p className="border-line bg-page text-muted rounded-card border px-4 py-3 text-[13px]">
             종료된 문의입니다. 답변을 이어가려면 상태를 &lsquo;처리 중&rsquo;으로 되돌려 주세요.
           </p>
         ) : (
-          <InquiryReplyForm inquiryId={inquiry.id} adminNickname={admin.nickname} />
+          <InquiryReplyForm
+            inquiryId={inquiry.id}
+            adminNickname={admin.nickname}
+            isEmail={isEmail}
+          />
         )}
       </div>
     </>

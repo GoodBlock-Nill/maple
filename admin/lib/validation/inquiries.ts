@@ -1,8 +1,10 @@
 import { z } from 'zod'
 
 import { firstValue, type QueryParams } from '@/lib/utils/table-query'
+import { isInquirySource } from '@/lib/validation/inquiry-source'
 
 import type { Enums } from '@/lib/supabase/types'
+import type { InquirySource } from '@/lib/validation/inquiry-source'
 
 /**
  * 1:1 문의 화면의 입력 계약 — 상태 전이 · 목록 필터 · 답변 폼.
@@ -10,7 +12,12 @@ import type { Enums } from '@/lib/supabase/types'
  * 서버 액션은 클라이언트 검증을 신뢰하지 않고 여기서 다시 파싱한다. 상태 전이는
  * 화면(select 옵션)과 액션이 **같은 표**를 보고 판단해야 "화면에는 없는데 직접
  * POST 하면 통과하는" 구멍이 생기지 않는다.
+ *
+ * 출처(웹 · 이메일)는 의존성 없는 `inquiry-source.ts` 가 갖고 여기서 다시 내보낸다 —
+ * 기존 임포트 경로를 그대로 쓰게 하면서 이 파일의 300줄 상한을 지키기 위해서다.
  */
+
+export * from '@/lib/validation/inquiry-source'
 
 export type InquiryStatus = Enums<'inquiry_status'>
 
@@ -162,6 +169,8 @@ export type InquiryFilters = {
   /** '접수 취소' 탭에서만 true. 취소분은 '종료'·'전체' 탭에도 함께 보인다. */
   cancelledOnly: boolean
   category: string | null
+  /** 출처 프리셋(사이드바의 '1:1 문의' · '이메일 문의'). null 이면 전체. */
+  source: InquirySource | null
   search: string | null
   /** `YYYY-MM-DD` (한국시간 기준 날짜). 데이터 계층이 UTC 경계로 환산한다. */
   from: string | null
@@ -171,6 +180,7 @@ export type InquiryFilters = {
 export function parseInquiryFilters(params: QueryParams): InquiryFilters {
   const tab = parseInquiryStatusTab(params.status)
   const category = firstValue(params.category)
+  const source = firstValue(params.source)
 
   return {
     tab,
@@ -179,6 +189,8 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
       INQUIRY_STATUS_TABS.find((option) => option.value === tab)?.cancelledOnly === true,
     // 목록에 없는 카테고리는 무시한다. 임의 문자열이 그대로 질의에 들어가지 않게 한다.
     category: category !== null && INQUIRY_CATEGORIES.includes(category) ? category : null,
+    // 모르는 출처는 필터를 걸지 않는다(= 전체). 임의 문자열이 질의로 흘러가지 않게 한다.
+    source: isInquirySource(source) ? source : null,
     search: sanitizeInquirySearch(params.q),
     from: parseDateParam(params.from),
     to: parseDateParam(params.to),

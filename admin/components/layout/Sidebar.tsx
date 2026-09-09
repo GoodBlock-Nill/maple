@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useMemo } from 'react'
 
 import { NavIconGlyph } from '@/components/layout/nav-icons'
@@ -30,6 +30,8 @@ export function Sidebar({
   permissions: ModulePermissions
 }) {
   const pathname = usePathname()
+  /* 고객지원의 하위 두 개는 같은 경로의 출처 필터 프리셋이라 쿼리까지 봐야 구분된다. */
+  const search = useSearchParams()
   const items = useMemo(() => visibleNavItems(permissions), [permissions])
 
   return (
@@ -52,7 +54,7 @@ export function Sidebar({
 
       <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-6">
         {items.map((item) => {
-          const isActive = isNavItemActive(item, pathname)
+          const isActive = isNavItemActive(item, pathname, search)
 
           return (
             <li key={item.href}>
@@ -83,7 +85,7 @@ export function Sidebar({
               {isActive && item.children !== undefined && (
                 <ul className="mt-0.5 mb-1 flex flex-col gap-0.5 pl-[42px]">
                   {item.children.map((child) => {
-                    const isChildActive = isPathActive(child.href, pathname)
+                    const isChildActive = isPathActive(child.href, pathname, search)
 
                     return (
                       <li key={child.href}>

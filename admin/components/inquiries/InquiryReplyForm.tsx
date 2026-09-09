@@ -23,14 +23,35 @@ const OPERATOR_NAME = '운영자'
  *
  * 성공하면 폼을 직접 비운다 — `revalidatePath` 로 스레드는 갱신되지만 입력값은
  * 클라이언트 상태라 그대로 남아, 같은 답변을 두 번 등록하기 쉽다.
+ *
+ * 이메일 문의는 **되돌릴 수 없는 발송**이라 문구를 바꾼다. "답변 등록"이라고 적혀
+ * 있으면 운영자가 콘솔 안에만 남는 메모로 오해하고 계정 정보를 적을 수 있다.
  */
+const COPY = {
+  web: {
+    description: "등록하면 사용자의 '내 문의 내역' 화면에 바로 표시됩니다.",
+    hint: '사용자의 ‘내 문의 내역’ 화면에 평문으로 노출됩니다. 줄바꿈은 유지되고 마크다운은 해석되지 않습니다.',
+    submit: '답변 등록',
+    pending: '등록 중…',
+  },
+  email: {
+    description: '저장한 답신은 사용자의 메일 주소로 발송되고 이 스레드에 남습니다.',
+    hint: '사용자의 메일 주소로 발송됩니다. 계정 정보나 개인정보는 적지 마세요.',
+    submit: '이메일로 답신 보내기',
+    pending: '발송 중…',
+  },
+} as const
+
 export function InquiryReplyForm({
   inquiryId,
   adminNickname,
+  isEmail,
 }: {
   inquiryId: string
   adminNickname: string
+  isEmail: boolean
 }) {
+  const copy = isEmail ? COPY.email : COPY.web
   const formRef = useRef<HTMLFormElement>(null)
   const { showToast } = useToast()
 
@@ -53,10 +74,7 @@ export function InquiryReplyForm({
 
   return (
     <Card>
-      <CardHeader
-        title="답변 작성"
-        description="등록하면 사용자의 '내 문의 내역' 화면에 바로 표시됩니다."
-      />
+      <CardHeader title="답변 작성" description={copy.description} />
       <CardBody>
         <form ref={formRef} action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="inquiryId" value={inquiryId} />
@@ -70,7 +88,7 @@ export function InquiryReplyForm({
             required
             maxLength={INQUIRY_REPLY_MAX_LENGTH}
             placeholder="사용자가 그대로 읽는 문장입니다."
-            hint="사용자의 ‘내 문의 내역’ 화면에 평문으로 노출됩니다. 줄바꿈은 유지되고 마크다운은 해석되지 않습니다."
+            hint={copy.hint}
             error={state.fieldErrors?.content}
           />
 
@@ -103,7 +121,7 @@ export function InquiryReplyForm({
                 ))}
               </select>
               <Button type="submit" disabled={isPending}>
-                {isPending ? '등록 중…' : '답변 등록'}
+                {isPending ? copy.pending : copy.submit}
               </Button>
             </div>
           </div>
