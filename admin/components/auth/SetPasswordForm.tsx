@@ -9,7 +9,7 @@ import { setPasswordAction } from '@/lib/actions/auth-actions'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { ADMIN_PASSWORD_MIN_LENGTH } from '@/lib/validation/auth'
 
-/** 비밀번호 재설정(`/reset-password`)과 초대 수락(`/invite/accept`)이 함께 쓴다. */
+/** 비밀번호 재설정(`/reset-password`)에서 쓴다. */
 export function SetPasswordForm({
   submitLabel,
   nextPath = '/',

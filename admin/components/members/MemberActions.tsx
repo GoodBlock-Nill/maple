@@ -96,7 +96,7 @@ export function MemberActions({
         description={
           role === 'admin'
             ? `${nickname} 님을 일반 사용자로 되돌립니다. 계정과 작성 이력은 그대로 남습니다.`
-            : `${nickname} 님에게 관리 콘솔 전체 권한을 부여합니다. 초대 기록(admin_invites)이 함께 남습니다.`
+            : `${nickname} 님에게 관리 콘솔 전체 권한을 부여합니다. 관리자 앱 로그인 안내는 별도로 해 주세요.`
         }
       >
         <form action={roleAction} className="flex flex-col gap-4">

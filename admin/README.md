@@ -26,9 +26,9 @@ Supabase 값 3개와 `REVALIDATE_SECRET` 을 **같은 값으로** 쓰고, 여기
 ```
 admin/
   app/
-    (auth)/        로그인 · 비밀번호 재설정 · 초대 수락   (사이드바 없음)
+    (auth)/        로그인 · 비밀번호 재설정                 (사이드바 없음)
     (admin)/       인증된 관리 화면 전부                  (layout 이 requireAdmin())
-    auth/callback/ 초대·재설정 메일 링크 착지점
+    auth/callback/ 재설정 메일 링크 착지점
   components/
     ui/            공용 프리미티브 (Button · Table · Dialog · Toast …)
     layout/        AdminShell · Sidebar · Topbar · ComingSoon
@@ -64,8 +64,9 @@ admin/
 - **서비스 롤은 Auth Admin API 에만.** 그 외 읽기·쓰기는 세션 클라이언트로 하고
   RLS(`public.is_admin()`)가 다시 검사하게 둔다. 서비스 롤을 일반 경로에 쓰면
   권한 버그가 조용히 통과한다.
-- **role 은 화면 입력으로 정하지 않는다.** 관리자 승격의 유일한 근거는
-  `admin_invites` 의 pending 행이다(`supabase/README.md` §6.2).
+- **role 은 화면 입력으로 정하지 않는다.** 관리자 승격은 회원 상세의
+  `changeMemberRoleAction` 한 곳에서만 하고, `admin_invites` 에 accepted 행을 근거로 남긴다.
+  이메일 초대 흐름은 2026-09-09 제품 결정으로 제거했다(테이블·트리거는 유지).
 - **Tailwind 클래스는 리터럴로.** `bg-${tone}` 처럼 조립하면 유틸리티가 생성되지 않는다.
   토큰은 `app/globals.css` 의 `@theme` 한곳에 있다.
 - **날짜는 `lib/utils/format-date.ts`.** `toLocaleString` 은 런타임 로캘에 따라
@@ -98,6 +99,6 @@ admin/
 
 - Supabase Auth → URL Configuration 의 **Redirect URLs** 에 관리자 도메인
   (`http://localhost:3100/**`, 배포 후 `https://<admin-domain>/**`)을 추가한다.
-  등록하지 않으면 초대·재설정 링크가 `redirectTo` 를 무시하고 사용자 사이트로 간다.
-- Supabase 기본 메일러는 **시간당 발송 한도가 매우 낮다**. 관리자 초대를 실제로
-  운영하려면 커스텀 SMTP 를 연결해야 한다.
+  등록하지 않으면 비밀번호 재설정 링크가 `redirectTo` 를 무시하고 사용자 사이트로 간다.
+- Supabase 기본 메일러는 **시간당 발송 한도가 매우 낮다**. 비밀번호 재설정 메일을
+  실제로 운영하려면 커스텀 SMTP 를 연결해야 한다.

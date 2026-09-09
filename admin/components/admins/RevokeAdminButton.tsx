@@ -30,7 +30,7 @@ export function RevokeAdminButton({
   const [isOpen, setOpen] = useState(false)
   const { showToast } = useToast()
 
-  // 성공 처리는 액션 안에서 끝낸다(이유는 InviteAdminDialog 주석 참고).
+  // 성공 처리는 액션 안에서 끝낸다(성공 메시지를 컴포넌트에서 다루면 리다이렉트와 경합한다).
   const runRevoke = useCallback(
     async (prevState: FormState, formData: FormData): Promise<FormState> => {
       const result = await revokeAdminAction(prevState, formData)

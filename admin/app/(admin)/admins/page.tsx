@@ -1,11 +1,10 @@
-import { InviteAdminDialog } from '@/components/admins/InviteAdminDialog'
 import { RevokeAdminButton } from '@/components/admins/RevokeAdminButton'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Table, type Column } from '@/components/ui/Table'
 import { requireAdmin } from '@/lib/auth/require-admin'
-import { getAdmins, getPendingInvites, type AdminListItem, type InviteListItem } from '@/lib/data/admins'
+import { getAdmins, type AdminListItem } from '@/lib/data/admins'
 import { formatDateTime } from '@/lib/utils/format-date'
 
 import type { Metadata } from 'next'
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AdminsPage() {
-  const [me, admins, invites] = await Promise.all([requireAdmin(), getAdmins(), getPendingInvites()])
+  const [me, admins] = await Promise.all([requireAdmin(), getAdmins()])
 
   const adminColumns: readonly Column<AdminListItem>[] = [
     {
@@ -30,7 +29,11 @@ export default async function AdminsPage() {
         </span>
       ),
     },
-    { key: 'email', header: '이메일', cell: (row) => <span className="text-muted">{row.email}</span> },
+    {
+      key: 'email',
+      header: '이메일',
+      cell: (row) => <span className="text-muted">{row.email}</span>,
+    },
     {
       key: 'createdAt',
       header: '등록일',
@@ -48,31 +51,16 @@ export default async function AdminsPage() {
     },
   ]
 
-  const inviteColumns: readonly Column<InviteListItem>[] = [
-    { key: 'email', header: '이메일', cell: (row) => row.email },
-    {
-      key: 'status',
-      header: '상태',
-      className: 'w-28',
-      cell: () => <Badge tone="warn">수락 대기</Badge>,
-    },
-    {
-      key: 'createdAt',
-      header: '발송일',
-      className: 'w-44',
-      cell: (row) => <span className="text-muted">{formatDateTime(row.createdAt)}</span>,
-    },
-  ]
-
   return (
     <>
+      {/* 이메일 초대는 제품 결정(2026-09-09)으로 없앴다. 관리자는 사용자 사이트에 가입한
+          회원을 회원 상세에서 승격해서만 만든다. 여기서는 목록과 회수만 다룬다. */}
       <PageHeader
         title="관리자"
-        description="관리자 계정을 초대하고 권한을 회수합니다."
-        action={<InviteAdminDialog />}
+        description="관리자 목록과 권한 회수. 새 관리자는 회원 상세의 '관리자 권한 부여'로 승격합니다."
       />
 
-      <Card className="mb-6">
+      <Card>
         <CardHeader title={`관리자 ${admins.length}명`} />
         <Table
           columns={adminColumns}
@@ -80,20 +68,6 @@ export default async function AdminsPage() {
           getRowKey={(row) => row.id}
           caption="관리자 목록"
           emptyMessage="관리자가 없습니다."
-        />
-      </Card>
-
-      <Card>
-        <CardHeader
-          title="수락 대기 초대"
-          description="초대 메일을 보냈지만 아직 비밀번호를 설정하지 않은 계정입니다."
-        />
-        <Table
-          columns={inviteColumns}
-          rows={invites}
-          getRowKey={(row) => row.id}
-          caption="수락 대기 초대 목록"
-          emptyMessage="대기 중인 초대가 없습니다."
         />
       </Card>
     </>

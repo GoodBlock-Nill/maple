@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   ADMIN_PASSWORD_MIN_LENGTH,
   forgotPasswordSchema,
-  inviteAdminSchema,
   loginErrorMessage,
   loginSchema,
   sanitizeNextPath,
@@ -64,14 +63,9 @@ describe('setPasswordSchema', () => {
   })
 })
 
-describe('forgotPasswordSchema / inviteAdminSchema', () => {
+describe('forgotPasswordSchema', () => {
   it('should accept an email', () => {
     expect(forgotPasswordSchema.safeParse({ email: 'a@b.co' }).success).toBe(true)
-    expect(inviteAdminSchema.safeParse({ email: 'a@b.co' }).success).toBe(true)
-  })
-
-  it('should reject a missing email', () => {
-    expect(inviteAdminSchema.safeParse({ email: '   ' }).success).toBe(false)
   })
 })
 

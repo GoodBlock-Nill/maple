@@ -9,14 +9,6 @@ export type AdminListItem = {
   createdAt: string
 }
 
-export type InviteListItem = {
-  id: string
-  email: string
-  status: string
-  createdAt: string
-  acceptedAt: string | null
-}
-
 /**
  * 관리자 목록.
  *
@@ -43,29 +35,5 @@ export async function getAdmins(): Promise<readonly AdminListItem[]> {
     email: row.email ?? '-',
     nickname: row.nickname,
     createdAt: row.created_at,
-  }))
-}
-
-/** 아직 수락되지 않은 초대. 발송했는데 아무도 들어오지 않은 상황을 드러낸다. */
-export async function getPendingInvites(): Promise<readonly InviteListItem[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('admin_invites')
-    .select('id, email, status, created_at, accepted_at')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
-
-  if (error !== null) {
-    console.error('[admins] 초대 목록 조회 실패', error.message)
-
-    return []
-  }
-
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    email: row.email,
-    status: row.status,
-    createdAt: row.created_at,
-    acceptedAt: row.accepted_at,
   }))
 }
