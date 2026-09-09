@@ -5,6 +5,7 @@ import {
   NEWS_CATEGORY_VALUES,
 } from '@/lib/constants/board'
 import { DEFAULT_GACHA_TAB, GACHA_TAB_VALUES } from '@/lib/constants/guide'
+import { isPurgedAuthorName } from '@/lib/utils/author-display'
 
 import type {
   CommentRow,
@@ -126,11 +127,14 @@ export function toAdjacentNewsItem(row: AdjacentNewsSource): AdjacentNewsItem {
   }
 }
 
+/* 파기된 작성자는 스냅샷(`author_name`)으로만 알 수 있다 — 공개 조회는 profiles 를
+   읽지 못한다. 파기 배치가 스냅샷을 `탈퇴한 회원#…` 로 바꿔 두므로 접두사로 판정한다. */
 export function toComment(row: CommentSource): Comment {
   return {
     id: row.id,
     author: row.author_name,
     authorId: row.author_id,
+    authorPurged: isPurgedAuthorName(row.author_name),
     body: row.content,
     createdAt: row.created_at,
   }
@@ -145,6 +149,7 @@ export function toPost(row: PostSource, comments: readonly Comment[] = []): Post
     contentFormat: row.content_format,
     author: row.author_name,
     authorId: row.author_id,
+    authorPurged: isPurgedAuthorName(row.author_name),
     views: row.view_count,
     likes: row.like_count,
     createdAt: row.created_at,

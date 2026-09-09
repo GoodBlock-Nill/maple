@@ -9,6 +9,7 @@ import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
+import { mswLinkNotice } from '@/lib/utils/msw-link'
 import { suspensionBlockedMessage, suspensionNotice } from '@/lib/utils/suspension'
 import { createCommentSchema, createPostSchema } from '@/lib/validation/post'
 
@@ -26,6 +27,10 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
  * 그래도 뚫린 경우(우리가 읽은 프로필이 낡았다)에는 정책이 42501 로 막는다. 그때도
  * 일반 실패 문구가 아니라 같은 정지 안내로 옮겨 적는다 — 관리자 조치와 사용자가
  * 보는 화면 사이에 틈을 두지 않는다.
+ *
+ * 월드 계정 연동 필수(`FEATURES.postingRequiresMswLink`, 기본 OFF)도 같은 자리에서
+ * 검사한다. 탈퇴 대기 계정은 프록시·페이지가 /auth/restore 로 보내고, 뚫려도
+ * `is_withdrawn()` 정책이 42501 로 막는다.
  */
 
 const COMMUNITY_PATH = '/community'
@@ -63,6 +68,12 @@ export async function createPost(_prevState: FormState, formData: FormData): Pro
 
   if (suspended !== null) {
     return { formError: suspended }
+  }
+
+  const mswRequired = mswLinkNotice(user)
+
+  if (mswRequired !== null) {
+    return { formError: mswRequired }
   }
 
   /* 정제를 검증보다 **먼저** 한다. 상한(20,000자)은 실제로 저장되는 문자열을 재야
@@ -124,6 +135,12 @@ export async function createComment(_prevState: FormState, formData: FormData): 
 
   if (suspended !== null) {
     return { formError: suspended }
+  }
+
+  const mswRequired = mswLinkNotice(user)
+
+  if (mswRequired !== null) {
+    return { formError: mswRequired }
   }
 
   const parsed = createCommentSchema.safeParse({

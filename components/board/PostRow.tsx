@@ -10,7 +10,7 @@ import {
 import { MetaRow } from '@/components/board/MetaRow'
 import { Badge } from '@/components/ui/Badge'
 import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
-import { maskNickname } from '@/lib/utils/mask'
+import { authorLabel } from '@/lib/utils/author-display'
 
 import type { Post } from '@/types/domain'
 
@@ -36,7 +36,7 @@ export function PostRow({ post }: PostRowProps) {
         </div>
         {/* 폰에서는 뱃지 줄의 오른쪽 끝에 붙고(ml-auto), sm 이상에서는 뱃지 앞에 선다. */}
         <span className={BOARD_ROW_META_CLASS + ' order-1 ml-auto shrink-0 sm:order-2 sm:ml-0'}>
-          {maskNickname(post.author)}
+          {authorLabel(post)}
         </span>
         <Badge size="md" color={category.badge} className="order-1 sm:order-3">
           {category.label}

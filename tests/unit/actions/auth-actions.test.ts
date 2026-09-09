@@ -276,7 +276,60 @@ describe('completeOnboarding', () => {
     const result = await completeOnboarding(EMPTY_FORM_STATE, form(valid))
 
     // Assert
-    expect(result.fieldErrors?.mswUid).toBe('이미 등록된 UID입니다.')
+    expect(result.fieldErrors?.mswUid).toBe(
+      '이미 다른 계정에 연결된 월드 계정 UID입니다. 고객지원에 문의해 주세요.',
+    )
+  })
+})
+
+describe('completeOnboarding — 월드 계정 중복', () => {
+  const valid = {
+    nickname: '모험가',
+    ...VALID_MSW_FIELDS,
+    termsAgreed: 'on',
+    privacyAgreed: 'on',
+    ageConfirmed: 'on',
+  }
+
+  it('should explain a profile code collision on its own field', async () => {
+    // Arrange — 20260909000400 의 profiles_msw_profile_code_key(lower) 위반
+    stub = createSupabaseStub([
+      {
+        data: null,
+        error: {
+          code: '23505',
+          message: 'duplicate key value violates unique constraint "profiles_msw_profile_code_key"',
+        },
+      },
+    ])
+    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
+
+    // Act
+    const result = await completeOnboarding(EMPTY_FORM_STATE, form(valid))
+
+    // Assert
+    expect(result.fieldErrors?.mswProfileCode).toBe('이미 다른 계정에 연결된 프로필 코드입니다.')
+    expect(result.fieldErrors?.mswUid).toBeUndefined()
+  })
+})
+
+describe('socialSignIn — 탈퇴 대기 계정', () => {
+  it('should send a withdrawn member to the restore screen instead of the destination', async () => {
+    // Arrange
+    stub = createSupabaseStub([
+      {
+        data: { ...COMPLETE_PROFILE, deleted_at: '2026-09-01T00:00:00.000Z', purged_at: null },
+        error: null,
+      },
+    ])
+
+    // Act
+    const promise = socialSignIn(EMPTY_FORM_STATE, form({ provider: 'google', next: '/community' }))
+
+    // Assert
+    await expect(promise).rejects.toThrow(
+      `${REDIRECT_PREFIX}/auth/restore?next=${encodeURIComponent('/community')}`,
+    )
   })
 })
 
@@ -416,7 +469,9 @@ describe('updateAccount', () => {
     const result = await updateAccount(EMPTY_FORM_STATE, form(valid))
 
     // Assert
-    expect(result.fieldErrors?.mswUid).toBe('이미 등록된 UID입니다.')
+    expect(result.fieldErrors?.mswUid).toBe(
+      '이미 다른 계정에 연결된 월드 계정 UID입니다. 고객지원에 문의해 주세요.',
+    )
   })
 })
 

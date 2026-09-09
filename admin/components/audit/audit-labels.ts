@@ -58,7 +58,27 @@ const SEGMENT_LABELS: Record<string, string> = {
   promote_existing: '기존 계정 승격',
 }
 
+/**
+ * 조합으로는 만들 수 없는 예외 표기.
+ *
+ * 탈퇴·복구는 **행위자가 관리자가 아니라 본인**이다. "회원 탈퇴"라고만 적으면
+ * 운영자가 관리자 조치(강제 탈퇴)와 구분하지 못하고, 감사 로그의 쓰임 자체가
+ * 흐려진다. 그래서 누가 한 일인지를 라벨에 박아 둔다.
+ */
+const ACTION_LABELS: Record<string, string> = {
+  'member.withdraw': '회원 탈퇴(본인)',
+  'member.restore': '탈퇴 복구(본인)',
+  'member.purge': '개인정보 파기',
+  'member.force_withdraw': '강제 탈퇴',
+}
+
 export function auditActionLabel(action: string): string {
+  const override = ACTION_LABELS[action]
+
+  if (override !== undefined) {
+    return override
+  }
+
   const [domain, ...rest] = action.split('.')
   const verb = rest[rest.length - 1] ?? ''
   const middle = rest.slice(0, -1).map((segment) => SEGMENT_LABELS[segment] ?? segment)

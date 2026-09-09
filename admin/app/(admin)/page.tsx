@@ -8,6 +8,7 @@ import { requireAdmin } from '@/lib/auth/require-admin'
 import { COUNT_FAILED } from '@/lib/constants/messages'
 import { getDashboardMetrics, getRecentActivity, type MetricWindow } from '@/lib/data/dashboard'
 import { firstValue } from '@/lib/utils/table-query'
+import { PURGE_RETENTION_DAYS } from '@/lib/validation/member-status'
 
 import type { Metadata } from 'next'
 
@@ -59,7 +60,7 @@ export default async function DashboardPage(props: PageProps<'/'>) {
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label="신규 가입"
           value={format(metrics.profiles.today)}
@@ -97,6 +98,18 @@ export default async function DashboardPage(props: PageProps<'/'>) {
           hint="상태 pending"
           tone={isPositive(metrics.pendingInquiries) ? 'warn' : 'default'}
           testId="stat-inquiries"
+        />
+        <StatCard
+          label="탈퇴 대기"
+          value={format(metrics.withdrawnPending)}
+          hint={`파기까지 ${PURGE_RETENTION_DAYS}일 · 그 안에 재로그인하면 복구`}
+          testId="stat-withdrawn"
+        />
+        <StatCard
+          label="지난 7일 파기"
+          value={format(metrics.purgedThisWeek)}
+          hint="개인정보 영구 삭제 완료"
+          testId="stat-purged"
         />
       </div>
 

@@ -25,8 +25,11 @@ export const PRIVACY_POLICY_TITLE = '글자월드 개인정보처리방침'
 
 export const PRIVACY_POLICY_EFFECTIVE_DATE = '2026년 9월 18일'
 
-/** 문서 버전 쿼리 파라미터. 개정본이 추가되면 버전 선택 UI가 이 값을 늘린다. */
-export const PRIVACY_POLICY_VERSION = '20260918'
+/**
+ * 문서 버전 쿼리 파라미터. 개정본이 추가되면 버전 선택 UI가 이 값을 늘린다.
+ * `-2`: 회원 탈퇴 90일 보존·파기 규정 추가(2026-09-09, 시행일은 그대로 9/18).
+ */
+export const PRIVACY_POLICY_VERSION = '20260918-2'
 
 export const PRIVACY_POLICY_SECTIONS: readonly PolicySection[] = [
   SECTION_01,

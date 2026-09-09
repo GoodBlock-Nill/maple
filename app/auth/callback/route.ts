@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
+import { resolvePostAuthDestination } from '@/lib/auth/lifecycle'
 import { createClient } from '@/lib/supabase/server'
-import { isOnboardingComplete, ONBOARDING_PATH, sanitizePostAuthPath } from '@/lib/validation/auth'
 
 import type { NextRequest } from 'next/server'
 
@@ -16,12 +16,12 @@ import type { NextRequest } from 'next/server'
  * OAuth(구글·카카오)를 붙이면 그때부터 여기가 진입점이 된다. 미리 온보딩 분기까지
  * 맞춰 둔다.
  *
- * `next` 는 반드시 정규화한다. 그대로 리다이렉트하면 오픈 리다이렉트가 된다.
+ * `next` 는 반드시 정규화한다(`resolvePostAuthDestination` 안의 `sanitizePostAuthPath`).
+ * 그대로 리다이렉트하면 오픈 리다이렉트가 된다.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get('code')
-  const nextPath = sanitizePostAuthPath(searchParams.get('next'))
 
   // 제공자가 사용자 취소·설정 오류를 알릴 때 쓰는 규격(OAuth 2.0 §4.1.2.1).
   if (searchParams.get('error') !== null) {
@@ -39,18 +39,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL('/login?error=auth_failed', origin))
   }
 
+  /* 탈퇴 대기(deleted_at) → /auth/restore, 온보딩 미완료 → /auth/onboarding, 그 외 → next.
+     스텁 로그인(`stubSocialSignIn`)과 같은 함수로 판정한다. */
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at')
+    .select(
+      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at',
+    )
     .eq('id', data.user.id)
     .maybeSingle()
 
-  if (!isOnboardingComplete(profile)) {
-    const onboarding = new URL(ONBOARDING_PATH, origin)
-    onboarding.searchParams.set('next', nextPath)
-
-    return NextResponse.redirect(onboarding)
-  }
-
-  return NextResponse.redirect(new URL(nextPath, origin))
+  return NextResponse.redirect(
+    new URL(resolvePostAuthDestination(profile, searchParams.get('next')), origin),
+  )
 }

@@ -2,11 +2,11 @@ import 'server-only'
 
 import { countActivity } from '@/lib/data/member-activity'
 import { createClient } from '@/lib/supabase/server'
-import { DEFAULT_PAGE_SIZE, pageRange, type SortState } from '@/lib/utils/table-query'
+import { DEFAULT_PAGE_SIZE, pageRange } from '@/lib/utils/table-query'
 import { containsPattern, kstDayBoundary } from '@/lib/validation/moderation'
 
 import type { Tables, UserRole } from '@/lib/supabase/types'
-import type { MemberProvider, MemberStatusFilter } from '@/lib/validation/members'
+import type { MemberListParams } from '@/lib/validation/member-list-params'
 
 /* 회원 조회. `profiles_select_admin` 이 관리자에게만 전체 조회를 열어 주므로 세션
    클라이언트로 읽는다 — 서비스 롤로 읽으면 권한이 사라져도 목록이 그대로 보인다. */
@@ -23,6 +23,10 @@ export type MemberProfile = {
   suspensionReason: string | null
   mswUid: string | null
   mswProfileCode: string | null
+  /** 탈퇴 요청 시각. `null` 이면 정상. 판정은 `lib/validation/member-status.ts` 가 한다. */
+  deletedAt: string | null
+  /** 개인정보 파기 시각. `null` 이면 아직 파기 전(보존 기간 중이거나 정상). */
+  purgedAt: string | null
   termsAgreedAt: string | null
   privacyAgreedAt: string | null
   ageConfirmedAt: string | null
@@ -65,15 +69,10 @@ export type MemberActivity = {
   comments: readonly MemberCommentSummary[]
 }
 
-export type MemberListParams = {
-  q: string | null
-  status: MemberStatusFilter | null
-  provider: MemberProvider | null
-  from: string | null
-  to: string | null
-  sort: SortState
-  page: number
-}
+/* 쿼리스트링 파싱은 순수 모듈(`lib/validation/member-list-params.ts`)이 맡는다 —
+   서버 전용인 이 모듈에 두면 단위 테스트가 Supabase 클라이언트까지 끌어와야 한다.
+   호출부는 지금까지처럼 여기서 타입을 가져올 수 있게 이름만 다시 내보낸다. */
+export type { MemberListParams }
 
 export type MemberListResult = {
   rows: readonly MemberListItem[]
@@ -87,14 +86,29 @@ const ACTIVITY_LIMIT = 20
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const PROFILE_COLUMNS =
-  'id, nickname, email, avatar_url, provider, provider_id, role, suspended_until, suspension_reason, msw_uid, msw_profile_code, terms_agreed_at, privacy_agreed_at, age_confirmed_at, created_at, updated_at'
+  'id, nickname, email, avatar_url, provider, provider_id, role, suspended_until, suspension_reason, msw_uid, msw_profile_code, deleted_at, purged_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, created_at, updated_at'
 
 /* 컬럼 목록과 타입이 어긋나면 매퍼가 조용히 undefined 를 넣는다. 스키마에서 파생시킨다. */
 type ProfileRow = Pick<
   Tables<'profiles'>,
-  | 'id' | 'nickname' | 'email' | 'avatar_url' | 'provider' | 'provider_id' | 'role'
-  | 'suspended_until' | 'suspension_reason' | 'msw_uid' | 'msw_profile_code'
-  | 'terms_agreed_at' | 'privacy_agreed_at' | 'age_confirmed_at' | 'created_at' | 'updated_at'
+  | 'id'
+  | 'nickname'
+  | 'email'
+  | 'avatar_url'
+  | 'provider'
+  | 'provider_id'
+  | 'role'
+  | 'suspended_until'
+  | 'suspension_reason'
+  | 'msw_uid'
+  | 'msw_profile_code'
+  | 'deleted_at'
+  | 'purged_at'
+  | 'terms_agreed_at'
+  | 'privacy_agreed_at'
+  | 'age_confirmed_at'
+  | 'created_at'
+  | 'updated_at'
 >
 
 function toProfile(row: ProfileRow): MemberProfile {
@@ -110,6 +124,8 @@ function toProfile(row: ProfileRow): MemberProfile {
     suspensionReason: row.suspension_reason,
     mswUid: row.msw_uid,
     mswProfileCode: row.msw_profile_code,
+    deletedAt: row.deleted_at,
+    purgedAt: row.purged_at,
     termsAgreedAt: row.terms_agreed_at,
     privacyAgreedAt: row.privacy_agreed_at,
     ageConfirmedAt: row.age_confirmed_at,
@@ -139,12 +155,30 @@ export async function getMembers(params: MemberListParams): Promise<MemberListRe
     query = query.eq('provider', params.provider)
   }
 
+  /* 상태 필터. 뱃지와 달리 서로 배타적이지 않다 — "탈퇴 대기이면서 정지"인 회원은
+     양쪽에서 찾을 수 있어야 한다. 다만 '정상'만은 탈퇴·파기를 반드시 제외한다.
+     그 칸이 넓어지면 이미 나간 회원이 정상 명단에 섞인다. */
   if (params.status === 'admin') {
     query = query.eq('role', 'admin')
   } else if (params.status === 'suspended') {
     query = query.gt('suspended_until', now)
+  } else if (params.status === 'withdrawn') {
+    query = query.not('deleted_at', 'is', null).is('purged_at', null)
+  } else if (params.status === 'purged') {
+    query = query.not('purged_at', 'is', null)
   } else if (params.status === 'normal') {
-    query = query.eq('role', 'user').or(`suspended_until.is.null,suspended_until.lte.${now}`)
+    query = query
+      .eq('role', 'user')
+      .is('deleted_at', null)
+      .or(`suspended_until.is.null,suspended_until.lte.${now}`)
+  }
+
+  if (params.msw !== null) {
+    /* 월드 계정 중복 검색. 부분 일치를 쓰지 않는다 — UID 는 10~20자리 숫자라
+       부분 일치로 훑으면 관계없는 계정이 딸려 오고, 중복 점검의 답이 흐려진다.
+       프로필 코드는 대소문자를 가리지 않으므로 `ilike` 로 **정확히** 비교한다. */
+    const value = params.msw.replace(/[\\%_]/g, (match) => `\\${match}`)
+    query = query.or(`msw_uid.eq."${value}",msw_profile_code.ilike."${value}"`)
   }
 
   const since = kstDayBoundary(params.from)

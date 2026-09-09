@@ -13,6 +13,12 @@
 export const FEATURES = {
   mswAccountFields: process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS === 'true',
   /**
+   * 자유게시판 글쓰기·댓글을 월드 계정(UID)이 연동된 회원에게만 연다
+   * (docs/admin/ACCOUNT-WITHDRAWAL-PLAN.md 피드백 7 · 오너 결정 4: 준비만 하고 기본 OFF).
+   * 켜는 시점은 오너가 정한다. 켜면 `mswAccountFields` 도 함께 켜야 연동 경로가 열린다.
+   */
+  postingRequiresMswLink: process.env.NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW === 'true',
+  /**
    * 가이드(확률형 아이템 정보)·랭킹의 "서비스 준비 중" 화면. 개발팀이 실제 화면을
    * 보며 개발해야 하므로 기본값은 OPEN(준비 중 화면 OFF)이고, 오픈 전 잠시 막고
    * 싶을 때만 배포 환경 변수 `NEXT_PUBLIC_FEATURE_*_COMING_SOON=true` 로 켠다.

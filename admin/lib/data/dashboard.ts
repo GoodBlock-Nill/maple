@@ -32,6 +32,10 @@ export type DashboardMetrics = {
   comments: MetricWindow
   openReports: number | null
   pendingInquiries: number | null
+  /** 탈퇴 후 보존 기간 중(개인정보 파기 전)인 회원 수. */
+  withdrawnPending: number | null
+  /** 최근 7일 안에 개인정보가 파기된 회원 수. */
+  purgedThisWeek: number | null
 }
 
 export type ActivityKind = 'news' | 'community' | 'comment' | 'inquiry' | 'report'
@@ -114,7 +118,16 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
   const supabase = await createClient()
   const bounds = boundaries(now)
 
-  const [profiles, newsPosts, communityPosts, comments, reports, inquiries] = await Promise.all([
+  const [
+    profiles,
+    newsPosts,
+    communityPosts,
+    comments,
+    reports,
+    inquiries,
+    withdrawnPending,
+    purgedThisWeek,
+  ] = await Promise.all([
     windowFor('profiles', bounds, (since) =>
       supabase
         .from('profiles')
@@ -131,6 +144,19 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
     ),
     supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    /* 탈퇴 대기 = 탈퇴했고 아직 파기되지 않은 회원. 파기까지 남은 시간이 있는
+       사람들이라 이 숫자가 곧 "지금 복구가 가능한 회원 수"이기도 하다. */
+    supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .not('deleted_at', 'is', null)
+      .is('purged_at', null),
+    /* 파기는 되돌릴 수 없다. 배치가 도는지, 몇 명이 지워졌는지를 대시보드에서
+       바로 볼 수 없으면 사고가 나도 며칠 뒤에야 알게 된다. */
+    supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .gte('purged_at', bounds.week),
   ])
 
   return {
@@ -140,6 +166,8 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
     comments,
     openReports: toCount('reports:open', reports),
     pendingInquiries: toCount('inquiries:pending', inquiries),
+    withdrawnPending: toCount('profiles:withdrawn', withdrawnPending),
+    purgedThisWeek: toCount('profiles:purged', purgedThisWeek),
   }
 }
 

@@ -44,6 +44,56 @@ describe('회원 모듈 — 관리자 승격 제거', () => {
   })
 })
 
+/**
+ * 탈퇴·파기 조작은 **삭제 버튼이 아니다**. 계정 행은 남고 글·댓글도 남는다.
+ *
+ * 소스를 읽어 확인하는 이유는 위와 같다 — 렌더 테스트는 컨트롤이 사라졌을 때가
+ * 아니라 **되살아났을 때** 통과해 버린다. 특히 즉시 파기는 되돌릴 수 없으므로
+ * "슈퍼어드민 · 탈퇴 대기 · 본인 아님" 세 조건이 화면에서 빠지면 안 된다.
+ */
+describe('회원 모듈 — 탈퇴 · 파기 컨트롤', () => {
+  it('should gate the purge button behind super admin, withdrawn and not-self', () => {
+    const source = read('components/members/MemberActions.tsx')
+
+    expect(source).toContain('MemberPurgeDialog')
+    expect(source).toContain("lifecycle === 'withdrawn' && isSuperAdmin && !isSelf")
+  })
+
+  it('should offer force withdrawal only for active members other than yourself', () => {
+    const source = read('components/members/MemberActions.tsx')
+
+    expect(source).toContain('MemberForceWithdrawDialog')
+    expect(source).toContain("lifecycle === 'active' && !isSelf")
+  })
+
+  it('should drop every write control once the account is purged', () => {
+    const source = read('components/members/MemberActions.tsx')
+
+    expect(source).toContain("if (lifecycle === 'purged')")
+  })
+
+  it('should spell out what actually happens in the confirm dialogs', () => {
+    const purge = read('components/members/MemberPurgeDialog.tsx')
+    const withdraw = read('components/members/MemberForceWithdrawDialog.tsx')
+
+    expect(purge).toContain('개인정보 즉시 파기')
+    expect(purge).toContain('되돌릴 수 없습니다')
+    expect(purge).toContain('작성한 글과 댓글은 남고')
+    expect(purge).toContain('파기 중…')
+
+    expect(withdraw).toContain('90일 후 개인정보가 파기되며')
+    expect(withdraw).toContain('진행 중인 이용 제한은 유지됩니다')
+    expect(withdraw).toContain('탈퇴 처리 중…')
+  })
+
+  it('should hide personal information for purged members', () => {
+    const source = read('components/members/MemberProfileCard.tsx')
+
+    expect(source).toContain('isPurged')
+    expect(source).toContain('{!isPurged && (')
+  })
+})
+
 describe('로그인 — 간편로그인 제거', () => {
   it('should not ship social sign-in components', () => {
     for (const file of [

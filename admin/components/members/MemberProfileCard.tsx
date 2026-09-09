@@ -1,7 +1,10 @@
-import { MemberIdentity, MemberStatusBadge } from '@/components/members/MemberIdentity'
+import Link from 'next/link'
+
+import { MemberField } from '@/components/members/MemberField'
+import { MemberIdentity, MemberStatusBadges } from '@/components/members/MemberIdentity'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
-import { cn } from '@/lib/utils/cn'
 import { formatDateTime } from '@/lib/utils/format-date'
+import { memberLifecycle } from '@/lib/validation/member-status'
 import { isPermanentSuspension, isSuspended, maskEmail } from '@/lib/validation/members'
 
 import type { MemberProfile } from '@/lib/data/members'
@@ -12,6 +15,10 @@ import type { ReactNode } from 'react'
  *
  * 운영자가 문의를 처리할 때 필요한 값(MSW UID·프로필 코드·동의 시각)이 화면에 없으면
  * 결국 DB 콘솔을 열게 되고, 그 순간 감사 로그가 남지 않는 경로가 생긴다.
+ *
+ * **예외는 개인정보가 파기된 계정뿐이다.** 이메일·공급자 ID·월드 계정 칸은 아예
+ * 그리지 않는다 — 값이 비어 있는 칸을 남겨 두면 "조회에 실패했나?"로 읽히고,
+ * 혹시 남아 있는 값이 있다면 파기의 취지에 어긋난다.
  */
 export function MemberProfileCard({
   member,
@@ -23,35 +30,47 @@ export function MemberProfileCard({
   /* 현재 시각 비교는 헬퍼에 맡긴다. 컴포넌트 본문에서 `Date.now()` 를 직접 부르면
      렌더가 순수하지 않게 되고(react-hooks/purity) 값이 렌더마다 흔들린다. */
   const suspended = isSuspended(member.suspendedUntil)
+  const isPurged = memberLifecycle(member) === 'purged'
 
   return (
     <Card className="mb-5">
       <CardHeader
-        title={
-          <MemberIdentity nickname={member.nickname} provider={member.provider} />
-        }
+        title={<MemberIdentity nickname={member.nickname} provider={member.provider} />}
         description={
           <span className="flex items-center gap-2">
-            <MemberStatusBadge role={member.role} suspendedUntil={member.suspendedUntil} />
-            <span title={member.email ?? undefined}>{maskEmail(member.email)}</span>
+            <MemberStatusBadges
+              role={member.role}
+              suspendedUntil={member.suspendedUntil}
+              deletedAt={member.deletedAt}
+              purgedAt={member.purgedAt}
+            />
+            {!isPurged && <span title={member.email ?? undefined}>{maskEmail(member.email)}</span>}
           </span>
         }
         action={actions}
       />
 
       <CardBody className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="회원 ID" value={member.id} mono />
-        <Field label="가입일" value={formatDateTime(member.createdAt)} />
-        <Field label="최근 수정" value={formatDateTime(member.updatedAt)} />
-        <Field label="가입 방식" value={member.provider ?? 'email'} />
-        <Field label="공급자 ID" value={member.providerId ?? '-'} mono />
-        <Field label="권한" value={member.role === 'admin' ? '관리자' : '일반 사용자'} />
-        <Field label="MSW UID" value={member.mswUid ?? '-'} mono />
-        <Field label="MSW 프로필 코드" value={member.mswProfileCode ?? '-'} mono />
-        <Field label="이용약관 동의" value={formatDateTime(member.termsAgreedAt)} />
-        <Field label="개인정보 동의" value={formatDateTime(member.privacyAgreedAt)} />
-        <Field label="만 14세 확인" value={formatDateTime(member.ageConfirmedAt)} />
-        <Field
+        <MemberField label="회원 ID" value={member.id} mono />
+        <MemberField label="가입일" value={formatDateTime(member.createdAt)} />
+        <MemberField label="최근 수정" value={formatDateTime(member.updatedAt)} />
+        <MemberField label="가입 방식" value={member.provider ?? 'email'} />
+        {!isPurged && <MemberField label="공급자 ID" value={member.providerId ?? '-'} mono />}
+        <MemberField label="권한" value={member.role === 'admin' ? '관리자' : '일반 사용자'} />
+        {!isPurged && (
+          <>
+            <MemberField label="MSW UID" value={<MswValue value={member.mswUid} />} mono />
+            <MemberField
+              label="MSW 프로필 코드"
+              value={<MswValue value={member.mswProfileCode} />}
+              mono
+            />
+          </>
+        )}
+        <MemberField label="이용약관 동의" value={formatDateTime(member.termsAgreedAt)} />
+        <MemberField label="개인정보 동의" value={formatDateTime(member.privacyAgreedAt)} />
+        <MemberField label="만 14세 확인" value={formatDateTime(member.ageConfirmedAt)} />
+        <MemberField
           label="정지 종료"
           value={
             member.suspendedUntil === null
@@ -62,7 +81,7 @@ export function MemberProfileCard({
           }
           tone={suspended ? 'danger' : 'default'}
         />
-        <Field
+        <MemberField
           label="정지 사유"
           value={member.suspensionReason ?? '-'}
           tone={suspended ? 'danger' : 'default'}
@@ -73,33 +92,26 @@ export function MemberProfileCard({
   )
 }
 
-function Field({
-  label,
-  value,
-  mono = false,
-  tone = 'default',
-  className,
-}: {
-  label: string
-  value: string
-  mono?: boolean
-  tone?: 'default' | 'danger'
-  className?: string
-}) {
-  /* `<dl>` 이 아니라 div/p 로 그린다 — CardBody 가 `<div>` 라 dt/dd 를 직접 넣으면
-     문서 구조가 깨진다(dl 자식이 아닌 dt 는 유효하지 않다). */
+/**
+ * 월드 계정 값 + 중복 검색 링크.
+ *
+ * 유니크 인덱스가 붙은 뒤에는 새 중복이 생기지 않지만, 제약 이전에 들어온 과거
+ * 데이터는 그대로 남아 있다. 목록을 UID 로 좁혀 볼 수 있어야 점검이 끝난다.
+ */
+function MswValue({ value }: { value: string | null }) {
+  if (value === null || value === '') {
+    return '-'
+  }
+
   return (
-    <div className={className}>
-      <p className="text-muted text-[12px] font-semibold">{label}</p>
-      <p
-        className={cn(
-          'text-[13px] break-all',
-          mono && 'font-mono',
-          tone === 'danger' ? 'text-danger font-semibold' : 'text-ink',
-        )}
+    <span className="flex flex-wrap items-center gap-2">
+      {value}
+      <Link
+        href={`/members?msw=${encodeURIComponent(value)}`}
+        className="text-accent-strong focus-visible:outline-focus rounded-sm font-sans text-[12px] font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        {value}
-      </p>
-    </div>
+        중복 검색
+      </Link>
+    </span>
   )
 }

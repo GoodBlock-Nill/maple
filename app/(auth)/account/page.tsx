@@ -4,6 +4,8 @@ import { AccountForm } from '@/components/auth/AccountForm'
 import { AuthCard } from '@/components/auth/AuthCard'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 import { EmailMark, GoogleMark, KakaoMark, NaverMark } from '@/components/auth/social-icons'
+import { WithdrawAccountButton } from '@/components/auth/WithdrawAccountButton'
+import { isWithdrawnProfile, WITHDRAWAL_RETENTION_DAYS } from '@/lib/auth/lifecycle'
 import { getAccountProfile } from '@/lib/data/profiles'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateLong } from '@/lib/utils/format-date'
@@ -12,6 +14,7 @@ import {
   isOnboardingComplete,
   isSocialProvider,
   ONBOARDING_PATH,
+  RESTORE_PATH,
   SOCIAL_PROVIDER_LABEL,
 } from '@/lib/validation/auth'
 
@@ -84,6 +87,11 @@ export default async function AccountPage() {
 
   const profile = await getAccountProfile(user.id)
 
+  // 탈퇴 대기 계정은 먼저 복구를 묻는다(프록시도 같은 판정을 하지만 여기서 다시 확인한다).
+  if (isWithdrawnProfile(profile)) {
+    redirect(`${RESTORE_PATH}?next=${encodeURIComponent(ACCOUNT_PATH)}`)
+  }
+
   if (profile === null || !isOnboardingComplete(profile)) {
     redirect(`${ONBOARDING_PATH}?next=${encodeURIComponent(ACCOUNT_PATH)}`)
   }
@@ -126,6 +134,21 @@ export default async function AccountPage() {
         </div>
 
         <LogoutButton variant="light" size="lg" className="w-full" />
+
+        {/* 되돌리기 어려운 조작이라 화면 맨 아래, 로그아웃과도 떨어진 자리에 둔다. */}
+        <section
+          aria-labelledby="withdraw-heading"
+          className="border-line-soft flex flex-col gap-2 border-t pt-6"
+        >
+          <h2 id="withdraw-heading" className="text-ink text-[15px] font-bold">
+            회원 탈퇴
+          </h2>
+          <p className="text-ink-muted text-[14px] leading-[1.6]">
+            탈퇴 후 {WITHDRAWAL_RETENTION_DAYS}일 동안 개인정보가 보존되며, 그 안에 다시 로그인하면
+            복구됩니다. 작성한 글과 댓글은 남습니다.
+          </p>
+          <WithdrawAccountButton />
+        </section>
       </div>
     </AuthCard>
   )

@@ -14,6 +14,7 @@ import { CloseIcon, MenuIcon } from '@/components/ui/icons'
 import { signOut } from '@/lib/actions/auth-actions'
 import { DISCORD_URL, NAV_ITEMS, PLAY_URL } from '@/lib/constants/site'
 import { cn } from '@/lib/utils/cn'
+import { RESTORE_PATH } from '@/lib/validation/auth'
 
 import type { SocialProvider } from '@/lib/validation/auth'
 
@@ -30,7 +31,13 @@ const ICON_BUTTON_CLASS =
 type MobileNavProps = {
   className?: string
   /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
-  user?: { nickname: string; avatarUrl?: string | null; provider?: SocialProvider | null } | null
+  user?: {
+    nickname: string
+    avatarUrl?: string | null
+    provider?: SocialProvider | null
+    /** 탈퇴 대기 계정. "내 정보" 대신 "계정 복구"로 안내한다. */
+    isWithdrawn?: boolean
+  } | null
 }
 
 // 포털 대상은 바뀌지 않으므로 구독할 것이 없다. 서버 스냅샷은 null 로 두어 SSR 마크업과
@@ -158,9 +165,15 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
               <span className="text-ink truncate text-[17px] font-semibold">{user.nickname}</span>
             </div>
 
-            <Link href="/account" onClick={close} className={USER_ROW_CLASS}>
-              내 정보
-            </Link>
+            {user.isWithdrawn === true ? (
+              <Link href={RESTORE_PATH} onClick={close} className={USER_ROW_CLASS}>
+                계정 복구
+              </Link>
+            ) : (
+              <Link href="/account" onClick={close} className={USER_ROW_CLASS}>
+                내 정보
+              </Link>
+            )}
             <form action={signOut}>
               <button type="submit" className={cn(USER_ROW_CLASS, 'w-full')}>
                 로그아웃

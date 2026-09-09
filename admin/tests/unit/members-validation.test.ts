@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import {
   changeNicknameSchema,
+  forceWithdrawMemberSchema,
   isPermanentSuspension,
   isSuspended,
   maskEmail,
+  MEMBER_STATUS_FILTER_LABEL,
+  MEMBER_STATUS_FILTERS,
   MEMBER_STATUS_LABEL,
   memberStatus,
   providerLabel,
+  purgeMemberSchema,
   suspendMemberSchema,
   suspensionUntil,
   SUSPENSION_REASON_MAX,
@@ -189,5 +193,36 @@ describe('changeNicknameSchema', () => {
       changeNicknameSchema.safeParse({ memberId: MEMBER_ID, nickname: '모험가', reason: '' })
         .success,
     ).toBe(false)
+  })
+})
+
+describe('MEMBER_STATUS_FILTERS', () => {
+  it('should keep the existing filters and add the withdrawal states', () => {
+    expect([...MEMBER_STATUS_FILTERS]).toEqual([
+      'normal',
+      'suspended',
+      'withdrawn',
+      'purged',
+      'admin',
+    ])
+  })
+
+  it('should label every filter value', () => {
+    for (const value of MEMBER_STATUS_FILTERS) {
+      expect(MEMBER_STATUS_FILTER_LABEL[value]).toBeTruthy()
+    }
+  })
+})
+
+describe('생애주기 액션 스키마', () => {
+  it('should accept a uuid target', () => {
+    expect(purgeMemberSchema.safeParse({ memberId: MEMBER_ID }).success).toBe(true)
+    expect(forceWithdrawMemberSchema.safeParse({ memberId: MEMBER_ID }).success).toBe(true)
+  })
+
+  it('should reject anything that is not a uuid', () => {
+    // 직접 POST 로 임의 문자열이 들어와도 조회 단계까지 가지 못해야 한다.
+    expect(purgeMemberSchema.safeParse({ memberId: 'all' }).success).toBe(false)
+    expect(forceWithdrawMemberSchema.safeParse({ memberId: '' }).success).toBe(false)
   })
 })

@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 
+import { isWithdrawnProfile } from '@/lib/auth/lifecycle'
 import { updateSession } from '@/lib/supabase/middleware'
-import { isOnboardingComplete, ONBOARDING_PATH } from '@/lib/validation/auth'
+import {
+  ACCOUNT_PATH,
+  isOnboardingComplete,
+  ONBOARDING_PATH,
+  RESTORE_PATH,
+} from '@/lib/validation/auth'
 
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { NextRequest } from 'next/server'
@@ -11,17 +17,25 @@ import type { NextRequest } from 'next/server'
  * (node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md).
  * 파일은 프로젝트 루트에 하나만 둘 수 있고, 함수는 default 또는 named `proxy` 로 내보낸다.
  *
- * 여기서 하는 일은 세 가지다.
+ * 여기서 하는 일은 네 가지다.
  *  1) 사라진 경로(비밀번호 찾기)를 로그인으로 보낸다.
  *  2) 모든 요청에서 Supabase 세션(액세스 토큰)을 갱신한다.
- *  3) 보호 경로에 대한 **낙관적(optimistic) 인증 검사** + 온보딩 미완료 차단.
+ *  3) 보호 경로에 대한 **낙관적(optimistic) 인증 검사**.
+ *  4) 로그인 사용자의 상태 게이트 — 탈퇴 대기(`deleted_at`)면 복구 화면으로,
+ *     온보딩 미완료면 온보딩으로 보낸다.
  *
  * 권한(admin) 판정은 여기서 하지 않는다. 실제 인가는 RLS 의 `public.is_admin()` 과
  * 각 페이지의 서버 검사에서 강제된다. 프록시는 "로그인 여부"만 걸러 낸다.
  */
 
 /** GET 접근 시 로그인 페이지로 보낼 경로. */
-const PROTECTED_PREFIXES = ['/admin', '/community/write', ONBOARDING_PATH] as const
+const PROTECTED_PREFIXES = [
+  '/admin',
+  '/community/write',
+  ONBOARDING_PATH,
+  RESTORE_PATH,
+  ACCOUNT_PATH,
+] as const
 
 /** 비-GET(폼 제출·서버 액션)일 때만 로그인을 요구하는 경로. */
 const PROTECTED_MUTATION_PREFIXES = ['/support'] as const
@@ -36,12 +50,34 @@ const PROTECTED_MUTATION_PREFIXES = ['/support'] as const
 const ONBOARDING_READ_PREFIXES = ['/community/write'] as const
 const ONBOARDING_MUTATION_PREFIXES = ['/community', '/support'] as const
 
+/**
+ * 탈퇴 대기 계정을 복구 화면으로 돌려보내는 경로 — "로그인한 사람만 쓰는 화면"
+ * 전부다. 공개 읽기(목록·상세·뉴스)는 그대로 열어 둔다. 복구 화면 자체와 그 액션
+ * (POST /auth/restore)은 당연히 제외한다.
+ */
+const WITHDRAWN_READ_PREFIXES = [
+  '/community/write',
+  ACCOUNT_PATH,
+  ONBOARDING_PATH,
+  '/support/inquiries',
+] as const
+const WITHDRAWN_MUTATION_PREFIXES = [
+  '/community',
+  '/support',
+  ACCOUNT_PATH,
+  ONBOARDING_PATH,
+] as const
+
 /** 이메일 로그인 제거로 사라진 경로. 북마크·구버전 링크를 위해 살려 둔다. */
 const LEGACY_REDIRECTS: Record<string, string> = {
   '/forgot-password': '/login',
 }
 
 const LOGIN_PATH = '/login'
+
+/* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
+const GATE_COLUMNS =
+  'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at'
 
 function matchesPrefix(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
@@ -63,24 +99,32 @@ function redirectWithSession(response: NextResponse, url: URL): NextResponse {
   return redirectResponse
 }
 
-/** 온보딩을 마쳤는지 확인한다. 조회 실패는 "미완료"로 보지 않는다(오탐 차단). */
-async function hasCompletedOnboarding(
+type GateProfile = {
+  nickname: string | null
+  terms_agreed_at: string | null
+  privacy_agreed_at: string | null
+  age_confirmed_at: string | null
+  msw_uid: string | null
+  msw_profile_code: string | null
+  deleted_at: string | null
+  purged_at: string | null
+}
+
+/**
+ * 상태 게이트에 필요한 프로필. 조회 실패는 "정상 회원"으로 본다(오탐 차단 방지) —
+ * 쓰기는 어차피 RLS(`is_suspended()` · `is_withdrawn()`)가 최종적으로 막는다.
+ */
+async function readGateProfile(
   supabase: TypedSupabaseClient,
   userId: string,
-): Promise<boolean> {
+): Promise<GateProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select(
-      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code',
-    )
+    .select(GATE_COLUMNS)
     .eq('id', userId)
     .maybeSingle()
 
-  if (error !== null) {
-    return true
-  }
-
-  return isOnboardingComplete(data)
+  return error !== null ? null : data
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -116,13 +160,41 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return response
   }
 
+  /* 복구 화면과 그 액션은 탈퇴 대기 계정이 가야 하는 곳이다. 게이트를 태우지 않는다. */
+  const isRestoreRoute = matchesPrefix(pathname, [RESTORE_PATH])
+
+  const needsWithdrawnGate =
+    !isRestoreRoute &&
+    (isRead
+      ? matchesPrefix(pathname, WITHDRAWN_READ_PREFIXES)
+      : matchesPrefix(pathname, WITHDRAWN_MUTATION_PREFIXES))
   const needsOnboarding = isRead
     ? matchesPrefix(pathname, ONBOARDING_READ_PREFIXES)
     : matchesPrefix(pathname, ONBOARDING_MUTATION_PREFIXES)
 
   /* 조회는 이 분기에서만 일어난다. 모든 요청마다 DB 를 때리지 않도록
-     "쓰기 경로 + 로그인 상태"로 좁힌 뒤에야 프로필을 읽는다. */
-  if (!needsOnboarding || (await hasCompletedOnboarding(supabase, user.id))) {
+     "게이트 대상 경로 + 로그인 상태"로 좁힌 뒤에야 프로필을 한 번 읽는다. */
+  if (!needsWithdrawnGate && !needsOnboarding) {
+    return response
+  }
+
+  const profile = await readGateProfile(supabase, user.id)
+
+  if (needsWithdrawnGate && isWithdrawnProfile(profile)) {
+    if (isRead) {
+      const restoreUrl = new URL(RESTORE_PATH, request.url)
+      restoreUrl.searchParams.set('next', `${pathname}${search}`)
+
+      return redirectWithSession(response, restoreUrl)
+    }
+
+    return NextResponse.json(
+      { error: 'account_withdrawn', restorePath: RESTORE_PATH },
+      { status: 403 },
+    )
+  }
+
+  if (!needsOnboarding || profile === null || isOnboardingComplete(profile)) {
     return response
   }
 

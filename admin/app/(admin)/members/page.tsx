@@ -1,5 +1,9 @@
 import { MemberFilters } from '@/components/members/MemberFilters'
-import { MaskedEmail, MemberIdentity, MemberStatusBadge } from '@/components/members/MemberIdentity'
+import {
+  MaskedEmail,
+  MemberIdentity,
+  MemberStatusBadges,
+} from '@/components/members/MemberIdentity'
 import { Card } from '@/components/ui/Card'
 import { FormBanner } from '@/components/ui/FormField'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -7,25 +11,11 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Table, type Column } from '@/components/ui/Table'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
-import { getMembers, type MemberListItem, type MemberListParams } from '@/lib/data/members'
+import { getMembers, type MemberListItem } from '@/lib/data/members'
 import { formatDate } from '@/lib/utils/format-date'
-import {
-  buildHref,
-  DEFAULT_PAGE_SIZE,
-  firstValue,
-  parsePage,
-  parseSort,
-  sortHref,
-  totalPages,
-  type QueryParams,
-  type SortState,
-} from '@/lib/utils/table-query'
-import {
-  MEMBER_PROVIDERS,
-  MEMBER_STATUS_FILTERS,
-  type MemberProvider,
-  type MemberStatusFilter,
-} from '@/lib/validation/members'
+import { buildHref, DEFAULT_PAGE_SIZE, sortHref, totalPages } from '@/lib/utils/table-query'
+import { parseMemberListParams } from '@/lib/validation/member-list-params'
+import { memberLifecycle, purgeDueAt } from '@/lib/validation/member-status'
 
 import type { Metadata } from 'next'
 
@@ -36,33 +26,11 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 const PATH = '/members'
-const SORT_KEYS = ['created_at', 'nickname'] as const
-const DEFAULT_SORT: SortState = { key: 'created_at', direction: 'desc' }
-
-/** 쿼리스트링 → 조회 파라미터. 허용 목록 밖의 값은 "전체"로 떨어진다. */
-function parseParams(params: QueryParams): MemberListParams {
-  const status = firstValue(params.status)
-  const provider = firstValue(params.provider)
-
-  return {
-    q: firstValue(params.q),
-    status: MEMBER_STATUS_FILTERS.includes(status as MemberStatusFilter)
-      ? (status as MemberStatusFilter)
-      : null,
-    provider: MEMBER_PROVIDERS.includes(provider as MemberProvider)
-      ? (provider as MemberProvider)
-      : null,
-    from: firstValue(params.from),
-    to: firstValue(params.to),
-    sort: parseSort(params.sort, SORT_KEYS, DEFAULT_SORT),
-    page: parsePage(params.page),
-  }
-}
 
 export default async function MembersPage(props: PageProps<'/members'>) {
   await requirePermission('members', 'read')
   const searchParams = await props.searchParams
-  const params = parseParams(searchParams)
+  const params = parseMemberListParams(searchParams)
   const list = await getMembers(params)
 
   const columns: readonly Column<MemberListItem>[] = [
@@ -82,6 +50,8 @@ export default async function MembersPage(props: PageProps<'/members'>) {
       key: 'email',
       header: '이메일',
       className: 'w-52',
+      /* 파기된 회원은 이메일이 없다. 마스킹 함수가 이미 '-' 를 돌려주므로 분기하지
+         않는다 — 화면에는 "지워졌다"가 아니라 "값이 없다"로만 보이면 충분하다. */
       cell: (row) => <MaskedEmail email={row.email} />,
     },
     {
@@ -119,8 +89,24 @@ export default async function MembersPage(props: PageProps<'/members'>) {
     {
       key: 'status',
       header: '상태',
-      className: 'w-32',
-      cell: (row) => <MemberStatusBadge role={row.role} suspendedUntil={row.suspendedUntil} />,
+      className: 'w-44',
+      cell: (row) => (
+        <span className="flex flex-col gap-1">
+          <MemberStatusBadges
+            role={row.role}
+            suspendedUntil={row.suspendedUntil}
+            deletedAt={row.deletedAt}
+            purgedAt={row.purgedAt}
+          />
+          {/* 탈퇴 대기 행에만 파기 예정일을 붙인다. D-day 만으로는 언제까지인지
+              달력에 옮겨 적을 수 없어, 운영자가 매번 90일을 손으로 더한다. */}
+          {memberLifecycle(row) === 'withdrawn' && (
+            <span className="text-muted text-[11px]">
+              파기 예정 {formatDate(purgeDueAt(row.deletedAt))}
+            </span>
+          )}
+        </span>
+      ),
     },
   ]
 

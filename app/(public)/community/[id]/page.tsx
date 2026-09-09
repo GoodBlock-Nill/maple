@@ -12,8 +12,9 @@ import { PageShell } from '@/components/layout/PageShell'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
 import { getPostById, getPostLikeState } from '@/lib/data/community'
+import { authorLabel } from '@/lib/utils/author-display'
 import { isEdited } from '@/lib/utils/authorship'
-import { maskNickname } from '@/lib/utils/mask'
+import { mswLinkNotice } from '@/lib/utils/msw-link'
 import { suspensionNotice } from '@/lib/utils/suspension'
 import { postHtmlText } from '@/lib/utils/post-html'
 
@@ -58,6 +59,8 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
   /* 본인 정지 상태만 내려간다. 남의 제재 여부는 `profiles_select_self` 때문에
      애초에 조회되지 않는다. */
   const suspended = suspensionNotice(user)
+  /* 월드 계정 연동 필수 플래그(기본 OFF). 켜져 있고 연동 전이면 댓글 폼이 안내로 바뀐다. */
+  const mswRequired = mswLinkNotice(user)
 
   return (
     <PageShell variant="community" title={COMMUNITY_TITLE}>
@@ -70,9 +73,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
           likes={post.likes}
           aside={
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-ink-muted text-body-lg font-medium">
-                {maskNickname(post.author)}
-              </span>
+              <span className="text-ink-muted text-body-lg font-medium">{authorLabel(post)}</span>
               <PostActions
                 postId={post.id}
                 authorId={post.authorId}
@@ -107,6 +108,7 @@ export default async function CommunityDetailPage(props: PageProps<'/community/[
             isAuthenticated={user !== null}
             viewerId={viewerId}
             suspensionNotice={suspended}
+            mswLinkNotice={mswRequired}
           />
         </ArticleCard>
       </ListSheet>

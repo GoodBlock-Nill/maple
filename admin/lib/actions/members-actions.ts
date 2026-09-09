@@ -46,6 +46,12 @@ export async function suspendMember(
     return '관리자 계정은 정지할 수 없습니다. 먼저 관리자 권한을 회수해 주세요.'
   }
 
+  /* 파기된 계정에는 걸 것이 없다. 로그인 수단이 사라졌고 식별 근거도 없어
+     (계획 §3 의 5번) 제재를 남겨 두면 다음 파기 배치가 다시 지운다. */
+  if (member.purged_at !== null) {
+    return '개인정보가 파기된 계정입니다. 제재를 적용할 대상이 없습니다.'
+  }
+
   const until = suspensionUntil(period)
   const supabase = await createClient()
   const { error } = await supabase

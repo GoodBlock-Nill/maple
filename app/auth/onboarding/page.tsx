@@ -2,9 +2,15 @@ import { redirect } from 'next/navigation'
 
 import { AuthCard } from '@/components/auth/AuthCard'
 import { OnboardingForm } from '@/components/auth/OnboardingForm'
+import { isWithdrawnProfile } from '@/lib/auth/lifecycle'
 import { createClient } from '@/lib/supabase/server'
 import { firstValue } from '@/lib/utils/list-query'
-import { isOnboardingComplete, ONBOARDING_PATH, sanitizePostAuthPath } from '@/lib/validation/auth'
+import {
+  isOnboardingComplete,
+  ONBOARDING_PATH,
+  RESTORE_PATH,
+  sanitizePostAuthPath,
+} from '@/lib/validation/auth'
 
 import type { Metadata } from 'next'
 
@@ -36,10 +42,15 @@ export default async function OnboardingPage(props: PageProps<'/auth/onboarding'
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code',
+      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at',
     )
     .eq('id', user.id)
     .maybeSingle()
+
+  // 탈퇴 대기 계정은 약관을 다시 받기 전에 복구 여부를 먼저 묻는다.
+  if (isWithdrawnProfile(profile)) {
+    redirect(`${RESTORE_PATH}?next=${encodeURIComponent(nextPath)}`)
+  }
 
   // 이미 마친 사람이 주소로 직접 들어온 경우. 다시 묻지 않는다.
   if (isOnboardingComplete(profile)) {

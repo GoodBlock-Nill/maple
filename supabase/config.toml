@@ -405,3 +405,8 @@ verify_jwt = false
 
 [functions.email-outbound]
 verify_jwt = true
+
+# 회원 탈퇴 파기 배치(docs/admin/ACCOUNT-WITHDRAWAL-PLAN.md §4.3). pg_cron 이 `x-cron-secret`
+# 헤더로만 부르므로 게이트웨이 JWT 검증을 끄고 함수 안에서 secret(또는 서비스 롤 키)을 본다.
+[functions.purge-withdrawn]
+verify_jwt = false

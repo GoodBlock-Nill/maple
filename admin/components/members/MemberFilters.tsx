@@ -1,20 +1,23 @@
+import Link from 'next/link'
+
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
-import { firstValue, type QueryParams } from '@/lib/utils/table-query'
+import { josa } from '@/lib/utils/josa'
+import { buildHref, firstValue, type QueryParams } from '@/lib/utils/table-query'
 import {
   MEMBER_PROVIDER_LABEL,
   MEMBER_PROVIDERS,
+  MEMBER_STATUS_FILTER_LABEL,
   MEMBER_STATUS_FILTERS,
-  MEMBER_STATUS_LABEL,
 } from '@/lib/validation/members'
 
 import type { SelectOption } from '@/components/ui/Select'
 
 const STATUS_OPTIONS: readonly SelectOption[] = MEMBER_STATUS_FILTERS.map((value) => ({
   value,
-  label: MEMBER_STATUS_LABEL[value],
+  label: MEMBER_STATUS_FILTER_LABEL[value],
 }))
 
 const PROVIDER_OPTIONS: readonly SelectOption[] = MEMBER_PROVIDERS.map((value) => ({
@@ -30,6 +33,7 @@ const PROVIDER_OPTIONS: readonly SelectOption[] = MEMBER_PROVIDERS.map((value) =
  */
 export function MemberFilters({ pathname, params }: { pathname: string; params: QueryParams }) {
   const sort = firstValue(params.sort)
+  const msw = firstValue(params.msw)
 
   return (
     <form
@@ -38,6 +42,9 @@ export function MemberFilters({ pathname, params }: { pathname: string; params: 
       className="border-line bg-surface rounded-card shadow-card mb-4 flex flex-wrap items-end gap-3 border px-5 py-4"
     >
       {sort !== null && <input type="hidden" name="sort" value={sort} />}
+      {/* 월드 계정 좁히기는 상세 화면의 "중복 검색" 링크로만 켜진다. 검색 폼이
+          그 값을 떨어뜨리면 조건이 조용히 넓어져 다른 회원까지 보인다. */}
+      {msw !== null && <input type="hidden" name="msw" value={msw} />}
 
       <Input
         label="검색"
@@ -89,6 +96,19 @@ export function MemberFilters({ pathname, params }: { pathname: string; params: 
           초기화
         </Button>
       </div>
+
+      {msw !== null && (
+        <p className="text-muted w-full text-[12px]">
+          월드 계정 <span className="text-ink font-mono font-semibold">{msw}</span>
+          {josa(msw, '로')} 좁혔습니다. 값이 정확히 같은 회원만 보입니다.{' '}
+          <Link
+            href={buildHref(pathname, params, { msw: null, page: null })}
+            className="text-accent-strong focus-visible:outline-focus rounded-sm font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            해제
+          </Link>
+        </p>
+      )}
     </form>
   )
 }

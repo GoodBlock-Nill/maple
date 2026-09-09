@@ -8,8 +8,13 @@ import { Button } from '@/components/ui/Button'
 import type { SocialProvider } from '@/lib/validation/auth'
 
 type SiteHeaderProps = {
-  /** 세션 연동 전까지는 항상 null. */
-  user?: { nickname: string; avatarUrl?: string | null; provider?: SocialProvider | null } | null
+  /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
+  user?: {
+    nickname: string
+    avatarUrl?: string | null
+    provider?: SocialProvider | null
+    isWithdrawn?: boolean
+  } | null
 }
 
 /**

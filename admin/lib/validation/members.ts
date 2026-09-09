@@ -151,10 +151,41 @@ export const changeNicknameSchema = z.object({
   reason: reasonSchema,
 })
 
-/** 목록 필터의 상태 값. `null` 은 "전체". */
-export const MEMBER_STATUS_FILTERS = ['normal', 'suspended', 'admin'] as const
+/* 생애주기 조작(즉시 파기 · 강제 탈퇴)은 대상 하나만 받는다. 사유를 받지 않는 이유:
+   되돌릴 수 없는 조작이라 근거는 확인 다이얼로그가 아니라 감사 로그와 별도 기록
+   (파기 요청 접수 티켓)에 남아야 한다. 입력칸을 두면 그 칸이 근거의 전부가 된다. */
+export const purgeMemberSchema = z.object({
+  memberId: memberIdSchema,
+})
+
+export const forceWithdrawMemberSchema = z.object({
+  memberId: memberIdSchema,
+})
+
+/**
+ * 목록 필터의 상태 값. `null` 은 "전체".
+ *
+ * 뱃지(`MemberStatus`)와 값이 겹치지만 같은 것이 아니다 — 필터에는 생애주기
+ * (`withdrawn` · `purged`)가 함께 들어간다. 뱃지는 한 회원의 상태를 하나로
+ * 좁히지만, 필터는 "탈퇴 대기이면서 정지"인 회원을 양쪽에서 찾을 수 있어야 한다.
+ */
+export const MEMBER_STATUS_FILTERS = [
+  'normal',
+  'suspended',
+  'withdrawn',
+  'purged',
+  'admin',
+] as const
 
 export type MemberStatusFilter = (typeof MEMBER_STATUS_FILTERS)[number]
+
+export const MEMBER_STATUS_FILTER_LABEL: Record<MemberStatusFilter, string> = {
+  normal: '정상',
+  suspended: '정지',
+  withdrawn: '탈퇴 대기',
+  purged: '삭제됨',
+  admin: '관리자',
+}
 
 /** 목록 필터의 가입 공급자. `email` 은 provider 가 null 인 계정까지 포함한다. */
 export const MEMBER_PROVIDERS = ['kakao', 'google', 'naver', 'email'] as const

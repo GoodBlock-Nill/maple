@@ -6,6 +6,7 @@ import {
   MemberActivityPanel,
   type ActivityTab,
 } from '@/components/members/MemberActivityPanel'
+import { MemberLifecycleCard } from '@/components/members/MemberLifecycleCard'
 import { MemberProfileCard } from '@/components/members/MemberProfileCard'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -15,6 +16,7 @@ import { requirePermission } from '@/lib/auth/require-admin'
 import { getMember, getMemberActivity } from '@/lib/data/members'
 import { getReportsFor } from '@/lib/data/reports'
 import { buildHref, firstValue } from '@/lib/utils/table-query'
+import { memberLifecycle } from '@/lib/validation/member-status'
 import { isSuspended } from '@/lib/validation/members'
 
 import type { ReportItem } from '@/lib/data/reports'
@@ -35,6 +37,7 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
     notFound()
   }
 
+  const lifecycle = memberLifecycle(member)
   const activity = await getMemberActivity(id)
   const requested = firstValue(searchParams.tab)
   const tab: ActivityTab = ACTIVITY_TABS.includes(requested as ActivityTab)
@@ -62,6 +65,10 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
         }
       />
 
+      {/* 탈퇴·파기 카드가 프로필보다 위에 온다. 이 화면에 들어온 이유가 대개
+          "이 계정 왜 이러냐"이고, 그 답이 여기 있다. */}
+      <MemberLifecycleCard deletedAt={member.deletedAt} purgedAt={member.purgedAt} />
+
       <MemberProfileCard
         member={member}
         actions={
@@ -70,6 +77,9 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
               memberId={member.id}
               nickname={member.nickname}
               isSuspended={isSuspended(member.suspendedUntil)}
+              lifecycle={lifecycle}
+              isSuperAdmin={actor.isSuperAdmin}
+              isSelf={actor.id === member.id}
             />
           ) : null
         }

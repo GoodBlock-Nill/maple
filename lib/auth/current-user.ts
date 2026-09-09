@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { isWithdrawnProfile } from '@/lib/auth/lifecycle'
 import { createClient } from '@/lib/supabase/server'
 import { isSocialProvider } from '@/lib/validation/auth'
 
@@ -27,6 +28,14 @@ export type CurrentUser = {
   suspendedUntil: string | null
   /** 사용자에게 그대로 보여 주는 제재 사유. 내부 메모가 아니다. */
   suspensionReason: string | null
+  /** 탈퇴 요청 시각(ISO). null 이면 정상 회원. 90일 안에 복구할 수 있다. */
+  deletedAt: string | null
+  /** 개인정보 파기 시각(ISO). 있으면 복구할 수 없는 익명화 계정이다. */
+  purgedAt: string | null
+  /** `deletedAt` 이 있으면 true — 화면은 `/auth/restore` 로 보내고 쓰기를 열지 않는다. */
+  isWithdrawn: boolean
+  /** 메이플스토리 월드 계정 UID. 글쓰기 월드 연동 필수 플래그의 판정 근거다. */
+  mswUid: string | null
 }
 
 /**
@@ -50,7 +59,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nickname, role, avatar_url, provider, suspended_until, suspension_reason')
+    .select(
+      'nickname, role, avatar_url, provider, suspended_until, suspension_reason, deleted_at, purged_at, msw_uid',
+    )
     .eq('id', user.id)
     .maybeSingle()
 
@@ -67,5 +78,11 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
        액션은 42501 을 같은 안내로 옮겨 적는다. */
     suspendedUntil: profile?.suspended_until ?? null,
     suspensionReason: profile?.suspension_reason ?? null,
+    /* 탈퇴 상태도 같은 방향이다 — 못 읽으면 정상으로 보고, 쓰기는 `is_withdrawn()`
+       정책이 최종적으로 막는다. */
+    deletedAt: profile?.deleted_at ?? null,
+    purgedAt: profile?.purged_at ?? null,
+    isWithdrawn: isWithdrawnProfile(profile),
+    mswUid: profile?.msw_uid ?? null,
   }
 }

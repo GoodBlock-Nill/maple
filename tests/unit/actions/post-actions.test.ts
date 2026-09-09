@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSupabaseStub } from './supabase-stub'
 
@@ -36,6 +36,10 @@ const USER = {
   role: 'user',
   suspendedUntil: null,
   suspensionReason: null,
+  deletedAt: null,
+  purgedAt: null,
+  isWithdrawn: false,
+  mswUid: null,
 }
 /** 정지 계정. 먼 미래 시각이라 날짜 표기가 오늘과 무관하게 고정된다. */
 const SUSPENDED_USER = {
@@ -307,5 +311,83 @@ describe('정지 계정', () => {
 
     // Assert
     expect(result.formError).toBe(SUSPENDED_FALLBACK)
+  })
+})
+
+/**
+ * 월드 계정 연동 필수 플래그(기본 OFF). `FEATURES` 는 모듈 로드 시점에 굳으므로
+ * env 를 바꾸고 `vi.resetModules()` 뒤 다시 import 해 ON 상태를 검증한다.
+ */
+describe('월드 계정 연동 필수 플래그', () => {
+  const FLAG_KEY = 'NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW'
+  const MSW_MESSAGE = '월드 계정을 연동하면 글을 쓸 수 있습니다. 내 정보에서 연동해 주세요.'
+
+  async function loadWithFlagOn() {
+    vi.resetModules()
+    vi.stubEnv(FLAG_KEY, 'true')
+
+    return import('@/lib/actions/post-actions')
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://stub.supabase.co')
+  })
+
+  it('should not gate anyone while the flag is off (default build)', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(USER)
+    stub = createSupabaseStub([
+      { data: null, error: null },
+      { data: { id: POST_ID }, error: null },
+    ])
+
+    // Act
+    const promise = createPost(EMPTY_FORM_STATE, postForm())
+
+    // Assert — UID 가 없어도 등록된다.
+    await expect(promise).rejects.toThrow(`${REDIRECT_PREFIX}/community/${POST_ID}`)
+  })
+
+  it('should refuse a post from an unlinked member when the flag is on', async () => {
+    // Arrange
+    const { createPost: createPostOn } = await loadWithFlagOn()
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    const result = await createPostOn(EMPTY_FORM_STATE, postForm())
+
+    // Assert
+    expect(result.formError).toBe(MSW_MESSAGE)
+    expect(stub.inserts).toHaveLength(0)
+  })
+
+  it('should refuse a comment from an unlinked member when the flag is on', async () => {
+    // Arrange
+    const { createComment: createCommentOn } = await loadWithFlagOn()
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    const result = await createCommentOn(EMPTY_FORM_STATE, commentForm())
+
+    // Assert
+    expect(result.formError).toBe(MSW_MESSAGE)
+    expect(stub.inserts).toHaveLength(0)
+  })
+
+  it('should let a linked member post when the flag is on', async () => {
+    // Arrange
+    const { createPost: createPostOn } = await loadWithFlagOn()
+    getCurrentUser.mockResolvedValue({ ...USER, mswUid: '20123000000000000' })
+    stub = createSupabaseStub([
+      { data: null, error: null },
+      { data: { id: POST_ID }, error: null },
+    ])
+
+    // Act
+    const promise = createPostOn(EMPTY_FORM_STATE, postForm())
+
+    // Assert
+    await expect(promise).rejects.toThrow(`${REDIRECT_PREFIX}/community/${POST_ID}`)
   })
 })

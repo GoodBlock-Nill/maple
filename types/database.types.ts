@@ -727,6 +727,7 @@ export type Database = {
           age_confirmed_at: string | null
           avatar_url: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           msw_profile_code: string | null
@@ -735,6 +736,7 @@ export type Database = {
           privacy_agreed_at: string | null
           provider: string | null
           provider_id: string | null
+          purged_at: string | null
           role: Database["public"]["Enums"]["user_role"]
           suspended_until: string | null
           suspension_reason: string | null
@@ -746,6 +748,7 @@ export type Database = {
           age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id: string
           msw_profile_code?: string | null
@@ -754,6 +757,7 @@ export type Database = {
           privacy_agreed_at?: string | null
           provider?: string | null
           provider_id?: string | null
+          purged_at?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           suspended_until?: string | null
           suspension_reason?: string | null
@@ -765,6 +769,7 @@ export type Database = {
           age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           msw_profile_code?: string | null
@@ -773,6 +778,7 @@ export type Database = {
           privacy_agreed_at?: string | null
           provider?: string | null
           provider_id?: string | null
+          purged_at?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           suspended_until?: string | null
           suspension_reason?: string | null
@@ -967,6 +973,11 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
+      is_withdrawn: { Args: never; Returns: boolean }
+      purge_withdrawn_profiles: {
+        Args: { p_cutoff?: string }
+        Returns: string[]
+      }
       replace_ranking_snapshot: {
         Args: {
           p_rank_type: Database["public"]["Enums"]["ranking_type"]

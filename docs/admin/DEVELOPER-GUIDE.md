@@ -677,3 +677,16 @@ pnpm typecheck && pnpm --filter @maple/admin typecheck
     답신은 저장되고 `이메일 발송 설정이 아직 없습니다` 안내가 뜨며, 설정 후 스레드의 "다시 보내기"로 발송한다.
     SPF/DKIM/DMARC 판정은 Resend 문서에 필드가 없어 `Authentication-Results` 헤더에서 읽는다 — 실제
     페이로드로 확인이 필요하다.
+11. **개인정보 즉시 파기는 관리자 콘솔이 직접 지운다.** `public.purge_withdrawn_profiles(p_cutoff)` 와
+    Edge Function `purge-withdrawn` 은 **기준 기간을 넘긴 프로필을 한꺼번에** 훑는 배치 경로다
+    (크론이 빈 본문 + `x-cron-secret` 으로 호출한다 — 대상 지정 인자가 없다). 그래서
+    `purgeMemberNowAction`(`admin/lib/actions/member-lifecycle-actions.ts`)은 서비스 롤로 **한 명분만**
+    같은 필드를 지우고 `auth.admin.deleteUser` 까지 부른다. 배치 함수가 지우는 컬럼이 바뀌면 이 액션도
+    함께 고쳐야 한다 — 어긋나면 관리자 경로로 지운 계정에만 개인정보가 남는다
+    (`admin/tests/unit/member-lifecycle-actions.test.ts` 가 필드 목록을 고정한다).
+12. **탈퇴는 감사 로그에 두 줄이 남는다.** `profiles.deleted_at` 이 바뀌면 DB 트리거
+    `log_profile_lifecycle` 이 `member.withdraw`(또는 `member.restore`)를 남기므로, 관리자가 강제
+    탈퇴하면 그 줄과 액션이 남기는 `member.force_withdraw` 가 함께 보인다. 트리거 쪽 행위자는
+    `auth.uid()` 라 세션 클라이언트로 쓴 강제 탈퇴는 관리자 id 가, 서비스 롤 경로(파기 배치·스크립트)는
+    null 이 찍힌다. 그래서 강제 탈퇴는 서비스 롤을 쓰지 않는다 — 관리자 정책(`profiles_update_admin`)과
+    가드 트리거가 이미 관리자에게 `deleted_at` 을 열어 준다.

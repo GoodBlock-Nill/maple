@@ -56,11 +56,14 @@ export type AdjacentNews = {
 
 export type Comment = {
   id: string
+  /** 원본 닉네임 스냅샷. 화면에는 `authorLabel()` 을 거쳐 노출한다. */
   author: string
   body: string
   createdAt: string
-  /** 작성자 uuid. 탈퇴하면 null 이 된다(`on delete set null`). 삭제 버튼 노출 판정에만 쓴다. */
+  /** 작성자 uuid. 프로필이 없는 옛 데이터에서만 null 이다. 삭제 버튼 노출 판정에만 쓴다. */
   authorId: string | null
+  /** 작성자의 개인정보가 파기된 계정이면 true — "탈퇴한 회원"으로 고정 표시한다. */
+  authorPurged: boolean
 }
 
 export type Post = {
@@ -70,10 +73,12 @@ export type Post = {
   /** `contentFormat` 에 따라 마크다운 원문이거나 정제를 마친 HTML 이다. */
   body: string
   contentFormat: ContentFormat
-  /** 원본 닉네임. 화면에는 `maskNickname` 을 거쳐 노출한다. */
+  /** 원본 닉네임 스냅샷. 화면에는 `authorLabel()` 을 거쳐 노출한다. */
   author: string
-  /** 작성자 uuid. 탈퇴하면 null 이 된다. 수정·삭제 버튼 노출 판정에만 쓴다. */
+  /** 작성자 uuid. 프로필이 없는 옛 데이터에서만 null 이다. 수정·삭제 버튼 노출 판정에만 쓴다. */
   authorId: string | null
+  /** 작성자의 개인정보가 파기된 계정이면 true — "탈퇴한 회원"으로 고정 표시한다. */
+  authorPurged: boolean
   views: number
   likes: number
   createdAt: string

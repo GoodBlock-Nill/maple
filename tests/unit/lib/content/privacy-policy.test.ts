@@ -86,3 +86,36 @@ describe('PRIVACY_POLICY_SECTIONS', () => {
     }
   })
 })
+
+/**
+ * 회원 탈퇴 90일 보존·파기 규정(docs/admin/ACCOUNT-WITHDRAWAL-PLAN.md §4.2).
+ * 화면 문구(탈퇴 모달 · 복구 안내)와 방침이 같은 숫자를 말해야 한다.
+ */
+describe('회원 탈퇴 보존·파기 규정', () => {
+  const section4 = PRIVACY_POLICY_SECTIONS.find((section) => section.number === 4)
+  const section7 = PRIVACY_POLICY_SECTIONS.find((section) => section.number === 7)
+
+  it('should state the 90-day retention after a withdrawal request in §4', () => {
+    const text = (section4 === undefined ? [] : collectSectionText(section4)).join('\n')
+
+    expect(text).toContain('재가입에 대비해 90일간 보존한 뒤 지체 없이 파기')
+    expect(text).toContain(
+      '이메일, 간편로그인 식별자, 닉네임, 월드 계정 UID, 프로필 코드, 프로필 사진',
+    )
+    expect(text).toContain('비식별화("탈퇴한 회원")')
+  })
+
+  it('should keep the statutory retention rows intact', () => {
+    const text = (section4 === undefined ? [] : collectSectionText(section4)).join('\n')
+
+    expect(text).toContain('3년')
+    expect(text).toContain('3개월')
+    expect(text).toContain('회원 탈퇴 후 1년')
+  })
+
+  it('should mention the daily automatic purge batch in §7', () => {
+    const text = (section7 === undefined ? [] : collectSectionText(section7)).join('\n')
+
+    expect(text).toContain('매일 자동 배치로')
+  })
+})

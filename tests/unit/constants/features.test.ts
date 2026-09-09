@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
  */
 const FEATURE_ENV_KEYS = [
   'NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS',
+  'NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW',
   'NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON',
   'NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON',
 ] as const
@@ -73,6 +74,37 @@ describe('FEATURES.mswAccountFields', () => {
   })
 })
 
+// 오너 결정 4(ACCOUNT-WITHDRAWAL-PLAN §6): 글쓰기 월드 연동 필수는 준비만 하고 기본 OFF.
+describe('FEATURES.postingRequiresMswLink', () => {
+  it('should default to off when the env var is unset', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({})
+
+    // Assert
+    expect(FEATURES.postingRequiresMswLink).toBe(false)
+  })
+
+  it('should stay off for any value other than the literal string "true"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW: '1',
+    })
+
+    // Assert
+    expect(FEATURES.postingRequiresMswLink).toBe(false)
+  })
+
+  it('should turn on only when set to the literal string "true"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW: 'true',
+    })
+
+    // Assert
+    expect(FEATURES.postingRequiresMswLink).toBe(true)
+  })
+})
+
 // 오너 요청: 가이드(확률형 아이템 정보)·랭킹은 9/18 오픈 시점에 미제공 —
 // 두 플래그 모두 기본값이 꺼져 있어야 "서비스 준비 중" 화면이 뜬다.
 describe('FEATURES.guideOpen / FEATURES.rankingOpen', () => {
@@ -99,7 +131,9 @@ describe('FEATURES.guideOpen / FEATURES.rankingOpen', () => {
 
   it('should close guide only when NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON is "true"', async () => {
     // Arrange & Act
-    const { FEATURES } = await importFeaturesWithEnv({ NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON: 'true' })
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON: 'true',
+    })
 
     // Assert
     expect(FEATURES.guideOpen).toBe(false)
@@ -108,7 +142,9 @@ describe('FEATURES.guideOpen / FEATURES.rankingOpen', () => {
 
   it('should close ranking only when NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON is "true"', async () => {
     // Arrange & Act
-    const { FEATURES } = await importFeaturesWithEnv({ NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON: 'true' })
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON: 'true',
+    })
 
     // Assert
     expect(FEATURES.rankingOpen).toBe(false)

@@ -22,6 +22,9 @@ export const DEFAULT_NEXT_PATH = '/'
 /** 온보딩(최초 로그인 시 닉네임·약관 동의) 경로. */
 export const ONBOARDING_PATH = '/auth/onboarding'
 
+/** 탈퇴 대기 중인 계정이 다시 로그인했을 때 복구를 묻는 경로. */
+export const RESTORE_PATH = '/auth/restore'
+
 /* -------------------------------------------------------------------------- */
 /* 간편로그인 제공자                                                           */
 /* -------------------------------------------------------------------------- */
@@ -239,15 +242,21 @@ export function sanitizeNextPath(value: unknown): string {
   return value
 }
 
+/** 로그인 뒤 거치는 중간 화면. 이 경로들을 `next` 로 두면 자기 자신으로 되돌아가는 루프가 된다. */
+const INTERSTITIAL_PATHS = [ONBOARDING_PATH, RESTORE_PATH] as const
+
 /**
- * 온보딩이 끝난 뒤 돌아갈 곳.
+ * 온보딩·복구가 끝난 뒤 돌아갈 곳.
  *
- * 온보딩 자체를 `next` 로 지정하면 무한 루프가 되므로 기본 경로로 되돌린다.
+ * 온보딩(또는 복구) 화면 자체를 `next` 로 지정하면 무한 루프가 되므로 기본 경로로
+ * 되돌린다.
  */
 export function sanitizePostAuthPath(value: unknown): string {
   const path = sanitizeNextPath(value)
 
-  return path === ONBOARDING_PATH || path.startsWith(`${ONBOARDING_PATH}?`)
+  return INTERSTITIAL_PATHS.some(
+    (interstitial) => path === interstitial || path.startsWith(`${interstitial}?`),
+  )
     ? DEFAULT_NEXT_PATH
     : path
 }

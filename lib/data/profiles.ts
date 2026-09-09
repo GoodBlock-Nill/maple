@@ -26,11 +26,13 @@ export type AccountProfile = Pick<
   | 'age_confirmed_at'
   | 'msw_uid'
   | 'msw_profile_code'
+  | 'deleted_at'
+  | 'purged_at'
 >
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const ACCOUNT_COLUMNS =
-  'nickname, provider, avatar_url, created_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code'
+  'nickname, provider, avatar_url, created_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at'
 
 /** 프로필이 없으면(트리거 실패 등) null. 호출부가 온보딩 미완료로 취급한다. */
 export async function getAccountProfile(userId: string): Promise<AccountProfile | null> {

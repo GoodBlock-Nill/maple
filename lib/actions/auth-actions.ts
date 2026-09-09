@@ -5,12 +5,12 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { isUniqueViolation, uniqueViolationConstraint } from '@/lib/actions/pg-error'
+import { resolvePostAuthDestination } from '@/lib/auth/lifecycle'
 import { FEATURES } from '@/lib/constants/features'
 import { createClient } from '@/lib/supabase/server'
 import { markStubProvider, signInWithStubProvider } from '@/lib/supabase/stub-social'
 import {
   ACCOUNT_PATH,
-  isOnboardingComplete,
   isSocialProvider,
   onboardingSchema,
   ONBOARDING_PATH,
@@ -100,29 +100,24 @@ export async function stubSocialSignIn(
 /**
  * 로그인 직후 갈 곳을 고른다.
  *
- * 프로필이 아직 온보딩(닉네임 확정 + 약관 동의)을 마치지 않았으면 어디로 가려
- * 했든 온보딩을 먼저 통과시킨다.
+ * 탈퇴 대기 중(`deleted_at`)이면 복구 화면이 먼저고, 그다음 온보딩(닉네임 확정 +
+ * 약관 동의) 미완료면 어디로 가려 했든 온보딩을 먼저 통과시킨다. 규칙은
+ * `resolvePostAuthDestination()` 하나가 소유한다(인증 콜백과 같은 함수).
  */
 async function resolvePostAuthPath(
   supabase: TypedSupabaseClient,
   userId: string,
   next: string | undefined,
 ): Promise<string> {
-  const nextPath = sanitizePostAuthPath(next)
-
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code',
+      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at',
     )
     .eq('id', userId)
     .maybeSingle()
 
-  if (isOnboardingComplete(profile)) {
-    return nextPath
-  }
-
-  return `${ONBOARDING_PATH}?next=${encodeURIComponent(nextPath)}`
+  return resolvePostAuthDestination(profile, next)
 }
 
 /**
@@ -147,15 +142,28 @@ function mswAccountFieldsForWrite(data: {
   return { msw_uid: data.mswUid as string, msw_profile_code: data.mswProfileCode as string }
 }
 
-/** 닉네임/UID 유니크 충돌을 제약 이름으로 갈라 필드별 메시지를 붙인다. */
+/**
+ * 닉네임/월드 계정 유니크 충돌을 제약 이름으로 갈라 필드별 메시지를 붙인다.
+ *
+ * 월드 UID·프로필 코드는 한 계정에만 연결된다(`profiles_msw_uid_key` ·
+ * `profiles_msw_profile_code_key`, 20260909000400). 다른 계정에 이미 걸려 있으면
+ * 사용자가 스스로 풀 수 없으므로 고객지원으로 안내한다 — 탈퇴 대기 중인 옛
+ * 계정이 붙잡고 있는 경우가 대표적이다.
+ */
 const NICKNAME_TAKEN_MESSAGE = '이미 사용 중인 닉네임입니다.'
-const MSW_UID_TAKEN_MESSAGE = '이미 등록된 UID입니다.'
+const MSW_UID_TAKEN_MESSAGE =
+  '이미 다른 계정에 연결된 월드 계정 UID입니다. 고객지원에 문의해 주세요.'
+const MSW_PROFILE_CODE_TAKEN_MESSAGE = '이미 다른 계정에 연결된 프로필 코드입니다.'
 
 function accountUniqueViolationFieldErrors(error: unknown): Record<string, string> | null {
   const constraint = uniqueViolationConstraint(error)
 
   if (constraint === null || constraint.includes('nickname')) {
     return { nickname: NICKNAME_TAKEN_MESSAGE }
+  }
+
+  if (constraint.includes('msw_profile_code')) {
+    return { mswProfileCode: MSW_PROFILE_CODE_TAKEN_MESSAGE }
   }
 
   if (constraint.includes('msw_uid')) {

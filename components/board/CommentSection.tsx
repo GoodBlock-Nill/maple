@@ -1,7 +1,7 @@
 import { CommentActions } from '@/components/board/CommentActions'
 import { CommentForm } from '@/components/board/CommentForm'
 import { formatDateLong } from '@/lib/utils/format-date'
-import { maskNickname } from '@/lib/utils/mask'
+import { authorLabel } from '@/lib/utils/author-display'
 
 import type { Comment } from '@/types/domain'
 
@@ -14,6 +14,8 @@ type CommentSectionProps = {
   viewerId: string | null
   /** 뷰어 본인의 정지 안내. 작성 폼과 신고 다이얼로그가 같은 문구를 쓴다. */
   suspensionNotice?: string | null
+  /** 월드 계정 연동 필수 안내(플래그 ON · 연동 전). 작성 폼만 잠근다. */
+  mswLinkNotice?: string | null
 }
 
 /**
@@ -28,6 +30,7 @@ export function CommentSection({
   isAuthenticated,
   viewerId,
   suspensionNotice = null,
+  mswLinkNotice = null,
 }: CommentSectionProps) {
   const detailPath = `/community/${postId}`
 
@@ -38,16 +41,14 @@ export function CommentSection({
       </h3>
 
       {comments.length === 0 ? (
-        <p className="text-ink-muted mt-4 text-ui-sm">첫 댓글을 남겨보세요.</p>
+        <p className="text-ink-muted text-ui-sm mt-4">첫 댓글을 남겨보세요.</p>
       ) : (
         <ul className="mt-4 flex flex-col">
           {comments.map((comment) => (
             <li key={comment.id} className="border-line border-b py-4 last:border-b-0">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="text-ink text-ui-sm font-semibold">
-                    {maskNickname(comment.author)}
-                  </span>
+                  <span className="text-ink text-ui-sm font-semibold">{authorLabel(comment)}</span>
                   <time dateTime={comment.createdAt} className="text-ink-muted text-[14px]">
                     {formatDateLong(comment.createdAt)}
                   </time>
@@ -61,7 +62,7 @@ export function CommentSection({
                   suspensionNotice={suspensionNotice}
                 />
               </div>
-              <p className="text-ink mt-1.5 text-prose leading-[1.7]">{comment.body}</p>
+              <p className="text-ink text-prose mt-1.5 leading-[1.7]">{comment.body}</p>
             </li>
           ))}
         </ul>
@@ -71,6 +72,7 @@ export function CommentSection({
         postId={postId}
         isAuthenticated={isAuthenticated}
         suspensionNotice={suspensionNotice}
+        mswLinkNotice={mswLinkNotice}
       />
     </section>
   )

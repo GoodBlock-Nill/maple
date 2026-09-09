@@ -222,6 +222,41 @@ describe('toPost', () => {
     // Assert
     expect(result.category).toBe('chat')
   })
+
+  it('should keep an active author unflagged so the masked nickname shows', () => {
+    // Arrange & Act
+    const result = toPost(postRow)
+
+    // Assert
+    expect(result.authorPurged).toBe(false)
+    expect(result.author).toBe('cinnamon')
+  })
+
+  it('should flag a purged author from the anonymized snapshot the purge function writes', () => {
+    // Arrange — 파기 배치는 author_name 을 "탈퇴한 회원#<id 앞 8자>" 로 바꾼다.
+    const result = toPost({ ...postRow, author_name: '탈퇴한 회원#aaaaaaaa' })
+
+    // Assert
+    expect(result.authorPurged).toBe(true)
+  })
+
+  it('should flag a purged comment author the same way', () => {
+    // Arrange
+    const commentRow: CommentSource = {
+      id: '33333333-0000-4000-8000-000000000002',
+      author_id: 'aaaaaaaa-0000-4000-8000-000000000003',
+      author_name: '탈퇴한 회원#aaaaaaaa',
+      content: '남아 있는 댓글',
+      created_at: '2026-05-19T11:00:00.000Z',
+    }
+
+    // Act
+    const result = toComment(commentRow)
+
+    // Assert
+    expect(result.authorPurged).toBe(true)
+    expect(result.authorId).toBe(commentRow.author_id)
+  })
 })
 
 describe('toGachaItem', () => {
