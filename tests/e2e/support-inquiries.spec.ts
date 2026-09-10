@@ -281,3 +281,57 @@ test('should let the owner edit a pending inquiry and then cancel it', async ({
   await page.goto(LIST_PATH)
   await expect(page.getByRole('link', { name: new RegExp(editedTitle) })).toContainText('접수 취소')
 })
+
+/**
+ * 첨부 접수.
+ *
+ * 파일은 폼과 함께 서버 액션 본문으로 간다. 본문 상한(`next.config.ts`)을 넘긴
+ * 요청은 액션에 닿기도 전에 500 으로 끊겨 사용자가 입력을 통째로 잃으므로, 상한을
+ * 넘는 선택은 **보내기 전에** 막혀야 한다. 상한 안쪽의 사진은 그대로 접수되고
+ * 상세에서 다시 보여야 한다 — 두 가지를 한 흐름에서 확인한다.
+ */
+test('should refuse an oversized attachment before submitting and accept a real image', async ({
+  page,
+}) => {
+  // Arrange
+  await stubLogin(page, SUPPORT_PATH)
+
+  const fileInput = page.locator('input[name="attachments"]')
+  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+
+  // Act — 상한을 넘는 파일(6MB)
+  await fileInput.setInputFiles({
+    name: 'oversize.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.alloc(6 * 1024 * 1024),
+  })
+
+  // Assert — 무엇이 문제인지 한국어로 알려 주고 제출을 잠근다(첨부가 조용히 빠지지 않게).
+  await expect(page.getByText(/oversize\.pdf .*MB/)).toBeVisible()
+  await expect(submitButton).toBeDisabled()
+
+  // Act — 첨부를 포기하면 다시 열린다
+  await page.getByRole('button', { name: '첨부 지우기' }).click()
+
+  // Assert
+  await expect(submitButton).toBeEnabled()
+  expect(await fileInput.evaluate((input: HTMLInputElement) => input.files?.length ?? -1)).toBe(0)
+
+  // Act — 상한 안쪽의 이미지는 그대로 접수된다
+  const title = `E2E 첨부 문의 ${Date.now()}`
+  await fileInput.setInputFiles('tests/fixtures/pixel.png')
+  await expect(page.getByText('pixel.png')).toBeVisible()
+
+  const inquiryId = await submitInquiry(page, title)
+
+  await page
+    .getByRole('dialog', { name: '문의가 접수되었습니다' })
+    .getByRole('button', { name: '확인' })
+    .click()
+
+  // Assert — 상세의 첨부 목록에 서명 URL 링크로 뜬다(비공개 버킷이라 링크가 곧 접근 경로다).
+  const attachmentLink = page.getByRole('link', { name: /pixel\.png/ })
+  await expect(attachmentLink).toBeVisible()
+  await expect(attachmentLink).toHaveAttribute('href', /inquiry-attachments/)
+  expect(inquiryId).not.toBe('')
+})

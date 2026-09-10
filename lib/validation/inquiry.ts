@@ -1,7 +1,13 @@
 import { z } from 'zod'
 
 import { INQUIRY_CATEGORIES, INQUIRY_TYPES } from '@/lib/constants/support'
-import { INQUIRY_ATTACHMENT_MAX_BYTES, INQUIRY_ATTACHMENT_MAX_COUNT } from '@/lib/supabase/storage'
+import {
+  INQUIRY_ATTACHMENT_MAX_BYTES,
+  INQUIRY_ATTACHMENT_MAX_COUNT,
+  INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+} from '@/lib/supabase/storage'
 
 /**
  * 1:1 문의 입력 검증.
@@ -22,17 +28,30 @@ export const INQUIRY_CONTENT_MAX = 2_000
  */
 export const ACCOUNT_ID_PATTERN = /^[0-9]{10,20}$/u
 
-const MEGABYTE = 1024 * 1024
-
-export const INQUIRY_ATTACHMENT_MAX_MB = Math.floor(INQUIRY_ATTACHMENT_MAX_BYTES / MEGABYTE)
-
-/** 버킷의 `allowed_mime_types`(마이그레이션 20260908000800)와 1:1 로 맞춘다. */
+/**
+ * 웹 폼이 받는 형식. 버킷(마이그레이션 20260909000300)은 zip · txt 까지 열려 있지만
+ * 그쪽은 **이메일로 들어오는 첨부**를 담기 위한 것이라 여기서는 일부러 좁게 둔다.
+ * 대신 버킷이 허용하는 이미지 형식(webp 포함)은 모두 받는다 — 휴대폰·캡처 도구가
+ * 만드는 파일이라 "왜 이 사진만 안 되지"가 생기지 않게 한다.
+ */
 export const INQUIRY_ATTACHMENT_MIME_TYPES: readonly string[] = [
   'image/png',
   'image/jpeg',
   'image/gif',
+  'image/webp',
   'application/pdf',
 ]
+
+/** 파일 선택 대화상자에 넘길 `accept`. 확장자만 주면 일부 모바일 브라우저가 사진을 잠근다. */
+export const INQUIRY_ATTACHMENT_ACCEPT = [
+  ...INQUIRY_ATTACHMENT_MIME_TYPES,
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.pdf',
+].join(',')
 
 /** 값이 목록에 있는지만 본다. DB 컬럼이 text 라 enum 으로 좁힐 수 없다. */
 function optionOf(options: readonly string[], message: string) {
@@ -109,9 +128,17 @@ export type InquiryAttachmentCheck = { ok: true } | { ok: false; message: string
 /** 파일 객체의 필요한 부분만 본다(File 없이도 단위 테스트할 수 있게). */
 export type UploadCandidate = { name: string; type: string; size: number }
 
+function totalBytes(files: readonly UploadCandidate[]): number {
+  return files.reduce((sum, file) => sum + file.size, 0)
+}
+
 /**
  * 첨부 검증. 버킷에도 개수·용량·MIME 제한이 있지만 거기서 걸리면 사용자는 영문
  * 스토리지 오류만 본다. 같은 규칙을 앞단에서 재서 한국어 안내를 돌려준다.
+ *
+ * 합계 제한은 버킷이 아니라 서버 액션 본문 상한 때문에 있다. 합계가 상한을 넘으면
+ * 액션이 실행되지 않아 **아무 메시지도 돌려줄 수 없으므로**, 폼이 보내기 전에
+ * 여기서 먼저 걸러야 한다(`InquiryAttachmentField` 가 같은 함수를 부른다).
  */
 export function validateInquiryAttachments(
   files: readonly UploadCandidate[],
@@ -132,14 +159,22 @@ export function validateInquiryAttachments(
     }
 
     if (!INQUIRY_ATTACHMENT_MIME_TYPES.includes(file.type)) {
-      return { ok: false, message: 'jpg · png · gif · pdf 파일만 올릴 수 있습니다.' }
+      return { ok: false, message: 'jpg · png · gif · webp · pdf 파일만 올릴 수 있습니다.' }
     }
 
     if (file.size > INQUIRY_ATTACHMENT_MAX_BYTES) {
       return {
         ok: false,
-        message: `첨부파일은 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB 이하만 올릴 수 있습니다.`,
+        message: `${file.name} 은(는) ${INQUIRY_ATTACHMENT_MAX_MB}MB 를 넘습니다. 첨부파일은 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB 이하만 올릴 수 있습니다.`,
       }
+    }
+  }
+
+  /* 새로 올리는 파일만 센다. 그대로 두는 기존 첨부는 다시 전송되지 않는다. */
+  if (totalBytes(files) > INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES) {
+    return {
+      ok: false,
+      message: `첨부파일은 합쳐서 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB 이하만 올릴 수 있습니다.`,
     }
   }
 

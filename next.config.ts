@@ -1,3 +1,5 @@
+import { SERVER_ACTION_BODY_SIZE_LIMIT } from './lib/supabase/storage'
+
 import type { NextConfig } from 'next'
 
 /* `RemotePattern` 은 next 의 공개 진입점에서 내보내지 않는다. 내부 경로를
@@ -36,6 +38,17 @@ function supabaseStoragePatterns(): RemotePatterns {
 }
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      /**
+       * 서버 액션 본문 상한. 기본값 1MB 는 휴대폰 사진 한 장에도 못 미쳐서,
+       * 1:1 문의 첨부(`multipart/form-data`)가 액션에 닿기도 전에 500 으로
+       * 끊겼다. 값은 첨부 제한과 함께 `lib/supabase/storage.ts` 가 갖는다 —
+       * 검증 상한과 본문 상한이 갈리면 한쪽만 통과하는 조합이 생긴다.
+       */
+      bodySizeLimit: SERVER_ACTION_BODY_SIZE_LIMIT,
+    },
+  },
   images: {
     remotePatterns: [
       {

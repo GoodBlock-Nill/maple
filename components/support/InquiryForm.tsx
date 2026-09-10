@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useMemo } from 'react'
+import { useActionState, useCallback, useMemo, useState } from 'react'
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
 import { InquiryAttachmentField } from '@/components/support/InquiryAttachmentField'
@@ -59,6 +59,12 @@ export function InquiryForm({
     [inquiryId],
   )
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE)
+  /* 첨부가 준비 중이거나 규칙에 어긋나 있으면 제출을 잠근다. 열어 두면 (1) 축소 전
+     원본이 실려 나가 본문 상한을 넘기거나 (2) 첨부가 조용히 빠진 문의가 접수된다. */
+  const [isAttachmentBlocked, setIsAttachmentBlocked] = useState(false)
+  const handleAttachmentBlockedChange = useCallback((value: boolean) => {
+    setIsAttachmentBlocked(value)
+  }, [])
   const fieldErrors = state.fieldErrors ?? {}
 
   return (
@@ -79,7 +85,11 @@ export function InquiryForm({
 
       <InquiryFields values={defaultValues} fieldErrors={fieldErrors} />
 
-      <InquiryAttachmentField attachments={attachments} error={fieldErrors.attachments} />
+      <InquiryAttachmentField
+        attachments={attachments}
+        error={fieldErrors.attachments}
+        onBlockedChange={handleAttachmentBlockedChange}
+      />
 
       {/* 동의는 접수 시점에 이미 받아 저장돼 있다. 수정 화면에서 다시 묻지 않는다. */}
       {isEditMode ? null : (
@@ -107,7 +117,7 @@ export function InquiryForm({
 
       <div className="flex flex-col gap-2">
         <InquirySubmitButton
-          disabled={!isAuthenticated}
+          disabled={!isAuthenticated || isAttachmentBlocked}
           describedBy={isAuthenticated ? undefined : SUBMIT_NOTICE_ID}
           label={isEditMode ? INQUIRY_EDIT_SUBMIT_LABEL : undefined}
           pendingLabel={isEditMode ? '저장 중…' : undefined}

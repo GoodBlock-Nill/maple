@@ -2,8 +2,8 @@
 
 import { useCallback, useState } from 'react'
 
-import { downscaleImage } from '@/components/editor/downscale-image'
 import { uploadPostImage } from '@/lib/actions/upload-actions'
+import { downscaleImage } from '@/lib/utils/downscale-image'
 import { validatePostImage } from '@/lib/validation/upload'
 
 /**

@@ -1,12 +1,27 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  INQUIRY_ATTACHMENT_MAX_BYTES,
+  INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+  SERVER_ACTION_BODY_SIZE_LIMIT,
+} from '@/lib/supabase/storage'
+import {
   createInquirySchema,
+  INQUIRY_ATTACHMENT_ACCEPT,
   inquiryIdSchema,
   normalizeCRLF,
   updateInquirySchema,
   validateInquiryAttachments,
 } from '@/lib/validation/inquiry'
+
+/** `next.config.ts` 가 넘기는 문자열(`'14mb'`)을 바이트로 되돌린다. */
+function bodyLimitBytes(): number {
+  const match = /^(\d+)mb$/u.exec(SERVER_ACTION_BODY_SIZE_LIMIT)
+
+  return Number(match?.[1] ?? 0) * 1024 * 1024
+}
 
 const VALID_INPUT = {
   accountId: '123456789000000',
@@ -154,13 +169,23 @@ describe('validateInquiryAttachments', () => {
   })
 
   it('should reject unsupported types', () => {
-    // Arrange & Act
+    // Arrange & Act — 버킷은 이메일 첨부 때문에 zip 을 받지만 웹 폼은 받지 않는다.
     const result = validateInquiryAttachments([
       { name: 'a.zip', type: 'application/zip', size: 10 },
     ])
 
     // Assert
     expect(result.ok).toBe(false)
+  })
+
+  it('should accept webp because the bucket allows it', () => {
+    // Arrange & Act — 캡처 도구·모바일이 만드는 형식이라 "이 사진만 안 되는" 일이 없게 한다.
+    const result = validateInquiryAttachments([
+      { name: 'shot.webp', type: 'image/webp', size: 2048 },
+    ])
+
+    // Assert
+    expect(result.ok).toBe(true)
   })
 
   it('should reject empty files', () => {
@@ -171,12 +196,51 @@ describe('validateInquiryAttachments', () => {
     expect(result.ok).toBe(false)
   })
 
-  it('should reject files over the bucket limit', () => {
+  it('should reject a file over the per-file limit and name it', () => {
     // Arrange & Act
-    const result = validateInquiryAttachments([{ ...png, size: 201 * 1024 * 1024 }])
+    const result = validateInquiryAttachments([
+      { ...png, name: 'photo.jpg', type: 'image/jpeg', size: INQUIRY_ATTACHMENT_MAX_BYTES + 1 },
+    ])
+
+    // Assert — 어느 파일이 문제인지 알려 줘야 사용자가 다시 고를 수 있다.
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.message).toContain('photo.jpg')
+    expect(result.ok === false && result.message).toContain(`${INQUIRY_ATTACHMENT_MAX_MB}MB`)
+  })
+
+  it('should reject a selection whose total exceeds the server action body limit', () => {
+    // Arrange — 개별 파일은 상한 이내지만 합치면 본문 상한을 넘긴다. 여기서 막지 않으면
+    // 요청이 액션에 닿기도 전에 끊겨 사용자는 필드 오류 대신 오류 화면을 본다.
+    const big = { ...png, type: 'image/jpeg', size: INQUIRY_ATTACHMENT_MAX_BYTES }
+
+    // Act
+    const result = validateInquiryAttachments([big, big, big])
 
     // Assert
     expect(result.ok).toBe(false)
+    expect(result.ok === false && result.message).toContain(`${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`)
+  })
+
+  it('should keep every per-file limit inside the server action body limit', () => {
+    // Arrange & Act — 규칙이 서로 어긋나면 "검증은 통과하는데 요청이 끊기는" 조합이 생긴다.
+    const budget = INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES
+
+    // Assert
+    expect(INQUIRY_ATTACHMENT_MAX_BYTES).toBeLessThanOrEqual(budget)
+    expect(budget).toBeLessThan(bodyLimitBytes())
+  })
+})
+
+describe('INQUIRY_ATTACHMENT_ACCEPT', () => {
+  it('should list MIME types as well as extensions', () => {
+    // Arrange & Act — 확장자만 주면 일부 모바일 브라우저가 사진 선택을 잠근다.
+    const accept = INQUIRY_ATTACHMENT_ACCEPT.split(',')
+
+    // Assert
+    expect(accept).toContain('image/jpeg')
+    expect(accept).toContain('image/webp')
+    expect(accept).toContain('.jpg')
+    expect(accept).toContain('.pdf')
   })
 })
 

@@ -15,9 +15,37 @@ export const STORAGE_BUCKETS = {
 
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS]
 
-/** 시안의 첨부 안내(최대 3개, 각 200MB)와 마이그레이션의 버킷 제한을 함께 반영한다. */
+/**
+ * 1:1 문의 첨부 제한.
+ *
+ * 버킷(`file_size_limit` 200MiB)이 아니라 **서버 액션의 본문 상한**이 실질적인
+ * 천장이다. 첨부는 폼과 함께 `multipart/form-data` 로 서버 액션에 실려 오는데,
+ * 본문이 상한을 넘으면 액션이 실행되기도 전에 요청이 500 으로 끊긴다 — 사용자는
+ * 필드 오류가 아니라 "A server error occurred" 화면을 보고 입력을 통째로 잃는다.
+ * 그래서 코드 쪽 상한을 본문 상한 안쪽으로 잡고, 버킷 값은 그 바깥의 보루로 둔다
+ * (버킷은 이메일 수신 첨부도 함께 받으므로 좁히지 않는다).
+ */
 export const INQUIRY_ATTACHMENT_MAX_COUNT = 3
-export const INQUIRY_ATTACHMENT_MAX_BYTES = 200 * 1024 * 1024
+export const INQUIRY_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024
+export const INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES = 12 * 1024 * 1024
+
+/**
+ * `next.config.ts` 의 `experimental.serverActions.bodySizeLimit` 값.
+ *
+ * 첨부 합계(12MB) + 본문 필드 + multipart 경계 문자열이 들어갈 여유를 둔다.
+ * 두 값을 한곳에 적어 두어야 한쪽만 올라가 "검증은 통과하는데 요청이 끊기는"
+ * 조합이 생기지 않는다.
+ */
+export const SERVER_ACTION_BODY_SIZE_LIMIT = '14mb'
+
+const MEGABYTE = 1024 * 1024
+
+/* 안내 문구·오류 메시지가 쓰는 MB 표기. 바이트 값과 같은 곳에 두어야 둘이 갈리지 않는다. */
+export const INQUIRY_ATTACHMENT_MAX_MB = Math.floor(INQUIRY_ATTACHMENT_MAX_BYTES / MEGABYTE)
+export const INQUIRY_ATTACHMENT_TOTAL_MAX_MB = Math.floor(
+  INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES / MEGABYTE,
+)
+
 export const POST_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
 const PATH_SEPARATORS = /[\\/]/u

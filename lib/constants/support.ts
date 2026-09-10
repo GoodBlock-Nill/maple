@@ -1,3 +1,8 @@
+import {
+  INQUIRY_ATTACHMENT_MAX_COUNT,
+  INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+} from '@/lib/supabase/storage'
 import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
 
 import type { BoardOption } from '@/lib/constants/board'
@@ -53,7 +58,16 @@ export const INQUIRY_CATEGORIES: readonly string[] = ['계정', '결제', '버�
 
 export const INQUIRY_TYPES: readonly string[] = ['문의', '신고', '제안']
 
-export const ATTACHMENT_NOTICE = '최대 3개, 각 200MB 이하. (확장자: jpg, png, gif, pdf)'
+/**
+ * 첨부 안내.
+ *
+ * 숫자를 문구에 박지 않고 검증 상수에서 끌어온다 — 안내와 실제 제한이 갈리면
+ * 사용자는 "된다고 적힌 파일"을 고르고 오류를 본다. 시안 문구(각 200MB)는 서버
+ * 액션 본문 상한을 넘겨 실제로는 접수가 통째로 실패해서 쓸 수 없다.
+ */
+export const ATTACHMENT_NOTICE =
+  `최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개, 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB · 합계 ` +
+  `${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB 이하. (확장자: jpg, png, gif, webp, pdf)`
 
 export const PRIVACY_CONSENT_LABEL = '개인정보 수집 및 이용에 동의합니다.'
 
@@ -177,7 +191,8 @@ export const INQUIRY_CLOSED_NO_REPLY_NOTICE =
   '운영자 검토 후 종료된 문의입니다. 추가 문의는 새 1:1 문의로 남겨 주세요.'
 
 /** 처리 중이며 아직 답변이 없는 문의의 안내. 대기 중 문구와 구분해 진행 상태를 알린다. */
-export const INQUIRY_IN_PROGRESS_NO_REPLY_NOTICE = '운영자가 처리 중입니다. 답변이 등록되면 이곳에 표시됩니다.'
+export const INQUIRY_IN_PROGRESS_NO_REPLY_NOTICE =
+  '운영자가 처리 중입니다. 답변이 등록되면 이곳에 표시됩니다.'
 
 export const INQUIRY_ATTACHMENT_HEADING = '첨부파일'
 
