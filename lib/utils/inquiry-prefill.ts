@@ -61,5 +61,11 @@ export function withLegacyCategory(
     return categories
   }
 
-  return [...categories, { key: `legacy:${label}`, label, description: null, prefill: '' }]
+  /* 세부 유형은 비운다 — 없어진 카테고리의 유형 목록은 어디에도 남아 있지 않다.
+     저장된 유형 하나는 화면(`use-inquiry-prefill`)이 현재 값으로 뒤에 붙이고,
+     서버는 `updateInquirySchema` 의 legacyTypes 로 따로 허용한다. */
+  return [
+    ...categories,
+    { key: `legacy:${label}`, label, description: null, prefill: '', subtypes: [] },
+  ]
 }

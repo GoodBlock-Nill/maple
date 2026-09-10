@@ -188,6 +188,15 @@ describe('parseInquiryFilters', () => {
     expect(parseInquiryFilters({ category: '가'.repeat(21) }).category).toBeNull()
   })
 
+  /* 유형 옵션도 DB(세부 문의 유형) + 데이터에 남은 옛 값이라 같은 규칙이다. */
+  it('유형은 모양만 보고, 유형일 수 없는 값은 무시한다', () => {
+    expect(parseInquiryFilters({ type: '로그인/접속 불가' }).type).toBe('로그인/접속 불가')
+    expect(parseInquiryFilters({ type: '  문의  ' }).type).toBe('문의')
+    expect(parseInquiryFilters({}).type).toBeNull()
+    expect(parseInquiryFilters({ type: '' }).type).toBeNull()
+    expect(parseInquiryFilters({ type: '가'.repeat(31) }).type).toBeNull()
+  })
+
   it('출처는 web · email 만 받는다', () => {
     expect(parseInquiryFilters({ source: 'web' }).source).toBe('web')
     expect(parseInquiryFilters({ source: 'email' }).source).toBe('email')

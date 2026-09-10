@@ -16,6 +16,16 @@ export const INQUIRY_CATEGORY_DESCRIPTION_MAX = 100
 export const INQUIRY_CATEGORY_PREFILL_MAX = 2000
 export const INQUIRY_CATEGORY_KEY_MAX = 40
 
+/**
+ * 세부 문의 유형(`subtypes`). 상한은 DB CHECK(`inquiry_categories_subtypes_shape`,
+ * 마이그레이션 20260910000700)와 같은 숫자다.
+ *
+ * 항목 하나가 그대로 `inquiries.type` 에 저장되고 사용자 폼의 셀렉트에 보인다.
+ * 30자를 넘기면 좁은 화면에서 셀렉트가 잘려 사용자가 무엇을 고르는지 알 수 없다.
+ */
+export const INQUIRY_SUBTYPE_MAX = 30
+export const INQUIRY_SUBTYPE_COUNT_MAX = 20
+
 /** DB CHECK(`inquiry_categories_key_shape`)와 같은 모양. */
 const KEY_PATTERN = /^[a-z0-9][a-z0-9-]{0,39}$/
 
@@ -54,6 +64,37 @@ function optionalText(max: number, tooLongMessage: string) {
     .pipe(z.string().max(max, tooLongMessage))
 }
 
+/**
+ * 세부 유형 목록.
+ *
+ * 폼은 항목마다 `subtypes` 라는 같은 이름으로 싣는다(`formData.getAll`). 빈 칸은
+ * 지운 항목이므로 조용히 걷어내고, **중복만은 막는다** — 같은 문구가 두 번 보이는
+ * 셀렉트는 사용자가 "무엇이 다른가"를 고민하게 만들고, 관리자도 어느 쪽을 지워야
+ * 하는지 알 수 없다.
+ */
+const subtypesSchema = z
+  .array(z.string())
+  .transform((values) => values.map((value) => value.trim()).filter((value) => value !== ''))
+  .superRefine((values, ctx) => {
+    if (values.length > INQUIRY_SUBTYPE_COUNT_MAX) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `세부 유형은 ${INQUIRY_SUBTYPE_COUNT_MAX}개까지 넣을 수 있습니다.`,
+      })
+    }
+
+    if (values.some((value) => value.length > INQUIRY_SUBTYPE_MAX)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `세부 유형은 각 ${INQUIRY_SUBTYPE_MAX}자를 넘을 수 없습니다.`,
+      })
+    }
+
+    if (new Set(values).size !== values.length) {
+      ctx.addIssue({ code: 'custom', message: '같은 세부 유형을 두 번 넣을 수 없습니다.' })
+    }
+  })
+
 export const inquiryCategorySchema = z.object({
   label: z
     .string()
@@ -75,6 +116,7 @@ export const inquiryCategorySchema = z.object({
     INQUIRY_CATEGORY_PREFILL_MAX,
     `프리필은 ${INQUIRY_CATEGORY_PREFILL_MAX}자를 넘을 수 없습니다.`,
   ),
+  subtypes: subtypesSchema,
   isActive: z.boolean(),
 })
 

@@ -140,6 +140,10 @@ function applyCommonFilters<TQuery extends FilterableQuery<TQuery>>(
     next = next.eq('category', filters.category)
   }
 
+  if (filters.type !== null) {
+    next = next.eq('type', filters.type)
+  }
+
   if (filters.source !== null) {
     next = next.eq('source', filters.source)
   }

@@ -4,7 +4,10 @@ import { Button, FormBanner, PageHeader } from '@/components/ui'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { INQUIRY_SORT_KEYS, getInquiries, getInquiryTabCounts } from '@/lib/data/inquiries'
-import { getInquiryCategoryFilterOptions } from '@/lib/data/inquiry-categories'
+import {
+  getInquiryCategoryFilterOptions,
+  getInquiryTypeFilterOptions,
+} from '@/lib/data/inquiry-categories'
 import { parsePage, parseSort } from '@/lib/utils/table-query'
 import { parseInquiryFilters } from '@/lib/validation/inquiries'
 
@@ -54,10 +57,13 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
   const page = parsePage(params.page)
   const preset = presetFor(filters.source)
 
-  const [{ rows, count, hasError }, counts, categories] = await Promise.all([
+  const [{ rows, count, hasError }, counts, categories, types] = await Promise.all([
     getInquiries(filters, { page, sortKey: sort.key, ascending: sort.direction === 'asc' }),
     getInquiryTabCounts(filters),
     getInquiryCategoryFilterOptions(),
+    /* 유형 옵션은 고른 카테고리에 매달려 있다. 카테고리를 바꾸고 '검색'을 누르면
+       다음 화면에서 그 카테고리의 세부 유형만 남는다(GET 폼이라 왕복이 곧 갱신이다). */
+    getInquiryTypeFilterOptions(filters.category),
   ])
 
   return (
@@ -74,7 +80,13 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
         }
       />
 
-      <InquiryFilters params={params} filters={filters} counts={counts} categories={categories} />
+      <InquiryFilters
+        params={params}
+        filters={filters}
+        counts={counts}
+        categories={categories}
+        types={types}
+      />
 
       {hasError && (
         <div className="mb-3">

@@ -29,9 +29,10 @@ import {
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { toAttachments } from '@/lib/data/inquiries'
-import { getInquiryCategoryLabels } from '@/lib/data/inquiry-categories'
+import { getInquiryCategories } from '@/lib/data/inquiry-categories'
 import { createClient } from '@/lib/supabase/server'
 import { canCancelInquiry, canEditInquiry } from '@/lib/utils/inquiry-permissions'
+import { withLegacyCategory } from '@/lib/utils/inquiry-prefill'
 import {
   inquiryIdSchema,
   updateInquirySchema,
@@ -65,7 +66,7 @@ const CANCEL_FAILURE_MESSAGE = '문의 접수를 취소하지 못했습니다. �
 const EDIT_COOLDOWN_SECONDS = REPORT_COOLDOWN_SECONDS
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
-const OWNED_COLUMNS = 'status, cancelled_at, attachments, category, created_at, updated_at'
+const OWNED_COLUMNS = 'status, cancelled_at, attachments, category, type, created_at, updated_at'
 
 type OwnedInquiry = {
   status: InquiryStatus
@@ -73,6 +74,8 @@ type OwnedInquiry = {
   attachments: readonly InquiryAttachment[]
   /** 접수 당시의 카테고리 라벨. 지금은 없어진 옛 값일 수 있다. */
   category: string
+  /** 접수 당시의 세부 문의 유형. 옛 3종('문의' 등)이거나 지금은 없어진 항목일 수 있다. */
+  type: string
   createdAt: string
   updatedAt: string
 }
@@ -119,6 +122,7 @@ async function requireOwnInquiry(id: string): Promise<Guard> {
       cancelledAt: data.cancelled_at,
       attachments: toAttachments(data.attachments),
       category: data.category,
+      type: data.type,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     },
@@ -163,9 +167,15 @@ export async function updateInquiry(
 
   /* 활성 카테고리 + **이 문의의 현재 카테고리**를 허용한다. 운영자가 카테고리를
      비활성화하거나 이름을 바꾸면 그 분류로 접수된 옛 문의가 남는데, 활성 목록만
-     보면 본문 오타 하나 고치려다 "카테고리를 선택해 주세요"에 막힌다. */
-  const allowedCategories = [...(await getInquiryCategoryLabels()), guard.inquiry.category]
-  const parsed = updateInquirySchema(allowedCategories).safeParse({
+     보면 본문 오타 하나 고치려다 "카테고리를 선택해 주세요"에 막힌다. 옛 카테고리를
+     붙이는 방법은 수정 화면(`app/(public)/support/inquiries/[id]/edit/page.tsx`)과
+     같은 함수를 쓴다 — 목록이 갈리면 화면이 보여 준 선택지가 서버에서 거절된다.
+
+     유형도 같은 이유로 **접수 당시의 값**을 함께 허용한다. 세부 유형 목록은 카테고리
+     마다 다르고 운영자가 항목을 지울 수도 있어서, 저장된 값을 막으면 제목만 고치려던
+     사용자가 유형부터 다시 정해야 한다. */
+  const categories = withLegacyCategory(await getInquiryCategories(), guard.inquiry.category)
+  const parsed = updateInquirySchema(categories, [guard.inquiry.type]).safeParse({
     accountId: readField(formData, 'accountId'),
     category: readField(formData, 'category'),
     type: readField(formData, 'type'),

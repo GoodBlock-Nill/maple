@@ -5,6 +5,8 @@ import {
   INQUIRY_CATEGORY_DESCRIPTION_MAX,
   INQUIRY_CATEGORY_LABEL_MAX,
   INQUIRY_CATEGORY_PREFILL_MAX,
+  INQUIRY_SUBTYPE_COUNT_MAX,
+  INQUIRY_SUBTYPE_MAX,
   inquiryCategoryReorderSchema,
   inquiryCategorySchema,
   toCategoryKey,
@@ -15,6 +17,7 @@ const VALID = {
   label: '접속·서버',
   description: '로그인·접속 불가',
   prefill: '글자월드 캐릭터 닉네임:\n상세 내용:',
+  subtypes: ['로그인/접속 불가', '강제 종료'],
   isActive: true,
 }
 
@@ -73,6 +76,70 @@ describe('inquiryCategorySchema', () => {
     // Assert
     expect(parsed.success).toBe(true)
     expect(toNullableText(parsed.data?.description ?? '')).toBeNull()
+  })
+})
+
+describe('inquiryCategorySchema 의 세부 문의 유형', () => {
+  it('should keep the order the operator arranged', () => {
+    // Arrange & Act — 순서가 곧 사용자 폼 셀렉트의 순서다.
+    const parsed = inquiryCategorySchema.safeParse({
+      ...VALID,
+      subtypes: ['강제 종료', '로그인/접속 불가'],
+    })
+
+    // Assert
+    expect(parsed.data?.subtypes).toEqual(['강제 종료', '로그인/접속 불가'])
+  })
+
+  it('should drop blank rows and trim the rest', () => {
+    // Arrange & Act — 편집기에서 비운 칸은 "지운 항목"이다.
+    const parsed = inquiryCategorySchema.safeParse({
+      ...VALID,
+      subtypes: ['  강제 종료 ', '   ', ''],
+    })
+
+    // Assert
+    expect(parsed.data?.subtypes).toEqual(['강제 종료'])
+  })
+
+  it('should allow an empty list', () => {
+    // Arrange & Act — 세부 유형이 없으면 사용자 폼이 셀렉트를 잠그고 '기타' 로 접수한다.
+    const parsed = inquiryCategorySchema.safeParse({ ...VALID, subtypes: [] })
+
+    // Assert
+    expect(parsed.success).toBe(true)
+    expect(parsed.data?.subtypes).toEqual([])
+  })
+
+  it('should keep the DB check limits', () => {
+    // Arrange & Act — DB CHECK(`inquiry_categories_subtypes_shape`)와 같은 숫자다.
+    const tooMany = inquiryCategorySchema.safeParse({
+      ...VALID,
+      subtypes: Array.from(
+        { length: INQUIRY_SUBTYPE_COUNT_MAX + 1 },
+        (_item, index) => `유형${index}`,
+      ),
+    })
+    const tooLong = inquiryCategorySchema.safeParse({
+      ...VALID,
+      subtypes: ['가'.repeat(INQUIRY_SUBTYPE_MAX + 1)],
+    })
+
+    // Assert
+    expect(tooMany.success).toBe(false)
+    expect(tooLong.success).toBe(false)
+  })
+
+  it('should reject duplicates', () => {
+    // Arrange & Act — 같은 문구가 두 번 보이는 셀렉트는 고를 수가 없다.
+    const parsed = inquiryCategorySchema.safeParse({
+      ...VALID,
+      subtypes: ['강제 종료', ' 강제 종료 '],
+    })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toContain('두 번')
   })
 })
 

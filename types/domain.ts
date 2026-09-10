@@ -310,6 +310,11 @@ export type InquiryCategoryOption = {
   description: string | null
   /** 선택 시 문의 내용에 채워 넣을 평문 양식. 빈 문자열이면 채우지 않는다. */
   prefill: string
+  /**
+   * 이 카테고리에서 고를 수 있는 세부 문의 유형. 그대로 `inquiries.type` 이 된다.
+   * 비어 있으면 폼이 유형 셀렉트를 감추고 폴백(`INQUIRY_SUBTYPE_FALLBACK`)으로 접수한다.
+   */
+  subtypes: readonly string[]
 }
 
 export type InquiryReply = {

@@ -23,7 +23,13 @@ export default async function SupportPage(_props: PageProps<'/support'>) {
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
       <SupportCard activeHref={SUPPORT_PATH}>
-        <InquiryForm isAuthenticated={user !== null} categories={categories} />
+        {/* 계정 ID 는 필수 항목이다. 프로필에 월드 UID 가 연동돼 있으면 미리 채워
+            사용자가 클라이언트를 켜서 옮겨 적는 일을 줄인다(수정 가능). */}
+        <InquiryForm
+          isAuthenticated={user !== null}
+          categories={categories}
+          defaultAccountId={user?.mswUid ?? ''}
+        />
       </SupportCard>
       <div className="pb-16 xl:pb-0" />
     </PageShell>

@@ -20,8 +20,14 @@ const { getInquiryCategories, getInquiryCategoryLabels } =
   await import('@/lib/data/inquiry-categories')
 
 const ROWS = [
-  { key: 'connection', label: '접속·서버', description: '접속 문제', prefill: '닉네임:\n내용:' },
-  { key: 'etc', label: '기타·건의', description: null, prefill: '' },
+  {
+    key: 'connection',
+    label: '접속·서버',
+    description: '접속 문제',
+    prefill: '닉네임:\n내용:',
+    subtypes: ['로그인/접속 불가', '강제 종료'],
+  },
+  { key: 'etc', label: '기타·건의', description: null, prefill: '', subtypes: [] },
 ]
 
 beforeEach(() => {
@@ -41,8 +47,9 @@ describe('getInquiryCategories', () => {
         label: '접속·서버',
         description: '접속 문제',
         prefill: '닉네임:\n내용:',
+        subtypes: ['로그인/접속 불가', '강제 종료'],
       },
-      { key: 'etc', label: '기타·건의', description: null, prefill: '' },
+      { key: 'etc', label: '기타·건의', description: null, prefill: '', subtypes: [] },
     ])
     expect(stub.orders).toEqual([
       ['sort_order', { ascending: true }],
@@ -60,6 +67,9 @@ describe('getInquiryCategories', () => {
     // Assert
     expect(categories.map((category) => category.label)).toEqual(INQUIRY_CATEGORY_FALLBACK_LABELS)
     expect(categories.every((category) => category.prefill === '')).toBe(true)
+    /* 세부 유형도 비어 있다 — 폼은 유형 셀렉트를 잠그고 '기타' 로 접수한다.
+       카테고리를 못 읽었다고 유형까지 고르라고 막아 세울 이유가 없다. */
+    expect(categories.every((category) => category.subtypes.length === 0)).toBe(true)
   })
 
   it('should fall back when the table has no active row', async () => {

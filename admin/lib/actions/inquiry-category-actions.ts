@@ -54,12 +54,18 @@ function nullableArg(value: string | null): string {
   return value as unknown as string
 }
 
-/** 폼 → 스키마 입력. 체크박스는 값이 없으면 아예 오지 않는다. */
+/**
+ * 폼 → 스키마 입력. 체크박스는 값이 없으면 아예 오지 않는다.
+ *
+ * 세부 유형은 항목마다 같은 이름(`subtypes`)으로 실려 오므로 `getAll` 로 한 번에
+ * 받는다 — 순서가 곧 사용자 폼 셀렉트의 순서다(화면이 보여 준 대로 저장된다).
+ */
 function readCategoryInput(formData: FormData) {
   return {
     label: readField(formData, 'label'),
     description: readField(formData, 'description'),
     prefill: readField(formData, 'prefill'),
+    subtypes: formData.getAll('subtypes').map((value) => (typeof value === 'string' ? value : '')),
     isActive: formData.get('isActive') !== null,
   }
 }
@@ -75,7 +81,7 @@ export async function createInquiryCategoryAction(
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
-  const { label, description, prefill, isActive } = parsed.data
+  const { label, description, prefill, subtypes, isActive } = parsed.data
   const supabase = await createClient()
   // 새 카테고리는 맨 뒤에 붙인다. 중간에 끼우면 기존 순서가 통째로 밀린다.
   const sortOrder = await getNextInquiryCategorySortOrder()
@@ -88,6 +94,7 @@ export async function createInquiryCategoryAction(
       label,
       description: toNullableText(description),
       prefill,
+      subtypes,
       sort_order: sortOrder,
       is_active: isActive,
     })
@@ -112,7 +119,7 @@ export async function createInquiryCategoryAction(
     action: 'inquiry_category.create',
     targetTable: 'inquiry_categories',
     targetId: data.id,
-    after: { key, label, description, is_active: isActive, sort_order: sortOrder },
+    after: { key, label, description, subtypes, is_active: isActive, sort_order: sortOrder },
   })
 
   await revalidateCategories()
@@ -136,11 +143,11 @@ export async function updateInquiryCategoryAction(
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
-  const { label, description, prefill, isActive } = parsed.data
+  const { label, description, prefill, subtypes, isActive } = parsed.data
   const supabase = await createClient()
   const { data: before } = await supabase
     .from('inquiry_categories')
-    .select('key, label, description, prefill, sort_order, is_active')
+    .select('key, label, description, prefill, subtypes, sort_order, is_active')
     .eq('id', categoryId)
     .maybeSingle()
 
@@ -158,6 +165,7 @@ export async function updateInquiryCategoryAction(
     p_prefill: prefill,
     p_sort_order: before.sort_order,
     p_is_active: isActive,
+    p_subtypes: subtypes,
   })
 
   if (error !== null) {
@@ -184,6 +192,7 @@ export async function updateInquiryCategoryAction(
       label,
       description,
       prefill,
+      subtypes,
       is_active: isActive,
       /* 이름이 바뀌면서 함께 옮겨 간 과거 문의 수. 나중에 "왜 이 문의의 분류가
          달라졌나"를 되짚는 유일한 근거다. */
@@ -222,7 +231,7 @@ export async function deleteInquiryCategoryAction(
   const supabase = await createClient()
   const { data: before } = await supabase
     .from('inquiry_categories')
-    .select('key, label, description, prefill, sort_order, is_active')
+    .select('key, label, description, prefill, subtypes, sort_order, is_active')
     .eq('id', categoryId)
     .maybeSingle()
 

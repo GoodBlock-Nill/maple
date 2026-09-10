@@ -76,16 +76,42 @@ export const INQUIRY_CATEGORY_FALLBACK_LABELS: readonly string[] = [
   '기타·건의',
 ]
 
-/** 폴백 라벨을 폼이 쓰는 옵션 모양으로 올린다(설명·프리필 없음). */
+/**
+ * 폴백 라벨을 폼이 쓰는 옵션 모양으로 올린다(설명·프리필·세부 유형 없음).
+ *
+ * 세부 유형이 비어 있으므로 폼은 유형 셀렉트를 감추고 `INQUIRY_SUBTYPE_FALLBACK`
+ * 으로 접수한다 — 조회가 깨진 상황에서 유형까지 고르라고 막아 세울 이유가 없다.
+ */
 export const INQUIRY_CATEGORY_FALLBACK: readonly InquiryCategoryOption[] =
   INQUIRY_CATEGORY_FALLBACK_LABELS.map((label, index) => ({
     key: `fallback-${index}`,
     label,
     description: null,
     prefill: '',
+    subtypes: [],
   }))
 
 export const INQUIRY_CATEGORY_PLACEHOLDER = '카테고리를 선택해주세요'
+
+/* -------------------------------------------------------------------------
+ * 글자월드 계정 ID (2026-09-11 부터 필수)
+ * ---------------------------------------------------------------------- */
+
+export const INQUIRY_ACCOUNT_LABEL = '글자월드 계정 ID'
+
+export const INQUIRY_ACCOUNT_PLACEHOLDER = '예: 20123456789000000'
+
+/** 쿠폰 등록·마이페이지와 같은 문장을 쓴다 — 같은 값을 두 화면이 다르게 부르지 않는다. */
+export const INQUIRY_ACCOUNT_HELP =
+  '계정 ID는 “글자월드 - 설정 - 계정 정보” 를 통해서 확인할 수 있습니다.'
+
+/**
+ * 필수 항목이 덜 채워졌을 때 제출 버튼 아래에 서는 안내.
+ *
+ * 버튼을 잠그기만 하면 사용자는 왜 눌리지 않는지 모른다 — 비로그인 안내와 같은
+ * 자리에 이유를 적는다.
+ */
+export const INQUIRY_REQUIRED_NOTICE = '필수 항목(*)을 모두 입력해 주세요.'
 
 /**
  * 프리필 교체 확인.
@@ -100,7 +126,15 @@ export const INQUIRY_PREFILL_CONFIRM_DESCRIPTION = '카테고리를 바꿀까요
 
 export const INQUIRY_PREFILL_CONFIRM_LABEL = '카테고리 변경'
 
-export const INQUIRY_TYPES: readonly string[] = ['문의', '신고', '제안']
+/**
+ * 세부 문의 유형 셀렉트의 안내 문구.
+ *
+ * 카테고리를 고르기 전에는 보여 줄 항목이 없다 — 빈 셀렉트를 눌러 보게 두지 않고
+ * 무엇을 먼저 해야 하는지 그 자리에 적는다.
+ */
+export const INQUIRY_SUBTYPE_PLACEHOLDER = '세부 문의 유형을 선택해주세요'
+
+export const INQUIRY_SUBTYPE_LOCKED_PLACEHOLDER = '카테고리를 먼저 선택해주세요'
 
 /**
  * 첨부 안내.

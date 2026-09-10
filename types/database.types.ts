@@ -602,6 +602,7 @@ export type Database = {
           label: string
           prefill: string
           sort_order: number
+          subtypes: string[]
           updated_at: string
         }
         Insert: {
@@ -613,6 +614,7 @@ export type Database = {
           label: string
           prefill?: string
           sort_order?: number
+          subtypes?: string[]
           updated_at?: string
         }
         Update: {
@@ -624,6 +626,7 @@ export type Database = {
           label?: string
           prefill?: string
           sort_order?: number
+          subtypes?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -1145,6 +1148,17 @@ export type Database = {
           total: number
         }[]
       }
+      inquiry_subtypes_valid: {
+        Args: { p_subtypes: string[] }
+        Returns: boolean
+      }
+      inquiry_type_usage: {
+        Args: never
+        Returns: {
+          total: number
+          type: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
@@ -1195,6 +1209,7 @@ export type Database = {
           p_label: string
           p_prefill: string
           p_sort_order: number
+          p_subtypes: string[]
         }
         Returns: number
       }

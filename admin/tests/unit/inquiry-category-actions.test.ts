@@ -145,11 +145,17 @@ const {
   updateInquiryCategoryAction,
 } = await import('@/lib/actions/inquiry-category-actions')
 
-function formData(fields: Record<string, string>): FormData {
+function formData(fields: Record<string, string>, subtypes: readonly string[] = []): FormData {
   const data = new FormData()
 
   for (const [key, value] of Object.entries(fields)) {
     data.set(key, value)
+  }
+
+  /* 세부 유형은 항목마다 같은 이름으로 실린다(편집기의 입력이 그대로 전송된다).
+     액션은 `getAll('subtypes')` 로 화면 순서 그대로 받는다. */
+  for (const subtype of subtypes) {
+    data.append('subtypes', subtype)
   }
 
   return data
@@ -179,6 +185,7 @@ beforeEach(() => {
     label: '접속',
     description: null,
     prefill: '',
+    subtypes: [],
     sort_order: 0,
     is_active: true,
   }
@@ -385,5 +392,63 @@ describe('reorderInquiryCategoriesAction', () => {
     // Assert
     expect(result.formError).toBe('정렬 정보를 읽지 못했습니다.')
     expect(updates).toHaveLength(0)
+  })
+})
+
+describe('세부 문의 유형', () => {
+  it('should insert the subtypes in the order the editor showed', async () => {
+    // Arrange & Act — 순서가 곧 사용자 폼 셀렉트의 순서다.
+    await createInquiryCategoryAction(
+      {},
+      formData({ label: 'Save Data', description: '', prefill: '', isActive: 'on' }, [
+        '데이터 롤백',
+        '저장되지 않음',
+      ]),
+    )
+
+    // Assert
+    expect(inserts[0]).toMatchObject({ subtypes: ['데이터 롤백', '저장되지 않음'] })
+  })
+
+  it('should drop the rows the operator emptied', async () => {
+    // Arrange & Act — 편집기에서 비운 칸은 "지운 항목"이다.
+    await createInquiryCategoryAction(
+      {},
+      formData({ label: 'Save Data', description: '', prefill: '', isActive: 'on' }, [
+        '데이터 롤백',
+        '   ',
+      ]),
+    )
+
+    // Assert
+    expect(inserts[0]).toMatchObject({ subtypes: ['데이터 롤백'] })
+  })
+
+  it('should pass the subtypes through the update RPC', async () => {
+    // Arrange & Act — 카테고리 수정은 RPC 한 번(= 한 트랜잭션)으로만 간다.
+    await updateInquiryCategoryAction({}, formData(EDIT_FIELDS, ['로그인/접속 불가', '강제 종료']))
+
+    // Assert
+    expect(rpcCalls[0]?.name).toBe('update_inquiry_category')
+    expect(rpcCalls[0]?.args).toMatchObject({
+      p_subtypes: ['로그인/접속 불가', '강제 종료'],
+    })
+  })
+
+  it('should refuse duplicates before touching the database', async () => {
+    // Arrange & Act — 같은 문구가 두 번 보이는 셀렉트는 고를 수가 없다.
+    const result = await updateInquiryCategoryAction({}, formData(EDIT_FIELDS, ['중복', '중복']))
+
+    // Assert
+    expect(result.fieldErrors?.subtypes).toContain('두 번')
+    expect(rpcCalls).toHaveLength(0)
+  })
+
+  it('should record the subtypes in the audit log', async () => {
+    // Arrange & Act — 나중에 "이 유형이 언제 사라졌나"를 되짚는 유일한 근거다.
+    await updateInquiryCategoryAction({}, formData(EDIT_FIELDS, ['로그인/접속 불가']))
+
+    // Assert
+    expect(audits.at(-1)?.after).toMatchObject({ subtypes: ['로그인/접속 불가'] })
   })
 })

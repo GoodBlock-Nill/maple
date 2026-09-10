@@ -33,12 +33,15 @@ export function InquiryFilters({
   filters,
   counts,
   categories,
+  types,
 }: {
   params: QueryParams
   filters: Filters
   counts: InquiryTabCounts
   /** DB 의 카테고리(비활성 포함) + 데이터에만 남은 옛 라벨. `lib/data/inquiry-categories.ts` */
   categories: readonly string[]
+  /** 고른 카테고리의 세부 유형(카테고리 미선택이면 전체) + 데이터에만 남은 옛 유형. */
+  types: readonly string[]
 }) {
   const sort = firstValue(params.sort)
   const isEmail = filters.source === 'email'
@@ -109,6 +112,22 @@ export function InquiryFilters({
               {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {/* 유형 옵션은 카테고리를 고른 뒤 '검색'을 누르면 그 카테고리의 것만 남는다.
+            이메일 문의의 유형('일반')은 수신 함수가 고정하므로 고를 것이 없다. */}
+        {!isEmail && types.length > 0 && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-ink text-[13px] font-semibold">유형</span>
+            <select name="type" defaultValue={filters.type ?? ''} className={CONTROL_CLASS}>
+              <option value="">전체</option>
+              {types.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>

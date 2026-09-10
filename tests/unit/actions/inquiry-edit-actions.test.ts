@@ -46,18 +46,19 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ ...stub.client, storage: storageStub() }),
 }))
 
-/* 카테고리는 DB 에서 온다. 액션이 무엇을 허용 목록으로 쓰는지만 보면 되므로
-   데이터 계층은 고정 목록으로 세운다(`server-only` 를 끌고 오지 않는 부수 효과도 있다). */
-const CATEGORIES: readonly string[] = ['접속·서버', '캐릭터·게임 진행', '기타·건의']
+/* 카테고리(와 그 카테고리의 세부 문의 유형)는 DB 에서 온다. 액션이 무엇을 허용
+   목록으로 쓰는지만 보면 되므로 데이터 계층은 고정 목록으로 세운다(`server-only` 를
+   끌고 오지 않는 부수 효과도 있다). */
+const CATEGORIES = [
+  { key: 'k0', label: '접속·서버', subtypes: ['로그인/접속 불가', '강제 종료'] },
+  { key: 'k1', label: '캐릭터·게임 진행', subtypes: ['보상 획득 오류'] },
+  /* 세부 유형이 없는 카테고리 — 폼이 hidden 으로 싣는 '기타' 만 받는다. */
+  { key: 'k2', label: '기타·건의', subtypes: [] },
+]
 vi.mock('@/lib/data/inquiry-categories', () => ({
   getInquiryCategories: async () =>
-    CATEGORIES.map((label, index) => ({
-      key: `k${index}`,
-      label,
-      description: null,
-      prefill: '',
-    })),
-  getInquiryCategoryLabels: async () => CATEGORIES,
+    CATEGORIES.map((category) => ({ ...category, description: null, prefill: '' })),
+  getInquiryCategoryLabels: async () => CATEGORIES.map((category) => category.label),
 }))
 
 const { cancelInquiry, updateInquiry } = await import('@/lib/actions/inquiry-edit-actions')
@@ -81,6 +82,9 @@ function ownedRow(overrides: Record<string, unknown> = {}) {
     status: 'pending',
     cancelled_at: null,
     attachments: [ATTACHMENT],
+    /* 접수 당시의 분류·유형. 지금 목록에 없어도 수정은 통과해야 한다. */
+    category: '접속·서버',
+    type: '로그인/접속 불가',
     created_at: CREATED_AT,
     updated_at: CREATED_AT,
     ...overrides,
@@ -90,9 +94,9 @@ function ownedRow(overrides: Record<string, unknown> = {}) {
 function editForm(overrides: Record<string, string> = {}): FormData {
   const formData = new FormData()
   const values = {
-    accountId: '123456789000000',
+    accountId: '20123456789000000',
     category: '캐릭터·게임 진행',
-    type: '제안',
+    type: '보상 획득 오류',
     title: '제목을 고쳤습니다',
     content: '내용도 함께 고쳤습니다.',
     ...overrides,
@@ -131,14 +135,47 @@ describe('updateInquiry', () => {
 
     // Assert
     expect(stub.updates[0]).toMatchObject({
-      account_id: '123456789000000',
+      account_id: '20123456789000000',
       category: '캐릭터·게임 진행',
-      type: '제안',
+      type: '보상 획득 오류',
       title: '제목을 고쳤습니다',
       content: '내용도 함께 고쳤습니다.',
       attachments: [ATTACHMENT],
     })
     expect(message).toBe(`${REDIRECT_PREFIX}${DETAIL_PATH}?updated=1`)
+  })
+
+  it('should keep the type the inquiry was filed with', async () => {
+    // Arrange — 옛 3종('문의')으로 접수된 문의. 지금은 어느 카테고리에도 없는 값이다.
+    stub = createSupabaseStub([
+      { data: ownedRow({ type: '문의' }), error: null },
+      { data: null, error: null },
+    ])
+
+    // Act — 제목만 고치고 유형은 그대로 둔다.
+    await runAndCatch(
+      updateInquiry(
+        INQUIRY_ID,
+        EMPTY_FORM_STATE,
+        editForm({ category: '접속·서버', type: '문의' }),
+      ),
+    )
+
+    // Assert
+    expect(stub.updates[0]).toMatchObject({ category: '접속·서버', type: '문의' })
+  })
+
+  it('should reject a subtype from another category', async () => {
+    // Arrange & Act — 예외는 이 문의가 들고 있던 값 하나뿐이다.
+    const result = await updateInquiry(
+      INQUIRY_ID,
+      EMPTY_FORM_STATE,
+      editForm({ category: '접속·서버', type: '보상 획득 오류' }),
+    )
+
+    // Assert
+    expect(result.fieldErrors?.type).toContain('세부 문의 유형')
+    expect(stub.updates).toHaveLength(0)
   })
 
   it('should refuse to edit an inquiry the operator already picked up', async () => {

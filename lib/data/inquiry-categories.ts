@@ -19,7 +19,7 @@ import type { InquiryCategoryOption } from '@/types/domain'
  */
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
-const CATEGORY_COLUMNS = 'key, label, description, prefill'
+const CATEGORY_COLUMNS = 'key, label, description, prefill, subtypes'
 
 async function fetchInquiryCategories(): Promise<readonly InquiryCategoryOption[]> {
   const supabase = createPublicClient()
@@ -43,6 +43,7 @@ async function fetchInquiryCategories(): Promise<readonly InquiryCategoryOption[
     label: row.label,
     description: row.description,
     prefill: row.prefill,
+    subtypes: row.subtypes,
   }))
 }
 
@@ -72,7 +73,13 @@ export async function getInquiryCategories(): Promise<readonly InquiryCategoryOp
   }
 }
 
-/** 접수·수정 액션이 검사에 쓰는 허용 라벨. */
+/**
+ * 접수·수정 액션이 검사에 쓰는 허용 라벨.
+ *
+ * 유형(세부 문의 유형) 검사는 카테고리마다 달라 라벨만으로는 할 수 없다 — 액션은
+ * `getInquiryCategories()` 를 그대로 넘긴다. 이 함수는 "어떤 라벨을 받는가"만
+ * 물어보는 자리(테스트 · 진단)에 남겨 둔다.
+ */
 export async function getInquiryCategoryLabels(): Promise<readonly string[]> {
   return (await getInquiryCategories()).map((category) => category.label)
 }

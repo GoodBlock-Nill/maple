@@ -23,6 +23,12 @@ const DESCRIPTION = 'E2E 로 만든 카테고리입니다.'
 const PREFILL = '닉네임:\n증상:\n발생 일시:'
 const EDITED_PREFILL = '닉네임:\n증상:\n발생 일시:\n첨부:'
 
+/** 세부 문의 유형 — 사용자 폼의 유형 셀렉트가 그대로 이 목록이 된다. */
+const SUBTYPES = ['E2E 유형 하나', 'E2E 유형 둘']
+
+/** 수정에서 순서를 뒤집는다(위에 둔 항목이 사용자에게도 먼저 보인다). */
+const REORDERED_SUBTYPES = [...SUBTYPES].reverse()
+
 const SHOT_DIR =
   process.env.INQUIRY_CATEGORY_SHOTS ??
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-categories'
@@ -96,6 +102,12 @@ test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따�
   await createDialog.getByLabel('설명').fill(DESCRIPTION)
   await createDialog.getByLabel('프리필(문의 내용 양식)').fill(PREFILL)
 
+  // Act — 세부 문의 유형 두 개
+  for (const [index, subtype] of SUBTYPES.entries()) {
+    await createDialog.getByRole('button', { name: '세부 유형 추가' }).click()
+    await createDialog.getByRole('textbox', { name: `세부 유형 ${index + 1}` }).fill(subtype)
+  }
+
   // Assert — 미리보기가 줄바꿈을 그대로 보여 준다
   await expect(createDialog.getByText('사용자 화면 미리보기')).toBeVisible()
   await page.screenshot({ path: `${SHOT_DIR}/admin-category-create-dialog.png` })
@@ -103,9 +115,23 @@ test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따�
   await createDialog.getByRole('button', { name: '등록', exact: true }).click()
   await expect(categoryRow(page, LABEL)).toBeVisible()
 
+  // Assert — 목록 한 줄이 세부 유형 개수와 항목을 함께 보여 준다
+  await expect(categoryRow(page, LABEL)).toContainText(`세부 유형 ${SUBTYPES.length}개`)
+
   // Assert — 사용자 폼에 라벨 · 설명이 아니라 옵션으로 들어간다(프리필은 옵션 데이터)
   const html = await waitForClientSupportHtml(request, LABEL)
   expect(html).toContain(LABEL)
+
+  // Assert — 고르면 유형 셀렉트가 관리자가 넣은 순서 그대로 채워진다
+  await page.goto(`${CLIENT_URL}/support`)
+  await page.locator('select[name="category"]').selectOption(LABEL)
+  expect(await page.locator('select[name="type"] option').allTextContents()).toEqual([
+    '세부 문의 유형을 선택해주세요',
+    ...SUBTYPES,
+  ])
+  await page.screenshot({ path: `${SHOT_DIR}/client-support-subtypes.png`, fullPage: true })
+
+  await page.goto('/inquiries/categories')
 
   // Act — 수정: 이름과 프리필을 함께 바꾼다
   await categoryRow(page, LABEL).getByRole('button', { name: '수정' }).click()
@@ -113,6 +139,13 @@ test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따�
   const editDialog = page.getByRole('dialog')
   await editDialog.getByLabel('이름').fill(RENAMED_LABEL)
   await editDialog.getByLabel('프리필(문의 내용 양식)').fill(EDITED_PREFILL)
+
+  // Act — 저장된 세부 유형이 그대로 열리고, 순서를 한 칸 올린다
+  const firstSubtype = editDialog.getByRole('textbox', { name: '세부 유형 1' })
+
+  await expect(firstSubtype).toHaveValue(SUBTYPES[0] as string)
+  await editDialog.getByRole('button', { name: '세부 유형 2 위로' }).click()
+  await expect(firstSubtype).toHaveValue(REORDERED_SUBTYPES[0] as string)
   await page.screenshot({ path: `${SHOT_DIR}/admin-category-edit-dialog.png` })
   await editDialog.getByRole('button', { name: '수정', exact: true }).click()
 
@@ -125,6 +158,12 @@ test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따�
   await page.goto(`${CLIENT_URL}/support`)
   await page.locator('select[name="category"]').selectOption(RENAMED_LABEL)
   await expect(page.locator('textarea[name="content"]')).toHaveValue(EDITED_PREFILL)
+
+  // Assert — 유형 셀렉트도 관리자가 바꾼 순서를 그대로 따라간다
+  expect(await page.locator('select[name="type"] option').allTextContents()).toEqual([
+    '세부 문의 유형을 선택해주세요',
+    ...REORDERED_SUBTYPES,
+  ])
   await page.screenshot({ path: `${SHOT_DIR}/client-support-prefill.png`, fullPage: true })
 
   // Act — 삭제 다이얼로그(문의 0건이라 삭제할 수 있다)
@@ -170,7 +209,7 @@ test('접수된 문의가 있는 카테고리는 삭제 대신 비활성화를 �
     .from('inquiries')
     .insert({
       category: label,
-      type: '문의',
+      type: 'E2E 유형 하나',
       title: `[E2E] 카테고리 사용 ${STAMP}`,
       content: '삭제 가드 검증용 문의입니다.',
       privacy_consent: true,

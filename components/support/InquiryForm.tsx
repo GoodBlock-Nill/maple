@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useCallback, useMemo, useState } from 'react'
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
 import { InquiryAttachmentField } from '@/components/support/InquiryAttachmentField'
@@ -13,6 +13,7 @@ import { createInquiry } from '@/lib/actions/inquiry-actions'
 import { updateInquiry } from '@/lib/actions/inquiry-edit-actions'
 import {
   INQUIRY_EDIT_SUBMIT_LABEL,
+  INQUIRY_REQUIRED_NOTICE,
   LOGIN_REQUIRED_INQUIRY_NOTICE,
   MY_INQUIRIES_HEADING,
   MY_INQUIRIES_PATH,
@@ -20,11 +21,13 @@ import {
   PRIVACY_CONSENT_LINK_LABEL,
   PRIVACY_POLICY_PATH,
 } from '@/lib/constants/support'
+import { isInquiryFormFilled } from '@/lib/validation/inquiry'
 
 import type { InquiryFormValues } from '@/components/support/InquiryFields'
 import type { InquiryAttachment, InquiryCategoryOption } from '@/types/domain'
 
 const SUBMIT_NOTICE_ID = 'inquiry-submit-notice'
+const REQUIRED_NOTICE_ID = 'inquiry-required-notice'
 const LOGIN_HREF = `/login?next=${encodeURIComponent('/support')}`
 
 type InquiryFormProps = {
@@ -37,6 +40,17 @@ type InquiryFormProps = {
   defaultValues?: InquiryFormValues
   /** 수정 모드에서 이미 올라가 있는 첨부. */
   attachments?: readonly InquiryAttachment[]
+  /** 접수 모드에서 계정 ID 칸에 미리 채울 값(프로필의 월드 UID). */
+  defaultAccountId?: string
+}
+
+/** 잠긴 제출 버튼이 가리킬 안내. 로그인 쪽이 먼저다(그 상태에서는 입력도 못 한다). */
+function requiredDescribedBy(isAuthenticated: boolean, isIncomplete: boolean): string | undefined {
+  if (!isAuthenticated) {
+    return SUBMIT_NOTICE_ID
+  }
+
+  return isIncomplete ? REQUIRED_NOTICE_ID : undefined
 }
 
 /**
@@ -55,6 +69,7 @@ export function InquiryForm({
   inquiryId,
   defaultValues,
   attachments = [],
+  defaultAccountId,
 }: InquiryFormProps) {
   const isEditMode = inquiryId !== undefined
   const action = useMemo(
@@ -69,10 +84,31 @@ export function InquiryForm({
     setIsAttachmentBlocked(value)
   }, [])
   const fieldErrors = state.fieldErrors ?? {}
+  /* 필수 항목이 덜 채워졌으면 제출을 잠근다(2026-09-11 제품 결정 — 첨부만 선택).
+     값마다 상태를 두는 대신 폼 DOM 을 그대로 읽는다: 입력이 늘어나도 판정이 한
+     자리에 남고, 수정 화면처럼 서버가 채워 준 값도 마운트 직후 그대로 잡힌다. */
+  const formRef = useRef<HTMLFormElement>(null)
+  const [isIncomplete, setIsIncomplete] = useState(true)
+  const syncRequired = useCallback(() => {
+    const form = formRef.current
+
+    if (form !== null) {
+      setIsIncomplete(!isInquiryFormFilled(new FormData(form), !isEditMode))
+    }
+  }, [isEditMode])
+
+  useEffect(syncRequired, [syncRequired])
 
   return (
     /* 세로 리듬은 시안 렌더(support.png) 기준 행 간격 17(라벨 25.5 + 8 + 필드 40). */
-    <form action={formAction} className="flex flex-col gap-5 lg:gap-[17px]">
+    <form
+      ref={formRef}
+      action={formAction}
+      /* 리액트의 onChange 는 입력마다 올라오므로(제어·비제어 모두) 폼 하나에
+         걸어 두면 모든 칸의 변화를 한 번에 받는다. */
+      onChange={syncRequired}
+      className="flex flex-col gap-5 lg:gap-[17px]"
+    >
       {isAuthenticated && !isEditMode ? (
         <div className="flex justify-end">
           <Link
@@ -86,7 +122,12 @@ export function InquiryForm({
 
       <FormFeedback state={state} />
 
-      <InquiryFields categories={categories} values={defaultValues} fieldErrors={fieldErrors} />
+      <InquiryFields
+        categories={categories}
+        values={defaultValues}
+        defaultAccountId={defaultAccountId}
+        fieldErrors={fieldErrors}
+      />
 
       <InquiryAttachmentField
         attachments={attachments}
@@ -120,8 +161,8 @@ export function InquiryForm({
 
       <div className="flex flex-col gap-2">
         <InquirySubmitButton
-          disabled={!isAuthenticated || isAttachmentBlocked}
-          describedBy={isAuthenticated ? undefined : SUBMIT_NOTICE_ID}
+          disabled={!isAuthenticated || isAttachmentBlocked || isIncomplete}
+          describedBy={requiredDescribedBy(isAuthenticated, isIncomplete)}
           label={isEditMode ? INQUIRY_EDIT_SUBMIT_LABEL : undefined}
           pendingLabel={isEditMode ? '저장 중…' : undefined}
         />
@@ -132,6 +173,13 @@ export function InquiryForm({
             </Link>
           </p>
         )}
+
+        {/* 잠긴 버튼 옆에 이유를 남긴다 — 로그인 안내와 같은 자리, 같은 문투다. */}
+        {isAuthenticated && isIncomplete ? (
+          <p id={REQUIRED_NOTICE_ID} className="text-ink-muted text-center text-[15px]">
+            {INQUIRY_REQUIRED_NOTICE}
+          </p>
+        ) : null}
       </div>
     </form>
   )

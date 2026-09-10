@@ -23,6 +23,10 @@ const LIST_PATH = '/support/inquiries'
 const SCREENSHOT_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/verify'
 
+/** 세부 문의 유형·필수 항목 검증 화면. 리포트에 함께 싣는다. */
+const SUBTYPE_SHOT_DIR =
+  '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-subtypes'
+
 /** 카테고리·프리필 검증 화면. 리포트에 함께 싣는다. */
 const CATEGORY_SHOT_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-categories'
@@ -76,15 +80,31 @@ async function stubLogin(page: Page, nextPath: string): Promise<void> {
 /** 시드 카테고리(마이그레이션 20260910000400). 고르면 내용에 양식이 채워진다. */
 const CATEGORY_LABEL = '접속·서버'
 
+/** 세부 유형이 없는 시드 카테고리 — 폼이 유형 셀렉트를 잠그고 '기타' 로 접수한다. */
 const OTHER_CATEGORY_LABEL = '기타·건의'
 
-async function submitInquiry(page: Page, title: string): Promise<string> {
-  await page.locator('input[name="accountId"]').fill(randomDigits(15))
+/** 그 카테고리의 세부 문의 유형(마이그레이션 20260910000700 시드). */
+const SUBTYPES = ['로그인/접속 불가', '강제 종료', '지연/서버 장애'] as const
+
+const [SUBTYPE_LABEL, OTHER_SUBTYPE_LABEL] = SUBTYPES
+
+/**
+ * 필수 항목을 모두 채운다(2026-09-11 제품 결정 — 첨부만 선택).
+ *
+ * 하나라도 비면 제출 버튼이 잠기므로, 첨부·영상 시나리오도 이 함수를 먼저 부른 뒤에야
+ * "첨부 때문에 잠겼는가"를 물어볼 수 있다.
+ */
+async function fillRequiredFields(page: Page, title: string): Promise<void> {
+  await page.locator('input[name="accountId"]').fill(randomDigits(17))
   await page.locator('select[name="category"]').selectOption(CATEGORY_LABEL)
-  await page.locator('select[name="type"]').selectOption('문의')
+  await page.locator('select[name="type"]').selectOption(SUBTYPE_LABEL)
   await page.locator('input[name="title"]').fill(title)
   await page.locator('textarea[name="content"]').fill('E2E 로 접수한 문의입니다.\n두 번째 줄.')
   await page.locator('input[name="consent"]').check()
+}
+
+async function submitInquiry(page: Page, title: string): Promise<string> {
+  await fillRequiredFields(page, title)
   await page.getByRole('button', { name: '문의 등록하기' }).click()
 
   await page.waitForURL(/\/support\/inquiries\/[0-9a-f-]{36}/)
@@ -111,19 +131,36 @@ test('should prefill the content from the selected category and confirm before r
   await page.goto(SUPPORT_PATH)
 
   const category = page.locator('select[name="category"]')
+  const type = page.locator('select[name="type"]')
   const content = page.locator('textarea[name="content"]')
+
+  // Assert — 카테고리 이전에는 고를 것이 없다(셀렉트가 잠겨 있다)
+  await expect(type).toBeDisabled()
 
   // Act — 카테고리를 고르면 그 카테고리의 양식이 내용에 들어간다
   await category.selectOption(CATEGORY_LABEL)
 
   // Assert — 양식 + 설명(셀렉트 아래 한 줄)
   await expect(content).toHaveValue(/글자월드 캐릭터 닉네임:/)
-  await expect(content).toHaveValue(/세부 문의 유형/)
+  /* 세부 유형 목록은 이제 셀렉트가 갖는다 — 양식에 다시 적지 않는다(같은 것을
+     두 번 고르게 되고, 둘이 어긋난 문의가 들어온다). */
+  await expect(content).not.toHaveValue(/세부 문의 유형/)
   await expect(page.getByText('로그인·접속 불가')).toBeVisible()
+
+  // Assert — 유형 셀렉트가 그 카테고리의 세부 유형으로 채워진다
+  await expect(type).toBeEnabled()
+  expect(await type.locator('option').allTextContents()).toEqual([
+    '세부 문의 유형을 선택해주세요',
+    ...SUBTYPES,
+  ])
   await page.screenshot({
     path: `${CATEGORY_SHOT_DIR}/client-support-prefilled-${isDesktop ? '1440' : 'pixel7'}.png`,
     fullPage: true,
   })
+
+  // Act — 고른 유형은 카테고리를 바꾸면 비워진다
+  await type.selectOption(OTHER_SUBTYPE_LABEL)
+  await expect(type).toHaveValue(OTHER_SUBTYPE_LABEL)
 
   // Act — 양식을 건드리지 않은 채 바꾸면 묻지 않고 갈아 끼운다
   await category.selectOption(OTHER_CATEGORY_LABEL)
@@ -131,6 +168,16 @@ test('should prefill the content from the selected category and confirm before r
   // Assert
   await expect(page.getByRole('dialog', { name: '작성 중인 내용이 지워집니다' })).toHaveCount(0)
   await expect(content).toHaveValue(/건의 주제:/)
+
+  /* 세부 유형이 없는 카테고리 — 셀렉트는 잠기고 저장될 값('기타')만 보여 준다.
+     값은 hidden 이 싣는다(잠긴 셀렉트는 전송되지 않는다). */
+  await expect(type).toBeDisabled()
+  expect(await type.locator('option').allTextContents()).toEqual(['기타'])
+  await expect(page.locator('input[type="hidden"][name="type"]')).toHaveValue('기타')
+  await page.screenshot({
+    path: `${SUBTYPE_SHOT_DIR}/client-support-no-subtype-${isDesktop ? '1440' : 'pixel7'}.png`,
+    fullPage: true,
+  })
 
   // Act — 사용자가 쓴 내용이 있으면 확인을 한 번 세운다
   await content.fill('직접 쓴 문의 내용입니다.')
@@ -157,7 +204,57 @@ test('should prefill the content from the selected category and confirm before r
 
   // Assert
   await expect(category).toHaveValue(CATEGORY_LABEL)
-  await expect(content).toHaveValue(/세부 문의 유형/)
+  await expect(content).toHaveValue(/글자월드 캐릭터 닉네임:/)
+  await expect(type).toHaveValue('')
+  await page.screenshot({
+    path: `${SUBTYPE_SHOT_DIR}/client-support-subtypes-${isDesktop ? '1440' : 'pixel7'}.png`,
+    fullPage: true,
+  })
+})
+
+/**
+ * 필수 항목(2026-09-11 제품 결정).
+ *
+ * 카테고리 · 세부 유형 · 계정 ID · 제목 · 내용 · 동의가 모두 채워질 때까지 제출이
+ * 잠긴다. 첨부는 선택이라 없어도 열린다.
+ */
+test('should keep the submit locked until every required field is filled', async ({
+  page,
+}, testInfo) => {
+  // Arrange
+  const isDesktop = testInfo.project.name === 'chromium'
+
+  if (isDesktop) {
+    await page.setViewportSize({ width: 1440, height: 1200 })
+  }
+
+  await stubLogin(page, SUPPORT_PATH)
+
+  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+
+  // Assert — 빈 폼에서는 잠겨 있고 이유가 버튼 아래에 적혀 있다
+  await expect(submitButton).toBeDisabled()
+  await expect(page.getByText('필수 항목(*)을 모두 입력해 주세요.')).toBeVisible()
+  await page.screenshot({
+    path: `${SUBTYPE_SHOT_DIR}/client-support-required-${isDesktop ? '1440' : 'pixel7'}.png`,
+    fullPage: true,
+  })
+
+  // Act — 동의만 빼고 모두 채운다
+  await page.locator('input[name="accountId"]').fill(randomDigits(17))
+  await page.locator('select[name="category"]').selectOption(CATEGORY_LABEL)
+  await page.locator('select[name="type"]').selectOption(SUBTYPE_LABEL)
+  await page.locator('input[name="title"]').fill('필수 항목 확인')
+  await page.locator('textarea[name="content"]').fill('필수 항목이 모두 채워졌는지 봅니다.')
+
+  // Assert — 약관 동의도 필수다
+  await expect(submitButton).toBeDisabled()
+
+  // Act
+  await page.locator('input[name="consent"]').check()
+
+  // Assert — 첨부 없이도 열린다(첨부는 선택 항목이다)
+  await expect(submitButton).toBeEnabled()
 })
 
 test('should send anonymous visitors to login when they open 내 문의 내역', async ({ page }) => {
@@ -237,7 +334,7 @@ test('should accept an inquiry, list it, and surface the operator reply', async 
   const row = page.getByRole('link', { name: new RegExp(title) })
   await expect(row).toBeVisible()
   await expect(row).toContainText('접수 대기')
-  await expect(row).toContainText(`${CATEGORY_LABEL} · 문의`)
+  await expect(row).toContainText(`${CATEGORY_LABEL} · ${SUBTYPE_LABEL}`)
   await expect(row).toContainText('답변 0')
 
   if (isDesktop) {
@@ -380,6 +477,10 @@ test('should refuse an oversized attachment before submitting and accept a real 
   // Arrange
   await stubLogin(page, SUPPORT_PATH)
 
+  /* 제출 잠금은 이제 두 가지 이유로 걸린다(첨부 · 필수 항목). 첨부만 남기려면
+     나머지를 먼저 채워야 "첨부 때문에 잠겼는가"를 물어볼 수 있다. */
+  await fillRequiredFields(page, `E2E 첨부 잠금 ${Date.now()}`)
+
   const fileInput = page.locator('input[name="attachments"]')
   const submitButton = page.getByRole('button', { name: '문의 등록하기' })
 
@@ -442,6 +543,11 @@ test('should upload a video straight to storage and play it on the detail page',
 
   await stubLogin(page, SUPPORT_PATH)
 
+  const title = `E2E 영상 문의 ${Date.now()}`
+
+  // 필수 항목을 먼저 채운다 — 영상 업로드가 끝나도 나머지가 비면 제출은 잠긴 채다.
+  await fillRequiredFields(page, title)
+
   const fileInput = page.locator('input[name="attachments"]')
   const hiddenField = page.locator('input[name="videoAttachments"]')
   const submitButton = page.getByRole('button', { name: '문의 등록하기' })
@@ -459,7 +565,6 @@ test('should upload a video straight to storage and play it on the detail page',
   await expect(submitButton).toBeEnabled()
 
   // Act — 접수
-  const title = `E2E 영상 문의 ${Date.now()}`
   const inquiryId = await submitInquiry(page, title)
 
   await page

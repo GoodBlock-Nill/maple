@@ -2,6 +2,7 @@
 
 import { useActionState, useCallback, useState } from 'react'
 
+import { InquiryCategorySubtypeEditor } from '@/components/inquiry-categories/InquiryCategorySubtypeEditor'
 import { Button, Dialog, FormBanner, Input, Textarea, useToast } from '@/components/ui'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import {
@@ -26,6 +27,10 @@ import type { AdminInquiryCategory } from '@/lib/data/inquiry-categories'
  *
  * 이름을 바꾸면 그 이름으로 접수된 과거 문의의 분류도 함께 바뀐다 — 되돌리기 어려운
  * 조작이라 그 사실을 폼 안에 적어 둔다(실제 반영 건수는 저장 뒤 토스트에 나온다).
+ *
+ * 세부 문의 유형은 사용자 폼의 **유형 셀렉트**가 된다. 프리필 양식에 같은 목록을
+ * 다시 적지 않는다 — 두 곳에 두면 사용자가 같은 것을 두 번 고르고, 둘이 어긋난
+ * 문의가 들어온다(마이그레이션 20260910000700 · 20260910000800).
  */
 export function InquiryCategoryFormDialog({
   category,
@@ -41,6 +46,9 @@ export function InquiryCategoryFormDialog({
 }) {
   const [isOpen, setOpen] = useState(false)
   const [prefill, setPrefill] = useState(category?.prefill ?? '')
+  /* 다이얼로그를 닫았다 열면 편집기가 처음 값으로 돌아가야 한다(등록 폼은 빈 목록,
+     수정 폼은 저장된 목록). 목록 상태는 편집기가 들고 있으므로 key 로 다시 마운트한다. */
+  const [formKey, setFormKey] = useState(0)
   const { showToast } = useToast()
   const isEdit = category !== undefined
 
@@ -53,6 +61,7 @@ export function InquiryCategoryFormDialog({
       if (result.message !== undefined) {
         showToast(result.message, 'success')
         setOpen(false)
+        setFormKey((current) => current + 1)
 
         if (!isEdit) {
           setPrefill('')
@@ -119,6 +128,12 @@ export function InquiryCategoryFormDialog({
             onChange={(event) => setPrefill(event.target.value)}
             hint="사용자가 이 카테고리를 고르면 문의 내용 칸에 그대로 채워집니다. 줄바꿈은 그대로 살아납니다."
             error={state.fieldErrors?.prefill}
+          />
+
+          <InquiryCategorySubtypeEditor
+            key={formKey}
+            defaultSubtypes={category?.subtypes ?? []}
+            error={state.fieldErrors?.subtypes}
           />
 
           <div className="flex flex-col gap-1.5">

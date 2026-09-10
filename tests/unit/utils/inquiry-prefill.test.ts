@@ -16,9 +16,10 @@ const CATEGORIES: readonly InquiryCategoryOption[] = [
     label: '접속·서버',
     description: '접속이 안 될 때',
     prefill: CONNECTION_PREFILL,
+    subtypes: ['로그인/접속 불가', '강제 종료'],
   },
-  { key: 'etc', label: '기타·건의', description: null, prefill: '건의 주제:' },
-  { key: 'empty', label: '양식없음', description: null, prefill: '' },
+  { key: 'etc', label: '기타·건의', description: null, prefill: '건의 주제:', subtypes: [] },
+  { key: 'empty', label: '양식없음', description: null, prefill: '', subtypes: [] },
 ]
 
 describe('isDiscardableContent', () => {
@@ -72,11 +73,14 @@ describe('withLegacyCategory', () => {
 
     // Assert
     expect(result).toHaveLength(CATEGORIES.length + 1)
+    /* 세부 유형은 비운다 — 없어진 카테고리의 유형 목록은 어디에도 남아 있지 않다.
+       저장된 유형 하나는 폼과 서버가 따로 허용한다. */
     expect(result.at(-1)).toEqual({
       key: 'legacy:결제',
       label: '결제',
       description: null,
       prefill: '',
+      subtypes: [],
     })
   })
 

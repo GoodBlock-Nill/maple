@@ -53,18 +53,19 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ ...stub.client, storage: storageStub() }),
 }))
 
-/* 카테고리는 DB 에서 온다. 액션이 무엇을 허용 목록으로 쓰는지만 보면 되므로
-   데이터 계층은 고정 목록으로 세운다(`server-only` 를 끌고 오지 않는 부수 효과도 있다). */
-const CATEGORIES: readonly string[] = ['접속·서버', '캐릭터·게임 진행', '기타·건의']
+/* 카테고리(와 그 카테고리의 세부 문의 유형)는 DB 에서 온다. 액션이 무엇을 허용
+   목록으로 쓰는지만 보면 되므로 데이터 계층은 고정 목록으로 세운다(`server-only` 를
+   끌고 오지 않는 부수 효과도 있다). */
+const CATEGORIES = [
+  { key: 'k0', label: '접속·서버', subtypes: ['로그인/접속 불가', '강제 종료'] },
+  { key: 'k1', label: '캐릭터·게임 진행', subtypes: ['보상 획득 오류'] },
+  /* 세부 유형이 없는 카테고리 — 폼이 hidden 으로 싣는 '기타' 만 받는다. */
+  { key: 'k2', label: '기타·건의', subtypes: [] },
+]
 vi.mock('@/lib/data/inquiry-categories', () => ({
   getInquiryCategories: async () =>
-    CATEGORIES.map((label, index) => ({
-      key: `k${index}`,
-      label,
-      description: null,
-      prefill: '',
-    })),
-  getInquiryCategoryLabels: async () => CATEGORIES,
+    CATEGORIES.map((category) => ({ ...category, description: null, prefill: '' })),
+  getInquiryCategoryLabels: async () => CATEGORIES.map((category) => category.label),
 }))
 
 const { createInquiry } = await import('@/lib/actions/inquiry-actions')
@@ -76,9 +77,9 @@ const INQUIRY_ID = '33333333-0000-4000-8000-000000000001'
 function inquiryForm(overrides: Record<string, string> = {}): FormData {
   const formData = new FormData()
   const values = {
-    accountId: '123456789000000',
+    accountId: '20123456789000000',
     category: '접속·서버',
-    type: '문의',
+    type: '로그인/접속 불가',
     title: '로그인이 되지 않습니다',
     content: '어제부터 로그인 화면에서 멈춥니다.',
     consent: 'on',
@@ -105,6 +106,44 @@ beforeEach(() => {
 })
 
 describe('createInquiry', () => {
+  it('should reject a subtype that does not belong to the chosen category', async () => {
+    // Arrange — 화면에서는 만들 수 없는 조합이다(카테고리를 바꾸면 유형이 비워진다).
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    const result = await createInquiry(EMPTY_FORM_STATE, inquiryForm({ type: '보상 획득 오류' }))
+
+    // Assert — DB 까지 가지 않고 필드 오류로 돌려준다.
+    expect(result.fieldErrors?.type).toContain('세부 문의 유형')
+    expect(stub.inserts).toHaveLength(0)
+  })
+
+  it('should accept 기타 for a category that has no subtypes', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    await createInquiry(
+      EMPTY_FORM_STATE,
+      inquiryForm({ category: '기타·건의', type: '기타' }),
+    ).catch(() => undefined)
+
+    // Assert
+    expect(stub.inserts[0]).toMatchObject({ category: '기타·건의', type: '기타' })
+  })
+
+  it('should require the 글자월드 계정 ID', async () => {
+    // Arrange — 2026-09-11 부터 필수다. 첨부만 선택 항목이다.
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    const result = await createInquiry(EMPTY_FORM_STATE, inquiryForm({ accountId: '' }))
+
+    // Assert
+    expect(result.fieldErrors?.accountId).toContain('계정 ID')
+    expect(stub.inserts).toHaveLength(0)
+  })
+
   it('should refuse to accept an inquiry without a session', async () => {
     // Arrange
     getCurrentUser.mockResolvedValue(null)
@@ -143,9 +182,9 @@ describe('createInquiry', () => {
     // Assert
     expect(stub.inserts[0]).toMatchObject({
       user_id: USER.id,
-      account_id: '123456789000000',
+      account_id: '20123456789000000',
       category: '접속·서버',
-      type: '문의',
+      type: '로그인/접속 불가',
       privacy_consent: true,
       status: 'pending',
       attachments: [],

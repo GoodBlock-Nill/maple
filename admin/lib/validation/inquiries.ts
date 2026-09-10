@@ -133,6 +133,13 @@ export function statusesForTab(tab: InquiryStatusTab): readonly InquiryStatus[] 
  */
 export const INQUIRY_CATEGORY_MAX_LENGTH = 20
 
+/**
+ * 유형 필터 값의 상한. DB CHECK(`inquiry_categories_subtypes_shape`)의 항목 길이와
+ * 같은 숫자다. 옵션 목록은 DB(세부 유형) + 데이터에 남은 옛 값이라 고정 배열로
+ * 검사할 수 없어, 카테고리와 같은 규칙으로 "유형일 수 없는 값"만 걸러 낸다.
+ */
+export const INQUIRY_TYPE_MAX_LENGTH = 30
+
 export const INQUIRY_SEARCH_MAX_LENGTH = 60
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -167,6 +174,13 @@ export function sanitizeInquiryCategory(raw: string | null): string | null {
   return value === '' || value.length > INQUIRY_CATEGORY_MAX_LENGTH ? null : value
 }
 
+/** 유형(세부 문의 유형) 필터 값 정리. 카테고리와 같은 규칙이다. */
+export function sanitizeInquiryType(raw: string | null): string | null {
+  const value = (raw ?? '').trim()
+
+  return value === '' || value.length > INQUIRY_TYPE_MAX_LENGTH ? null : value
+}
+
 function parseDateParam(raw: string | string[] | undefined): string | null {
   const value = firstValue(raw)
 
@@ -183,6 +197,8 @@ export type InquiryFilters = {
   /** '접수 취소' 탭에서만 true. 취소분은 '종료'·'전체' 탭에도 함께 보인다. */
   cancelledOnly: boolean
   category: string | null
+  /** 세부 문의 유형. 옵션은 카테고리의 subtypes + 데이터에 남은 옛 값이다. */
+  type: string | null
   /** 출처 프리셋(사이드바의 '1:1 문의' · '이메일 문의'). null 이면 전체. */
   source: InquirySource | null
   search: string | null
@@ -194,6 +210,7 @@ export type InquiryFilters = {
 export function parseInquiryFilters(params: QueryParams): InquiryFilters {
   const tab = parseInquiryStatusTab(params.status)
   const category = firstValue(params.category)
+  const type = firstValue(params.type)
   const source = firstValue(params.source)
 
   return {
@@ -203,6 +220,8 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
       INQUIRY_STATUS_TABS.find((option) => option.value === tab)?.cancelledOnly === true,
     // 라벨일 수 없는 값(빈 값 · 상한 초과)은 필터를 걸지 않는다(= 전체).
     category: sanitizeInquiryCategory(category),
+    // 유형도 같은 규칙이다(빈 값 · 상한 초과 → 전체).
+    type: sanitizeInquiryType(type),
     // 모르는 출처는 필터를 걸지 않는다(= 전체). 임의 문자열이 질의로 흘러가지 않게 한다.
     source: isInquirySource(source) ? source : null,
     search: sanitizeInquirySearch(params.q),

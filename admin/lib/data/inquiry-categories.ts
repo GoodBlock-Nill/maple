@@ -13,7 +13,8 @@ import { createClient } from '@/lib/supabase/server'
  * (`public.inquiry_category_usage()`). 삭제 가능 여부와 목록 필터 옵션이 이 값에서 나온다.
  */
 
-const CATEGORY_COLUMNS = 'id, key, label, description, prefill, sort_order, is_active, updated_at'
+const CATEGORY_COLUMNS =
+  'id, key, label, description, prefill, subtypes, sort_order, is_active, updated_at'
 
 export type AdminInquiryCategory = {
   id: string
@@ -21,6 +22,8 @@ export type AdminInquiryCategory = {
   label: string
   description: string | null
   prefill: string
+  /** 사용자 폼의 유형 셀렉트 선택지. 순서가 곧 표시 순서다. 비면 '기타' 로 접수된다. */
+  subtypes: readonly string[]
   sortOrder: number
   isActive: boolean
   /** 이 라벨로 접수된 문의 수. 0 일 때만 삭제할 수 있다. */
@@ -32,6 +35,20 @@ export type InquiryCategoryListResult = {
   rows: readonly AdminInquiryCategory[]
   /** 조회가 깨졌는지. 빈 표를 "카테고리가 없다"로 읽지 않도록 화면이 배너를 세운다. */
   hasError: boolean
+}
+
+/** 유형 → 문의 수. 목록 필터가 "데이터에만 남은 옛 유형"을 잃지 않도록 함께 읽는다. */
+export async function getInquiryTypeUsage(): Promise<ReadonlyMap<string, number>> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('inquiry_type_usage')
+
+  if (error !== null || data === null) {
+    console.error('[inquiry-categories] 유형 집계 실패', error?.message)
+
+    return new Map()
+  }
+
+  return new Map(data.map((row) => [row.type, Number(row.total)]))
 }
 
 /** 라벨 → 문의 수. 집계가 깨지면 빈 표를 돌려준다(0건으로 읽혀 삭제가 열리지 않게 한다). */
@@ -73,6 +90,7 @@ export async function getInquiryCategories(): Promise<InquiryCategoryListResult>
       label: row.label,
       description: row.description,
       prefill: row.prefill,
+      subtypes: row.subtypes,
       sortOrder: row.sort_order,
       isActive: row.is_active,
       usageCount: usage.get(row.label) ?? 0,
@@ -114,6 +132,36 @@ export async function getInquiryCategoryFilterOptions(): Promise<readonly string
 
   const registered = (data ?? []).map((row) => row.label)
   const legacy = [...usage.keys()].filter((label) => !registered.includes(label)).sort()
+
+  return [...registered, ...legacy]
+}
+
+/**
+ * 목록 필터의 유형 옵션.
+ *
+ * 카테고리 필터가 걸려 있으면 **그 카테고리의 세부 유형만** 보여 준다 — 필터 폼은
+ * 자바스크립트 없이 도는 GET 폼이라, 카테고리를 고르고 검색을 누른 다음 화면이
+ * 좁혀진 목록을 그리는 것이 유일하게 정직한 동작이다.
+ *
+ * 어느 경우든 **데이터에만 남은 옛 유형**('문의' · '신고' · '제안' · 이메일 문의의
+ * 'general')을 뒤에 붙인다. 빼면 그 값으로 접수된 과거 문의를 필터로 찾을 길이 사라진다.
+ */
+export async function getInquiryTypeFilterOptions(
+  category: string | null,
+): Promise<readonly string[]> {
+  const supabase = await createClient()
+  const [{ data }, usage] = await Promise.all([
+    supabase
+      .from('inquiry_categories')
+      .select('label, subtypes')
+      .order('sort_order', { ascending: true }),
+    getInquiryTypeUsage(),
+  ])
+
+  const rows = data ?? []
+  const scoped = category === null ? rows : rows.filter((row) => row.label === category)
+  const registered = [...new Set(scoped.flatMap((row) => row.subtypes))]
+  const legacy = [...usage.keys()].filter((type) => !registered.includes(type)).sort()
 
   return [...registered, ...legacy]
 }

@@ -8,14 +8,20 @@ import {
   SERVER_ACTION_BODY_SIZE_LIMIT,
 } from '@/lib/supabase/storage'
 import {
+  ACCOUNT_ID_MAX,
   createInquirySchema,
   INQUIRY_ATTACHMENT_ACCEPT,
   INQUIRY_CONTENT_MAX,
   inquiryIdSchema,
+  isInquiryFormFilled,
   normalizeCRLF,
   updateInquirySchema,
   validateInquiryAttachments,
 } from '@/lib/validation/inquiry'
+
+import { INQUIRY_SUBTYPE_FALLBACK } from '@/lib/utils/inquiry-subtypes'
+
+import type { InquiryCategoryChoice } from '@/lib/utils/inquiry-subtypes'
 
 /** `next.config.ts` 가 넘기는 문자열(`'14mb'`)을 바이트로 되돌린다. */
 function bodyLimitBytes(): number {
@@ -24,13 +30,21 @@ function bodyLimitBytes(): number {
   return Number(match?.[1] ?? 0) * 1024 * 1024
 }
 
-/** 활성 카테고리는 DB 가 소유한다. 스키마는 호출 시점에 이 목록을 받아 만들어진다. */
-const CATEGORIES: readonly string[] = ['접속·서버', '캐릭터·게임 진행', '기타·건의']
+/**
+ * 활성 카테고리는 DB 가 소유한다. 스키마는 호출 시점에 이 목록(라벨 + 그 카테고리의
+ * 세부 문의 유형)을 받아 만들어진다.
+ */
+const CATEGORIES: readonly InquiryCategoryChoice[] = [
+  { label: '접속·서버', subtypes: ['로그인/접속 불가', '강제 종료', '지연/서버 장애'] },
+  { label: '캐릭터·게임 진행', subtypes: ['퀘스트/콘텐츠 진행 불가', '보상 획득 오류'] },
+  /* 세부 유형이 없는 카테고리. 폼이 hidden 으로 싣는 '기타' 만 받는다. */
+  { label: '기타·건의', subtypes: [] },
+]
 
 const VALID_INPUT = {
   accountId: '123456789000000',
   category: '접속·서버',
-  type: '문의',
+  type: '로그인/접속 불가',
   title: '로그인이 되지 않습니다',
   content: '어제부터 로그인 화면에서 멈춥니다.',
   consent: true,
@@ -46,26 +60,113 @@ describe('createInquirySchema', () => {
     expect(parsed.data?.accountId).toBe('123456789000000')
   })
 
-  it('should turn a blank account id into null', () => {
-    // Arrange & Act — DB 컬럼이 nullable 이라 "미입력"은 빈 문자열이 아니라 null 로 간다.
+  it('should require the account id', () => {
+    // Arrange & Act — 2026-09-11 부터 필수다(본인 확인 없이 답할 수 있는 문의가 없다).
     const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, accountId: '  ' })
 
     // Assert
-    expect(parsed.success).toBe(true)
-    expect(parsed.data?.accountId).toBeNull()
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toContain('계정 ID')
   })
 
-  it('should reject an account id that is not a 10~20 digit number', () => {
-    // Arrange & Act
-    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, accountId: '12ab' })
+  it('should trim the account id and keep letters, digits, _ and -', () => {
+    // Arrange & Act — 클라이언트가 보여 주는 ID 서식을 숫자로 굳히지 않는다.
+    const parsed = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      accountId: ' msw_user-01 ',
+    })
 
     // Assert
-    expect(parsed.success).toBe(false)
+    expect(parsed.success).toBe(true)
+    expect(parsed.data?.accountId).toBe('msw_user-01')
+  })
+
+  it('should reject an account id with spaces or symbols', () => {
+    // Arrange & Act
+    const spaced = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      accountId: '2012 3456',
+    })
+    const symbol = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      accountId: '2012@3456',
+    })
+
+    // Assert
+    expect(spaced.success).toBe(false)
+    expect(symbol.success).toBe(false)
+  })
+
+  it('should reject an account id outside 2~40 characters', () => {
+    // Arrange & Act — 상한은 DB CHECK(inquiries_account_id_length)와 같은 숫자다.
+    const tooShort = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, accountId: '1' })
+    const tooLong = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      accountId: '2'.repeat(ACCOUNT_ID_MAX + 1),
+    })
+
+    // Assert
+    expect(tooShort.success).toBe(false)
+    expect(tooLong.success).toBe(false)
   })
 
   it('should reject a category that is not on the list', () => {
     // Arrange & Act
     const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, category: '해킹' })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+  })
+
+  it('should reject a subtype that belongs to another category', () => {
+    // Arrange & Act — 화면에서는 만들 수 없는 조합이지만 직접 POST 로는 들어온다.
+    const parsed = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      type: '보상 획득 오류',
+    })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.path).toEqual(['type'])
+    expect(parsed.error?.issues[0]?.message).toContain('세부 문의 유형')
+  })
+
+  it('should reject an empty subtype', () => {
+    // Arrange & Act
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, type: '' })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toContain('세부 문의 유형')
+  })
+
+  it('should reject the legacy 3-type values', () => {
+    // Arrange & Act — 옛 '문의 · 신고 · 제안' 은 어느 카테고리의 세부 유형도 아니다.
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, type: '문의' })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+  })
+
+  it('should accept the fallback subtype for a category with no subtypes', () => {
+    // Arrange & Act — 폼이 셀렉트를 잠그고 hidden 으로 싣는 값이 그대로 통과해야 한다.
+    const parsed = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      category: '기타·건의',
+      type: INQUIRY_SUBTYPE_FALLBACK,
+    })
+
+    // Assert
+    expect(parsed.success).toBe(true)
+  })
+
+  it('should reject a real subtype for a category with no subtypes', () => {
+    // Arrange & Act — 세부 유형이 없는 카테고리에서는 폴백 말고 아무것도 받지 않는다.
+    const parsed = createInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      category: '기타·건의',
+      type: '강제 종료',
+    })
 
     // Assert
     expect(parsed.success).toBe(false)
@@ -274,6 +375,27 @@ describe('updateInquirySchema', () => {
     expect(unknownCategory.success).toBe(false)
   })
 
+  it('should allow the type the inquiry was filed with', () => {
+    // Arrange — 접수 당시의 '문의'(옛 3종). 지금은 어느 카테고리에도 없는 값이다.
+    const { consent: _consent, ...input } = VALID_INPUT
+
+    // Act
+    const parsed = updateInquirySchema(CATEGORIES, ['문의']).safeParse({ ...input, type: '문의' })
+
+    // Assert — 목록에 없다고 막으면 제목만 고치려던 사용자가 유형부터 다시 정해야 한다.
+    expect(parsed.success).toBe(true)
+    expect(parsed.data?.type).toBe('문의')
+  })
+
+  it("should not allow another inquiry's legacy type", () => {
+    // Arrange & Act — 예외는 **이 문의가 들고 있던 값** 하나뿐이다.
+    const { consent: _consent, ...input } = VALID_INPUT
+    const parsed = updateInquirySchema(CATEGORIES, ['문의']).safeParse({ ...input, type: '신고' })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+  })
+
   it('should ignore a consent field sent by a direct POST', () => {
     // Arrange & Act — 수정 폼에는 동의 체크박스가 없다. 실려 와도 저장에 쓰지 않는다.
     const parsed = updateInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, consent: false })
@@ -281,6 +403,54 @@ describe('updateInquirySchema', () => {
     // Assert
     expect(parsed.success).toBe(true)
     expect(parsed.data).not.toHaveProperty('consent')
+  })
+})
+
+describe('isInquiryFormFilled', () => {
+  /** 접수 폼이 실제로 싣는 이름 그대로 만든다. */
+  function formOf(values: Record<string, string>, consent = true): FormData {
+    const formData = new FormData()
+
+    for (const [name, value] of Object.entries(values)) {
+      formData.append(name, value)
+    }
+
+    if (consent) {
+      formData.append('consent', 'on')
+    }
+
+    return formData
+  }
+
+  const FILLED = {
+    accountId: '20123456789000000',
+    category: '접속·서버',
+    type: '로그인/접속 불가',
+    title: '로그인이 되지 않습니다',
+    content: '어제부터 로그인 화면에서 멈춥니다.',
+  }
+
+  it('should open the submit when every required field is filled', () => {
+    // Arrange & Act & Assert
+    expect(isInquiryFormFilled(formOf(FILLED), true)).toBe(true)
+  })
+
+  it('should stay closed while a required field is empty or blank', () => {
+    // Arrange & Act & Assert — 공백만 친 칸은 채운 것으로 보지 않는다.
+    expect(isInquiryFormFilled(formOf({ ...FILLED, type: '' }), true)).toBe(false)
+    expect(isInquiryFormFilled(formOf({ ...FILLED, accountId: '   ' }), true)).toBe(false)
+    expect(isInquiryFormFilled(formOf({ ...FILLED, title: '' }), true)).toBe(false)
+  })
+
+  it('should require the consent only when the form asks for it', () => {
+    // Arrange & Act & Assert — 수정 화면에는 동의 체크박스가 없다.
+    expect(isInquiryFormFilled(formOf(FILLED, false), true)).toBe(false)
+    expect(isInquiryFormFilled(formOf(FILLED, false), false)).toBe(true)
+  })
+
+  it('should treat attachments as optional', () => {
+    // Arrange & Act & Assert — 첨부는 선택 항목이다(2026-09-11 제품 결정).
+    expect(isInquiryFormFilled(formOf(FILLED), true)).toBe(true)
   })
 })
 

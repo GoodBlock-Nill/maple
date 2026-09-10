@@ -103,6 +103,13 @@ export function InquiryCategoryRow({
         <span className="text-muted line-clamp-1 text-[12px]">
           {prefillSummary(category.prefill)}
         </span>
+        {/* 세부 유형이 없으면 사용자 폼이 유형 셀렉트를 잠그고 '기타' 로 접수한다 —
+            숫자만이 아니라 그 사실까지 한 줄로 보여 준다. */}
+        <span className="text-muted line-clamp-1 text-[12px]">
+          {category.subtypes.length === 0
+            ? '세부 유형 없음 (기타로 접수)'
+            : `세부 유형 ${category.subtypes.length}개 · ${category.subtypes.join(' · ')}`}
+        </span>
       </span>
 
       {category.isActive ? <Badge tone="success">노출</Badge> : <Badge tone="neutral">숨김</Badge>}
