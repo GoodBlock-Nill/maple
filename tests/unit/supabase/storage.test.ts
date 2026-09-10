@@ -10,11 +10,13 @@ import {
 const USER_ID = '11111111-2222-4333-8444-555555555555'
 
 describe('STORAGE_BUCKETS', () => {
-  it('should match the bucket ids created in 20260908000800_storage_buckets.sql', () => {
+  it('should match the bucket ids created by the migrations', () => {
+    /* 20260908000800_storage_buckets.sql 의 세 개 + 20260910000100_coupons.sql 의 avatars. */
     expect(Object.values(STORAGE_BUCKETS)).toEqual([
       'public-assets',
       'post-images',
       'inquiry-attachments',
+      'avatars',
     ])
   })
 })

@@ -52,7 +52,7 @@ function adminClient(): SupabaseClient {
 /** 스텁 간편로그인 + 온보딩. 실행마다 새 계정이 만들어진다. */
 async function signInAsNewUser(page: Page, nextPath: string): Promise<string> {
   await page.goto(`/login?next=${encodeURIComponent(nextPath)}`)
-  await page.getByRole('button', { name: '카카오로 계속하기' }).click()
+  await page.getByRole('button', { name: 'Kakao로 계속하기' }).click()
   await page.waitForURL((current) => !current.pathname.startsWith('/login'))
 
   const stamp = Date.now().toString().slice(-8)

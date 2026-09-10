@@ -1,5 +1,5 @@
 export type FooterVariant =
-  'home' | 'news' | 'community' | 'guide' | 'ranking' | 'support' | 'about' | 'auth'
+  'home' | 'news' | 'community' | 'guide' | 'ranking' | 'support' | 'about' | 'auth' | 'mypage'
 
 export type FooterMascot = {
   src: string
@@ -185,6 +185,31 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
       left: 1244,
       top: 303,
       mobileWidth: 110,
+    },
+  },
+  /**
+   * 마이페이지 — 언덕·꽃·나무 위 여우.
+   *
+   * 시안(2041:2958 등)은 이 배경(939)의 **위쪽 175px 을 본문이 덮는다** — 구분선과
+   * "홈페이지 회원 탈퇴" 블록이 배경 상단(투명 대신 #fafafa 로 구워진 영역)에
+   * 겹쳐 앉는다. 그 겹침은 `MyPageShell` 이 음수 마진으로 만든다(같은 값 175).
+   */
+  mypage: {
+    background: '/images/mypage/footer-bg.png',
+    backgroundColor: '#fafafa',
+    needsGrassPatch: false,
+    height: 939,
+    panelTop: subPanelTop(939),
+    panelClass: 'glass-panel-sub',
+    mascot: {
+      src: '/images/mypage/mascot-footer.gif',
+      width: 207,
+      /* 원본(51×41) 비율대로 207 폭에 맞춘 실제 렌더 높이 166.4 → 166.
+         디자인값 167 과의 1px 차는 next/image 의 aspect-ratio 경고를 부른다. */
+      height: 166,
+      left: 1136,
+      top: 564,
+      mobileWidth: 120,
     },
   },
   about: {

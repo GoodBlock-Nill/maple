@@ -28,13 +28,13 @@ describe('AuthMenu (logged out)', () => {
 })
 
 describe('AuthMenu (logged in)', () => {
-  it('should replace the pills with the nickname menu', () => {
-    // Arrange & Act
+  it('should replace the pills with a link to 마이페이지', () => {
+    // Arrange & Act — 시안(2041:3122)의 로그인 알약은 드롭다운이 아니라 링크다.
     render(<AuthMenu user={{ nickname: '모험가' }} />)
 
     // Assert
     expect(screen.queryByRole('link', { name: '회원가입' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /모험가/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /모험가/ })).toHaveAttribute('href', '/account')
   })
 
   it('should send a withdrawn account to the restore screen instead', () => {

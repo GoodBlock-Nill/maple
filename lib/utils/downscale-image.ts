@@ -12,6 +12,7 @@
  * 갈리면 한쪽에서만 통과하는 사진이 생긴다.
  */
 
+/** 기본 상한 — 커뮤니티 본문 이미지·문의 첨부. */
 const MAX_DIMENSION = 2000
 
 /** GIF 는 캔버스를 거치면 첫 프레임만 남아 애니메이션이 사라진다. */
@@ -23,14 +24,14 @@ function toBlob(canvas: HTMLCanvasElement, type: string): Promise<Blob | null> {
   })
 }
 
-export async function downscaleImage(file: File): Promise<File> {
+export async function downscaleImage(file: File, maxDimension = MAX_DIMENSION): Promise<File> {
   if (SKIP_TYPES.has(file.type) || typeof createImageBitmap !== 'function') {
     return file
   }
 
   try {
     const bitmap = await createImageBitmap(file)
-    const scale = MAX_DIMENSION / Math.max(bitmap.width, bitmap.height)
+    const scale = maxDimension / Math.max(bitmap.width, bitmap.height)
 
     if (scale >= 1) {
       bitmap.close()

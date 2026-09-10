@@ -11,13 +11,18 @@ import type { Profile } from '@/lib/supabase/types'
  * 내 정보 화면은 로그인 방식·가입일·약관 동의 일시까지 함께 보여줘야 해서
  * 별도 컬럼 세트를 읽는 이 모듈을 둔다.
  *
+ * 마이페이지(시안 §4)가 이름·이메일·마케팅 수신거부까지 함께 그리므로 컬럼 세트를
+ * 넓혔다. 화면 하나가 프로필을 두 번 읽지 않도록 한 번에 담는다.
+ *
  * DB 스네이크케이스 컬럼명을 그대로 쓴다 — `isOnboardingComplete()`
  * (lib/validation/auth.ts) 가 같은 모양(`OnboardingStatusSource`)을 기대하므로,
  * 여기서 캐멀케이스로 바꾸면 호출부마다 다시 변환해야 한다.
  */
 export type AccountProfile = Pick<
   Profile,
+  | 'name'
   | 'nickname'
+  | 'email'
   | 'provider'
   | 'avatar_url'
   | 'created_at'
@@ -26,13 +31,15 @@ export type AccountProfile = Pick<
   | 'age_confirmed_at'
   | 'msw_uid'
   | 'msw_profile_code'
+  | 'marketing_sms_opt_out'
+  | 'marketing_email_opt_out'
   | 'deleted_at'
   | 'purged_at'
 >
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const ACCOUNT_COLUMNS =
-  'nickname, provider, avatar_url, created_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at'
+  'name, nickname, email, provider, avatar_url, created_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, marketing_sms_opt_out, marketing_email_opt_out, deleted_at, purged_at'
 
 /** 프로필이 없으면(트리거 실패 등) null. 호출부가 온보딩 미완료로 취급한다. */
 export async function getAccountProfile(userId: string): Promise<AccountProfile | null> {

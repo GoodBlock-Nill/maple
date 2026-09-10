@@ -27,14 +27,14 @@ vi.mock('@/lib/supabase/stub-social', () => ({
   markStubProvider: (...args: unknown[]) => markStubProvider(...args),
 }))
 
-const { completeOnboarding, signOut, socialSignIn, stubSocialSignIn, updateAccount } =
+const { completeOnboarding, signOut, socialSignIn, stubSocialSignIn } =
   await import('@/lib/actions/auth-actions')
 const { EMPTY_FORM_STATE } = await import('@/lib/actions/form-state')
 
 /**
  * `FEATURES.mswAccountFields` 는 모듈 로드 시점에 굳는 값이다. 이 파일의
  * 정적 import(위)는 env 가 비어 있을 때(기본값, 곧 OFF) 로드됐으므로 아래
- * `completeOnboarding`/`updateAccount` describe 는 기본적으로 OFF 를
+ * `completeOnboarding` describe 는 기본적으로 OFF 를
  * 검증한다. ON 상태를 확인해야 하는 테스트는 env 를 바꾸고
  * `vi.resetModules()` 로 캐시를 비운 뒤 다시 import 한다.
  */
@@ -395,118 +395,5 @@ describe('signOut', () => {
     // Assert
     await expect(promise).rejects.toThrow(`${REDIRECT_PREFIX}/`)
     expect(stub.client.auth.signOut).toHaveBeenCalled()
-  })
-})
-
-describe('updateAccount', () => {
-  const valid = { nickname: '모험가', ...VALID_MSW_FIELDS }
-
-  beforeEach(() => {
-    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
-  })
-
-  it('should send an anonymous visitor to the login page', async () => {
-    // Arrange
-    stub.client.auth.getUser.mockResolvedValue({ data: { user: null }, error: null })
-
-    // Act
-    const promise = updateAccount(EMPTY_FORM_STATE, form(valid))
-
-    // Assert
-    await expect(promise).rejects.toThrow(
-      `${REDIRECT_PREFIX}/login?next=${encodeURIComponent('/account')}`,
-    )
-  })
-
-  it('should ignore an invalid MSW UID when the feature flag is off', async () => {
-    // Arrange & Act — 입력칸이 없어 형식 검증 자체를 하지 않는다.
-    const result = await updateAccount(EMPTY_FORM_STATE, form({ ...valid, mswUid: '123' }))
-
-    // Assert
-    expect(result.fieldErrors?.mswUid).toBeUndefined()
-  })
-
-  it('should save only the nickname (not the MSW account) and refresh the current route', async () => {
-    // Arrange & Act
-    const result = await updateAccount(EMPTY_FORM_STATE, form(valid))
-
-    // Assert — 플래그가 꺼져 있으면 UID·프로필 코드는 컬럼에 쓰지 않는다(기존 값 보존).
-    const [payload] = stub.updates as [Record<string, string>]
-    expect(payload.nickname).toBe('모험가')
-    expect(payload.msw_uid).toBeUndefined()
-    expect(payload.msw_profile_code).toBeUndefined()
-    expect(refresh).toHaveBeenCalled()
-    expect(result.message).toBe('정보를 저장했습니다.')
-  })
-
-  it('should explain a nickname collision instead of leaking the constraint', async () => {
-    // Arrange
-    stub = createSupabaseStub([{ data: null, error: { code: '23505', message: 'duplicate key' } }])
-    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
-
-    // Act
-    const result = await updateAccount(EMPTY_FORM_STATE, form(valid))
-
-    // Assert
-    expect(result.fieldErrors?.nickname).toBe('이미 사용 중인 닉네임입니다.')
-    expect(refresh).not.toHaveBeenCalled()
-  })
-
-  it('should explain a MSW UID collision instead of leaking the constraint', async () => {
-    // Arrange
-    stub = createSupabaseStub([
-      {
-        data: null,
-        error: {
-          code: '23505',
-          message: 'duplicate key value violates unique constraint "profiles_msw_uid_key"',
-        },
-      },
-    ])
-    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
-
-    // Act
-    const result = await updateAccount(EMPTY_FORM_STATE, form(valid))
-
-    // Assert
-    expect(result.fieldErrors?.mswUid).toBe(
-      '이미 다른 계정에 연결된 월드 계정 UID입니다. 고객지원에 문의해 주세요.',
-    )
-  })
-})
-
-describe('updateAccount — feature flag ON', () => {
-  const valid = { nickname: '모험가', ...VALID_MSW_FIELDS }
-
-  beforeEach(() => {
-    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
-  })
-
-  it('should reject an invalid MSW UID before writing anything', async () => {
-    // Arrange
-    const { updateAccount: updateAccountOn } = await loadAuthActionsWithFlagOn()
-
-    // Act
-    const result = await updateAccountOn(EMPTY_FORM_STATE, form({ ...valid, mswUid: '123' }))
-
-    // Assert
-    expect(result.fieldErrors?.mswUid).toBeDefined()
-    expect(stub.updates).toHaveLength(0)
-  })
-
-  it('should save the nickname and MSW account, then refresh the current route', async () => {
-    // Arrange
-    const { updateAccount: updateAccountOn } = await loadAuthActionsWithFlagOn()
-
-    // Act
-    const result = await updateAccountOn(EMPTY_FORM_STATE, form(valid))
-
-    // Assert
-    const [payload] = stub.updates as [Record<string, string>]
-    expect(payload.nickname).toBe('모험가')
-    expect(payload.msw_uid).toBe('20123000000000000')
-    expect(payload.msw_profile_code).toBe('#abcd1')
-    expect(refresh).toHaveBeenCalled()
-    expect(result.message).toBe('정보를 저장했습니다.')
   })
 })

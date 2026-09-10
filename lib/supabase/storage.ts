@@ -11,6 +11,8 @@ export const STORAGE_BUCKETS = {
   publicAssets: 'public-assets',
   postImages: 'post-images',
   inquiryAttachments: 'inquiry-attachments',
+  /** 마이페이지 프로필 이미지(공개 읽기 · 경로 첫 세그먼트 = 업로더 uid). */
+  avatars: 'avatars',
 } as const
 
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS]

@@ -10,10 +10,13 @@ import { vi } from 'vitest'
 
 export type StubResult = { data: unknown; error: unknown }
 
+export type StorageUpload = { bucket: string; path: string; contentType: string | undefined }
+
 export type SupabaseStub = {
   client: {
     from: (table: string) => unknown
     rpc: (name: string, args: unknown) => Promise<StubResult>
+    storage: { from: (bucket: string) => unknown }
     auth: {
       /** 기본값은 "미로그인". 필요한 테스트에서 mockResolvedValue 로 덮어쓴다. */
       getUser: ReturnType<typeof vi.fn>
@@ -21,8 +24,17 @@ export type SupabaseStub = {
       verifyOtp: ReturnType<typeof vi.fn>
       signInWithPassword: ReturnType<typeof vi.fn>
       signOut: ReturnType<typeof vi.fn>
+      updateUser: ReturnType<typeof vi.fn>
     }
   }
+  /** `rpc()` 호출 순서 — 함수 이름과 인자. */
+  rpcCalls: { name: string; args: unknown }[]
+  /** 스토리지 업로드 순서. */
+  uploads: StorageUpload[]
+  /** 스토리지 삭제 대상(경로 배열) 순서. */
+  removals: string[][]
+  /** 다음 업로드가 돌려줄 오류. null 이면 성공. */
+  uploadError: { message: string } | null
   /** `from()` 에 넘어온 테이블 이름 순서. */
   tables: string[]
   /** `insert()` 에 넘어온 payload 순서. */
@@ -43,6 +55,9 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
   const updates: unknown[] = []
   const deletes: Record<string, unknown>[] = []
   const orders: [string, unknown][] = []
+  const rpcCalls: { name: string; args: unknown }[] = []
+  const uploads: StorageUpload[] = []
+  const removals: string[][] = []
   let cursor = 0
 
   const nextResult = (): StubResult => results[cursor++] ?? EMPTY_RESULT
@@ -99,20 +114,45 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     return builder
   }
 
-  return {
+  const stub: SupabaseStub = {
     client: {
       from: (table: string) => {
         tables.push(table)
 
         return createBuilder()
       },
-      rpc: async () => nextResult(),
+      rpc: async (name: string, args: unknown) => {
+        rpcCalls.push({ name, args })
+
+        return nextResult()
+      },
+      storage: {
+        from: (bucket: string) => ({
+          upload: async (path: string, _file: unknown, options?: { contentType?: string }) => {
+            uploads.push({ bucket, path, contentType: options?.contentType })
+
+            return { data: { path }, error: stub.uploadError }
+          },
+          remove: async (paths: string[]) => {
+            removals.push(paths)
+
+            return { data: [], error: null }
+          },
+          getPublicUrl: (path: string) => ({
+            data: {
+              publicUrl: `https://stub.supabase.co/storage/v1/object/public/${bucket}/${path}`,
+            },
+          }),
+          list: async () => ({ data: [], error: null }),
+        }),
+      },
       auth: {
         getUser: vi.fn(async () => ({ data: { user: null }, error: null })),
         signInAnonymously: vi.fn(async () => nextResult()),
         verifyOtp: vi.fn(async () => nextResult()),
         signInWithPassword: vi.fn(async () => nextResult()),
         signOut: vi.fn(async () => nextResult()),
+        updateUser: vi.fn(async () => nextResult()),
       },
     },
     tables,
@@ -120,5 +160,11 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     updates,
     deletes,
     orders,
+    rpcCalls,
+    uploads,
+    removals,
+    uploadError: null,
   }
+
+  return stub
 }

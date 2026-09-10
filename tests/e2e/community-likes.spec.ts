@@ -84,7 +84,7 @@ async function fillIfPresent(page: Page, name: string, value: string): Promise<v
  */
 async function stubLogin(page: Page, nextPath: string): Promise<void> {
   await page.goto(`/login?next=${encodeURIComponent(nextPath)}`)
-  await page.getByRole('button', { name: '카카오로 계속하기' }).click()
+  await page.getByRole('button', { name: 'Kakao로 계속하기' }).click()
   await page.waitForURL((url) => !url.pathname.startsWith('/login'))
 
   if (page.url().includes('/auth/onboarding')) {
