@@ -8,10 +8,14 @@ import { RESTORE_PATH } from '@/lib/validation/auth'
 
 import type { SocialProvider } from '@/lib/validation/auth'
 
-/** 시안 실측: padding 12 · Inter Medium 16 · 자간 -0.2 · 그림자 0 6 5 rgba(0,0,0,.15). */
-const AUTH_PILL_BASE = 'font-ui px-3 font-medium tracking-[-0.2px]'
-const AUTH_PILL_LIGHT_CLASS = `${AUTH_PILL_BASE} shadow-[inset_0_0_9px_#ddd,0_6px_5px_rgba(0,0,0,0.15)]`
-const AUTH_PILL_DARK_CLASS = `${AUTH_PILL_BASE} shadow-[inset_0_0_14px_rgba(255,255,255,0.5),0_6px_5px_rgba(0,0,0,0.15)]`
+/**
+ * 로그아웃 상태의 "로그인" 알약 표면(시안 auth-v2 §공통 실측).
+ * padding 12 · Inter Medium 16 · 자간 -0.2 · inset 0 0 9 #ddd · drop 0 6 5 rgba(0,0,0,.15).
+ *
+ * 폰 헤더(SiteHeader)의 알약도 시안에서 같은 흰 알약이라 이 값을 함께 쓴다.
+ */
+export const AUTH_PILL_LIGHT_CLASS =
+  'font-ui px-3 font-medium tracking-[-0.2px] shadow-[inset_0_0_9px_#ddd,0_6px_5px_rgba(0,0,0,0.15)]'
 
 /**
  * 로그인 상태의 알약(마이페이지 시안 §2 실측).
@@ -39,9 +43,9 @@ type AuthMenuProps = {
 /**
  * 헤더 우측 인증 영역.
  *
- * 미로그인일 때는 버튼 두 개("로그인" 흰색 · "회원가입" 진한색)를 둔다. 이메일
- * 가입이 되살아나면서 두 동작이 서로 다른 화면이 되었다 — 로그인·회원가입 시안
- * (Figma 2041:2294) 실측: h40 · padding 12 · radius 50 · gap 12 · Inter Medium 16.
+ * 미로그인일 때는 "로그인" 알약 **하나**다. 로그인 수단이 간편로그인뿐이라
+ * 가입과 로그인이 같은 동작이 되었기 때문이다(로그인 시안 auth-v2 §공통).
+ * 실측: h40 · padding 12 · radius 50 · Inter Medium 16 · border #cdd3db.
  *
  * 로그인 상태는 마이페이지 시안(2041:3122)의 어두운 알약 하나다 — 닉네임 +
  * 사람 아이콘, 누르면 `/account`. 드롭다운(내 정보·로그아웃)을 두지 않는 이유는
@@ -77,17 +81,11 @@ export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
   }
 
   return (
-    /* 컨테이너 그림자(0 2 2 rgba(0,0,0,.25))는 두 버튼에 함께 걸린다 — 시안 실측. */
-    <div
-      id={id}
-      className={cn('items-center gap-3 drop-shadow-[0_2px_2px_rgba(0,0,0,0.25)]', className)}
-    >
+    /* 컨테이너 그림자(0 2 2 rgba(0,0,0,.25))는 시안 실측값이다. */
+    <div id={id} className={cn('items-center drop-shadow-[0_2px_2px_rgba(0,0,0,0.25)]', className)}>
       {/* 시안 헤더 인증 버튼만 Inter Medium 16 이다(히어로 CTA 는 Switzer Semibold). */}
       <Button href="/login" variant="light" size="sm" className={AUTH_PILL_LIGHT_CLASS}>
         로그인
-      </Button>
-      <Button href="/signup" variant="dark" size="sm" className={AUTH_PILL_DARK_CLASS}>
-        회원가입
       </Button>
     </div>
   )

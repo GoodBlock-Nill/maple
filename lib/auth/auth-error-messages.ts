@@ -18,7 +18,7 @@ export type AuthErrorLike = {
 
 export const AUTH_MESSAGE = {
   invalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다.',
-  emailNotConfirmed: '이메일 인증이 완료되지 않은 계정입니다. 회원가입에서 인증을 마쳐 주세요.',
+  emailNotConfirmed: '이메일 인증이 완료되지 않은 계정입니다.',
   rateLimited: '인증번호 요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.',
   otpInvalid: '인증번호가 올바르지 않거나 만료되었습니다.',
   samePassword: '이전과 다른 비밀번호를 입력해 주세요.',

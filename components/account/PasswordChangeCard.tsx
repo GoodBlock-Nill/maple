@@ -7,7 +7,6 @@ import {
   MYPAGE_CARD_CLASS,
   MYPAGE_CARD_TITLE_CLASS,
   MYPAGE_ERROR_CLASS,
-  MYPAGE_HINT_CLASS,
   MYPAGE_SUBMIT_CLASS,
 } from '@/components/account/mypage-styles'
 import { FormFeedback } from '@/components/auth/FormFeedback'
@@ -17,23 +16,17 @@ import { changePasswordAction } from '@/lib/actions/password-actions'
 
 import type { ChangePasswordState } from '@/lib/actions/password-actions'
 
-const SOCIAL_NOTICE = '간편로그인 계정은 비밀번호가 없습니다.'
-
 const EMPTY_STATE: ChangePasswordState = EMPTY_FORM_STATE
-
-type PasswordChangeCardProps = {
-  /** 이메일·비밀번호 계정일 때만 입력칸을 그린다. */
-  hasPassword: boolean
-}
 
 /**
  * "비밀번호 변경" 카드 — 현재 비밀번호 + 새 비밀번호 2칸(시안 §4.2).
  *
- * 간편로그인 계정에서도 **카드는 남기고** 안내 한 줄만 그린다. 통째로 숨기면
- * 카드가 둘뿐인 화면이 되어 시안의 리듬(프로필 → 비밀번호 → 마케팅)이 무너지고,
- * 사용자는 "비밀번호 변경이 어디 갔지"를 스스로 알아내야 한다.
+ * 로그인 수단이 간편로그인(구글·네이버)뿐이 되면서 대부분의 계정에는 비밀번호가
+ * 없다. 그래서 이 카드는 **이메일 계정에서만** 그린다 — 판정은 호출부(계정 관리
+ * 탭)가 `profiles.provider` 로 한다. 비밀번호가 없는 계정에 "비밀번호가 없습니다"
+ * 안내만 남기면 아무 할 일도 없는 카드가 화면을 차지한다.
  */
-export function PasswordChangeCard({ hasPassword }: PasswordChangeCardProps) {
+export function PasswordChangeCard() {
   const [state, formAction] = useActionState(changePasswordAction, EMPTY_STATE)
 
   return (
@@ -42,21 +35,17 @@ export function PasswordChangeCard({ hasPassword }: PasswordChangeCardProps) {
         비밀번호 변경
       </h2>
 
-      {hasPassword ? (
-        <form action={formAction} className="flex flex-col gap-8">
-          <FormFeedback state={state} />
+      <form action={formAction} className="flex flex-col gap-8">
+        <FormFeedback state={state} />
 
-          {/* 성공하면 입력 세 칸을 새로 마운트해 비운다 — effect 로 setState 를
-              부르지 않고도 "제출 뒤 초기화"가 된다. */}
-          <PasswordFields key={state.changedAt ?? 0} fieldErrors={state.fieldErrors} />
+        {/* 성공하면 입력 세 칸을 새로 마운트해 비운다 — effect 로 setState 를
+            부르지 않고도 "제출 뒤 초기화"가 된다. */}
+        <PasswordFields key={state.changedAt ?? 0} fieldErrors={state.fieldErrors} />
 
-          <button type="submit" className={MYPAGE_SUBMIT_CLASS}>
-            비밀번호 변경
-          </button>
-        </form>
-      ) : (
-        <p className={MYPAGE_HINT_CLASS}>{SOCIAL_NOTICE}</p>
-      )}
+        <button type="submit" className={MYPAGE_SUBMIT_CLASS}>
+          비밀번호 변경
+        </button>
+      </form>
     </section>
   )
 }

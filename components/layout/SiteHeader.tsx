@@ -1,4 +1,4 @@
-import { AuthMenu } from '@/components/layout/AuthMenu'
+import { AuthMenu, AUTH_PILL_LIGHT_CLASS } from '@/components/layout/AuthMenu'
 import { HeaderGlass } from '@/components/layout/HeaderGlass'
 import { Logo } from '@/components/layout/Logo'
 import { MobileNav } from '@/components/layout/MobileNav'
@@ -31,9 +31,10 @@ export function SiteHeader({ user = null }: SiteHeaderProps) {
         <SiteNav id="site-desktop-nav" className="hidden lg:block" />
         <AuthMenu user={user} id="site-desktop-auth" className="ml-auto hidden lg:flex" />
         <div className="ml-auto flex items-center gap-2 lg:hidden">
-          {/* 미로그인일 때만 노출한다. 로그인 상태의 로그아웃은 드로어 안에 있다. */}
+          {/* 미로그인일 때만 노출한다. 로그인 상태의 로그아웃은 드로어 안에 있다.
+              시안(auth-v2 모바일)의 알약은 데스크톱과 같은 흰 알약이다. */}
           {user === null ? (
-            <Button href="/login" variant="dark" size="sm" className="font-ui font-medium">
+            <Button href="/login" variant="light" size="sm" className={AUTH_PILL_LIGHT_CLASS}>
               로그인
             </Button>
           ) : null}

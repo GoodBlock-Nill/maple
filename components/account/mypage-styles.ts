@@ -8,7 +8,7 @@
  *   → gap 32 → 라벨 박스(line 22) → gap 10 → 입력 h56 → gap 32 → 다음 블록
  *
  * 입력 표면 자체는 로그인·회원가입 시안과 같은 값이라(#fafafa · #d5d9df · h56 ·
- * radius 12) `auth-scene-styles` 의 `AUTH_INPUT_CLASS` 를 그대로 쓴다 — 두 벌로
+ * radius 12) `components/auth/auth-styles.ts` 의 `AUTH_INPUT_CLASS` 를 그대로 쓴다 — 두 벌로
  * 나누면 한쪽만 고쳐지는 날이 온다.
  */
 

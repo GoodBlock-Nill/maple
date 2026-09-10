@@ -25,13 +25,17 @@ import type { SocialProvider } from '@/lib/validation/auth'
 /**
  * 인증 서버 액션 — 간편로그인 · 온보딩 · 로그아웃.
  *
- * 이메일·비밀번호 로그인과 인증번호 회원가입은 `lib/actions/email-auth-actions.ts`
- * 와 `lib/actions/signup-actions.ts` 가, 마이페이지의 프로필 저장은
- * `lib/actions/profile-actions.ts` 가 담당한다(파일 300줄 한도).
+ * 이메일·비밀번호 로그인과 인증번호 회원가입은 2026-09-10 시안(auth-v2)과 함께
+ * 제거되었다. 마이페이지의 프로필 저장은 `lib/actions/profile-actions.ts`,
+ * 비밀번호 변경은 `lib/actions/password-actions.ts` 가 담당한다(파일 300줄 한도).
  *
- * TODO(auth): 지금 세 버튼은 **스텁**이다. 누르면 실제 제공자를 거치지 않고 곧바로
+ * TODO(auth): 지금 버튼은 **스텁**이다. 누르면 실제 제공자를 거치지 않고 곧바로
  * 로그인된다. 개발팀이 실 OAuth 를 붙이면 `SOCIAL_LOGIN_MODE=oauth` 로 바꾸고
  * `signInWithOAuth` 경로를 채운다. UI 는 그대로 둔다.
+ *
+ * 화면에 있는 버튼은 구글·네이버 둘뿐이지만(시안에서 카카오는 숨김) 제공자
+ * 목록에는 카카오가 남아 있다 — 이미 카카오로 가입한 계정의 세션·아바타 처리가
+ * 그대로 살아 있어야 한다.
  */
 
 const LOGIN_PATH = '/login'

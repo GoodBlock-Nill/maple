@@ -26,7 +26,7 @@ test.describe.configure({ mode: 'serial' })
 /** 스텁 간편로그인 + (최초 1회) 온보딩. 실 OAuth 로 교체되면 이 헬퍼만 바꾸면 된다. */
 async function signIn(page: Page, nextPath: string): Promise<void> {
   await page.goto(`/login?next=${encodeURIComponent(nextPath)}`)
-  await page.getByRole('button', { name: 'Kakao로 계속하기' }).click()
+  await page.locator('button[name="provider"][value="google"]').click()
 
   await page.waitForURL((url) => !url.pathname.startsWith('/login'))
 

@@ -222,18 +222,13 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
           >
             디스코드 바로가기
           </Button>
-          {/* 이메일 가입이 되살아나 로그인·회원가입이 서로 다른 화면이 되었다.
-              헤더(AuthMenu)와 같은 두 버튼을 드로어 아래쪽에도 둔다.
+          {/* 로그인 수단이 간편로그인뿐이라 가입과 로그인이 같은 동작이다 — 헤더
+              (AuthMenu)와 같은 버튼 하나만 드로어 아래쪽에 둔다.
               로그인 상태의 "내 정보"·"로그아웃"은 드로어 상단(사용자 블록)에 이미 있다. */}
           {user === null ? (
-            <>
-              <Button href="/login" variant="light" size="md" className="w-full font-medium">
-                로그인
-              </Button>
-              <Button href="/signup" variant="dark" size="md" className="w-full">
-                회원가입
-              </Button>
-            </>
+            <Button href="/login" variant="light" size="md" className="w-full font-medium">
+              로그인
+            </Button>
           ) : null}
         </div>
       </div>

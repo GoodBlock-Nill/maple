@@ -9,7 +9,7 @@ import {
   MYPAGE_CARD_TITLE_CLASS,
   MYPAGE_SUBMIT_CLASS,
 } from '@/components/account/mypage-styles'
-import { AUTH_INPUT_CLASS } from '@/components/auth/auth-scene-styles'
+import { AUTH_INPUT_CLASS } from '@/components/auth/auth-styles'
 import { redeemCouponAction } from '@/lib/actions/coupon-actions'
 import { cn } from '@/lib/utils/cn'
 

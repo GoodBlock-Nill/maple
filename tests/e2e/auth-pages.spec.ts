@@ -1,36 +1,54 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * 로그인·회원가입·비밀번호 찾기 화면.
+ * 로그인 화면(시안 auth-v2, Figma 2UmKcpmy55IqMZ7Sg6vTeW).
  *
- * 시안(Figma 2041:2289 · 2041:2365)은 1440 한 폭만 있으므로 좌표 검증은 1440
- * 에서만 한다. 폰(390)에서는 "잘리지 않는가"만 본다.
+ * 로그인 수단이 간편로그인(구글·네이버)뿐이라 화면도 하나다 — 이메일 가입·비밀번호
+ * 찾기·재설정 경로는 모두 `/login` 으로 돌려보낸다.
  *
- * 좌표 기준값은 `docs/reference/figma/auth-spec.md` 실측값이다.
+ * 좌표 기준값은 `docs/reference/figma/auth-v2-spec.md` 실측값이다. PC 는 1440,
+ * 폰은 375 프레임이며 여기서는 실기기 폭 390 으로 본다(가운데 정렬이라 x 만 다르다).
  */
 
 const DESKTOP = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }
 
-/** 카드 · 첫 입력 · 첫 소셜 버튼 · 푸터 패널의 1440 기준 y. */
-const LOGIN_LAYOUT = { cardY: 223, cardX: 290, cardW: 860, inputY: 451, socialY: 877, panelY: 1439 }
-const SIGNUP_LAYOUT = {
-  cardY: 223,
-  cardX: 290,
-  cardW: 860,
-  inputY: 451,
-  socialY: 1024,
-  panelY: 1583,
-}
-
 /** 시안과 ±2px 안에서 같으면 통과로 본다(서브픽셀 반올림 여유). */
 const TOLERANCE = 2
 
-async function boxOf(page: import('@playwright/test').Page, selector: string) {
+/** 1440 기준 실측값. */
+const PC = {
+  titleY: 300,
+  subtitleY: 352,
+  buttonX: 520,
+  buttonW: 400,
+  buttonH: 54,
+  googleY: 422,
+  naverY: 496,
+  errorY: 578,
+  errorIcon: 24,
+  footerY: 868,
+  pageHeight: 1456,
+  leftCharacter: { x: 325, y: 229, width: 175, height: 180 },
+  rightCharacter: { x: 940, y: 475, width: 205, height: 187 },
+}
+
+/** 390 기준(시안 375 + 좌우 여백 16 → 폭 343). */
+const MOBILE = { titleY: 196, buttonW: 343, buttonH: 48, googleY: 306, naverY: 370, errorY: 442 }
+
+type Box = { x: number; y: number; width: number; height: number }
+
+async function boxOf(page: import('@playwright/test').Page, selector: string): Promise<Box> {
   const box = await page.locator(selector).first().boundingBox()
   expect(box, `${selector} 를 찾지 못했다`).not.toBeNull()
 
-  return box as { x: number; y: number; width: number; height: number }
+  return box as Box
+}
+
+function expectNear(actual: number, expected: number, label: string) {
+  expect(Math.abs(actual - expected), `${label}: ${actual} ≠ ${expected}`).toBeLessThanOrEqual(
+    TOLERANCE,
+  )
 }
 
 async function expectNoHorizontalOverflow(page: import('@playwright/test').Page) {
@@ -41,8 +59,8 @@ async function expectNoHorizontalOverflow(page: import('@playwright/test').Page)
   expect(overflow).toBeLessThanOrEqual(0)
 }
 
-test.describe('로그인 화면', () => {
-  test('should place the card, first field, social buttons and footer panel on the Figma grid at 1440', async ({
+test.describe('로그인 화면 (1440)', () => {
+  test('should place the title, both buttons and the footer on the Figma grid', async ({
     page,
   }) => {
     // Arrange
@@ -55,169 +73,149 @@ test.describe('로그인 화면', () => {
     expect(response?.status()).toBe(200)
     await expect(page.getByRole('heading', { name: '로그인', level: 1 })).toBeVisible()
 
-    const card = await boxOf(page, 'main section')
-    expect(Math.abs(card.x - LOGIN_LAYOUT.cardX)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(card.y - LOGIN_LAYOUT.cardY)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(card.width - LOGIN_LAYOUT.cardW)).toBeLessThanOrEqual(TOLERANCE)
+    const title = await boxOf(page, 'main h1')
+    expectNear(title.y, PC.titleY, '제목 y')
 
-    const email = await boxOf(page, '#login-email')
-    expect(Math.abs(email.y - LOGIN_LAYOUT.inputY)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(email.height - 56)).toBeLessThanOrEqual(TOLERANCE)
+    const subtitle = await boxOf(page, 'main h1 + p')
+    expectNear(subtitle.y, PC.subtitleY, '부제 y')
 
-    const social = await boxOf(page, 'main button[name="provider"]')
-    expect(Math.abs(social.y - LOGIN_LAYOUT.socialY)).toBeLessThanOrEqual(TOLERANCE)
+    const google = await boxOf(page, 'main button[value="google"]')
+    expectNear(google.x, PC.buttonX, '구글 버튼 x')
+    expectNear(google.y, PC.googleY, '구글 버튼 y')
+    expectNear(google.width, PC.buttonW, '구글 버튼 폭')
+    expectNear(google.height, PC.buttonH, '구글 버튼 높이')
 
-    const panel = await boxOf(page, 'footer .rounded-panel')
-    expect(Math.abs(panel.y - LOGIN_LAYOUT.panelY)).toBeLessThanOrEqual(TOLERANCE)
+    const naver = await boxOf(page, 'main button[value="naver"]')
+    expectNear(naver.x, PC.buttonX, '네이버 버튼 x')
+    expectNear(naver.y, PC.naverY, '네이버 버튼 y')
+    expectNear(naver.height, PC.buttonH, '네이버 버튼 높이')
+
+    const footer = await boxOf(page, 'footer')
+    expectNear(footer.y, PC.footerY, '푸터 상단 y')
+
+    const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight)
+    expectNear(pageHeight, PC.pageHeight, '페이지 높이')
 
     await expectNoHorizontalOverflow(page)
   })
 
-  test('should keep the submit button locked until both fields are filled', async ({ page }) => {
+  test('should stand the two characters beside the content column', async ({ page }) => {
     // Arrange
     await page.setViewportSize(DESKTOP)
-    await page.goto('/login')
-    const submit = page.getByRole('button', { name: '로그인', exact: true })
-
-    // Act & Assert — 시안의 비활성 상태(불투명도 25%).
-    await expect(submit).toBeDisabled()
-
-    await page.fill('#login-email', 'tester@glzaworld.co.kr')
-    await expect(submit).toBeDisabled()
-
-    await page.fill('#login-password', 'maple1234')
-    await expect(submit).toBeEnabled()
-  })
-
-  test('should keep the animated GIFs as real gif images', async ({ page }) => {
-    // Arrange
-    await page.setViewportSize(DESKTOP)
-    await page.goto('/login')
 
     // Act
+    await page.goto('/login')
+
+    // Assert — 시안 Group 225 · 226 실측값.
+    const left = await boxOf(page, 'main img[src*="char-left"]')
+    expectNear(left.x, PC.leftCharacter.x, '왼쪽 캐릭터 x')
+    expectNear(left.y, PC.leftCharacter.y, '왼쪽 캐릭터 y')
+    expectNear(left.width, PC.leftCharacter.width, '왼쪽 캐릭터 폭')
+    expectNear(left.height, PC.leftCharacter.height, '왼쪽 캐릭터 높이')
+
+    const right = await boxOf(page, 'main img[src*="char-right"]')
+    expectNear(right.x, PC.rightCharacter.x, '오른쪽 캐릭터 x')
+    expectNear(right.y, PC.rightCharacter.y, '오른쪽 캐릭터 y')
+    expectNear(right.width, PC.rightCharacter.width, '오른쪽 캐릭터 폭')
+
+    // 말풍선 두 개가 캐릭터 위에 붙어 있다.
+    await expect(page.locator('main [data-bubble]')).toHaveCount(2)
+    await expect(page.getByText('글자월드에요!')).toBeVisible()
+  })
+
+  test('should keep the error row out of the page until something failed', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+
+    // Act
+    await page.goto('/login')
+
+    // Assert — 개발 서버의 Next 오버레이도 role=alert 를 쓰므로 본문으로 좁힌다.
+    await expect(page.locator('main [role="alert"]')).toHaveCount(0)
+  })
+
+  test('should show the design error row for ?error=oauth_failed', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+
+    // Act
+    await page.goto('/login?error=oauth_failed')
+
+    // Assert
+    const alert = page.locator('main [role="alert"]')
+    await expect(alert).toHaveText('로그인에 실패했어요. 잠시 후 다시 시도해주세요')
+
+    const row = await boxOf(page, 'main [role="alert"]')
+    expectNear(row.y, PC.errorY, '오류 행 y')
+
+    const icon = await boxOf(page, 'main [role="alert"] svg')
+    expectNear(icon.height, PC.errorIcon, '오류 아이콘 크기')
+
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test('should offer social sign-in only', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+
+    // Act
+    await page.goto('/login')
+
+    // Assert — 이메일·비밀번호 입력칸과 카카오 버튼은 시안에 없다.
+    await expect(page.locator('main button[value="google"]')).toBeVisible()
+    await expect(page.locator('main button[value="naver"]')).toBeVisible()
+    await expect(page.locator('main input[type="password"]')).toHaveCount(0)
+    await expect(page.locator('main button[value="kakao"]')).toHaveCount(0)
+  })
+
+  test('should keep the footer mascot an animated gif', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+
+    // Act
+    await page.goto('/login')
     const sources = await page.evaluate(() =>
-      [...document.querySelectorAll('img')]
-        .map((img) => img.currentSrc || img.src)
-        .filter((src) => src.includes('.gif')),
+      [...document.querySelectorAll<HTMLImageElement>('footer img')].map(
+        (img) => img.currentSrc || img.src,
+      ),
     )
 
     // Assert — next/image 가 최적화하면 정지 이미지가 된다(`unoptimized` 필수).
-    expect(sources.some((src) => src.includes('ufo.gif'))).toBe(true)
-    expect(sources.some((src) => src.includes('mascot-footer.gif'))).toBe(true)
+    expect(sources.some((src) => src.endsWith('home-mascot.gif'))).toBe(true)
   })
 
-  test('should show both header pills and link them to the two screens', async ({ page }) => {
+  test('should show a single login pill in the header', async ({ page }) => {
     // Arrange
     await page.setViewportSize(DESKTOP)
+
+    // Act
     await page.goto('/login')
     const header = page.locator('#site-desktop-auth')
 
-    // Act & Assert
-    await expect(header.getByRole('link', { name: '로그인' })).toHaveAttribute('href', '/login')
-    await expect(header.getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
-  })
-})
-
-test.describe('회원가입 화면', () => {
-  test('should place the two-column email row and the social buttons on the Figma grid at 1440', async ({
-    page,
-  }) => {
-    // Arrange
-    await page.setViewportSize(DESKTOP)
-
-    // Act
-    const response = await page.goto('/signup')
-
     // Assert
-    expect(response?.status()).toBe(200)
-    await expect(page.getByRole('heading', { name: '회원가입', level: 1 })).toBeVisible()
-
-    const card = await boxOf(page, 'main section')
-    expect(Math.abs(card.x - SIGNUP_LAYOUT.cardX)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(card.y - SIGNUP_LAYOUT.cardY)).toBeLessThanOrEqual(TOLERANCE)
-
-    const email = await boxOf(page, '#signup-email')
-    expect(Math.abs(email.y - SIGNUP_LAYOUT.inputY)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(email.width - 435)).toBeLessThanOrEqual(TOLERANCE)
-
-    const social = await boxOf(page, 'main button[name="provider"]')
-    expect(Math.abs(social.y - SIGNUP_LAYOUT.socialY)).toBeLessThanOrEqual(TOLERANCE)
-
-    const panel = await boxOf(page, 'footer .rounded-panel')
-    expect(Math.abs(panel.y - SIGNUP_LAYOUT.panelY)).toBeLessThanOrEqual(TOLERANCE)
-
-    await expectNoHorizontalOverflow(page)
-  })
-
-  test('should gate every step until the previous one is done', async ({ page }) => {
-    // Arrange
-    await page.setViewportSize(DESKTOP)
-    await page.goto('/signup')
-
-    // Act & Assert — 주소가 형식에 맞기 전에는 전송 버튼이 잠겨 있다.
-    await expect(page.getByRole('button', { name: '인증번호 전송' })).toBeDisabled()
-    await page.fill('#signup-email', 'tester@glzaworld.co.kr')
-    await expect(page.getByRole('button', { name: '인증번호 전송' })).toBeEnabled()
-
-    // 인증번호를 보내기 전에는 "인증하기" 도, "가입하기" 도 잠겨 있다.
-    await page.fill('#signup-code', '012345')
-    await expect(page.getByRole('button', { name: '인증하기' })).toBeDisabled()
-
-    await page.fill('#signup-password', 'maple1234')
-    await page.fill('#signup-password-confirm', 'maple1234')
-    await expect(page.getByRole('button', { name: '가입하기' })).toBeDisabled()
-  })
-
-  test('should explain a weak password only after something was typed', async ({ page }) => {
-    // Arrange
-    await page.setViewportSize(DESKTOP)
-    await page.goto('/signup')
-
-    // Act & Assert
-    await expect(page.getByText('영문과 숫자를 포함해')).toHaveCount(0)
-    await page.fill('#signup-password', 'maple')
-    await expect(page.getByText('영문과 숫자를 포함해')).toBeVisible()
-
-    await page.fill('#signup-password', 'maple1234')
-    await expect(page.getByText('영문과 숫자를 포함해')).toHaveCount(0)
-
-    await page.fill('#signup-password-confirm', 'maple12345')
-    await expect(page.getByText('비밀번호가 일치하지 않습니다.')).toBeVisible()
+    await expect(header.getByRole('link', { name: '로그인' })).toHaveAttribute('href', '/login')
+    await expect(header.getByRole('link')).toHaveCount(1)
   })
 })
 
-test.describe('비밀번호 화면', () => {
-  test('should render the forgot-password card', async ({ page }) => {
-    // Arrange
-    await page.setViewportSize(DESKTOP)
+test.describe('사라진 경로', () => {
+  for (const path of ['/signup', '/forgot-password', '/reset-password']) {
+    test(`should send ${path} to /login`, async ({ page }) => {
+      // Arrange & Act
+      await page.goto(path)
 
-    // Act
-    const response = await page.goto('/forgot-password')
+      // Assert
+      expect(new URL(page.url()).pathname).toBe('/login')
+    })
+  }
 
-    // Assert — 프록시가 예전처럼 /login 으로 되돌리지 않는다.
-    expect(response?.status()).toBe(200)
-    expect(new URL(page.url()).pathname).toBe('/forgot-password')
-    await expect(page.getByRole('heading', { name: '비밀번호 찾기', level: 1 })).toBeVisible()
-    await expectNoHorizontalOverflow(page)
-  })
-
-  test('should send an unauthenticated visitor away from the reset screen', async ({ page }) => {
-    // Arrange & Act
-    await page.goto('/reset-password')
-
-    // Assert — 메일 링크가 만든 세션이 있어야 열린다.
-    const url = new URL(page.url())
-    expect(url.pathname).toBe('/login')
-    expect(url.searchParams.get('next')).toBe('/reset-password')
-  })
-
-  test('should keep /register as a permanent redirect to /signup', async ({ page }) => {
+  test('should keep /register as a permanent redirect to /login', async ({ page }) => {
     // Arrange & Act
     await page.goto('/register?next=%2Fcommunity')
 
     // Assert
     const url = new URL(page.url())
-    expect(url.pathname).toBe('/signup')
+    expect(url.pathname).toBe('/login')
     expect(url.searchParams.get('next')).toBe('/community')
   })
 })
@@ -225,22 +223,40 @@ test.describe('비밀번호 화면', () => {
 test.describe('폰 폭(390)', () => {
   test.use({ viewport: PHONE })
 
-  for (const path of ['/login', '/signup', '/forgot-password']) {
-    test(`should fit ${path} without horizontal overflow`, async ({ page }) => {
-      // Arrange & Act
-      await page.goto(path)
+  test('should stack the two buttons full width without characters', async ({ page }) => {
+    // Arrange & Act
+    await page.goto('/login')
 
-      // Assert
-      await expectNoHorizontalOverflow(page)
+    // Assert
+    const title = await boxOf(page, 'main h1')
+    expectNear(title.y, MOBILE.titleY, '제목 y')
 
-      const card = await boxOf(page, 'main section')
-      expect(card.x).toBeGreaterThanOrEqual(0)
-      expect(card.x + card.width).toBeLessThanOrEqual(PHONE.width)
+    const google = await boxOf(page, 'main button[value="google"]')
+    expectNear(google.y, MOBILE.googleY, '구글 버튼 y')
+    expectNear(google.width, MOBILE.buttonW, '구글 버튼 폭')
+    expectNear(google.height, MOBILE.buttonH, '구글 버튼 높이')
+    expect(google.x).toBeGreaterThanOrEqual(0)
+    expect(google.x + google.width).toBeLessThanOrEqual(PHONE.width)
 
-      // 마스코트·UFO 도 화면 안에 있어야 한다(오너 요구: 어떤 폭에서도 잘리지 않는다).
-      const ufo = await boxOf(page, 'main img[src*="ufo"]')
-      expect(ufo.x).toBeGreaterThanOrEqual(0)
-      expect(ufo.x + ufo.width).toBeLessThanOrEqual(PHONE.width)
-    })
-  }
+    const naver = await boxOf(page, 'main button[value="naver"]')
+    expectNear(naver.y, MOBILE.naverY, '네이버 버튼 y')
+
+    // 시안 모바일에는 캐릭터가 없다.
+    await expect(page.locator('main img[src*="char-left"]')).toBeHidden()
+
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test('should put the error row under the buttons', async ({ page }) => {
+    // Arrange & Act
+    await page.goto('/login?error=oauth_failed')
+
+    // Assert
+    const row = await boxOf(page, 'main [role="alert"]')
+    expectNear(row.y, MOBILE.errorY, '오류 행 y')
+    expect(row.x).toBeGreaterThanOrEqual(0)
+    expect(row.x + row.width).toBeLessThanOrEqual(PHONE.width)
+
+    await expectNoHorizontalOverflow(page)
+  })
 })

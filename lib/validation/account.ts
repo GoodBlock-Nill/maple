@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import { mswProfileCodeSchema, mswUidSchema, updateAccountSchema } from '@/lib/validation/auth'
-import { passwordSchema, PASSWORD_MISMATCH_MESSAGE } from '@/lib/validation/email-auth'
 
 /**
  * 마이페이지 검증 — 이름 · 프로필 이미지 · 비밀번호 변경 · 쿠폰 등록.
@@ -89,12 +88,46 @@ export function validateAvatarFile(file: { type: string; size: number }): Avatar
 /* 비밀번호 변경                                                               */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * 비밀번호 규칙.
+ *
+ * 로그인이 간편로그인 전용이 되면서(2026-09-10 시안) 이메일 가입·재설정 화면과
+ * 함께 `lib/validation/email-auth.ts` 가 사라졌다. 규칙을 쓰는 곳은 이제 이
+ * 화면(마이페이지 비밀번호 변경)뿐이라 여기서 소유한다 — 이메일 계정으로 만들어진
+ * 기존 회원이 비밀번호를 바꿀 수 있어야 한다.
+ */
+
+/** Supabase 기본 최소 길이(6)보다 강하게 잡는다. */
+export const PASSWORD_MIN_LENGTH = 8
+
+/** bcrypt 는 73바이트째부터 버린다. 뒤가 조용히 무시되지 않도록 여기서 끊는다. */
+export const PASSWORD_MAX_LENGTH = 72
+
+export const PASSWORD_RULE_MESSAGE = `비밀번호는 영문과 숫자를 포함해 ${PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`
+
+export const PASSWORD_MISMATCH_MESSAGE = '비밀번호가 일치하지 않습니다.'
+
 export const SAME_PASSWORD_MESSAGE = '현재 비밀번호와 다른 비밀번호를 입력해 주세요.'
+
+/** 길이 + 영문 + 숫자를 한 문장으로 알린다 — 한 번에 하나씩 고치게 하지 않는다. */
+export function isStrongPassword(value: string): boolean {
+  return (
+    value.length >= PASSWORD_MIN_LENGTH &&
+    value.length <= PASSWORD_MAX_LENGTH &&
+    /\p{L}/u.test(value) &&
+    /[0-9]/u.test(value)
+  )
+}
+
+export const passwordSchema = z
+  .string()
+  .max(PASSWORD_MAX_LENGTH, `비밀번호는 ${PASSWORD_MAX_LENGTH}자를 넘을 수 없습니다.`)
+  .refine((value) => isStrongPassword(value), { message: PASSWORD_RULE_MESSAGE })
 
 /**
  * 비밀번호 변경 — 현재 비밀번호 + 새 비밀번호 + 확인.
  *
- * 새 비밀번호 규칙은 재설정 화면과 같은 `passwordSchema` 다. "현재 비밀번호"는
+ * 새 비밀번호는 위 `passwordSchema` 를 그대로 쓴다. "현재 비밀번호"는
  * 형식을 검사하지 않는다(규칙이 강해지기 전에 만든 계정이 있다). 맞는지는 서버가
  * 재인증으로 확인한다.
  */

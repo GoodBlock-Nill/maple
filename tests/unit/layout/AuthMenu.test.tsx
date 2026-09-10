@@ -8,13 +8,21 @@ vi.mock('@/lib/actions/auth-actions', () => ({ signOut: async () => undefined })
 const { AuthMenu } = await import('@/components/layout/AuthMenu')
 
 describe('AuthMenu (logged out)', () => {
-  it('should show both the login and the signup pill', () => {
-    // Arrange & Act — 이메일 가입이 되살아나 두 동작이 서로 다른 화면이 되었다.
+  it('should show a single login pill', () => {
+    // Arrange & Act — 로그인 수단이 간편로그인뿐이라 가입 버튼이 없다(시안 auth-v2).
     render(<AuthMenu />)
 
     // Assert
     expect(screen.getByRole('link', { name: '로그인' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
+    expect(screen.getAllByRole('link')).toHaveLength(1)
+  })
+
+  it('should not offer a separate signup screen', () => {
+    // Arrange & Act
+    render(<AuthMenu />)
+
+    // Assert — 회원가입 경로는 사라졌다(프록시가 /login 으로 302).
+    expect(screen.queryByRole('link', { name: '회원가입' })).not.toBeInTheDocument()
   })
 
   it('should not leak account controls', () => {
@@ -28,12 +36,12 @@ describe('AuthMenu (logged out)', () => {
 })
 
 describe('AuthMenu (logged in)', () => {
-  it('should replace the pills with a link to 마이페이지', () => {
+  it('should replace the pill with a link to 마이페이지', () => {
     // Arrange & Act — 시안(2041:3122)의 로그인 알약은 드롭다운이 아니라 링크다.
     render(<AuthMenu user={{ nickname: '모험가' }} />)
 
     // Assert
-    expect(screen.queryByRole('link', { name: '회원가입' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /모험가/ })).toHaveAttribute('href', '/account')
   })
 
@@ -43,6 +51,6 @@ describe('AuthMenu (logged in)', () => {
 
     // Assert
     expect(screen.getByRole('link', { name: '계정 복구' })).toHaveAttribute('href', '/auth/restore')
-    expect(screen.queryByRole('link', { name: '회원가입' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument()
   })
 })

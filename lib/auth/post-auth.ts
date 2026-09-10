@@ -9,8 +9,8 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
  * 약관 동의) 미완료면 어디로 가려 했든 온보딩을 먼저 통과시킨다. 규칙 자체는
  * `resolvePostAuthDestination()` 하나가 소유한다(프록시·인증 콜백과 같은 함수).
  *
- * 간편로그인·이메일 로그인·회원가입 완료가 모두 같은 판정을 써야 해서 조회까지
- * 포함한 이 얇은 껍데기를 공유한다.
+ * 간편로그인(서버 액션)과 OAuth 콜백이 같은 판정을 써야 해서 조회까지 포함한
+ * 이 얇은 껍데기를 공유한다.
  */
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */

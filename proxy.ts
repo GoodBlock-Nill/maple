@@ -8,7 +8,6 @@ import {
   ONBOARDING_PATH,
   RESTORE_PATH,
 } from '@/lib/validation/auth'
-import { RESET_PASSWORD_PATH } from '@/lib/validation/email-auth'
 
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { NextRequest } from 'next/server'
@@ -19,7 +18,7 @@ import type { NextRequest } from 'next/server'
  * 파일은 프로젝트 루트에 하나만 둘 수 있고, 함수는 default 또는 named `proxy` 로 내보낸다.
  *
  * 여기서 하는 일은 네 가지다.
- *  1) 사라진 경로(비밀번호 찾기)를 로그인으로 보낸다.
+ *  1) 사라진 경로(회원가입·비밀번호 찾기·재설정)를 로그인으로 보낸다.
  *  2) 모든 요청에서 Supabase 세션(액세스 토큰)을 갱신한다.
  *  3) 보호 경로에 대한 **낙관적(optimistic) 인증 검사**.
  *  4) 로그인 사용자의 상태 게이트 — 탈퇴 대기(`deleted_at`)면 복구 화면으로,
@@ -36,8 +35,6 @@ const PROTECTED_PREFIXES = [
   ONBOARDING_PATH,
   RESTORE_PATH,
   ACCOUNT_PATH,
-  /* 비밀번호 재설정은 메일 링크(`/auth/confirm`)가 만든 세션이 있어야 열린다. */
-  RESET_PASSWORD_PATH,
 ] as const
 
 /** 비-GET(폼 제출·서버 액션)일 때만 로그인을 요구하는 경로. */
@@ -74,10 +71,15 @@ const WITHDRAWN_MUTATION_PREFIXES = [
 /**
  * 사라진 경로 → 살아 있는 경로. 북마크·구버전 링크를 위한 자리다.
  *
- * `/forgot-password` 는 2026-09-10 시안(비밀번호 찾기 화면)과 함께 되살아나
- * 여기서 빠졌다. `/register` 는 페이지 자체가 308 로 `/signup` 을 가리킨다.
+ * 로그인 수단이 간편로그인(구글·네이버)뿐이 되면서(2026-09-10 시안) 이메일
+ * 가입·비밀번호 화면이 통째로 사라졌다. `/register` 는 페이지 자체가 308 로
+ * `/login` 을 가리킨다.
  */
-const LEGACY_REDIRECTS: Record<string, string> = {}
+const LEGACY_REDIRECTS: Record<string, string> = {
+  '/signup': '/login',
+  '/forgot-password': '/login',
+  '/reset-password': '/login',
+}
 
 const LOGIN_PATH = '/login'
 

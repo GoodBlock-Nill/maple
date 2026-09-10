@@ -52,12 +52,12 @@ async function fillIfPresent(page: Page, name: string, value: string): Promise<v
 /**
  * 스텁 간편로그인 + 온보딩.
  *
- * 버튼은 라벨이 아니라 `name`/`value` 로 고른다 — 시안 문구("Kakao로 계속하기")가
+ * 버튼은 라벨이 아니라 `name`/`value` 로 고른다 — 시안 문구("Google로 계속하기")가
  * 바뀌어도 흐름 테스트가 함께 깨지지 않게 한다.
  */
 async function stubLogin(page: Page, nextPath: string): Promise<void> {
   await page.goto(`/login?next=${encodeURIComponent(nextPath)}`)
-  await page.locator('button[name="provider"][value="kakao"]').click()
+  await page.locator('button[name="provider"][value="google"]').click()
   await page.waitForURL((url) => !url.pathname.startsWith('/login'))
 
   if (page.url().includes('/auth/onboarding')) {
@@ -192,11 +192,11 @@ test.describe('마이페이지', () => {
 
     // Assert
     await expect(page.getByRole('heading', { name: '프로필' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: '비밀번호 변경' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '마케팅 수신 설정' })).toBeVisible()
     await expect(page.getByRole('button', { name: '홈페이지 회원 탈퇴' })).toBeVisible()
-    /* 스텁 로그인은 간편로그인 계정이라 비밀번호 입력칸이 없다(시안 §4.2). */
-    await expect(page.getByText('간편로그인 계정은 비밀번호가 없습니다.')).toBeVisible()
+    /* 스텁 로그인은 간편로그인 계정이라 비밀번호 카드 자체가 없다 — 바꿀 비밀번호가
+       없는 계정에 빈 카드를 남기지 않는다(2026-09-10 로그인 개편). */
+    await expect(page.getByRole('heading', { name: '비밀번호 변경' })).toHaveCount(0)
   })
 
   test('should explain a bad coupon code and a bad world uid in Korean', async ({ page }) => {

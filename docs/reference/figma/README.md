@@ -17,8 +17,23 @@
 | 고객지원(1:1 문의 + FAQ) | `461:15245` | support.png |
 | 소개(크리에이터 세글자) | `509:2958` | about.png |
 | 레이아웃·푸터 변형 모음 | `499:2947` | layout.png |
-| 로그인 (2026-09-10 추가) | `2041:2289` | auth/login.png |
-| 회원가입 입력 전·후 | `2041:2365`, `2041:2473` | auth/signup-1.png, auth/signup-2.png — 수치는 `auth-spec.md` |
+| ~~로그인 (2026-09-10 오전)~~ **폐기** | `2041:2289` | auth/login.png |
+| ~~회원가입 입력 전·후~~ **폐기** | `2041:2365`, `2041:2473` | auth/signup-1.png, auth/signup-2.png — 수치는 `auth-spec.md` |
+
+## 로그인 v2 (다른 파일, 2026-09-10 오후)
+
+- 파일: https://www.figma.com/design/2UmKcpmy55IqMZ7Sg6vTeW/ ("메이플 글자월드")
+- 간편로그인(Google·네이버)만 있는 화면으로 **전면 교체**되었다. 수치는 `auth-v2-spec.md`.
+
+| 화면 | 노드 ID | 스크린샷 |
+|---|---|---|
+| 로그인 PC | `5:5018` (1440×1456) | auth-v2/login-pc.png |
+| 로그인 PC – 오류 | `11:10413` | auth-v2/login-pc-2.png |
+| 로그인 모바일 | `16:3787` (375×812) | auth-v2/login-mobile-1.png |
+| 로그인 모바일 – 오류 | `16:4364` | auth-v2/login-mobile-2.png |
+
+> 위 표의 `auth/login.png`·`auth/signup-*.png` 와 `auth-spec.md`(이메일 로그인·인증번호 가입·비밀번호
+> 찾기)는 **대체된 시안**이다. 구현은 남아 있지 않지만(2026-09-10 제거) 결정 이력으로 파일은 남긴다.
 
 ## 추가 프레임 (2026-09-08 전수 확인)
 

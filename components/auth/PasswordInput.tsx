@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { CancelGlyph, EyeGlyph } from '@/components/auth/auth-icons'
-import { AUTH_INPUT_CLASS } from '@/components/auth/auth-scene-styles'
+import { AUTH_INPUT_CLASS } from '@/components/auth/auth-styles'
 import { cn } from '@/lib/utils/cn'
 
 type PasswordInputProps = {

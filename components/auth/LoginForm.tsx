@@ -1,129 +1,115 @@
 'use client'
 
-import Link from 'next/link'
 import { useActionState, useState } from 'react'
 
-import { AuthDivider } from '@/components/auth/AuthDivider'
-import { AuthField } from '@/components/auth/AuthField'
-import {
-  AUTH_ERROR_CLASS,
-  AUTH_FORGOT_LINK_CLASS,
-  AUTH_FORM_CLASS,
-  AUTH_INPUT_CLASS,
-  AUTH_MUTED_LINK_CLASS,
-  AUTH_NOTICE_CLASS,
-  AUTH_SUBMIT_CLASS,
-} from '@/components/auth/auth-scene-styles'
-import { AuthSocialButtons } from '@/components/auth/AuthSocialButtons'
-import { PasswordInput } from '@/components/auth/PasswordInput'
-import { signInWithPassword } from '@/lib/actions/email-auth-actions'
+import { GoogleGlyph, NaverGlyph, NoticeGlyph } from '@/components/auth/auth-icons'
+import { socialSignIn } from '@/lib/actions/auth-actions'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { cn } from '@/lib/utils/cn'
+
+import type { SocialProvider } from '@/lib/validation/auth'
+import type { ReactNode } from 'react'
+
+/**
+ * 간편로그인 버튼(시안 auth-v2 §PC 본문).
+ *
+ * 이 사이트의 로그인 수단은 구글·네이버 둘뿐이다 — 시안에서 카카오 버튼은
+ * 숨김 처리되어 있다. 제공자 목록(`SOCIAL_PROVIDERS`)에는 카카오가 남아 있으므로
+ * 언제든 이 배열에 한 줄을 더하면 되살아난다.
+ *
+ * 버튼 표면은 1440 실측값이다 — 400×54 / radius 100 / 아이콘 24 + gap 6.
+ * 폰(≤767)은 343×48 · 글자 16 이다.
+ */
+const BUTTON_BASE =
+  'flex h-12 w-full items-center justify-center gap-1.5 rounded-[100px] ' +
+  'text-[16px] leading-[22px] font-semibold tracking-[-0.4px] transition-opacity ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ' +
+  'disabled:cursor-not-allowed disabled:opacity-60 ' +
+  'md:h-[54px] md:w-[400px] md:text-[18px] md:leading-[26px] md:tracking-[-0.45px] ' +
+  'shadow-[0_0.326px_0.367px_rgba(0,0,0,0.12),0_1.541px_1.433px_rgba(0,0,0,0.07),0_4px_4.5px_rgba(0,0,0,0.05)]'
+
+const GOOGLE_CLASS = `${BUTTON_BASE} border border-[#cdd3db] bg-white text-[#2a2a2a] hover:opacity-90`
+const NAVER_CLASS = `${BUTTON_BASE} bg-[#03a94d] text-white hover:opacity-90`
+
+type SocialButton = {
+  provider: SocialProvider
+  label: string
+  icon: ReactNode
+  className: string
+}
+
+const BUTTONS: readonly SocialButton[] = [
+  {
+    provider: 'google',
+    label: 'Google로 계속하기',
+    icon: <GoogleGlyph className="size-6 shrink-0" />,
+    className: GOOGLE_CLASS,
+  },
+  {
+    provider: 'naver',
+    label: '네이버로 계속하기',
+    icon: <NaverGlyph className="size-6 shrink-0" />,
+    className: NAVER_CLASS,
+  },
+]
 
 type LoginFormProps = {
   /** 로그인 후 돌아갈 경로. 서버에서 이미 정규화된 값이다. */
   nextPath: string
-  /** `?error=` (간편로그인 콜백 실패) 안내. */
+  /** `?error=` 로 넘어온 실패 안내. 없으면 오류 행 자체가 없다. */
   initialError?: string
-  /** `?notice=` (비밀번호 변경 완료 등) 안내. */
-  notice?: string
 }
 
-const FORGOT_PATH = '/forgot-password'
-
 /**
- * 로그인 폼 — 이메일 · 비밀번호 · 간편로그인.
+ * 로그인 폼 — 버튼 두 개와 그 아래 오류 행 하나가 전부다.
  *
- * "로그인" 버튼은 두 칸이 모두 채워질 때까지 25% 불투명도로 잠긴다(시안).
- * 값을 눌러 담기 위해 제어 컴포넌트로 두지만, 자바스크립트가 꺼져 있어도 폼
- * 제출 자체는 서버 액션으로 그대로 동작한다.
+ * 폼 하나에 두 버튼을 담고 눌린 버튼의 `name="provider"` 값으로 제공자를 넘긴다.
+ * 스텁/실 OAuth 전환은 서버 액션이 `SOCIAL_LOGIN_MODE` 로 판단하므로 화면은
+ * 바뀌지 않는다. 자바스크립트가 없어도 폼 제출은 그대로 동작한다(진행 표시만 빠진다).
  */
-export function LoginForm({ nextPath, initialError, notice }: LoginFormProps) {
-  const [state, formAction, isPending] = useActionState(signInWithPassword, EMPTY_FORM_STATE)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export function LoginForm({ nextPath, initialError }: LoginFormProps) {
+  const [state, formAction, isPending] = useActionState(socialSignIn, EMPTY_FORM_STATE)
+  const [clicked, setClicked] = useState<SocialProvider | null>(null)
 
-  const canSubmit = email.trim() !== '' && password !== '' && !isPending
+  /* 액션이 아직 아무것도 돌려주지 않았을 때만 URL 로 받은 오류를 보여 준다.
+     새로 시도해 실패했다면 그쪽 문구가 더 정확하다. */
+  const error = state === EMPTY_FORM_STATE ? initialError : (state.formError ?? undefined)
 
   return (
-    <div className={AUTH_FORM_CLASS}>
-      <form action={formAction} className="flex flex-col">
-        <input type="hidden" name="next" value={nextPath} />
+    <form action={formAction} className="flex w-full flex-col items-center">
+      {/* 서버 액션은 직접 POST 로도 호출되므로 이 값은 서버에서 다시 정규화된다. */}
+      <input type="hidden" name="next" value={nextPath} />
 
-        {notice === undefined ? null : (
-          <p role="status" className={cn(AUTH_NOTICE_CLASS, 'mt-0 mb-4 text-center')}>
-            {notice}
-          </p>
-        )}
-
-        <div className="flex flex-col gap-6">
-          <AuthField label="이메일" htmlFor="login-email" error={state.fieldErrors?.email}>
-            <input
-              id="login-email"
-              name="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="이메일 주소를 입력해주세요"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              aria-invalid={state.fieldErrors?.email === undefined ? undefined : true}
-              className={cn(AUTH_INPUT_CLASS, 'pr-[23px]')}
-            />
-          </AuthField>
-
-          <div className="flex flex-col">
-            <AuthField
-              label="비밀번호"
-              htmlFor="login-password"
-              error={state.fieldErrors?.password}
-            >
-              <PasswordInput
-                id="login-password"
-                name="password"
-                value={password}
-                onValueChange={setPassword}
-                placeholder="비밀번호"
-                autoComplete="current-password"
-                invalid={state.fieldErrors?.password !== undefined}
-              />
-            </AuthField>
-
-            {/* 입력 아래 8px, 오른쪽 정렬(시안 2041:2301). */}
-            <Link href={FORGOT_PATH} className={cn(AUTH_FORGOT_LINK_CLASS, 'mt-2 self-end')}>
-              비밀번호를 잊으셨나요
-            </Link>
-          </div>
-        </div>
-
-        {state.formError === undefined ? null : (
-          <p role="alert" className={cn(AUTH_ERROR_CLASS, 'mt-6 mb-0 text-center')}>
-            {state.formError}
-          </p>
-        )}
-
-        <button type="submit" disabled={!canSubmit} className={cn(AUTH_SUBMIT_CLASS, 'mt-6')}>
-          {isPending ? '로그인 중…' : '로그인'}
-        </button>
-      </form>
-
-      <div className="mt-6 flex h-6 items-center justify-center gap-5">
-        <Link href="/signup" className={AUTH_MUTED_LINK_CLASS}>
-          회원가입
-        </Link>
-        <span aria-hidden className="h-[14px] w-0.5 bg-[#666]" />
-        <Link href={FORGOT_PATH} className={AUTH_MUTED_LINK_CLASS}>
-          비밀번호 찾기
-        </Link>
+      <div className="flex w-full flex-col items-center gap-4 md:gap-5">
+        {BUTTONS.map(({ provider, label, icon, className }) => (
+          <button
+            key={provider}
+            type="submit"
+            name="provider"
+            value={provider}
+            disabled={isPending}
+            aria-busy={isPending && clicked === provider}
+            onClick={() => setClicked(provider)}
+            className={className}
+          >
+            {icon}
+            {isPending && clicked === provider ? '연결 중…' : label}
+          </button>
+        ))}
       </div>
 
-      <div className="mt-8">
-        <AuthDivider />
-      </div>
-
-      <div className="mt-8">
-        <AuthSocialButtons nextPath={nextPath} initialError={initialError} />
-      </div>
-    </div>
+      {error === undefined ? null : (
+        <p
+          role="alert"
+          className={cn(
+            'mt-6 flex items-center justify-center gap-1.5 text-center',
+            'text-[14px] leading-[20px] tracking-[-0.35px] text-[#2a2a2a] md:mt-7',
+          )}
+        >
+          <NoticeGlyph className="size-5 shrink-0 md:size-6" />
+          {error}
+        </p>
+      )}
+    </form>
   )
 }

@@ -9,7 +9,7 @@ import {
   MYPAGE_CARD_TITLE_CLASS,
   MYPAGE_SUBMIT_CLASS,
 } from '@/components/account/mypage-styles'
-import { AUTH_INPUT_CLASS } from '@/components/auth/auth-scene-styles'
+import { AUTH_INPUT_CLASS } from '@/components/auth/auth-styles'
 import { FormFeedback } from '@/components/auth/FormFeedback'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { updateProfileAction } from '@/lib/actions/profile-actions'

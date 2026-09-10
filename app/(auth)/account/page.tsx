@@ -17,8 +17,9 @@ export const metadata: Metadata = {
 /**
  * 마이페이지 — 계정 관리 탭(시안 2041:2958).
  *
- * 비밀번호 카드는 이메일 계정에만 입력칸이 있다. 판정 근거는 `profiles.provider`
- * 다(마이그레이션 20260908001200 이 'google'|'kakao'|'naver'|'email'|'anonymous'
+ * 비밀번호 카드는 **이메일 계정에만** 그린다. 로그인 수단이 간편로그인뿐이라
+ * 나머지 계정에는 바꿀 비밀번호 자체가 없다. 판정 근거는 `profiles.provider` 다
+ * (마이그레이션 20260908001200 이 'google'|'kakao'|'naver'|'email'|'anonymous'
  * 중 하나로 정규화해 둔다) — auth 쪽 identities 를 다시 읽지 않는다.
  */
 export default async function AccountPage() {
@@ -36,7 +37,7 @@ export default async function AccountPage() {
         mswProfileCode={profile.msw_profile_code ?? ''}
       />
 
-      <PasswordChangeCard hasPassword={profile.provider === 'email'} />
+      {profile.provider === 'email' ? <PasswordChangeCard /> : null}
 
       <MarketingCard
         smsOptOut={profile.marketing_sms_opt_out}
