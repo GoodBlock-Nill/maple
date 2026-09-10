@@ -23,7 +23,7 @@ export function LoadMoreButton({ href, shown, total, hasMore }: LoadMoreButtonPr
   }
 
   return (
-    <div className="flex justify-center pt-16 pb-10 xl:pb-0">
+    <div className="flex justify-center pt-16 pb-10 xl:pb-16">
       {/* 누적 목록이라 새 항목은 버튼 아래에 붙는다. 기본 동작(최상단 스크롤)은
           사용자가 읽던 위치를 잃게 하므로 스크롤 위치를 유지한다. */}
       <Link href={href} scroll={false} className={BOARD_PILL_CLASS}>
