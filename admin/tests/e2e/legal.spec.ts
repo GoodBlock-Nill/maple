@@ -147,7 +147,7 @@ test('개인정보처리방침 편집 화면이 발행본과 이력을 함께 �
   await expect(page.getByRole('heading', { name: '개인정보처리방침 편집' })).toBeVisible()
   /* 발행본은 잠긴다 — 문안을 덮어쓰지 않고 새 버전을 쌓는 규칙이 화면에도 보여야 한다. */
   await expect(page.getByText('이미 발행한 개정본입니다.')).toBeVisible()
-  await expect(page.getByTestId('legal-preview')).toContainText('1. 총칙')
+  await expect(page.getByTestId('legal-preview')).toContainText('1. 개인정보의 처리 목적')
   await expect(page.getByTestId('legal-preview')).toContainText('시행일 2026년 9월 18일')
   await expect(page.getByRole('heading', { name: '버전 이력' })).toBeVisible()
 
@@ -169,7 +169,7 @@ test('새 초안을 만들어 미리보기로 확인하고 발행하면 사용�
      기다려야 아래 입력이 **이전 화면**(발행본, 잠긴 폼)에 떨어지지 않는다. */
   await page.waitForURL(/from=/u)
   await expect(page.getByText('이미 발행한 개정본입니다.')).toBeHidden()
-  await expect(page.getByRole('textbox', { name: '본문' })).toContainText('1. 총칙')
+  await expect(page.getByRole('textbox', { name: '본문' })).toContainText('1. 개인정보의 처리 목적')
 
   /* 라우트 전환 후에도 폼이 새 초안 기본값으로 다시 마운트됐는지 본다(폼 key). */
   await expect(page.getByRole('radio', { name: /임시저장/u })).toBeChecked()

@@ -16,6 +16,7 @@ import {
 } from '@/lib/content/marketing-consent'
 import {
   PRIVACY_POLICY_EFFECTIVE_DATE,
+  PRIVACY_POLICY_NOTICE,
   PRIVACY_POLICY_SECTIONS,
   PRIVACY_POLICY_TITLE,
   PRIVACY_POLICY_VERSION,
@@ -73,6 +74,7 @@ export const POLICY_FALLBACKS: Record<LegalSlug, PolicyFallback> = {
     version: PRIVACY_POLICY_VERSION,
     effectiveDate: PRIVACY_POLICY_EFFECTIVE_DATE,
     sections: PRIVACY_POLICY_SECTIONS,
+    notice: PRIVACY_POLICY_NOTICE,
     paragraphs: [],
     hasIpNotice: true,
   },

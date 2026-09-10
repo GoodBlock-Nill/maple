@@ -83,7 +83,10 @@ const documents = [
     version: privacy.PRIVACY_POLICY_VERSION,
     effectiveDate: toIsoDate(privacy.PRIVACY_POLICY_EFFECTIVE_DATE),
     summary: '코드 문안(lib/content/privacy-policy)을 옮긴 최초 발행본.',
-    html: policySectionsToHtml({ sections: privacy.PRIVACY_POLICY_SECTIONS }),
+    html: policySectionsToHtml({
+      sections: privacy.PRIVACY_POLICY_SECTIONS,
+      notice: privacy.PRIVACY_POLICY_NOTICE,
+    }),
   },
   {
     slug: 'discord',
