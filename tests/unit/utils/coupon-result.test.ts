@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  couponLabel,
+  COUPON_DELIVERY_NOTICE,
+  COUPON_DELIVERY_TIMEFRAME,
   COUPON_ERROR_FIELD,
   COUPON_GENERIC_FAILURE_MESSAGE,
+  COUPON_PENDING_PROCESSED_TEXT,
+  COUPON_STATUS_CLASS,
+  COUPON_STATUS_HINT,
+  COUPON_STATUS_LABEL,
   couponErrorMessage,
-  maskCouponCode,
   parseRedeemCouponResult,
   toCouponStatus,
 } from '@/lib/utils/coupon-result'
@@ -103,23 +107,40 @@ describe('toCouponStatus', () => {
   })
 })
 
-describe('couponLabel', () => {
-  it('should prefer the name, then the masked code, then a neutral word', () => {
-    // Arrange & Act & Assert
-    expect(couponLabel('테스트 쿠폰', 'GLZA-TEST-0001')).toBe('테스트 쿠폰')
-    expect(couponLabel(null, 'GLZA-TEST-0001')).toBe('****-0001')
-    expect(couponLabel('  ', null)).toBe('쿠폰')
+describe('COUPON_STATUS_LABEL · COUPON_STATUS_CLASS', () => {
+  it('should name the three statuses the way the console does', () => {
+    // Arrange & Act & Assert — 관리자 콘솔(COUPON_REDEMPTION_STATUS_LABELS)과 같은 낱말이어야
+    // 운영자가 "지급 완료로 바꿨다"고 말한 것이 사용자 화면에서 그대로 읽힌다.
+    expect(COUPON_STATUS_LABEL.pending).toBe('대기 중')
+    expect(COUPON_STATUS_LABEL.delivered).toBe('지급 완료')
+    expect(COUPON_STATUS_LABEL.rejected).toBe('거절')
+  })
+
+  it('should explain each status in one sentence', () => {
+    // Arrange & Act & Assert — 지급은 게임 안에서 일어난다는 사실이 문구에 남아야 한다.
+    expect(COUPON_STATUS_HINT.delivered).toContain('게임 안')
+    expect(COUPON_STATUS_HINT.pending).toContain('확인')
+    expect(COUPON_STATUS_HINT.rejected).toContain('지급되지')
+  })
+
+  it('should give 지급 완료 the dark pill and 거절 the warning tint', () => {
+    // Arrange & Act & Assert — 문의내역의 "답변완료"와 같은 어두운 알약이 끝난 일을 가리킨다.
+    expect(COUPON_STATUS_CLASS.delivered).toContain('bg-ink')
+    expect(COUPON_STATUS_CLASS.pending).toContain('border')
+    expect(COUPON_STATUS_CLASS.rejected).toContain('#c84545')
   })
 })
 
-describe('maskCouponCode', () => {
-  it('should keep only the last four characters', () => {
-    // Arrange & Act & Assert
-    expect(maskCouponCode('GLZA-TEST-0001')).toBe('****-0001')
+describe('처리 기간 문구', () => {
+  it('should keep the timeframe in a single constant', () => {
+    // Arrange & Act & Assert — 운영팀이 바꾸는 값이라 흩어지면 서로 다른 약속이 남는다.
+    expect(COUPON_DELIVERY_NOTICE).toContain(COUPON_DELIVERY_TIMEFRAME)
+    expect(COUPON_PENDING_PROCESSED_TEXT).toContain(COUPON_DELIVERY_TIMEFRAME)
   })
 
-  it('should render a dash when the code is not readable', () => {
-    // Arrange & Act & Assert — coupons 에는 사용자 select 정책이 없다.
-    expect(maskCouponCode(null)).toBe('-')
+  it('should tell that delivery happens inside the game after a staff check', () => {
+    // Arrange & Act & Assert
+    expect(COUPON_DELIVERY_NOTICE).toContain('운영팀')
+    expect(COUPON_DELIVERY_NOTICE).toContain('게임 안')
   })
 })

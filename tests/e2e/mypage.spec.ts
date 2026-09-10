@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { createServiceClient } from './service-role'
+
 import type { Page } from '@playwright/test'
 
 /**
@@ -31,6 +33,9 @@ const LAYOUT = {
 const TOLERANCE = 2
 
 const TABS = ['계정 관리', '쿠폰', '문의내역'] as const
+
+/** 마이그레이션 시드에 들어 있는 샘플 쿠폰(평소에는 꺼져 있다). */
+const SAMPLE_COUPON_CODE = 'GLZA-TEST-0001'
 
 function randomDigits(length: number): string {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('')
@@ -158,8 +163,8 @@ test.describe('마이페이지', () => {
     await nav.getByRole('link', { name: '쿠폰' }).click()
     await page.waitForURL('**/account/coupon')
 
-    // Assert
-    await expect(page.getByRole('heading', { name: '쿠폰 등록' })).toBeVisible()
+    // Assert — 아래 "쿠폰 등록 내역" 카드와 이름이 겹치므로 정확히 일치시킨다.
+    await expect(page.getByRole('heading', { name: '쿠폰 등록', exact: true })).toBeVisible()
     await expect(nav.getByRole('link', { name: '쿠폰' })).toHaveAttribute('aria-current', 'page')
     await expect(nav.getByRole('link', { name: '계정 관리' })).not.toHaveAttribute(
       'aria-current',
@@ -237,6 +242,142 @@ test.describe('마이페이지', () => {
 
     // Assert
     await expect(page.getByText('존재하지 않거나 사용할 수 없는 쿠폰 코드입니다.')).toBeVisible()
+  })
+
+  test('should explain what the coupon history is before anything is registered', async ({
+    page,
+  }) => {
+    // Arrange & Act
+    await page.setViewportSize(DESKTOP)
+    await page.goto('/account/coupon')
+
+    const card = page.locator('section[aria-labelledby="coupon-history-heading"]')
+
+    // Assert — 빈 표 대신 "코드는 어디서 나오는가"를 알려 준다.
+    await expect(page.getByRole('heading', { name: '쿠폰 등록 내역' })).toBeVisible()
+    await expect(card.getByText('아직 등록한 쿠폰이 없습니다.')).toBeVisible()
+    await expect(card.getByRole('button', { name: '쿠폰 코드 입력하기' })).toBeVisible()
+    await expect(card.getByText(/운영팀 확인 후 게임 안에서 지급됩니다/u)).toBeVisible()
+    /* 시안(§3)의 카드 골격을 그대로 쓴다 — 등록 카드와 같은 폭·같은 자리. */
+    const box = await boxOf(page, 'section[aria-labelledby="coupon-history-heading"]')
+    expect(Math.abs(box.x - LAYOUT.cardX)).toBeLessThanOrEqual(TOLERANCE)
+    expect(Math.abs(box.width - LAYOUT.cardW)).toBeLessThanOrEqual(TOLERANCE)
+  })
+
+  /**
+   * 등록 → 내역 한 바퀴.
+   *
+   * 샘플 쿠폰을 잠깐 켜서 실제로 한 건 등록하고, 관리자만 적을 수 있는 상태
+   * (지급 완료 · 거절)는 서비스 롤로 만들어 붙인다. 끝나면 만든 행을 지우고 쿠폰을
+   * 원래의 비활성 상태로 되돌린다.
+   *
+   * chromium 에서만 돈다. 두 프로젝트가 동시에 같은 쿠폰을 켜고 끄면 한쪽이
+   * `invalid_code` 를 만나 무작위로 실패한다 — 흐름 자체는 폭과 무관하다.
+   */
+  test('should list a registered coupon and open its details', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', '쿠폰 상태를 공유하므로 한 프로젝트에서만 돈다')
+
+    const service = createServiceClient()
+    test.skip(service === null, '.env.local 의 SUPABASE_SERVICE_ROLE_KEY 가 필요하다')
+
+    // Arrange — 샘플 쿠폰을 잠깐 켠다.
+    const { data: coupon } = await service!
+      .from('coupons')
+      .select('id, is_active')
+      .eq('code', SAMPLE_COUPON_CODE)
+      .maybeSingle()
+
+    expect(coupon, `샘플 쿠폰 ${SAMPLE_COUPON_CODE} 가 없다`).not.toBeNull()
+    await service!.from('coupons').update({ is_active: true }).eq('id', coupon!.id)
+
+    const uid = `2012${randomDigits(13)}`
+
+    try {
+      await page.setViewportSize(DESKTOP)
+      await page.goto('/account/coupon')
+
+      // Act — 화면으로 실제 등록한다.
+      await page.locator('input[name="code"]').fill(SAMPLE_COUPON_CODE)
+      await page.locator('input[name="mswUid"]').fill(uid)
+      await page
+        .locator('input[name="mswProfileCode"]')
+        .fill(`#e2e${Math.random().toString(36).slice(2, 7)}`)
+      await page.getByRole('button', { name: '쿠폰 등록' }).click()
+
+      // Assert — 성공 안내가 아래 카드로 시선을 넘기고, 새 줄이 강조된 채 열린다.
+      await expect(page.getByText(/아래 “쿠폰 등록 내역”에서 처리 상태를 확인/u)).toBeVisible()
+
+      const card = page.locator('section[aria-labelledby="coupon-history-heading"]')
+      const table = card.locator('table')
+
+      await expect(table.getByText('클라이언트 연동 테스트 쿠폰')).toBeVisible()
+      await expect(table.getByText('****-****-0001')).toBeVisible()
+      await expect(table.getByText('대기 중')).toBeVisible()
+      await expect(card.locator('.coupon-row-new')).toHaveCount(2)
+      /* 방금 등록한 줄은 펼친 채로 연다 — '대기 중'만으로는 언제 받는지 알 수 없다. */
+      await expect(table.getByText('테스트 보상 (실제 지급 없음)')).toBeVisible()
+
+      // Arrange — 관리자가 적는 두 상태를 붙인다.
+      const { data: mine } = await service!
+        .from('coupon_redemptions')
+        .select('id, user_id')
+        .eq('msw_uid', uid)
+        .maybeSingle()
+
+      expect(mine, '등록 이력이 만들어지지 않았다').not.toBeNull()
+
+      await service!.from('coupon_redemptions').insert([
+        {
+          coupon_id: coupon!.id,
+          user_id: mine!.user_id,
+          msw_uid: uid,
+          msw_profile_code: '#e2edeliv',
+          status: 'delivered',
+          processed_at: new Date().toISOString(),
+        },
+        {
+          coupon_id: coupon!.id,
+          user_id: mine!.user_id,
+          msw_uid: uid,
+          msw_profile_code: '#e2ereject',
+          status: 'rejected',
+          admin_note: '입력한 UID 계정을 찾을 수 없습니다.',
+          processed_at: new Date().toISOString(),
+        },
+      ])
+
+      // Act
+      await page.reload()
+
+      // Assert — 세 상태가 한 표에 선다.
+      await expect(table.getByText('대기 중')).toBeVisible()
+      await expect(table.getByText('지급 완료')).toBeVisible()
+      await expect(table.getByText('거절')).toBeVisible()
+
+      // Act — 거절 건을 펼친다.
+      await table.getByRole('row').filter({ hasText: '거절' }).getByRole('button').click()
+
+      // Assert — 사유와 물어볼 곳이 함께 있다.
+      await expect(table.getByText('입력한 UID 계정을 찾을 수 없습니다.')).toBeVisible()
+      await expect(table.getByRole('link', { name: '고객지원에 문의' })).toHaveAttribute(
+        'href',
+        '/support',
+      )
+
+      // Assert — 폰에서는 표 대신 카드로 눕고 가로 스크롤이 없다.
+      await page.setViewportSize(PHONE)
+      await expect(table).toBeHidden()
+      await expect(
+        card.getByRole('button', { name: /클라이언트 연동 테스트 쿠폰/u }).first(),
+      ).toBeVisible()
+      await expectNoHorizontalOverflow(page)
+    } finally {
+      await service!.from('coupon_redemptions').delete().eq('msw_uid', uid)
+      await service!
+        .from('coupons')
+        .update({ is_active: coupon?.is_active ?? false })
+        .eq('id', coupon!.id)
+    }
   })
 
   test('should keep the animated fox in the footer as a gif image', async ({ page }) => {

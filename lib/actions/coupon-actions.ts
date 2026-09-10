@@ -37,6 +37,8 @@ export type RedeemCouponState = FormState & {
   couponName?: string
   /** 성공 렌더 후 폼을 비우기 위한 표식(같은 값이 두 번 오지 않도록 시각을 담는다). */
   successAt?: number
+  /** 방금 만들어진 등록 이력 id. 아래 "쿠폰 등록 내역" 카드가 그 줄을 짚는 데 쓴다. */
+  redemptionId?: string
 }
 
 export async function redeemCouponAction(
@@ -88,5 +90,8 @@ export async function redeemCouponAction(
     message: COUPON_SUCCESS_MESSAGE,
     couponName: result.couponName,
     successAt: Date.now(),
+    /* RPC 가 id 를 돌려주지 못한 경우(있을 수 없지만)에도 등록은 성공이다.
+       강조만 생략한다 — 표식이 없다고 성공 안내까지 접을 이유가 없다. */
+    redemptionId: result.redemptionId ?? undefined,
   }
 }

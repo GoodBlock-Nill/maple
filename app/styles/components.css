@@ -349,3 +349,34 @@
     border-top: 1px dashed var(--color-table-line);
   }
 }
+
+@layer components {
+  /**
+   * 마이페이지 "쿠폰 등록 내역" — 방금 등록한 줄.
+   *
+   * 등록 성공 안내는 폼 카드 안에 뜨는데, 새로 생긴 줄은 그 아래 카드에 있다.
+   * 두 카드를 잇는 것이 이 짧은 강조다(파랑 tint → 투명). 시선을 끌 만큼만 남고
+   * 사라져야 목록을 훑는 데 방해가 되지 않으므로 2.6초 한 번으로 끝낸다.
+   */
+  @keyframes coupon-row-new {
+    from {
+      background-color: rgb(46 110 255 / 0.16);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+
+  .coupon-row-new {
+    animation: coupon-row-new 2.6s ease-out both;
+  }
+
+  /* 움직임을 줄인 설정에서는 사라지는 연출 대신 옅은 면을 남긴다 — 강조 자체를
+     지우면 "새 줄이 어디 생겼는지"를 알려 줄 수단이 없어진다. */
+  @media (prefers-reduced-motion: reduce) {
+    .coupon-row-new {
+      animation: none;
+      background-color: rgb(46 110 255 / 0.08);
+    }
+  }
+}

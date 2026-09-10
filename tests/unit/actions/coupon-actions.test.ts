@@ -116,7 +116,9 @@ describe('redeemCouponAction', () => {
     const result = await redeemCouponAction({}, form(VALID))
 
     // Assert
-    expect(result.message).toBe('쿠폰이 등록되었습니다. 보상은 순차 지급됩니다.')
+    expect(result.message).toBe(
+      '쿠폰이 등록되었습니다. 아래 “쿠폰 등록 내역”에서 처리 상태를 확인할 수 있습니다.',
+    )
     expect(result.couponName).toBe('테스트 쿠폰')
     expect(typeof result.successAt).toBe('number')
     expect(refresh).toHaveBeenCalled()

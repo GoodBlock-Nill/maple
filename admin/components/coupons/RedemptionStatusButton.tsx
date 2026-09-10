@@ -18,6 +18,8 @@ const COPY = {
     confirm: '지급완료',
     pending: '처리 중…',
     variant: 'primary',
+    noteLabel: '메모 (선택)',
+    noteHint: '등록 내역 표에 남는 운영 기록입니다. 사용자에게는 보이지 않습니다.',
   },
   rejected: {
     trigger: '거절',
@@ -27,6 +29,11 @@ const COPY = {
     confirm: '거절',
     pending: '거절 중…',
     variant: 'danger',
+    noteLabel: '거절 사유 (선택)',
+    /* 거절 메모는 사용자 마이페이지의 "쿠폰 등록 내역"에 그대로 실린다
+       (my_coupon_redemptions RPC 는 거절 건에만 admin_note 를 내보낸다). */
+    noteHint:
+      '사용자의 마이페이지 "쿠폰 등록 내역"에 그대로 보입니다. 비워 두면 "고객지원에 문의해 주세요" 로 안내됩니다.',
   },
 } as const
 
@@ -38,7 +45,9 @@ const COPY = {
  * 오해가 그대로 남으면 실제 지급 없이 처리만 끝난 건이 쌓인다.
  *
  * 메모는 선택이지만 거절에는 사실상 필수다. 나중에 문의가 들어왔을 때 "왜 거절됐나"에
- * 답할 수 있는 유일한 기록이다.
+ * 답할 수 있는 유일한 기록이고, **거절 건의 메모만** 사용자 화면(마이페이지 →
+ * 쿠폰 등록 내역)에 그대로 실린다. 지급 완료 건의 메모는 콘솔 안에만 남는다.
+ * 두 경우의 안내 문구가 다른 이유이며, 규칙의 주인은 `my_coupon_redemptions()` 다.
  */
 export function RedemptionStatusButton({
   redemptionId,
@@ -92,11 +101,11 @@ export function RedemptionStatusButton({
           <FormBanner message={state.formError} />
 
           <Textarea
-            label="메모 (선택)"
+            label={copy.noteLabel}
             name="note"
             rows={3}
             maxLength={COUPON_ADMIN_NOTE_MAX_LENGTH}
-            hint="등록 내역 표에 그대로 남습니다. 사용자에게는 보이지 않습니다."
+            hint={copy.noteHint}
             error={state.fieldErrors?.note}
             disabled={isPending}
           />

@@ -1106,6 +1106,22 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
       is_withdrawn: { Args: never; Returns: boolean }
+      mask_coupon_code: { Args: { p_code: string }; Returns: string }
+      my_coupon_redemptions: {
+        Args: never
+        Returns: {
+          admin_note: string
+          code_masked: string
+          coupon_name: string
+          created_at: string
+          id: string
+          msw_profile_code: string
+          msw_uid: string
+          processed_at: string
+          reward_note: string
+          status: string
+        }[]
+      }
       purge_withdrawn_profiles: {
         Args: { p_cutoff?: string }
         Returns: string[]

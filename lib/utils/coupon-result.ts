@@ -20,7 +20,15 @@ export type RedeemCouponFailure = { ok: false; code: string }
 
 export type RedeemCouponResult = RedeemCouponSuccess | RedeemCouponFailure
 
-export const COUPON_SUCCESS_MESSAGE = '쿠폰이 등록되었습니다. 보상은 순차 지급됩니다.'
+/**
+ * 등록 성공 안내.
+ *
+ * "등록됐다"와 "지급됐다"는 다른 일이다. 지급은 운영팀이 게임 안에서 하고, 그 사이
+ * 사용자는 아무 일도 일어나지 않은 화면을 본다 — 그래서 안내는 바로 아래 카드로
+ * 시선을 넘긴다(거기에 '대기 중' 줄이 새로 생겨 있다).
+ */
+export const COUPON_SUCCESS_MESSAGE =
+  '쿠폰이 등록되었습니다. 아래 “쿠폰 등록 내역”에서 처리 상태를 확인할 수 있습니다.'
 
 export const COUPON_GENERIC_FAILURE_MESSAGE =
   '쿠폰을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'
@@ -92,22 +100,43 @@ export function parseRedeemCouponResult(value: unknown): RedeemCouponResult {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 등록 이력 상태                                                              */
+/* 등록 이력 상태 · 안내 문구                                                  */
 /* -------------------------------------------------------------------------- */
 
 export type CouponRedemptionStatus = 'pending' | 'delivered' | 'rejected'
 
 /** DB 의 `coupon_redemptions.status` CHECK 와 같은 값 집합. */
 export const COUPON_STATUS_LABEL: Record<CouponRedemptionStatus, string> = {
-  pending: '대기',
-  delivered: '지급완료',
+  pending: '대기 중',
+  delivered: '지급 완료',
   rejected: '거절',
 }
 
+/**
+ * 상태 한 줄 설명.
+ *
+ * 라벨만으로는 "대기 중"이 무엇을 기다리는 것인지, "지급 완료"가 어디에 지급됐다는
+ * 것인지 알 수 없다. 콘솔은 아이템을 주지 않고 **줬다고 적는다** — 실제 지급은 게임
+ * 안에서 일어난다는 사실이 사용자 쪽 문구에도 그대로 있어야 문의가 줄어든다.
+ */
+export const COUPON_STATUS_HINT: Record<CouponRedemptionStatus, string> = {
+  pending: '운영팀이 확인하고 있습니다.',
+  delivered: '게임 안에서 지급을 마쳤습니다.',
+  rejected: '지급되지 않았습니다.',
+}
+
+/**
+ * 상태 배지 색 — 문의내역 표의 규칙을 따른다.
+ *
+ * '지급 완료'만 어두운 알약이다(시안 §6 의 "답변완료"). 끝난 일이 가장 진하면
+ * 목록을 훑을 때 "받은 것/못 받은 것"이 먼저 읽힌다. '대기 중'은 아직 아무 일도
+ * 일어나지 않은 상태라 테두리만 두고, '거절'은 회원 탈퇴 블록과 같은 경고색
+ * (#c84545)의 옅은 면으로 둔다 — 빨간 알약을 통째로 쓰면 오류처럼 읽힌다.
+ */
 export const COUPON_STATUS_CLASS: Record<CouponRedemptionStatus, string> = {
-  pending: 'bg-tray text-ink',
+  pending: 'border-line-soft text-ink-muted border bg-white',
   delivered: 'bg-ink text-white',
-  rejected: 'border-line-soft text-ink-muted border bg-page-sub',
+  rejected: 'border border-[#c84545]/25 bg-[#c84545]/10 text-[#c84545]',
 }
 
 export function toCouponStatus(value: string): CouponRedemptionStatus {
@@ -115,37 +144,19 @@ export function toCouponStatus(value: string): CouponRedemptionStatus {
 }
 
 /**
- * 쿠폰 코드 마스킹(`GLZA-TEST-0001` → `****-0001`).
+ * 처리 소요 기간 — **운영팀이 바꾸는 값**이다.
  *
- * 지금은 일반 사용자에게 `coupons` select 정책이 없어 목록에서 코드를 읽을 수
- * 없다(코드 열거 차단). 정책이 열리는 날을 대비해 표기 규칙만 미리 둔다 — 뒤
- * 4자리만 남겨 "내가 등록한 그 쿠폰"을 알아볼 정도로만 보여 준다.
+ * 지급은 사람이 하고 그 속도는 운영 상황을 탄다. 화면 여러 곳에 흩어 두면 한 곳만
+ * 고쳐진 채 서로 다른 약속이 남으므로, 사용자에게 보이는 기간 표기는 이 상수 하나가
+ * 소유한다.
  */
-export function maskCouponCode(code: string | null): string {
-  const trimmed = (code ?? '').trim()
+export const COUPON_DELIVERY_TIMEFRAME = '1~3일'
 
-  if (trimmed === '') {
-    return '-'
-  }
+/** 등록 내역 카드 머리의 한 줄 안내. */
+export const COUPON_DELIVERY_NOTICE = `등록한 쿠폰은 운영팀 확인 후 게임 안에서 지급됩니다. 보통 ${COUPON_DELIVERY_TIMEFRAME} 걸립니다.`
 
-  return `****-${trimmed.slice(-4)}`
-}
+/** 아직 처리되지 않은 건의 "처리일" 자리에 들어가는 문구. */
+export const COUPON_PENDING_PROCESSED_TEXT = `아직 처리 전입니다. (보통 ${COUPON_DELIVERY_TIMEFRAME})`
 
-/**
- * 등록 이력 한 줄의 제목.
- *
- * 이름 > 마스킹한 코드 > 중립 폴백 순이다. 지금은 정책상 앞의 둘이 모두 비어서
- * 늘 폴백이 나온다 — 그래도 "-" 같은 빈칸 대신 뜻이 있는 낱말을 둔다(사용자에게는
- * "무엇을 등록했는지 못 읽는다"가 아니라 "등록한 쿠폰 한 건"으로 보여야 한다).
- */
-export function couponLabel(name: string | null, code: string | null): string {
-  if (name !== null && name.trim() !== '') {
-    return name
-  }
-
-  if (code !== null && code.trim() !== '') {
-    return maskCouponCode(code)
-  }
-
-  return '쿠폰'
-}
+/** 거절 사유가 비어 있을 때. 사유 없이 "거절"만 남기면 물어볼 곳이 없다. */
+export const COUPON_REJECTED_FALLBACK_REASON = '자세한 사유는 고객지원으로 문의해 주세요.'
