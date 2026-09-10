@@ -227,6 +227,28 @@ describe('completeOnboarding', () => {
     expect(payload.age_confirmed_at).toBeDefined()
   })
 
+  it('should close both marketing channels when the visitor left the optional box alone', async () => {
+    // Arrange & Act — 체크하지 않은 체크박스는 FormData 에 실리지 않는다.
+    await completeOnboarding(EMPTY_FORM_STATE, form(valid)).catch(() => undefined)
+
+    // Assert — 컬럼 기본값(false = 수신)에 기대면 동의한 적 없는 사람에게 보내게 된다.
+    const [payload] = stub.updates as [Record<string, boolean>]
+    expect(payload.marketing_sms_opt_out).toBe(true)
+    expect(payload.marketing_email_opt_out).toBe(true)
+  })
+
+  it('should open both marketing channels when the visitor agreed', async () => {
+    // Arrange & Act
+    await completeOnboarding(EMPTY_FORM_STATE, form({ ...valid, marketingAgreed: 'on' })).catch(
+      () => undefined,
+    )
+
+    // Assert — 동의는 SMS·이메일 두 채널을 한꺼번에 연다(시안의 항목이 하나다).
+    const [payload] = stub.updates as [Record<string, boolean>]
+    expect(payload.marketing_sms_opt_out).toBe(false)
+    expect(payload.marketing_email_opt_out).toBe(false)
+  })
+
   it('should accept a submission missing the MSW UID and profile code when the feature flag is off', async () => {
     // Arrange & Act — 검증을 통과하면 redirect() 로 빠져나간다(성공).
     const promise = completeOnboarding(
@@ -255,8 +277,8 @@ describe('completeOnboarding', () => {
     // Act
     const result = await completeOnboarding(EMPTY_FORM_STATE, form(valid))
 
-    // Assert
-    expect(result.fieldErrors?.nickname).toBe('이미 사용 중인 닉네임입니다.')
+    // Assert — 회원가입 시안 문구다(마이페이지는 "…입니다"로 알린다).
+    expect(result.fieldErrors?.nickname).toBe('이미 사용 중인 닉네임이에요.')
   })
 
   it('should explain a MSW UID collision instead of leaking the constraint', async () => {

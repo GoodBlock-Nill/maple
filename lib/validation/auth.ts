@@ -124,14 +124,46 @@ const mswProfileCodeField = FEATURES.mswAccountFields
 /* 온보딩과 "내 정보" 닉네임 변경이 같은 규칙을 쓴다. 두 곳에서 재사용하도록
    내보낸다(민감한 이름은 아니라 export 해도 되지만, 이 파일 밖에서 규칙을 다시
    베끼는 쪽이 더 위험하다). */
+/** 허용 문자 집합. 화면의 즉시 검증(`nicknameIssue`)과 스키마가 같은 정규식을 쓴다. */
+export const NICKNAME_PATTERN = /^[가-힣a-zA-Z0-9_]+$/u
+
 export const nicknameSchema = z
   .string()
   .trim()
   .min(NICKNAME_MIN_LENGTH, { message: `닉네임은 ${NICKNAME_MIN_LENGTH}자 이상이어야 합니다.` })
   .max(NICKNAME_MAX_LENGTH, { message: `닉네임은 ${NICKNAME_MAX_LENGTH}자 이하여야 합니다.` })
-  .regex(/^[가-힣a-zA-Z0-9_]+$/u, {
+  .regex(NICKNAME_PATTERN, {
     message: '닉네임은 한글·영문·숫자·밑줄만 사용할 수 있습니다.',
   })
+
+/** 닉네임이 규칙을 어긴 지점. 통과하면 null. */
+export type NicknameIssue = 'empty' | 'charset' | 'length'
+
+/**
+ * 회원가입 폼이 **입력할 때마다** 부르는 동기 검증.
+ *
+ * 버튼 활성 조건("닉네임 미입력 또는 검증 실패", 시안 27:5222)을 화면에서 바로
+ * 판정해야 하는데, zod 스키마는 오류 메시지를 만들려고 이슈 배열을 돌린다. 여기서는
+ * "어디가 틀렸는지"만 알면 되므로 같은 규칙을 가벼운 함수로 한 번 더 노출한다.
+ * 최종 판단은 서버 액션이 `onboardingSchema` 로 다시 한다.
+ */
+export function nicknameIssue(value: string): NicknameIssue | null {
+  const trimmed = value.trim()
+
+  if (trimmed === '') {
+    return 'empty'
+  }
+
+  if (!NICKNAME_PATTERN.test(trimmed)) {
+    return 'charset'
+  }
+
+  if (trimmed.length < NICKNAME_MIN_LENGTH || trimmed.length > NICKNAME_MAX_LENGTH) {
+    return 'length'
+  }
+
+  return null
+}
 
 /* 체크박스는 체크했을 때만 FormData 에 담긴다. 액션이 boolean 으로 바꿔 넘기고
    여기서는 "반드시 true" 만 확인한다. `z.literal(true)` 로 두면 미체크(false)일 때
@@ -145,6 +177,9 @@ export const onboardingSchema = z.object({
   termsAgreed: z.literal(true, { message: '이용약관에 동의해 주세요.' }),
   privacyAgreed: z.literal(true, { message: '개인정보처리방침에 동의해 주세요.' }),
   ageConfirmed: z.literal(true, { message: '만 14세 이상만 가입할 수 있습니다.' }),
+  /* [선택] 마케팅 정보 수신 동의. 체크하지 않아도 가입이 되어야 하므로 boolean 이다.
+     값은 `profiles.marketing_*_opt_out` 두 컬럼으로 뒤집혀 저장된다(동의=수신거부 false). */
+  marketingAgreed: z.boolean(),
 })
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>

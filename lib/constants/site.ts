@@ -86,6 +86,7 @@ export const POLICY_LINKS: readonly NavItem[] = [
   { label: '개인정보처리방침', href: '/policy/privacy' },
   { label: '디스코드 운영정책', href: '/policy/discord' },
   { label: '글자월드 운영정책', href: '/policy/operating' },
+  { label: '마케팅 정보 수신 동의', href: '/policy/marketing' },
 ]
 
 export type SnsLink = NavItem & {

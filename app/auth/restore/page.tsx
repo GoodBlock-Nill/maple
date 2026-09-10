@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import { AuthCard } from '@/components/auth/AuthCard'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { RestoreAccountForm } from '@/components/auth/RestoreAccountForm'
 import {
   canRestoreProfile,
@@ -53,12 +54,16 @@ export default async function RestorePage(props: PageProps<'/auth/restore'>) {
 
   const canRestore = canRestoreProfile(profile)
 
+  /* 회원가입(온보딩)이 자기 헤더·푸터를 직접 그리게 되면서 `/auth` 레이아웃이
+     껍데기가 됐다. 이 화면은 예전 그대로 인증 셸 안에 선다. */
   return (
-    <AuthCard
-      title="계정 복구"
-      description={canRestore ? restoreNotice(profile?.deleted_at) : PURGED_ACCOUNT_MESSAGE}
-    >
-      <RestoreAccountForm nextPath={nextPath} canRestore={canRestore} />
-    </AuthCard>
+    <AuthShell>
+      <AuthCard
+        title="계정 복구"
+        description={canRestore ? restoreNotice(profile?.deleted_at) : PURGED_ACCOUNT_MESSAGE}
+      >
+        <RestoreAccountForm nextPath={nextPath} canRestore={canRestore} />
+      </AuthCard>
+    </AuthShell>
   )
 }

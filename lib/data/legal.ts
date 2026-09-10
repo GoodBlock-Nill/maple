@@ -16,8 +16,11 @@ import { createPublicClient } from '@/lib/supabase/public'
  * 조금 오래된 문안을 보여 주는 편이 낫다.
  */
 
-/** 사용자 사이트가 다루는 정책 문서. DB 의 `legal_documents_slug_known` 과 같은 집합이다. */
-export const LEGAL_SLUGS = ['privacy', 'discord', 'operating'] as const
+/**
+ * 사용자 사이트가 다루는 정책 문서. DB 의 `legal_documents_slug_known` 과 같은
+ * 집합이어야 한다(`marketing` 은 20260910000300 마이그레이션이 제약에 더한다).
+ */
+export const LEGAL_SLUGS = ['privacy', 'discord', 'operating', 'marketing'] as const
 
 export type LegalSlug = (typeof LEGAL_SLUGS)[number]
 

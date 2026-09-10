@@ -77,6 +77,7 @@ describe('stubNicknameFor', () => {
       termsAgreed: true,
       privacyAgreed: true,
       ageConfirmed: true,
+      marketingAgreed: false,
     })
 
     // Assert — 공백이 섞이면 온보딩 폼이 곧바로 반려한다.
@@ -110,6 +111,8 @@ describe('onboardingSchema — feature flag OFF (default)', () => {
     termsAgreed: true,
     privacyAgreed: true,
     ageConfirmed: true,
+    /* [선택] 마케팅 동의는 boolean 이다 — 체크하지 않아도 통과해야 한다. */
+    marketingAgreed: false,
   }
 
   it('should accept a complete submission', () => {
@@ -171,6 +174,7 @@ describe('onboardingSchema — feature flag OFF (default)', () => {
       termsAgreed: true,
       privacyAgreed: true,
       ageConfirmed: true,
+      marketingAgreed: false,
     })
 
     // Assert
@@ -187,6 +191,8 @@ describe('onboardingSchema — feature flag ON', () => {
     termsAgreed: true,
     privacyAgreed: true,
     ageConfirmed: true,
+    /* [선택] 마케팅 동의는 boolean 이다 — 체크하지 않아도 통과해야 한다. */
+    marketingAgreed: false,
   }
 
   it('should require both the MSW UID and profile code', async () => {

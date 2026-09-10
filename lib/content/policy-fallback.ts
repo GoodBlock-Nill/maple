@@ -6,6 +6,14 @@ import {
   OPERATING_POLICY_VERSION,
 } from '@/lib/content/operating-policy'
 import {
+  MARKETING_CONSENT_DESCRIPTION,
+  MARKETING_CONSENT_EFFECTIVE_DATE,
+  MARKETING_CONSENT_HEADING,
+  MARKETING_CONSENT_SECTIONS,
+  MARKETING_CONSENT_TITLE,
+  MARKETING_CONSENT_VERSION,
+} from '@/lib/content/marketing-consent'
+import {
   PRIVACY_POLICY_EFFECTIVE_DATE,
   PRIVACY_POLICY_SECTIONS,
   PRIVACY_POLICY_TITLE,
@@ -69,6 +77,16 @@ export const POLICY_FALLBACKS: Record<LegalSlug, PolicyFallback> = {
     effectiveDate: PRIVACY_POLICY_EFFECTIVE_DATE,
     sections: [],
     paragraphs: DISCORD_PARAGRAPHS,
+    hasIpNotice: false,
+  },
+  marketing: {
+    heading: MARKETING_CONSENT_HEADING,
+    title: MARKETING_CONSENT_TITLE,
+    description: MARKETING_CONSENT_DESCRIPTION,
+    version: MARKETING_CONSENT_VERSION,
+    effectiveDate: MARKETING_CONSENT_EFFECTIVE_DATE,
+    sections: MARKETING_CONSENT_SECTIONS,
+    paragraphs: [],
     hasIpNotice: false,
   },
   operating: {

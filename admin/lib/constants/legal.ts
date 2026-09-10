@@ -5,7 +5,7 @@
  * 한다. 여기 없는 슬러그로 화면을 열면 404 로 끊고, DB 에도 들어가지 못한다.
  */
 
-export const LEGAL_SLUGS = ['privacy', 'discord', 'operating'] as const
+export const LEGAL_SLUGS = ['privacy', 'discord', 'operating', 'marketing'] as const
 
 export type LegalSlug = (typeof LEGAL_SLUGS)[number]
 
@@ -18,6 +18,7 @@ export const LEGAL_DOCUMENTS: readonly { slug: LegalSlug; label: string; clientP
   { slug: 'privacy', label: '개인정보처리방침', clientPath: '/policy/privacy' },
   { slug: 'discord', label: '디스코드 운영정책', clientPath: '/policy/discord' },
   { slug: 'operating', label: '글자월드 운영정책', clientPath: '/policy/operating' },
+  { slug: 'marketing', label: '마케팅 정보 수신 동의', clientPath: '/policy/marketing' },
 ]
 
 export function legalDocumentLabel(slug: LegalSlug): string {

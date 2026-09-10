@@ -101,3 +101,58 @@ export function CancelGlyph({ className }: IconProps) {
     </svg>
   )
 }
+
+/**
+ * 약관 상세 보기 화살표 24 — 시안 `auth-v2/arrow.svg`.
+ * 폰에서는 20 으로 줄여 쓴다(행 높이가 20 이다).
+ */
+export function ChevronRightGlyph({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden focusable="false" className={className}>
+      <path
+        d="M9 6L15 12L9 18"
+        stroke="#2A2A37"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
+ * 닉네임 지우기 20 — 시안 `auth-v2/clear.svg`(회색 원 안 흰 ×).
+ * 마이페이지의 `CancelGlyph`(#666 60% 원)와 표면이 달라 따로 둔다.
+ */
+export function ClearGlyph({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden focusable="false" className={className}>
+      <circle cx="10" cy="10" r="8.33333" fill="#545461" stroke="#545461" strokeLinejoin="round" />
+      <path d="M12.5 7.5L7.5 12.5" stroke="#fff" strokeWidth="1.25" strokeLinecap="round" />
+      <path d="M12.5 12.5L7.5 7.5" stroke="#fff" strokeWidth="1.25" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/**
+ * 체크박스 On 22 — 시안 `auth-v2/check-on.svg`(검정 채움 + 흰 체크).
+ *
+ * CSS `:checked` + `background-image` 로도 같은 그림이 나오지만, 그 방식은 체크
+ * 상태를 **브라우저의 의사 클래스**와 **파일 요청**에 맡긴다. 리액트 상태로
+ * 그리면(전체 동의가 네 칸을 한꺼번에 켜는 화면이다) 상태와 그림이 갈라질 여지가
+ * 없고, 자산을 못 받아도 체크가 사라지지 않는다.
+ */
+export function CheckOnGlyph({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 22 22" fill="none" aria-hidden focusable="false" className={className}>
+      <rect width="22" height="22" rx="4" fill="#2A2A2A" />
+      <path
+        d="M6 10.5L9.33333 14L16 7"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}

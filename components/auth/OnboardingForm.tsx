@@ -1,18 +1,26 @@
 'use client'
 
-import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
-import { AUTH_FIELD_CLASS, AUTH_LINK_CLASS } from '@/components/auth/auth-styles'
-import { FormFeedback } from '@/components/auth/FormFeedback'
-import { SubmitButton } from '@/components/auth/SubmitButton'
-import { Input } from '@/components/ui/Input'
+import { MarketingConsentDialog } from '@/components/auth/MarketingConsentDialog'
+import {
+  ONBOARDING_CARD_CLASS,
+  ONBOARDING_PAGE_CLASS,
+  ONBOARDING_SUBMIT_CLASS,
+} from '@/components/auth/onboarding-styles'
+import { OnboardingConsents } from '@/components/auth/OnboardingConsents'
+import { OnboardingFailureCard } from '@/components/auth/OnboardingFailureCard'
+import { OnboardingMswFields } from '@/components/auth/OnboardingMswFields'
+import { OnboardingNickname } from '@/components/auth/OnboardingNickname'
 import { completeOnboarding } from '@/lib/actions/auth-actions'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
-import { FEATURES } from '@/lib/constants/features'
-import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from '@/lib/validation/auth'
+import { ONBOARDING_COPY } from '@/lib/content/onboarding'
+import { cn } from '@/lib/utils/cn'
+import { nicknameIssue } from '@/lib/validation/auth'
 
-import type { ReactNode } from 'react'
+import type { ConsentValues } from '@/components/auth/OnboardingConsents'
+import type { MswFieldValues } from '@/components/auth/OnboardingMswFields'
+import type { FormState } from '@/lib/actions/form-state'
 
 type OnboardingFormProps = {
   /** 온보딩 후 돌아갈 경로. 서버에서 이미 정규화된 값이다. */
@@ -22,142 +30,130 @@ type OnboardingFormProps = {
   /** 재방문(입력을 마치지 못하고 이탈했다가 돌아온) 시 이미 입력해 둔 값. */
   defaultMswUid: string
   defaultMswProfileCode: string
+  /** 마케팅 수신 안내 본문(발행본 또는 코드 문안). 서버가 골라서 넘긴다. */
+  marketingConsentHtml: string
 }
 
-type ConsentProps = {
-  name: string
-  error: string | undefined
-  children: ReactNode
-}
-
-/**
- * 필수 동의 한 줄.
- *
- * 체크박스는 체크했을 때만 FormData 에 담긴다. 서버 액션은 "값이 있는지"만 보고
- * 판단하므로 value 를 따로 주지 않는다.
- */
-function Consent({ name, error, children }: ConsentProps) {
-  const errorId = `${name}-error`
-
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-ink flex items-start gap-2.5 text-[15px] leading-[1.5]">
-        <input
-          type="checkbox"
-          name={name}
-          aria-describedby={error === undefined ? undefined : errorId}
-          aria-invalid={error === undefined ? undefined : true}
-          className="accent-ink mt-0.5 h-[18px] w-[18px] shrink-0"
-        />
-        <span>{children}</span>
-      </label>
-      {error === undefined ? null : (
-        <p id={errorId} role="alert" className="text-badge-red pl-7 text-[12px] font-medium">
-          {error}
-        </p>
-      )}
-    </div>
-  )
+const NO_CONSENTS: ConsentValues = {
+  termsAgreed: false,
+  privacyAgreed: false,
+  marketingAgreed: false,
+  ageConfirmed: false,
 }
 
 /**
- * 최초 로그인 온보딩.
+ * 회원가입(온보딩) 카드 — 시안 auth-v2 27:5172.
  *
- * 닉네임 확정과 필수 동의 세 가지를 한 화면에서 받는다. 만 14세 확인은
- * 개인정보처리방침 제11조(만 14세 미만 가입 불가) 때문에 선택이 아니라 필수다.
+ * 입력값을 **모두 리액트 상태로** 들고 있다. 이유가 둘이다.
+ *  1) 버튼 활성 조건(필수 약관·만 14세·닉네임 검증)을 입력할 때마다 판정해야 한다.
+ *  2) 실패 카드(27:5161)로 갈아탈 때 폼이 언마운트되는데, 되돌아오면 값이 그대로여야 한다.
+ *
+ * 만 14세 확인은 개인정보처리방침 제11조(만 14세 미만 가입 불가) 때문에 필수다.
+ * 마케팅 동의만 선택이며, 체크하지 않으면 두 수신거부 컬럼이 켜진 채 저장된다.
  */
 export function OnboardingForm({
   nextPath,
   defaultNickname,
   defaultMswUid,
   defaultMswProfileCode,
+  marketingConsentHtml,
 }: OnboardingFormProps) {
-  const [state, formAction] = useActionState(completeOnboarding, EMPTY_FORM_STATE)
+  const [state, formAction, isPending] = useActionState(completeOnboarding, EMPTY_FORM_STATE)
+  const [nickname, setNickname] = useState(defaultNickname)
+  const [msw, setMsw] = useState<MswFieldValues>({
+    mswUid: defaultMswUid,
+    mswProfileCode: defaultMswProfileCode,
+  })
+  const [consents, setConsents] = useState<ConsentValues>(NO_CONSENTS)
+  const [isMarketingOpen, setMarketingOpen] = useState(false)
+  /** 마지막으로 제출한 닉네임. 값을 고치면 서버가 준 오류를 내린다. */
+  const [submittedNickname, setSubmittedNickname] = useState<string | null>(null)
+  /** "다시 시도하기"로 닫은 실패 상태. 액션이 새로 실패하면 다른 객체라 다시 열린다. */
+  const [dismissedFailure, setDismissedFailure] = useState<FormState | null>(null)
+
+  const issue = nicknameIssue(nickname)
+  const serverNicknameError =
+    submittedNickname === nickname ? state.fieldErrors?.nickname : undefined
+  const nicknameError = issue === 'charset' ? ONBOARDING_COPY.nicknameInvalid : serverNicknameError
+
+  if (state.formError !== undefined && state !== dismissedFailure) {
+    return <OnboardingFailureCard onRetry={() => setDismissedFailure(state)} />
+  }
+
+  const isDisabled =
+    isPending ||
+    issue !== null ||
+    !consents.termsAgreed ||
+    !consents.privacyAgreed ||
+    !consents.ageConfirmed
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
-      <FormFeedback state={state} />
+    <div className={ONBOARDING_PAGE_CLASS}>
+      <section className={ONBOARDING_CARD_CLASS}>
+        <form action={formAction} onSubmit={() => setSubmittedNickname(nickname)}>
+          {/* 서버 액션은 직접 POST 로도 호출되므로 이 값은 서버에서 다시 정규화된다. */}
+          <input type="hidden" name="next" value={nextPath} />
 
-      <input type="hidden" name="next" value={nextPath} />
+          <div className="text-center">
+            <h1 className="text-[20px] leading-[28px] font-medium tracking-[-0.5px] text-[#2a2a2a] md:text-[32px] md:leading-[42px] md:tracking-[-0.8px]">
+              {ONBOARDING_COPY.title}
+            </h1>
+            <p className="mt-2 text-[14px] leading-[20px] font-medium tracking-[-0.35px] text-[#727272] md:text-[16px] md:leading-[22px] md:tracking-[-0.4px]">
+              {ONBOARDING_COPY.subtitle}
+            </p>
+          </div>
 
-      <Input
-        label="닉네임"
-        name="nickname"
-        type="text"
-        required
-        defaultValue={defaultNickname}
-        minLength={NICKNAME_MIN_LENGTH}
-        maxLength={NICKNAME_MAX_LENGTH}
-        autoComplete="nickname"
-        placeholder={`${NICKNAME_MIN_LENGTH}~${NICKNAME_MAX_LENGTH}자`}
-        hint="한글·영문·숫자·밑줄만 쓸 수 있고, 게시판에는 앞 3글자만 노출됩니다."
-        error={state.fieldErrors?.nickname}
-        className={AUTH_FIELD_CLASS}
+          <div className="mt-6 md:mt-8">
+            <OnboardingNickname value={nickname} onChange={setNickname} error={nicknameError} />
+          </div>
+
+          <OnboardingMswFields
+            values={msw}
+            onChange={setMsw}
+            errors={{
+              mswUid: state.fieldErrors?.mswUid,
+              mswProfileCode: state.fieldErrors?.mswProfileCode,
+            }}
+          />
+
+          <div className="mt-6 md:mt-8">
+            <OnboardingConsents
+              values={consents}
+              onToggle={(name, checked) =>
+                setConsents((current) => ({ ...current, [name]: checked }))
+              }
+              onToggleAll={(checked) =>
+                setConsents({
+                  termsAgreed: checked,
+                  privacyAgreed: checked,
+                  marketingAgreed: checked,
+                  ageConfirmed: checked,
+                })
+              }
+              onOpenMarketing={() => setMarketingOpen(true)}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isDisabled}
+            aria-busy={isPending}
+            className={cn(ONBOARDING_SUBMIT_CLASS, 'mt-7 md:mt-8')}
+          >
+            {isPending ? ONBOARDING_COPY.submitPending : ONBOARDING_COPY.submit}
+          </button>
+        </form>
+      </section>
+
+      <MarketingConsentDialog
+        open={isMarketingOpen}
+        onClose={() => setMarketingOpen(false)}
+        onAgree={() => {
+          setConsents((current) => ({ ...current, marketingAgreed: true }))
+          setMarketingOpen(false)
+        }}
+        html={marketingConsentHtml}
       />
-
-      {/* 오너 요청: UID·프로필 코드 입력은 지우지 않고 플래그로만 숨긴다.
-          추후 재활성화 시 NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS 만 켜면 된다. */}
-      {FEATURES.mswAccountFields ? (
-        <>
-          <Input
-            label="메이플스토리 월드 계정 UID"
-            name="mswUid"
-            type="text"
-            inputMode="numeric"
-            required
-            defaultValue={defaultMswUid}
-            placeholder="예: 20123000000000000"
-            hint={
-              'UID는 "메이플스토리 월드 클라이언트 - 설정 - 계정" 에서 확인할 수 있습니다. ex) 20123000000000000'
-            }
-            error={state.fieldErrors?.mswUid}
-            className={AUTH_FIELD_CLASS}
-          />
-
-          <Input
-            label="메이플스토리 월드 프로필 코드"
-            name="mswProfileCode"
-            type="text"
-            required
-            defaultValue={defaultMswProfileCode}
-            placeholder="예: #abcd1"
-            hint={
-              '프로필 코드는 "메이플스토리 월드 클라이언트 - 더보기 - 프로필 편집" 에서 확인할 수 있습니다. ex) #abcd1'
-            }
-            error={state.fieldErrors?.mswProfileCode}
-            className={AUTH_FIELD_CLASS}
-          />
-        </>
-      ) : null}
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-ink mb-1 text-[13px] font-bold">
-          필수 동의
-          <span className="text-badge-red ml-1" aria-hidden>
-            *
-          </span>
-        </legend>
-
-        <Consent name="termsAgreed" error={state.fieldErrors?.termsAgreed}>
-          <Link href="/policy/operating" className={AUTH_LINK_CLASS} target="_blank">
-            이용약관
-          </Link>
-          에 동의합니다.
-        </Consent>
-
-        <Consent name="privacyAgreed" error={state.fieldErrors?.privacyAgreed}>
-          <Link href="/policy/privacy" className={AUTH_LINK_CLASS} target="_blank">
-            개인정보처리방침
-          </Link>
-          에 동의합니다.
-        </Consent>
-
-        <Consent name="ageConfirmed" error={state.fieldErrors?.ageConfirmed}>
-          만 14세 이상입니다.
-        </Consent>
-      </fieldset>
-
-      <SubmitButton pendingLabel="저장 중…">시작하기</SubmitButton>
-    </form>
+    </div>
   )
 }

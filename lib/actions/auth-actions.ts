@@ -9,6 +9,7 @@ import {
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { isUniqueViolation } from '@/lib/actions/pg-error'
 import { resolvePostAuthPath } from '@/lib/auth/post-auth'
+import { ONBOARDING_COPY } from '@/lib/content/onboarding'
 import { createClient } from '@/lib/supabase/server'
 import { markStubProvider, signInWithStubProvider } from '@/lib/supabase/stub-social'
 import {
@@ -46,6 +47,21 @@ const GENERIC_FAILURE_MESSAGE = '로그인에 실패했습니다. 잠시 후 다
 /** 체크박스는 체크했을 때만 FormData 에 담긴다. 값 자체("on")는 보지 않는다. */
 function readCheckbox(formData: FormData, name: string): boolean {
   return formData.get(name) !== null
+}
+
+/**
+ * 닉네임 중복 안내를 회원가입 시안 문구로 바꾼다.
+ *
+ * 같은 충돌을 마이페이지는 "이미 사용 중인 닉네임입니다."로 알린다. 두 화면의
+ * 어미가 달라(시안 27:5222 는 "…이에요") 공용 상수를 고치는 대신 이 화면에서만
+ * 옮겨 적는다 — 마이페이지 시안 문구까지 함께 흔들리지 않게.
+ */
+function withOnboardingNicknameCopy(fieldErrors: Record<string, string>): Record<string, string> {
+  if (fieldErrors.nickname === undefined) {
+    return fieldErrors
+  }
+
+  return { ...fieldErrors, nickname: ONBOARDING_COPY.nicknameTaken }
 }
 
 /**
@@ -129,12 +145,17 @@ export async function completeOnboarding(
     termsAgreed: readCheckbox(formData, 'termsAgreed'),
     privacyAgreed: readCheckbox(formData, 'privacyAgreed'),
     ageConfirmed: readCheckbox(formData, 'ageConfirmed'),
+    marketingAgreed: readCheckbox(formData, 'marketingAgreed'),
   })
 
   if (!parsed.success) {
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
+  /* 마케팅 동의는 "수신거부" 두 컬럼으로 뒤집어 저장한다. 동의하면 두 채널 모두
+     열고(false), 체크하지 않았으면 둘 다 닫는다(true). 컬럼 기본값은 false 라
+     체크하지 않은 사람을 그대로 두면 "동의한 적 없는데 수신"이 된다. */
+  const optOut = !parsed.data.marketingAgreed
   const now = new Date().toISOString()
   const { error } = await supabase
     .from('profiles')
@@ -144,6 +165,8 @@ export async function completeOnboarding(
       terms_agreed_at: now,
       privacy_agreed_at: now,
       age_confirmed_at: now,
+      marketing_sms_opt_out: optOut,
+      marketing_email_opt_out: optOut,
     })
     .eq('id', user.id)
 
@@ -151,7 +174,7 @@ export async function completeOnboarding(
     const fieldErrors = isUniqueViolation(error) ? accountUniqueViolationFieldErrors(error) : null
 
     if (fieldErrors !== null) {
-      return { fieldErrors }
+      return { fieldErrors: withOnboardingNicknameCopy(fieldErrors) }
     }
 
     return { formError: GENERIC_FAILURE_MESSAGE }
@@ -165,4 +188,18 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut()
 
   redirect('/')
+}
+
+/**
+ * 회원가입 실패 카드의 "로그인으로 돌아가기".
+ *
+ * 온보딩을 마치지 못한 세션은 살아 있어도 글쓰기·댓글이 열리지 않는 반쪽 계정이라
+ * 그대로 두면 헤더만 로그인 상태로 남는다. 세션을 끊고 로그인 화면으로 돌려보낸다.
+ * 홈으로 가는 `signOut()` 과 목적지만 다르다.
+ */
+export async function signOutToLogin(): Promise<void> {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+
+  redirect(LOGIN_PATH)
 }

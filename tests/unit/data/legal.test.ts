@@ -13,9 +13,8 @@ const rpc = vi.fn<(name: string, args: Record<string, string>) => Promise<RpcRes
 
 vi.mock('@/lib/supabase/public', () => ({ createPublicClient: () => ({ rpc }) }))
 
-const { formatEffectiveDate, getLegalDocument, isLegalSlug, LEGAL_SLUGS } = await import(
-  '@/lib/data/legal'
-)
+const { formatEffectiveDate, getLegalDocument, isLegalSlug, LEGAL_SLUGS } =
+  await import('@/lib/data/legal')
 
 const ROW = {
   slug: 'privacy',
@@ -46,9 +45,11 @@ describe('formatEffectiveDate', () => {
 })
 
 describe('isLegalSlug', () => {
-  it('should accept exactly the three managed documents', () => {
-    expect(LEGAL_SLUGS).toEqual(['privacy', 'discord', 'operating'])
+  it('should accept exactly the four managed documents', () => {
+    // 마케팅 정보 수신 동의는 20260910000300 마이그레이션이 제약에 더한 네 번째 문서다.
+    expect(LEGAL_SLUGS).toEqual(['privacy', 'discord', 'operating', 'marketing'])
     expect(isLegalSlug('privacy')).toBe(true)
+    expect(isLegalSlug('marketing')).toBe(true)
     expect(isLegalSlug('terms')).toBe(false)
   })
 })
