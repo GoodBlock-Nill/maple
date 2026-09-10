@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { isUniqueViolation, uniqueViolationConstraint } from '@/lib/actions/pg-error'
-import { resolvePostAuthDestination } from '@/lib/auth/lifecycle'
+import { resolvePostAuthPath } from '@/lib/auth/post-auth'
 import { FEATURES } from '@/lib/constants/features'
 import { createClient } from '@/lib/supabase/server'
 import { markStubProvider, signInWithStubProvider } from '@/lib/supabase/stub-social'
@@ -20,14 +20,13 @@ import {
 } from '@/lib/validation/auth'
 
 import type { FormState } from '@/lib/actions/form-state'
-import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { SocialProvider } from '@/lib/validation/auth'
 
 /**
- * 인증 서버 액션.
+ * 인증 서버 액션 — 간편로그인 · 온보딩 · 내 정보.
  *
- * 로그인 수단은 간편로그인(구글·카카오·네이버)뿐이다. 이메일·비밀번호 로그인과
- * 비밀번호 재설정은 제거되었다.
+ * 이메일·비밀번호 로그인과 인증번호 회원가입은 `lib/actions/email-auth-actions.ts`
+ * 와 `lib/actions/signup-actions.ts` 가 담당한다(파일 300줄 한도).
  *
  * TODO(auth): 지금 세 버튼은 **스텁**이다. 누르면 실제 제공자를 거치지 않고 곧바로
  * 로그인된다. 개발팀이 실 OAuth 를 붙이면 `SOCIAL_LOGIN_MODE=oauth` 로 바꾸고
@@ -95,29 +94,6 @@ export async function stubSocialSignIn(
 
   // redirect() 는 예외를 던진다. try/catch 바깥에서 호출해야 한다(Next 16 문서).
   redirect(destination)
-}
-
-/**
- * 로그인 직후 갈 곳을 고른다.
- *
- * 탈퇴 대기 중(`deleted_at`)이면 복구 화면이 먼저고, 그다음 온보딩(닉네임 확정 +
- * 약관 동의) 미완료면 어디로 가려 했든 온보딩을 먼저 통과시킨다. 규칙은
- * `resolvePostAuthDestination()` 하나가 소유한다(인증 콜백과 같은 함수).
- */
-async function resolvePostAuthPath(
-  supabase: TypedSupabaseClient,
-  userId: string,
-  next: string | undefined,
-): Promise<string> {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select(
-      'nickname, terms_agreed_at, privacy_agreed_at, age_confirmed_at, msw_uid, msw_profile_code, deleted_at, purged_at',
-    )
-    .eq('id', userId)
-    .maybeSingle()
-
-  return resolvePostAuthDestination(profile, next)
 }
 
 /**

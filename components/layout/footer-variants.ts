@@ -1,5 +1,5 @@
 export type FooterVariant =
-  'home' | 'news' | 'community' | 'guide' | 'ranking' | 'support' | 'about'
+  'home' | 'news' | 'community' | 'guide' | 'ranking' | 'support' | 'about' | 'auth'
 
 export type FooterMascot = {
   src: string
@@ -157,6 +157,34 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
       left: 1154,
       top: 236,
       mobileWidth: 140,
+    },
+  },
+  /**
+   * 로그인·회원가입 — 달 표면 위 우주정거장.
+   *
+   * 배경 PNG 는 시안 프레임의 y∈[푸터 인스턴스-107, 프레임 끝] 을 잘라낸 것이라
+   * 이미지 위쪽 107px 이 하늘이다(그래서 섹션이 카드 아래를 10px 남짓 파고든다).
+   * 패널은 다른 서브 페이지와 같은 규칙(높이 353 + 아래 여백 70)에 따라
+   * 섹션 상단에서 245px 아래에 온다 — 시안 실측 절대 y=1439(로그인) 과 일치한다.
+   */
+  auth: {
+    background: '/images/auth/footer-bg.png',
+    /* 달 아래쪽 남색. 배경이 없거나 섹션이 더 길어졌을 때 드러난다. */
+    backgroundColor: '#0b1642',
+    needsGrassPatch: false,
+    height: 668,
+    panelTop: subPanelTop(668),
+    /* 배경이 어두워서 밝은 회색(`-sub`)을 얹으면 시안보다 밝아진다.
+       시안 실측(패널 안쪽이 바깥보다 밝아지는 정도)은 홈과 같은 값이다. */
+    panelClass: 'glass-panel',
+    mascot: {
+      src: '/images/auth/mascot-footer.gif',
+      width: 165,
+      /* 원본(105×151) 비율대로 165 폭에 맞춘 실제 렌더 높이 237.14 → 237. */
+      height: 237,
+      left: 1244,
+      top: 303,
+      mobileWidth: 110,
     },
   },
   about: {

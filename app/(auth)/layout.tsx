@@ -1,8 +1,12 @@
-import { AuthShell } from '@/components/auth/AuthShell'
-
 import type { ReactNode } from 'react'
 
-/** /login · /register 셸. 실제 마크업은 `/auth/*` 와 함께 쓰는 `AuthShell` 에 있다. */
+/**
+ * `(auth)` 라우트 그룹 껍데기.
+ *
+ * 로그인·회원가입·비밀번호 화면은 시안 배경이 서로 다른 `AuthScene` 을 각자
+ * 그리고, "내 정보"는 기존 `AuthShell` 을 쓴다. 공통 셸을 여기에 두면 두 셸이
+ * 겹쳐 헤더가 두 번 그려지므로 이 레이아웃은 아무것도 감싸지 않는다.
+ */
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  return <AuthShell>{children}</AuthShell>
+  return children
 }

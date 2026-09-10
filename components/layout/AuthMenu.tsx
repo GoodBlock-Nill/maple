@@ -5,6 +5,11 @@ import { RESTORE_PATH } from '@/lib/validation/auth'
 
 import type { SocialProvider } from '@/lib/validation/auth'
 
+/** 시안 실측: padding 12 · Inter Medium 16 · 자간 -0.2 · 그림자 0 6 5 rgba(0,0,0,.15). */
+const AUTH_PILL_BASE = 'font-ui px-3 font-medium tracking-[-0.2px]'
+const AUTH_PILL_LIGHT_CLASS = `${AUTH_PILL_BASE} shadow-[inset_0_0_9px_#ddd,0_6px_5px_rgba(0,0,0,0.15)]`
+const AUTH_PILL_DARK_CLASS = `${AUTH_PILL_BASE} shadow-[inset_0_0_14px_rgba(255,255,255,0.5),0_6px_5px_rgba(0,0,0,0.15)]`
+
 type AuthMenuProps = {
   /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
   user?: {
@@ -21,9 +26,9 @@ type AuthMenuProps = {
 /**
  * 헤더 우측 인증 영역.
  *
- * 미로그인일 때는 **버튼 하나**(진한 필 "로그인")만 둔다. 간편로그인에는
- * "가입"과 "로그인"의 구분이 없어서(첫 로그인이 곧 가입이다) 두 버튼을 나란히
- * 두면 사용자가 무엇이 다른지 고민하게 된다 — 제품 결정 2026-09-08.
+ * 미로그인일 때는 버튼 두 개("로그인" 흰색 · "회원가입" 진한색)를 둔다. 이메일
+ * 가입이 되살아나면서 두 동작이 서로 다른 화면이 되었다 — 로그인·회원가입 시안
+ * (Figma 2041:2294) 실측: h40 · padding 12 · radius 50 · gap 12 · Inter Medium 16.
  *
  * 로그인 상태에는 "로그아웃" 버튼을 바로 노출하지 않는다. 닉네임 트리거를
  * 눌러야 열리는 드롭다운(`UserMenu`) 안에 "내 정보"와 함께 둔다 — 제품 결정
@@ -52,10 +57,17 @@ export function AuthMenu({ user = null, id, className }: AuthMenuProps) {
   }
 
   return (
-    <div id={id} className={cn('items-center gap-3', className)}>
+    /* 컨테이너 그림자(0 2 2 rgba(0,0,0,.25))는 두 버튼에 함께 걸린다 — 시안 실측. */
+    <div
+      id={id}
+      className={cn('items-center gap-3 drop-shadow-[0_2px_2px_rgba(0,0,0,0.25)]', className)}
+    >
       {/* 시안 헤더 인증 버튼만 Inter Medium 16 이다(히어로 CTA 는 Switzer Semibold). */}
-      <Button href="/login" variant="dark" size="sm" className="font-ui font-medium">
+      <Button href="/login" variant="light" size="sm" className={AUTH_PILL_LIGHT_CLASS}>
         로그인
+      </Button>
+      <Button href="/signup" variant="dark" size="sm" className={AUTH_PILL_DARK_CLASS}>
+        회원가입
       </Button>
     </div>
   )

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import { AccountForm } from '@/components/auth/AccountForm'
 import { AuthCard } from '@/components/auth/AuthCard'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 import { EmailMark, GoogleMark, KakaoMark, NaverMark } from '@/components/auth/social-icons'
 import { WithdrawAccountButton } from '@/components/auth/WithdrawAccountButton'
@@ -99,57 +100,61 @@ export default async function AccountPage() {
   const { label: providerLabel, icon: providerIcon } = providerBadge(profile.provider)
 
   return (
-    <AuthCard title="내 정보" description="닉네임과 메이플스토리 월드 계정을 관리할 수 있습니다.">
-      <div className="flex flex-col gap-6">
-        <AccountForm
-          defaultNickname={profile.nickname}
-          defaultMswUid={profile.msw_uid ?? ''}
-          defaultMswProfileCode={profile.msw_profile_code ?? ''}
-        />
+    /* `(auth)` 레이아웃은 더 이상 셸을 씌우지 않는다(로그인·회원가입이 각자
+       시안 배경을 그린다). 이 화면은 기존 셸을 계속 쓴다. */
+    <AuthShell>
+      <AuthCard title="내 정보" description="닉네임과 메이플스토리 월드 계정을 관리할 수 있습니다.">
+        <div className="flex flex-col gap-6">
+          <AccountForm
+            defaultNickname={profile.nickname}
+            defaultMswUid={profile.msw_uid ?? ''}
+            defaultMswProfileCode={profile.msw_profile_code ?? ''}
+          />
 
-        <div className="border-line-soft divide-line-soft divide-y border-t">
-          <InfoRow label="로그인 방식">
-            <span className="inline-flex items-center gap-2">
-              {providerIcon}
-              {providerLabel}
-            </span>
-          </InfoRow>
-
-          <InfoRow label="가입일">{formatDateLong(profile.created_at)}</InfoRow>
-
-          <InfoRow label="약관·개인정보 동의 일시">
-            <span className="flex flex-col gap-0.5">
-              <span>
-                이용약관:{' '}
-                {profile.terms_agreed_at === null ? '-' : formatDateLong(profile.terms_agreed_at)}
+          <div className="border-line-soft divide-line-soft divide-y border-t">
+            <InfoRow label="로그인 방식">
+              <span className="inline-flex items-center gap-2">
+                {providerIcon}
+                {providerLabel}
               </span>
-              <span>
-                개인정보처리방침:{' '}
-                {profile.privacy_agreed_at === null
-                  ? '-'
-                  : formatDateLong(profile.privacy_agreed_at)}
+            </InfoRow>
+
+            <InfoRow label="가입일">{formatDateLong(profile.created_at)}</InfoRow>
+
+            <InfoRow label="약관·개인정보 동의 일시">
+              <span className="flex flex-col gap-0.5">
+                <span>
+                  이용약관:{' '}
+                  {profile.terms_agreed_at === null ? '-' : formatDateLong(profile.terms_agreed_at)}
+                </span>
+                <span>
+                  개인정보처리방침:{' '}
+                  {profile.privacy_agreed_at === null
+                    ? '-'
+                    : formatDateLong(profile.privacy_agreed_at)}
+                </span>
               </span>
-            </span>
-          </InfoRow>
+            </InfoRow>
+          </div>
+
+          <LogoutButton variant="light" size="lg" className="w-full" />
+
+          {/* 되돌리기 어려운 조작이라 화면 맨 아래, 로그아웃과도 떨어진 자리에 둔다. */}
+          <section
+            aria-labelledby="withdraw-heading"
+            className="border-line-soft flex flex-col gap-2 border-t pt-6"
+          >
+            <h2 id="withdraw-heading" className="text-ink text-[15px] font-bold">
+              회원 탈퇴
+            </h2>
+            <p className="text-ink-muted text-[14px] leading-[1.6]">
+              탈퇴 후 {WITHDRAWAL_RETENTION_DAYS}일 동안 개인정보가 보존되며, 그 안에 다시
+              로그인하면 복구됩니다. 작성한 글과 댓글은 남습니다.
+            </p>
+            <WithdrawAccountButton />
+          </section>
         </div>
-
-        <LogoutButton variant="light" size="lg" className="w-full" />
-
-        {/* 되돌리기 어려운 조작이라 화면 맨 아래, 로그아웃과도 떨어진 자리에 둔다. */}
-        <section
-          aria-labelledby="withdraw-heading"
-          className="border-line-soft flex flex-col gap-2 border-t pt-6"
-        >
-          <h2 id="withdraw-heading" className="text-ink text-[15px] font-bold">
-            회원 탈퇴
-          </h2>
-          <p className="text-ink-muted text-[14px] leading-[1.6]">
-            탈퇴 후 {WITHDRAWAL_RETENTION_DAYS}일 동안 개인정보가 보존되며, 그 안에 다시 로그인하면
-            복구됩니다. 작성한 글과 댓글은 남습니다.
-          </p>
-          <WithdrawAccountButton />
-        </section>
-      </div>
-    </AuthCard>
+      </AuthCard>
+    </AuthShell>
   )
 }

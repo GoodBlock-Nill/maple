@@ -28,7 +28,7 @@ export function SubmitButton({ children, pendingLabel, className }: SubmitButton
       size="lg"
       disabled={pending}
       aria-busy={pending}
-      className={cn('w-full rounded-[10px] text-ui', className)}
+      className={cn('text-ui w-full rounded-[10px]', className)}
     >
       {pending ? (pendingLabel ?? children) : children}
     </Button>

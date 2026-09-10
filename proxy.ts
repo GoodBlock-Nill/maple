@@ -8,6 +8,7 @@ import {
   ONBOARDING_PATH,
   RESTORE_PATH,
 } from '@/lib/validation/auth'
+import { RESET_PASSWORD_PATH } from '@/lib/validation/email-auth'
 
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { NextRequest } from 'next/server'
@@ -35,6 +36,8 @@ const PROTECTED_PREFIXES = [
   ONBOARDING_PATH,
   RESTORE_PATH,
   ACCOUNT_PATH,
+  /* 비밀번호 재설정은 메일 링크(`/auth/confirm`)가 만든 세션이 있어야 열린다. */
+  RESET_PASSWORD_PATH,
 ] as const
 
 /** 비-GET(폼 제출·서버 액션)일 때만 로그인을 요구하는 경로. */
@@ -68,10 +71,13 @@ const WITHDRAWN_MUTATION_PREFIXES = [
   ONBOARDING_PATH,
 ] as const
 
-/** 이메일 로그인 제거로 사라진 경로. 북마크·구버전 링크를 위해 살려 둔다. */
-const LEGACY_REDIRECTS: Record<string, string> = {
-  '/forgot-password': '/login',
-}
+/**
+ * 사라진 경로 → 살아 있는 경로. 북마크·구버전 링크를 위한 자리다.
+ *
+ * `/forgot-password` 는 2026-09-10 시안(비밀번호 찾기 화면)과 함께 되살아나
+ * 여기서 빠졌다. `/register` 는 페이지 자체가 308 로 `/signup` 을 가리킨다.
+ */
+const LEGACY_REDIRECTS: Record<string, string> = {}
 
 const LOGIN_PATH = '/login'
 

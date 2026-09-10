@@ -20,7 +20,7 @@ type UserAvatarProps = {
 /**
  * 제공자별 원 배경·마크 색.
  *
- * 색은 각 제공자의 로그인 버튼 가이드(`components/auth/social-providers.tsx`)와
+ * 색은 각 제공자의 로그인 버튼 가이드(`components/auth/auth-icons.tsx`)와
  * 같다 — 아바타에서도 다른 색을 쓰면 사용자가 "이게 그 카카오 로그인 맞나"
  * 헷갈린다.
  */

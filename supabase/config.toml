@@ -188,6 +188,8 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
+# 기본값 2/시간은 인증번호 회원가입에 턱없이 모자란다. 커스텀 SMTP(Resend)를
+# 붙인 뒤 이 값을 올린다 — 절차는 docs/admin/EMAIL-AUTH-ACTIVATION.md.
 email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
@@ -222,7 +224,9 @@ secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1m0s"
 # Number of characters used in the email OTP.
-otp_length = 8
+# 화면(회원가입 인증번호)이 6자리를 전제한다 — lib/validation/email-auth.ts OTP_LENGTH.
+# 이 값을 바꾸려면 그쪽도 함께 바꿔야 한다.
+otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
@@ -235,6 +239,20 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# 인증 메일 본문 — 화면이 번호를 입력받으므로 {{ .Token }} 을 가장 크게 싣는다.
+# 내용과 사용처는 supabase/templates/_base-note.md 참고.
+[auth.email.template.confirmation]
+subject = "[글자월드] 회원가입 인증번호"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "[글자월드] 이메일 인증번호"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.recovery]
+subject = "[글자월드] 비밀번호 재설정 안내"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
