@@ -179,9 +179,13 @@ describe('parseInquiryFilters', () => {
     expect(filters.cancelledOnly).toBe(true)
   })
 
-  it('목록에 없는 카테고리는 무시한다', () => {
-    expect(parseInquiryFilters({ category: '결제' }).category).toBe('결제')
-    expect(parseInquiryFilters({ category: 'DROP TABLE' }).category).toBeNull()
+  /* 옵션 목록은 DB(`inquiry_categories`) + 데이터에 남은 옛 라벨이라 고정 배열로
+     검사할 수 없다. 라벨일 수 없는 값(빈 값 · 상한 초과)만 걸러 낸다. */
+  it('라벨 모양이면 그대로 두고, 라벨일 수 없는 값은 무시한다', () => {
+    expect(parseInquiryFilters({ category: '접속·서버' }).category).toBe('접속·서버')
+    expect(parseInquiryFilters({ category: '  결제  ' }).category).toBe('결제')
+    expect(parseInquiryFilters({ category: '' }).category).toBeNull()
+    expect(parseInquiryFilters({ category: '가'.repeat(21) }).category).toBeNull()
   })
 
   it('출처는 web · email 만 받는다', () => {

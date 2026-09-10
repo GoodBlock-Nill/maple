@@ -6,7 +6,7 @@ import {
 import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
 
 import type { BoardOption } from '@/lib/constants/board'
-import type { FaqCategory, InquiryStatus } from '@/types/domain'
+import type { FaqCategory, InquiryCategoryOption, InquiryStatus } from '@/types/domain'
 
 export type SupportMenuItem = {
   href: string
@@ -54,7 +54,49 @@ export const SUPPORT_HEADING = '1:1 문의하기'
 export const SUPPORT_DESCRIPTION =
   '이용 중 궁금한 사항이나 불편한 점을 자세히 기재하여 문의해 주세요.'
 
-export const INQUIRY_CATEGORIES: readonly string[] = ['계정', '결제', '버그', '신고', '기타']
+/**
+ * 카테고리 폴백.
+ *
+ * 실제 목록은 DB(`inquiry_categories`)가 소유하고 서버 컴포넌트가 읽어 폼에 넘긴다
+ * (`lib/data/inquiry-categories.ts`). 여기 있는 배열은 **조회가 실패했을 때만** 쓰인다 —
+ * 카테고리를 못 읽었다고 문의 접수 자체를 막으면 "장애를 알리려는 문의"가 막힌다.
+ * 프리필 양식은 담지 않는다(원문은 DB 한 곳에만 둔다). 라벨은 마이그레이션
+ * 20260910000400 의 시드와 같은 순서·문구다.
+ */
+export const INQUIRY_CATEGORY_FALLBACK_LABELS: readonly string[] = [
+  '접속·서버',
+  '캐릭터·게임 진행',
+  '저장·데이터',
+  '재화·아이템',
+  '콘텐츠·밸런스',
+  '계정·이용환경',
+  '기능·UI',
+  '기타·건의',
+]
+
+/** 폴백 라벨을 폼이 쓰는 옵션 모양으로 올린다(설명·프리필 없음). */
+export const INQUIRY_CATEGORY_FALLBACK: readonly InquiryCategoryOption[] =
+  INQUIRY_CATEGORY_FALLBACK_LABELS.map((label, index) => ({
+    key: `fallback-${index}`,
+    label,
+    description: null,
+    prefill: '',
+  }))
+
+export const INQUIRY_CATEGORY_PLACEHOLDER = '카테고리를 선택해주세요'
+
+/**
+ * 프리필 교체 확인.
+ *
+ * 카테고리를 바꾸면 그 카테고리의 양식으로 **갈아 끼운다**(docs/1on1.md). 사용자가
+ * 직접 쓴 내용이 남아 있을 때만 물어본다 — 이전 양식 그대로면 잃을 것이 없어
+ * 확인을 세울 이유가 없다.
+ */
+export const INQUIRY_PREFILL_CONFIRM_TITLE = '작성 중인 내용이 지워집니다'
+
+export const INQUIRY_PREFILL_CONFIRM_DESCRIPTION = '카테고리를 바꿀까요?'
+
+export const INQUIRY_PREFILL_CONFIRM_LABEL = '카테고리 변경'
 
 export const INQUIRY_TYPES: readonly string[] = ['문의', '신고', '제안']
 

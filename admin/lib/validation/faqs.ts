@@ -2,6 +2,13 @@ import { z } from 'zod'
 
 /* 여러 줄 평문 정규화(CRLF→LF)는 문의 답변과 규칙이 같다. 규칙을 두 벌로 두면
    한쪽만 고쳐지므로 문의 쪽 구현을 그대로 빌려 쓴다. */
+import {
+  hasOrderChanged,
+  moveOrder,
+  normalizeOrder,
+  type MoveDirection,
+  type OrderItem,
+} from '@/lib/utils/sort-order'
 import { plainTextField } from '@/lib/validation/inquiries'
 
 import type { Enums } from '@/lib/supabase/types'
@@ -73,67 +80,25 @@ export const faqSchema = z.object({
 export type FaqInput = z.infer<typeof faqSchema>
 
 /* -------------------------------------------------------------------------
- * 정렬
+ * 정렬 — 규칙은 `lib/utils/sort-order.ts` 가 소유한다(문의 카테고리도 같은 규칙).
+ * 여기서는 FAQ 화면이 쓰던 이름만 유지한다.
  * ---------------------------------------------------------------------- */
 
-export type FaqOrderItem = {
-  id: string
-  sortOrder: number
-}
+export type FaqOrderItem = OrderItem
 
-export type FaqMoveDirection = 'up' | 'down'
+export type FaqMoveDirection = MoveDirection
 
 /**
  * 한 칸 위/아래로 옮긴 뒤 `sort_order` 를 0부터 다시 매긴다.
- *
- * 자리를 바꾼 두 행의 값만 맞바꾸면 기존 데이터에 중복·구멍(0,0,5,5)이 있을 때
- * 순서가 그대로 남는다. 화면에 보이는 배열을 그대로 0..n-1 로 다시 쓰는 편이
- * 결과가 눈에 보이는 것과 항상 같다.
- *
  * 끝에서 더 밀면 원본을 그대로 돌려준다(호출부는 저장할 변경이 없다고 판단한다).
  */
-export function moveFaqOrder(
-  items: readonly FaqOrderItem[],
-  id: string,
-  direction: FaqMoveDirection,
-): readonly FaqOrderItem[] {
-  const index = items.findIndex((item) => item.id === id)
-  const target = direction === 'up' ? index - 1 : index + 1
-
-  if (index === -1 || target < 0 || target >= items.length) {
-    return items
-  }
-
-  const next = [...items]
-  const moved = next[index]
-  const swapped = next[target]
-
-  if (moved === undefined || swapped === undefined) {
-    return items
-  }
-
-  next[index] = swapped
-  next[target] = moved
-
-  return normalizeFaqOrder(next.map((item) => item.id))
-}
+export const moveFaqOrder = moveOrder
 
 /** 화면에 보이는 순서를 그대로 `sort_order` 로 굳힌다. */
-export function normalizeFaqOrder(ids: readonly string[]): readonly FaqOrderItem[] {
-  return ids.map((id, index) => ({ id, sortOrder: index }))
-}
+export const normalizeFaqOrder = normalizeOrder
 
 /** 저장할 값이 있는지(= 순서가 실제로 바뀌었는지) 판정한다. */
-export function hasFaqOrderChanged(
-  original: readonly FaqOrderItem[],
-  next: readonly FaqOrderItem[],
-): boolean {
-  if (original.length !== next.length) {
-    return true
-  }
-
-  return original.some((item, index) => next[index]?.id !== item.id)
-}
+export const hasFaqOrderChanged = hasOrderChanged
 
 /** 정렬 저장 요청의 본문. 카테고리 안에서만 순서를 다시 매긴다. */
 export const faqReorderSchema = z.object({

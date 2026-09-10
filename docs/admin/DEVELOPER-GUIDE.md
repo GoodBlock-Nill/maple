@@ -187,22 +187,22 @@ flowchart TD
 
 ### 3.4 모듈 × 페이지 × 권한 × 쓰기 액션
 
-| 모듈        | 페이지 경로                                 | 페이지 가드                                              | 쓰기 액션 파일                                                           |
-| ----------- | ------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `dashboard` | `/`                                         | `requireAdmin()` + `hasPermission(…,'dashboard','read')` | 없음                                                                     |
-| `news`      | `/news`<br>`/news/new`<br>`/news/[id]`      | `read`<br>`write`<br>`write`                             | `admin/lib/actions/news-actions.ts`                                      |
-| `community` | `/community/posts`<br>`/community/comments` | `read`                                                   | `admin/lib/actions/moderation-actions.ts`                                |
-| `reports`   | `/reports`                                  | `read`                                                   | `admin/lib/actions/reports-actions.ts`                                   |
-| `members`   | `/members`<br>`/members/[id]`               | `read`                                                   | `admin/lib/actions/members-actions.ts`                                   |
-| `coupons`   | `/coupons`<br>`/coupons/[id]`               | `read`                                                   | `coupons-actions.ts` · `coupon-redemption-actions.ts`                    |
-| `inquiries` | `/inquiries`<br>`/inquiries/[id]`           | `read`                                                   | `admin/lib/actions/inquiries-actions.ts`                                 |
-| `faqs`      | `/faqs`                                     | `read`                                                   | `admin/lib/actions/faqs-actions.ts`                                      |
-| `gacha`     | `/gacha`<br>`/gacha/new`<br>`/gacha/[id]`   | `read`<br>`write`<br>`write`                             | `admin/lib/actions/gacha-actions.ts`                                     |
-| `rankings`  | `/rankings`                                 | `read`                                                   | `admin/lib/actions/rankings-actions.ts` (롤백 하나뿐)                    |
-| `settings`  | `/settings`                                 | `read`                                                   | `admin/lib/actions/settings-actions.ts`                                  |
-| `legal`     | `/legal`<br>`/legal/[slug]`                 | `read`<br>`write`                                        | `admin/lib/actions/legal-actions.ts`                                     |
-| `admins`    | `/admins`                                   | **`requireSuperAdmin()`**                                | `admin-actions.ts` · `admin-invite-actions.ts` · `admin-role-actions.ts` |
-| `audit`     | `/audit`                                    | `read`                                                   | 없음(추가 전용)                                                          |
+| 모듈        | 페이지 경로                                                  | 페이지 가드                                              | 쓰기 액션 파일                                                                      |
+| ----------- | ------------------------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `dashboard` | `/`                                                          | `requireAdmin()` + `hasPermission(…,'dashboard','read')` | 없음                                                                                |
+| `news`      | `/news`<br>`/news/new`<br>`/news/[id]`                       | `read`<br>`write`<br>`write`                             | `admin/lib/actions/news-actions.ts`                                                 |
+| `community` | `/community/posts`<br>`/community/comments`                  | `read`                                                   | `admin/lib/actions/moderation-actions.ts`                                           |
+| `reports`   | `/reports`                                                   | `read`                                                   | `admin/lib/actions/reports-actions.ts`                                              |
+| `members`   | `/members`<br>`/members/[id]`                                | `read`                                                   | `admin/lib/actions/members-actions.ts`                                              |
+| `coupons`   | `/coupons`<br>`/coupons/[id]`                                | `read`                                                   | `coupons-actions.ts` · `coupon-redemption-actions.ts`                               |
+| `inquiries` | `/inquiries`<br>`/inquiries/[id]`<br>`/inquiries/categories` | `read`                                                   | `inquiries-actions.ts` · `inquiry-email-actions.ts` · `inquiry-category-actions.ts` |
+| `faqs`      | `/faqs`                                                      | `read`                                                   | `admin/lib/actions/faqs-actions.ts`                                                 |
+| `gacha`     | `/gacha`<br>`/gacha/new`<br>`/gacha/[id]`                    | `read`<br>`write`<br>`write`                             | `admin/lib/actions/gacha-actions.ts`                                                |
+| `rankings`  | `/rankings`                                                  | `read`                                                   | `admin/lib/actions/rankings-actions.ts` (롤백 하나뿐)                               |
+| `settings`  | `/settings`                                                  | `read`                                                   | `admin/lib/actions/settings-actions.ts`                                             |
+| `legal`     | `/legal`<br>`/legal/[slug]`                                  | `read`<br>`write`                                        | `admin/lib/actions/legal-actions.ts`                                                |
+| `admins`    | `/admins`                                                    | **`requireSuperAdmin()`**                                | `admin-actions.ts` · `admin-invite-actions.ts` · `admin-role-actions.ts`            |
+| `audit`     | `/audit`                                                     | `read`                                                   | 없음(추가 전용)                                                                     |
 
 특이 케이스 둘.
 
@@ -384,23 +384,26 @@ sequenceDiagram
 
 ### 5.3 태그 매핑
 
-| 모듈                    | 태그             | 무효화 호출 위치                                 | 사용자 사이트 화면                                                               |
-| ----------------------- | ---------------- | ------------------------------------------------ | -------------------------------------------------------------------------------- |
-| 뉴스                    | `news-list`      | `news-actions.ts` `revalidateNewsList()`         | `/news` (`lib/data/news.ts` `getNewsList`)                                       |
-| 커뮤니티                | `community-list` | `moderation-actions.ts` `revalidateFor()`        | `/community` (`lib/data/community.ts` `getCommunityList`)                        |
-| 신고                    | `community-list` | 신고 처리가 `moderateTarget()` 을 거쳐 위와 동일 | 위와 동일 (`reports-actions.ts` 는 직접 부르지 않는다)                           |
-| FAQ                     | `faqs`           | `faqs-actions.ts`                                | `/support/faq` (`lib/data/faqs.ts` `getFaqGroups`)                               |
-| 가이드                  | `gacha`          | `gacha-actions.ts`                               | `/guide` (`lib/data/gacha.ts`)                                                   |
-| 랭킹                    | `rankings`       | `rankings-actions.ts`                            | `/ranking` (`lib/data/rankings.ts`)                                              |
-| 사이트 설정·히어로 배너 | `site`           | `settings-actions.ts` `revalidateSite()`         | `/about` · 푸터 · `/play` `/discord` `/sns/[name]` · `/policy/[slug]` 의 IP 고지 |
-| Legal                   | `legal`          | `legal-actions.ts` (`LEGAL_CLIENT_CACHE_TAG`)    | `/policy/[slug]` (`lib/data/legal.ts` `getLegalDocument`)                        |
+| 모듈                    | 태그                 | 무효화 호출 위치                                       | 사용자 사이트 화면                                                               |
+| ----------------------- | -------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| 뉴스                    | `news-list`          | `news-actions.ts` `revalidateNewsList()`               | `/news` (`lib/data/news.ts` `getNewsList`)                                       |
+| 커뮤니티                | `community-list`     | `moderation-actions.ts` `revalidateFor()`              | `/community` (`lib/data/community.ts` `getCommunityList`)                        |
+| 신고                    | `community-list`     | 신고 처리가 `moderateTarget()` 을 거쳐 위와 동일       | 위와 동일 (`reports-actions.ts` 는 직접 부르지 않는다)                           |
+| FAQ                     | `faqs`               | `faqs-actions.ts`                                      | `/support/faq` (`lib/data/faqs.ts` `getFaqGroups`)                               |
+| 문의 카테고리           | `inquiry-categories` | `inquiry-category-actions.ts` `revalidateCategories()` | `/support` 문의 폼의 카테고리 · 프리필 (`lib/data/inquiry-categories.ts`)        |
+| 가이드                  | `gacha`              | `gacha-actions.ts`                                     | `/guide` (`lib/data/gacha.ts`)                                                   |
+| 랭킹                    | `rankings`           | `rankings-actions.ts`                                  | `/ranking` (`lib/data/rankings.ts`)                                              |
+| 사이트 설정·히어로 배너 | `site`               | `settings-actions.ts` `revalidateSite()`               | `/about` · 푸터 · `/play` `/discord` `/sns/[name]` · `/policy/[slug]` 의 IP 고지 |
+| Legal                   | `legal`              | `legal-actions.ts` (`LEGAL_CLIENT_CACHE_TAG`)          | `/policy/[slug]` (`lib/data/legal.ts` `getLegalDocument`)                        |
 
 수명은 `lib/data/cache.ts` — 목록 계열 `LIST_REVALIDATE_SECONDS = 60`, FAQ·설정 계열 `STATIC_REVALIDATE_SECONDS = 300`. 무효화가 실패하면 그 수명만큼 늦게 반영된다.
 
-**문의(1:1 · 이메일)에는 태그가 없다.** 사용자 사이트의 "내 문의 내역"은 `user_id` 로 세션마다 직접 읽고
+**문의 본문에는 태그가 없다(카테고리는 예외).** 사용자 사이트의 "내 문의 내역"은 `user_id` 로 세션마다 직접 읽고
 캐시하지 않으므로, 관리자 답변·상태 변경 뒤에 `revalidateClient()` 를 부르지 않는다. 이메일 문의
 (`inquiries.source = 'email'`, 2026-09-09)는 `user_id` 가 null 이라 사용자 사이트에 아예 보이지 않는다 —
-발송은 Edge Function `email-outbound` 가 한다(`docs/admin/EMAIL-INQUIRY-PLAN.md`).
+발송은 Edge Function `email-outbound` 가 한다(`docs/admin/EMAIL-INQUIRY-PLAN.md`). 다만 **문의 카테고리**
+(`inquiry_categories`)는 누가 보든 같은 공개 문구라 사용자 사이트가 `unstable_cache`(300초)로 담는다 —
+그래서 카테고리 쓰기 액션만 `inquiry-categories` 태그를 태운다.
 
 **쿠폰에도 태그가 없다.** 쿠폰 목록은 RLS 에 일반 사용자 select 정책이 아예 없어 사용자 사이트가
 읽지 못하고(코드 열거 차단), 마이페이지의 등록 폼과 내 등록 내역은 세션마다 직접 읽는다. 태울 태그가
@@ -411,6 +414,35 @@ sequenceDiagram
 **히어로 배너.** 사용자 사이트가 읽는 자리는 홈이 아니라 **소개 화면(`/about`) 상단 영상 영역** 이다(`lib/data/hero-banner.ts` 헤더 · 2026-09-09 제품 결정). 규칙은 `sort_order` 오름차순 · 노출 기간(`starts_at`~`ends_at`) 안 · `is_active` 인 것들 중 **첫 한 장** 이다(`admin/components/settings/HeroBannerList.tsx`). 배너가 없으면 사이트 설정의 유튜브 주소 영상이 나온다. 기간 판정은 캐시 시점 기준이라 최대 300초 늦게 바뀔 수 있다. 배너 종류는 `hero_banners.media_type`(`image` | `youtube`)이고, DB 제약 `hero_banners_media_shape` 가 종류와 주소의 불일치를 원천 차단한다 (`supabase/migrations/20260909000100_hero_banner_media.sql`).
 
 **사이트 설정의 연동 표시.** `/settings` 의 각 필드에는 `사이트 반영` / `미연동` 태그가 붙는다 (`admin/components/settings/wiring.tsx`). 2026-09-09 기준 모든 필드가 연동돼 있고, 태그의 title 에 "어디에 보이는지"가 적혀 있다. 새 열을 추가했는데 사용자 사이트가 아직 읽지 않으면 `isLive: false` 로 넣어 그 사실을 드러낸다.
+
+**1:1 문의 카테고리 · 프리필.** 사용자 문의 폼(`/support`)의 카테고리 선택지와 "문의 내용" 양식은
+`public.inquiry_categories` 한 테이블이 소유한다(마이그레이션 `20260910000400`, 시드 8종은 `docs/1on1.md`).
+관리 화면은 `/inquiries/categories`(문의 목록 헤더의 **카테고리 관리** 버튼 · 사이드바 고객지원 하위), 권한은
+문의와 같은 `inquiries` 모듈이다.
+
+| 열            | 쓰임                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `key`         | 안정 식별자(슬러그). 라벨을 바꿔도 유지된다 — 화면에는 보이지 않는다.                 |
+| `label`       | 셀렉트에 보이는 문구이자 **`inquiries.category` 에 저장되는 값**(≤ 20자).             |
+| `description` | 셀렉트 아래 한 줄 안내(≤ 100자). 비우면 아무것도 그리지 않는다.                       |
+| `prefill`     | 카테고리를 고르면 문의 내용에 채워지는 평문 양식(≤ 2000자, 줄바꿈 유지).              |
+| `sort_order`  | 사용자 폼과 관리 화면의 표시 순서. ▲▼ + '순서 저장'.                                  |
+| `is_active`   | 끄면 사용자 폼에서 사라지고 접수도 거절된다. 과거 문의의 분류 문자열은 그대로 남는다. |
+
+- **프리필 동작.** 카테고리를 고르면 그 양식이 내용 칸을 채우고, 카테고리를 바꾸면 새 양식으로 **갈아 끼운다.**
+  사용자가 직접 쓴 내용이 남아 있을 때만 확인 모달("작성 중인 내용이 지워집니다")을 세운다 — 양식 그대로면 잃을 것이 없다
+  (`components/support/use-inquiry-prefill.ts` · `lib/utils/inquiry-prefill.ts`).
+- **이름을 바꾸면 과거 문의가 따라온다.** `inquiries.category` 는 라벨 문자열이라, 이름만 바꾸면 그 라벨로 접수된
+  문의가 목록 필터에서 사라진다. 그래서 수정은 `public.update_inquiry_category()` RPC 한 번(= 한 트랜잭션)으로
+  카테고리 행과 과거 문의의 재라벨링을 함께 처리하고, 옮긴 건수를 감사 로그(`relabelled_inquiries`)와 완료 토스트에
+  남긴다. 부수 효과 하나: 재라벨링은 그 문의들의 `updated_at` 을 밀어 올린다(내용·상태·이력은 그대로다).
+- **삭제는 0건일 때만.** 접수된 문의가 있는 카테고리는 다이얼로그가 건수를 보여 주고 비활성화를 권한다. 액션도 같은
+  규칙을 다시 검사한다(직접 POST 방어).
+- **필터 옵션.** 목록 필터의 카테고리는 DB 의 카테고리(비활성 포함) + **데이터에만 남은 옛 라벨**이다
+  (`public.inquiry_category_usage()`). 옛 라벨을 빼면 '계정' 으로 접수된 과거 문의를 찾을 길이 사라진다.
+- **조회 실패 시.** 사용자 폼은 정적 폴백 라벨 8개로 떨어진다(`lib/constants/support.ts`
+  `INQUIRY_CATEGORY_FALLBACK`). 카테고리를 못 읽었다고 접수를 막으면 하필 장애 때 문의가 들어올 길이 사라진다.
+  폴백에는 양식이 없으므로 접수는 되고 프리필만 빠진다.
 
 **Legal.** 관리자는 `/legal/[slug]` 에서 개정본을 쌓고, 사용자 사이트는 `/policy/[slug]` 에서 **시행 중인 발행본**을 읽는다. "지금 시행 중인 문안"의 규칙은 DB 함수 `current_legal_version(slug)` 하나가 소유한다(`20260908002200_legal_documents.sql`).
 
@@ -608,7 +640,7 @@ await writeAuditLog(actor.id, {
 | 커뮤니티    | `community.post.hide` `…unhide` `…delete` `…restore` `…bulk_hide` — `community.comment.*` 도 같은 접미사                                                  |
 | 신고        | `report.resolve` `report.dismiss`                                                                                                                         |
 | 회원        | `member.suspend` `member.unsuspend` `member.nickname.force_change`                                                                                        |
-| 문의        | `inquiry.status` `inquiry.reply`                                                                                                                          |
+| 문의        | `inquiry.status` `inquiry.reply` `inquiry_category.create` `inquiry_category.update` `inquiry_category.delete` `inquiry_category.reorder`                 |
 | 쿠폰        | `coupon.create` `coupon.update` `coupon.activate` `coupon.deactivate` `coupon.delete` `coupon_redemption.status`                                          |
 | FAQ         | `faq.create` `faq.update` `faq.delete` `faq.publish` `faq.reorder`                                                                                        |
 | 가이드      | `gacha.create` `gacha.update` `gacha.delete`                                                                                                              |

@@ -50,6 +50,20 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ ...stub.client, storage: storageStub() }),
 }))
 
+/* 카테고리는 DB 에서 온다. 액션이 무엇을 허용 목록으로 쓰는지만 보면 되므로
+   데이터 계층은 고정 목록으로 세운다(`server-only` 를 끌고 오지 않는 부수 효과도 있다). */
+const CATEGORIES: readonly string[] = ['접속·서버', '캐릭터·게임 진행', '기타·건의']
+vi.mock('@/lib/data/inquiry-categories', () => ({
+  getInquiryCategories: async () =>
+    CATEGORIES.map((label, index) => ({
+      key: `k${index}`,
+      label,
+      description: null,
+      prefill: '',
+    })),
+  getInquiryCategoryLabels: async () => CATEGORIES,
+}))
+
 const { createInquiry } = await import('@/lib/actions/inquiry-actions')
 const { EMPTY_FORM_STATE } = await import('@/lib/actions/form-state')
 
@@ -60,7 +74,7 @@ function inquiryForm(overrides: Record<string, string> = {}): FormData {
   const formData = new FormData()
   const values = {
     accountId: '123456789000000',
-    category: '계정',
+    category: '접속·서버',
     type: '문의',
     title: '로그인이 되지 않습니다',
     content: '어제부터 로그인 화면에서 멈춥니다.',
@@ -127,7 +141,7 @@ describe('createInquiry', () => {
     expect(stub.inserts[0]).toMatchObject({
       user_id: USER.id,
       account_id: '123456789000000',
-      category: '계정',
+      category: '접속·서버',
       type: '문의',
       privacy_consent: true,
       status: 'pending',

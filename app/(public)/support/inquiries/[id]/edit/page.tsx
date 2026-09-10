@@ -12,7 +12,9 @@ import {
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { getMyInquiry } from '@/lib/data/inquiries'
+import { getInquiryCategories } from '@/lib/data/inquiry-categories'
 import { canEditInquiry } from '@/lib/utils/inquiry-permissions'
+import { withLegacyCategory } from '@/lib/utils/inquiry-prefill'
 
 import type { Metadata } from 'next'
 
@@ -52,6 +54,10 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
     redirect(`${detailPath}?${INQUIRY_EDIT_LOCKED_PARAM}=1`)
   }
 
+  /* 저장된 카테고리가 그 사이 비활성화됐거나 이름이 바뀌었을 수 있다. 목록에
+     없으면 뒤에 붙여 셀렉트가 저장된 값을 그대로 고를 수 있게 한다. */
+  const categories = withLegacyCategory(await getInquiryCategories(), inquiry.category)
+
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
       <SupportCard
@@ -61,6 +67,7 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
       >
         <InquiryForm
           isAuthenticated
+          categories={categories}
           inquiryId={inquiry.id}
           defaultValues={{
             accountId: inquiry.accountId ?? '',

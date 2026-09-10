@@ -22,7 +22,7 @@ import {
 } from '@/lib/constants/support'
 
 import type { InquiryFormValues } from '@/components/support/InquiryFields'
-import type { InquiryAttachment } from '@/types/domain'
+import type { InquiryAttachment, InquiryCategoryOption } from '@/types/domain'
 
 const SUBMIT_NOTICE_ID = 'inquiry-submit-notice'
 const LOGIN_HREF = `/login?next=${encodeURIComponent('/support')}`
@@ -30,6 +30,8 @@ const LOGIN_HREF = `/login?next=${encodeURIComponent('/support')}`
 type InquiryFormProps = {
   /** 서버에서 판정한 로그인 여부. 폼 잠금과 "내 문의 내역" 링크 노출에 쓴다. */
   isAuthenticated: boolean
+  /** 서버가 DB 에서 읽어 넘긴 카테고리(라벨 · 안내 · 프리필 양식). */
+  categories: readonly InquiryCategoryOption[]
   /** 넘기면 수정 모드가 된다. 없으면 새 문의 접수. */
   inquiryId?: string
   defaultValues?: InquiryFormValues
@@ -49,6 +51,7 @@ type InquiryFormProps = {
  */
 export function InquiryForm({
   isAuthenticated,
+  categories,
   inquiryId,
   defaultValues,
   attachments = [],
@@ -83,7 +86,7 @@ export function InquiryForm({
 
       <FormFeedback state={state} />
 
-      <InquiryFields values={defaultValues} fieldErrors={fieldErrors} />
+      <InquiryFields categories={categories} values={defaultValues} fieldErrors={fieldErrors} />
 
       <InquiryAttachmentField
         attachments={attachments}

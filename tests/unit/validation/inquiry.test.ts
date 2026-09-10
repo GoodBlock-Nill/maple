@@ -10,6 +10,7 @@ import {
 import {
   createInquirySchema,
   INQUIRY_ATTACHMENT_ACCEPT,
+  INQUIRY_CONTENT_MAX,
   inquiryIdSchema,
   normalizeCRLF,
   updateInquirySchema,
@@ -23,9 +24,12 @@ function bodyLimitBytes(): number {
   return Number(match?.[1] ?? 0) * 1024 * 1024
 }
 
+/** 활성 카테고리는 DB 가 소유한다. 스키마는 호출 시점에 이 목록을 받아 만들어진다. */
+const CATEGORIES: readonly string[] = ['접속·서버', '캐릭터·게임 진행', '기타·건의']
+
 const VALID_INPUT = {
   accountId: '123456789000000',
-  category: '계정',
+  category: '접속·서버',
   type: '문의',
   title: '로그인이 되지 않습니다',
   content: '어제부터 로그인 화면에서 멈춥니다.',
@@ -35,7 +39,7 @@ const VALID_INPUT = {
 describe('createInquirySchema', () => {
   it('should accept a fully filled form', () => {
     // Arrange & Act
-    const parsed = createInquirySchema.safeParse(VALID_INPUT)
+    const parsed = createInquirySchema(CATEGORIES).safeParse(VALID_INPUT)
 
     // Assert
     expect(parsed.success).toBe(true)
@@ -44,7 +48,7 @@ describe('createInquirySchema', () => {
 
   it('should turn a blank account id into null', () => {
     // Arrange & Act — DB 컬럼이 nullable 이라 "미입력"은 빈 문자열이 아니라 null 로 간다.
-    const parsed = createInquirySchema.safeParse({ ...VALID_INPUT, accountId: '  ' })
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, accountId: '  ' })
 
     // Assert
     expect(parsed.success).toBe(true)
@@ -53,7 +57,7 @@ describe('createInquirySchema', () => {
 
   it('should reject an account id that is not a 10~20 digit number', () => {
     // Arrange & Act
-    const parsed = createInquirySchema.safeParse({ ...VALID_INPUT, accountId: '12ab' })
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, accountId: '12ab' })
 
     // Assert
     expect(parsed.success).toBe(false)
@@ -61,7 +65,7 @@ describe('createInquirySchema', () => {
 
   it('should reject a category that is not on the list', () => {
     // Arrange & Act
-    const parsed = createInquirySchema.safeParse({ ...VALID_INPUT, category: '해킹' })
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, category: '해킹' })
 
     // Assert
     expect(parsed.success).toBe(false)
@@ -69,7 +73,7 @@ describe('createInquirySchema', () => {
 
   it('should require the privacy consent', () => {
     // Arrange & Act — DB CHECK(privacy_consent) 보다 앞에서 한국어 문구로 막는다.
-    const parsed = createInquirySchema.safeParse({ ...VALID_INPUT, consent: false })
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, consent: false })
 
     // Assert
     expect(parsed.success).toBe(false)
@@ -78,10 +82,10 @@ describe('createInquirySchema', () => {
 
   it('should reject a title that is too short and content that is too long', () => {
     // Arrange & Act
-    const shortTitle = createInquirySchema.safeParse({ ...VALID_INPUT, title: '가' })
-    const longContent = createInquirySchema.safeParse({
+    const shortTitle = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, title: '가' })
+    const longContent = createInquirySchema(CATEGORIES).safeParse({
       ...VALID_INPUT,
-      content: '가'.repeat(2_001),
+      content: '가'.repeat(INQUIRY_CONTENT_MAX + 1),
     })
 
     // Assert
@@ -123,7 +127,7 @@ describe('createInquirySchema CRLF normalization', () => {
     const crlfContent = '문의 내용\r\n둘째 줄\r\n셋째 줄'
 
     // Act
-    const parsed = createInquirySchema.safeParse({
+    const parsed = createInquirySchema(CATEGORIES).safeParse({
       ...VALID_INPUT,
       title: crlfTitle,
       content: crlfContent,
@@ -142,7 +146,7 @@ describe('createInquirySchema CRLF normalization', () => {
     const title = `${line}\r\n${line}\r\n${line}\r\n${line}`
 
     // Act
-    const parsed = createInquirySchema.safeParse({ ...VALID_INPUT, title })
+    const parsed = createInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, title })
 
     // Assert
     expect(parsed.success).toBe(true)
@@ -250,7 +254,7 @@ describe('updateInquirySchema', () => {
     const { consent: _consent, ...input } = VALID_INPUT
 
     // Act
-    const parsed = updateInquirySchema.safeParse(input)
+    const parsed = updateInquirySchema(CATEGORIES).safeParse(input)
 
     // Assert
     expect(parsed.success).toBe(true)
@@ -259,8 +263,11 @@ describe('updateInquirySchema', () => {
 
   it('should keep every rule 접수 uses', () => {
     // Arrange & Act — 상한이 갈리면 "접수는 됐는데 수정은 막히는" 문의가 생긴다.
-    const shortTitle = updateInquirySchema.safeParse({ ...VALID_INPUT, title: '가' })
-    const unknownCategory = updateInquirySchema.safeParse({ ...VALID_INPUT, category: '없는분류' })
+    const shortTitle = updateInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, title: '가' })
+    const unknownCategory = updateInquirySchema(CATEGORIES).safeParse({
+      ...VALID_INPUT,
+      category: '없는분류',
+    })
 
     // Assert
     expect(shortTitle.success).toBe(false)
@@ -269,7 +276,7 @@ describe('updateInquirySchema', () => {
 
   it('should ignore a consent field sent by a direct POST', () => {
     // Arrange & Act — 수정 폼에는 동의 체크박스가 없다. 실려 와도 저장에 쓰지 않는다.
-    const parsed = updateInquirySchema.safeParse({ ...VALID_INPUT, consent: false })
+    const parsed = updateInquirySchema(CATEGORIES).safeParse({ ...VALID_INPUT, consent: false })
 
     // Assert
     expect(parsed.success).toBe(true)

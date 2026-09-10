@@ -297,6 +297,21 @@ export type InquiryDetail = InquirySummary & {
   attachments: readonly InquiryAttachment[]
 }
 
+/**
+ * 문의 카테고리 한 건(`inquiry_categories` 의 활성 행).
+ *
+ * `label` 이 곧 `inquiries.category` 에 저장되는 값이다 — 표시용 문자열과 저장
+ * 값을 분리하면 이미 쌓인 문의(text 컬럼)를 두 벌로 해석해야 한다.
+ */
+export type InquiryCategoryOption = {
+  key: string
+  label: string
+  /** 셀렉트 아래 한 줄 안내. 없으면 아무것도 그리지 않는다. */
+  description: string | null
+  /** 선택 시 문의 내용에 채워 넣을 평문 양식. 빈 문자열이면 채우지 않는다. */
+  prefill: string
+}
+
 export type InquiryReply = {
   id: string
   authorName: string

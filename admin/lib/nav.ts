@@ -82,6 +82,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
          부모 링크는 첫 하위와 같아야 하므로 부모도 `?source=web` 을 가리킨다. */
       { label: '1:1 문의', href: '/inquiries?source=web' },
       { label: '이메일 문의', href: '/inquiries?source=email' },
+      /* 카테고리 관리는 문의 목록과 같은 모듈(`inquiries`)이다. 사용자 폼의 분류와
+         프리필 양식을 여기서 고친다 — 문의를 처리하는 사람과 분류를 정하는 사람이
+         같기 때문에 별도 모듈로 쪼개지 않는다. */
+      { label: '문의 카테고리', href: '/inquiries/categories' },
       { label: 'FAQ', href: '/faqs', module: 'faqs' },
     ],
   },

@@ -158,6 +158,16 @@ describe('isNavItemActive', () => {
   it('should keep the parent open on a detail route', () => {
     expect(isNavItemActive(support!, '/inquiries/11111111-2222-4333-8444-555555555555')).toBe(true)
   })
+
+  /* 카테고리 관리는 문의와 같은 모듈이라 고객지원 아래 하위로 붙는다. 상세 라우트와
+     달리 **자기 하위 메뉴가 활성**이어야 운영자가 지금 어느 화면인지 안다. */
+  it('should light up 문의 카테고리 on its own route', () => {
+    const categories = support!.children?.find((child) => child.label === '문의 카테고리')
+
+    expect(categories?.href).toBe('/inquiries/categories')
+    expect(isPathActive(categories!.href, '/inquiries/categories')).toBe(true)
+    expect(navBreadcrumb('/inquiries/categories')).toEqual(['고객지원', '문의 카테고리'])
+  })
 })
 
 describe('navBreadcrumb', () => {

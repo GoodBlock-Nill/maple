@@ -20,6 +20,7 @@ import {
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { toAttachments } from '@/lib/data/inquiries'
+import { getInquiryCategoryLabels } from '@/lib/data/inquiry-categories'
 import { createClient } from '@/lib/supabase/server'
 import { canCancelInquiry, canEditInquiry } from '@/lib/utils/inquiry-permissions'
 import {
@@ -55,12 +56,14 @@ const CANCEL_FAILURE_MESSAGE = '문의 접수를 취소하지 못했습니다. �
 const EDIT_COOLDOWN_SECONDS = REPORT_COOLDOWN_SECONDS
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
-const OWNED_COLUMNS = 'status, cancelled_at, attachments, created_at, updated_at'
+const OWNED_COLUMNS = 'status, cancelled_at, attachments, category, created_at, updated_at'
 
 type OwnedInquiry = {
   status: InquiryStatus
   cancelledAt: string | null
   attachments: readonly InquiryAttachment[]
+  /** 접수 당시의 카테고리 라벨. 지금은 없어진 옛 값일 수 있다. */
+  category: string
   createdAt: string
   updatedAt: string
 }
@@ -106,6 +109,7 @@ async function requireOwnInquiry(id: string): Promise<Guard> {
       status: data.status,
       cancelledAt: data.cancelled_at,
       attachments: toAttachments(data.attachments),
+      category: data.category,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     },
@@ -164,7 +168,17 @@ export async function updateInquiry(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const parsed = updateInquirySchema.safeParse({
+  const guard = await requireOwnInquiry(id)
+
+  if (!guard.ok) {
+    return guard.state
+  }
+
+  /* 활성 카테고리 + **이 문의의 현재 카테고리**를 허용한다. 운영자가 카테고리를
+     비활성화하거나 이름을 바꾸면 그 분류로 접수된 옛 문의가 남는데, 활성 목록만
+     보면 본문 오타 하나 고치려다 "카테고리를 선택해 주세요"에 막힌다. */
+  const allowedCategories = [...(await getInquiryCategoryLabels()), guard.inquiry.category]
+  const parsed = updateInquirySchema(allowedCategories).safeParse({
     accountId: readField(formData, 'accountId'),
     category: readField(formData, 'category'),
     type: readField(formData, 'type'),
@@ -174,12 +188,6 @@ export async function updateInquiry(
 
   if (!parsed.success) {
     return { fieldErrors: toFieldErrors(parsed.error) }
-  }
-
-  const guard = await requireOwnInquiry(id)
-
-  if (!guard.ok) {
-    return guard.state
   }
 
   if (!canEditInquiry(guard.inquiry)) {

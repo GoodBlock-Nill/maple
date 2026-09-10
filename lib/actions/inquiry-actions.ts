@@ -8,6 +8,7 @@ import { readFiles, removeAttachments, uploadAttachments } from '@/lib/actions/i
 import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { INQUIRY_SUBMITTED_PARAM, MY_INQUIRIES_PATH } from '@/lib/constants/support'
+import { getInquiryCategoryLabels } from '@/lib/data/inquiry-categories'
 import { createClient } from '@/lib/supabase/server'
 import { createInquirySchema, validateInquiryAttachments } from '@/lib/validation/inquiry'
 
@@ -52,7 +53,10 @@ export async function createInquiry(_prevState: FormState, formData: FormData): 
     return { formError: LOGIN_MESSAGE }
   }
 
-  const parsed = createInquirySchema.safeParse({
+  /* 허용 카테고리는 DB(`inquiry_categories`)가 소유한다. 폼이 보낸 값을 그대로
+     믿지 않고 여기서 활성 라벨과 대조한다 — 이 액션은 UI 를 거치지 않는 직접
+     POST 로도 호출된다. */
+  const parsed = createInquirySchema(await getInquiryCategoryLabels()).safeParse({
     accountId: readField(formData, 'accountId'),
     category: readField(formData, 'category'),
     type: readField(formData, 'type'),

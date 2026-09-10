@@ -123,8 +123,15 @@ export function statusesForTab(tab: InquiryStatusTab): readonly InquiryStatus[] 
   return match?.statuses ?? INQUIRY_STATUS_VALUES
 }
 
-/** 사용자 문의 폼(`lib/constants/support.ts`)의 카테고리와 같은 목록. */
-export const INQUIRY_CATEGORIES: readonly string[] = ['계정', '결제', '버그', '신고', '기타']
+/**
+ * 카테고리 필터 값의 상한. DB CHECK(`inquiry_categories_label_length`)와 같은 숫자다.
+ *
+ * 옵션 목록은 DB(`inquiry_categories`) + 데이터에 남은 옛 라벨이라 여기서 고정 배열로
+ * 검사할 수 없다. 대신 "라벨일 수 없는 값"만 걸러 낸다 — 필터는 `eq()` 로만 쓰이므로
+ * 임의 문자열이 질의 문법으로 해석되지는 않지만, 길이가 상한을 넘는 값은 어떤 행과도
+ * 맞지 않아 필터로서 의미가 없다.
+ */
+export const INQUIRY_CATEGORY_MAX_LENGTH = 20
 
 export const INQUIRY_SEARCH_MAX_LENGTH = 60
 
@@ -151,6 +158,13 @@ export function sanitizeInquirySearch(raw: string | string[] | undefined): strin
     .slice(0, INQUIRY_SEARCH_MAX_LENGTH)
 
   return cleaned === '' ? null : cleaned
+}
+
+/** 카테고리 필터 값 정리. 옵션 목록은 DB 가 소유하므로 모양만 본다. */
+export function sanitizeInquiryCategory(raw: string | null): string | null {
+  const value = (raw ?? '').trim()
+
+  return value === '' || value.length > INQUIRY_CATEGORY_MAX_LENGTH ? null : value
 }
 
 function parseDateParam(raw: string | string[] | undefined): string | null {
@@ -187,8 +201,8 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
     statuses: statusesForTab(tab),
     cancelledOnly:
       INQUIRY_STATUS_TABS.find((option) => option.value === tab)?.cancelledOnly === true,
-    // 목록에 없는 카테고리는 무시한다. 임의 문자열이 그대로 질의에 들어가지 않게 한다.
-    category: category !== null && INQUIRY_CATEGORIES.includes(category) ? category : null,
+    // 라벨일 수 없는 값(빈 값 · 상한 초과)은 필터를 걸지 않는다(= 전체).
+    category: sanitizeInquiryCategory(category),
     // 모르는 출처는 필터를 걸지 않는다(= 전체). 임의 문자열이 질의로 흘러가지 않게 한다.
     source: isInquirySource(source) ? source : null,
     search: sanitizeInquirySearch(params.q),

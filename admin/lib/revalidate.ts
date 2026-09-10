@@ -39,6 +39,8 @@ export const CLIENT_CACHE_TAGS = {
   communityList: 'community-list',
   /** FAQ. 발행 토글 · 순서 저장까지 포함한다. */
   faqs: 'faqs',
+  /** 1:1 문의 카테고리. 라벨 · 안내 문구 · 프리필 양식이 모두 이 태그를 탄다. */
+  inquiryCategories: 'inquiry-categories',
   /** 뉴스 목록. 발행 · 숨김 · 삭제 · 복구. */
   newsList: 'news-list',
   /** 확률형 아이템 목록과 상세. */

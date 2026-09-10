@@ -5,7 +5,6 @@ import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { cn } from '@/lib/utils/cn'
 import { buildHref, firstValue, type QueryParams } from '@/lib/utils/table-query'
 import {
-  INQUIRY_CATEGORIES,
   INQUIRY_SOURCES,
   INQUIRY_SOURCE_LABELS,
   INQUIRY_STATUS_TABS,
@@ -33,10 +32,13 @@ export function InquiryFilters({
   params,
   filters,
   counts,
+  categories,
 }: {
   params: QueryParams
   filters: Filters
   counts: InquiryTabCounts
+  /** DB 의 카테고리(비활성 포함) + 데이터에만 남은 옛 라벨. `lib/data/inquiry-categories.ts` */
+  categories: readonly string[]
 }) {
   const sort = firstValue(params.sort)
   const isEmail = filters.source === 'email'
@@ -104,7 +106,7 @@ export function InquiryFilters({
             <span className="text-ink text-[13px] font-semibold">카테고리</span>
             <select name="category" defaultValue={filters.category ?? ''} className={CONTROL_CLASS}>
               <option value="">전체</option>
-              {INQUIRY_CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { INQUIRY_CATEGORIES, INQUIRY_TYPES } from '@/lib/constants/support'
+import { INQUIRY_TYPES } from '@/lib/constants/support'
 import {
   INQUIRY_ATTACHMENT_MAX_BYTES,
   INQUIRY_ATTACHMENT_MAX_COUNT,
@@ -19,7 +19,21 @@ import {
 export const INQUIRY_TITLE_MIN = 2
 export const INQUIRY_TITLE_MAX = 100
 export const INQUIRY_CONTENT_MIN = 5
-export const INQUIRY_CONTENT_MAX = 2_000
+
+/**
+ * 카테고리 프리필 양식의 상한. DB CHECK(`inquiry_categories_prefill_length`)와
+ * 같은 숫자여야 관리자에서 저장된 양식이 사용자 폼에서 잘리지 않는다.
+ */
+export const INQUIRY_PREFILL_MAX = 2_000
+
+/**
+ * 내용 상한.
+ *
+ * 프리필 양식이 그대로 내용 칸에 들어간다. 상한을 양식 상한과 같게 두면 양식이
+ * 긴 카테고리에서는 **한 글자도 더 못 쓰는** 폼이 된다. 양식 최대치를 채우고도
+ * 같은 분량을 더 쓸 수 있도록 두 배로 잡는다.
+ */
+export const INQUIRY_CONTENT_MAX = INQUIRY_PREFILL_MAX * 2
 
 /**
  * 계정 ID 는 숫자 문자열이다. 서식을 DB CHECK 로 강제하지 않는 이유는 마이그레이션
@@ -79,35 +93,47 @@ function plainTextField(min: number, max: number, minMessage: string, maxMessage
     .pipe(z.string().min(min, { message: minMessage }).max(max, { message: maxMessage }))
 }
 
-export const createInquirySchema = z.object({
-  /* 빈 문자열은 "입력하지 않음"으로 본다. DB 는 null 을 받는다. */
-  accountId: z
-    .string()
-    .trim()
-    .refine((value) => value === '' || ACCOUNT_ID_PATTERN.test(value), {
-      message: '계정 ID 는 숫자 10~20자리로 입력해 주세요.',
-    })
-    .transform((value) => (value === '' ? null : value)),
-  category: optionOf(INQUIRY_CATEGORIES, '카테고리를 선택해 주세요.'),
-  type: optionOf(INQUIRY_TYPES, '유형을 선택해 주세요.'),
-  title: plainTextField(
-    INQUIRY_TITLE_MIN,
-    INQUIRY_TITLE_MAX,
-    `제목은 ${INQUIRY_TITLE_MIN}자 이상 입력해 주세요.`,
-    `제목은 ${INQUIRY_TITLE_MAX}자 이하로 입력해 주세요.`,
-  ),
-  content: plainTextField(
-    INQUIRY_CONTENT_MIN,
-    INQUIRY_CONTENT_MAX,
-    `내용은 ${INQUIRY_CONTENT_MIN}자 이상 입력해 주세요.`,
-    `내용은 ${INQUIRY_CONTENT_MAX}자 이하로 입력해 주세요.`,
-  ),
-  /* DB 에 `privacy_consent` CHECK 가 걸려 있어 미동의는 어차피 저장되지 않는다.
-     여기서 먼저 막아 제약 위반(23514) 대신 사람이 읽는 문구를 돌려준다. */
-  consent: z.literal(true, { message: '개인정보 수집 및 이용에 동의해 주세요.' }),
-})
+/**
+ * 접수 입력 검증.
+ *
+ * 카테고리 목록은 DB(`inquiry_categories`)가 소유하므로 스키마를 **호출 시점에**
+ * 만든다. 상수로 굳혀 두면 운영자가 관리자에서 추가한 카테고리가 서버 검증에서
+ * 거절된다 — 화면에는 있는데 접수가 안 되는 상태가 된다.
+ *
+ * 허용 목록은 서버 액션이 `getInquiryCategoryLabels()` 로 읽어 넘긴다(조회 실패 시
+ * 폴백 라벨). 신뢰 경계는 어디까지나 서버다.
+ */
+export function createInquirySchema(allowedCategories: readonly string[]) {
+  return z.object({
+    /* 빈 문자열은 "입력하지 않음"으로 본다. DB 는 null 을 받는다. */
+    accountId: z
+      .string()
+      .trim()
+      .refine((value) => value === '' || ACCOUNT_ID_PATTERN.test(value), {
+        message: '계정 ID 는 숫자 10~20자리로 입력해 주세요.',
+      })
+      .transform((value) => (value === '' ? null : value)),
+    category: optionOf(allowedCategories, '카테고리를 선택해 주세요.'),
+    type: optionOf(INQUIRY_TYPES, '유형을 선택해 주세요.'),
+    title: plainTextField(
+      INQUIRY_TITLE_MIN,
+      INQUIRY_TITLE_MAX,
+      `제목은 ${INQUIRY_TITLE_MIN}자 이상 입력해 주세요.`,
+      `제목은 ${INQUIRY_TITLE_MAX}자 이하로 입력해 주세요.`,
+    ),
+    content: plainTextField(
+      INQUIRY_CONTENT_MIN,
+      INQUIRY_CONTENT_MAX,
+      `내용은 ${INQUIRY_CONTENT_MIN}자 이상 입력해 주세요.`,
+      `내용은 ${INQUIRY_CONTENT_MAX}자 이하로 입력해 주세요.`,
+    ),
+    /* DB 에 `privacy_consent` CHECK 가 걸려 있어 미동의는 어차피 저장되지 않는다.
+       여기서 먼저 막아 제약 위반(23514) 대신 사람이 읽는 문구를 돌려준다. */
+    consent: z.literal(true, { message: '개인정보 수집 및 이용에 동의해 주세요.' }),
+  })
+}
 
-export type CreateInquiryInput = z.infer<typeof createInquirySchema>
+export type CreateInquiryInput = z.infer<ReturnType<typeof createInquirySchema>>
 
 /**
  * 수정 입력. 접수와 **같은 규칙**을 쓰되 동의 체크박스만 뺀다 — 동의는 접수
@@ -116,9 +142,11 @@ export type CreateInquiryInput = z.infer<typeof createInquirySchema>
  * 규칙을 새로 쓰지 않고 파생시키는 이유는 상한이 갈리면 "접수는 됐는데 수정은
  * 막히는" 문의가 생기기 때문이다.
  */
-export const updateInquirySchema = createInquirySchema.omit({ consent: true })
+export function updateInquirySchema(allowedCategories: readonly string[]) {
+  return createInquirySchema(allowedCategories).omit({ consent: true })
+}
 
-export type UpdateInquiryInput = z.infer<typeof updateInquirySchema>
+export type UpdateInquiryInput = z.infer<ReturnType<typeof updateInquirySchema>>
 
 /** 서버 액션에 실려 오는 문의 id. uuid 가 아니면 조회 자체를 하지 않는다(22P02 방지). */
 export const inquiryIdSchema = z.uuid()

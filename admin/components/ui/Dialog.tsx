@@ -54,7 +54,8 @@ export function Dialog({ open, onClose, title, description, children, footer }: 
       return
     }
 
-    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
 
     const first = focusables()[0] ?? panelRef.current
     first?.focus()
@@ -128,7 +129,10 @@ export function Dialog({ open, onClose, title, description, children, footer }: 
         aria-labelledby={titleId}
         aria-describedby={description === undefined ? undefined : descriptionId}
         tabIndex={-1}
-        className="rounded-card bg-surface shadow-menu relative z-10 flex w-full max-w-[440px] flex-col outline-none"
+        /* 화면 높이를 넘지 않게 잡고 본문만 스크롤한다. 상한이 없으면 긴 폼
+           (문의 카테고리의 프리필 + 미리보기)에서 저장 버튼이 뷰포트 밖으로 밀려
+           눌리지 않는다. 머리말과 버튼 줄은 늘 보이는 편이 안전하다. */
+        className="rounded-card bg-surface shadow-menu relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[440px] flex-col outline-none"
       >
         <header className="border-line flex flex-col gap-1 border-b px-5 py-4">
           <h2 id={titleId} className="text-ink text-[16px] font-bold">
@@ -140,9 +144,11 @@ export function Dialog({ open, onClose, title, description, children, footer }: 
             </p>
           )}
         </header>
-        <div className="px-5 py-4">{children}</div>
+        <div className="overflow-y-auto px-5 py-4">{children}</div>
         {footer !== undefined && (
-          <footer className="border-line flex justify-end gap-2 border-t px-5 py-3">{footer}</footer>
+          <footer className="border-line flex justify-end gap-2 border-t px-5 py-3">
+            {footer}
+          </footer>
         )}
       </div>
     </div>,

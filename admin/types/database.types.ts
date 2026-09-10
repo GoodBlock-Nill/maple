@@ -592,6 +592,42 @@ export type Database = {
           },
         ]
       }
+      inquiry_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          prefill: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          prefill?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          prefill?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inquiry_replies: {
         Row: {
           author_id: string | null
@@ -1102,6 +1138,13 @@ export type Database = {
         }[]
       }
       increment_post_view: { Args: { p_id: string }; Returns: number }
+      inquiry_category_usage: {
+        Args: never
+        Returns: {
+          category: string
+          total: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_suspended: { Args: never; Returns: boolean }
@@ -1136,6 +1179,18 @@ export type Database = {
           p_rows: Json
         }
         Returns: string
+      }
+      update_inquiry_category: {
+        Args: {
+          p_description: string
+          p_id: string
+          p_is_active: boolean
+          p_key: string
+          p_label: string
+          p_prefill: string
+          p_sort_order: number
+        }
+        Returns: number
       }
     }
     Enums: {

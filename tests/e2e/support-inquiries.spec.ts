@@ -20,6 +20,10 @@ const LIST_PATH = '/support/inquiries'
 const SCREENSHOT_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/verify'
 
+/** 카테고리·프리필 검증 화면. 리포트에 함께 싣는다. */
+const CATEGORY_SHOT_DIR =
+  '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-categories'
+
 const REPLY_CONTENT = '문의 주신 내용 확인했습니다. 순차적으로 처리해 드리겠습니다.'
 
 /** 실행마다 새 계정이 생기므로 유니크 제약에 걸리지 않게 매번 다른 값을 만든다. */
@@ -62,9 +66,14 @@ async function stubLogin(page: Page, nextPath: string): Promise<void> {
   await page.waitForURL(`**${nextPath}`)
 }
 
+/** 시드 카테고리(마이그레이션 20260910000400). 고르면 내용에 양식이 채워진다. */
+const CATEGORY_LABEL = '접속·서버'
+
+const OTHER_CATEGORY_LABEL = '기타·건의'
+
 async function submitInquiry(page: Page, title: string): Promise<string> {
   await page.locator('input[name="accountId"]').fill(randomDigits(15))
-  await page.locator('select[name="category"]').selectOption('계정')
+  await page.locator('select[name="category"]').selectOption(CATEGORY_LABEL)
   await page.locator('select[name="type"]').selectOption('문의')
   await page.locator('input[name="title"]').fill(title)
   await page.locator('textarea[name="content"]').fill('E2E 로 접수한 문의입니다.\n두 번째 줄.')
@@ -75,6 +84,74 @@ async function submitInquiry(page: Page, title: string): Promise<string> {
 
   return page.url().split('/').pop()?.split('?')[0] ?? ''
 }
+
+/**
+ * 카테고리 프리필(docs/1on1.md).
+ *
+ * 로그인 없이도 확인할 수 있는 화면 동작이라 스텁 로그인을 거치지 않는다 — 제출만
+ * 로그인이 필요하고, 카테고리·양식은 누구에게나 같은 공개 문구다.
+ */
+test('should prefill the content from the selected category and confirm before replacing', async ({
+  page,
+}, testInfo) => {
+  // Arrange
+  const isDesktop = testInfo.project.name === 'chromium'
+
+  if (isDesktop) {
+    await page.setViewportSize({ width: 1440, height: 1200 })
+  }
+
+  await page.goto(SUPPORT_PATH)
+
+  const category = page.locator('select[name="category"]')
+  const content = page.locator('textarea[name="content"]')
+
+  // Act — 카테고리를 고르면 그 카테고리의 양식이 내용에 들어간다
+  await category.selectOption(CATEGORY_LABEL)
+
+  // Assert — 양식 + 설명(셀렉트 아래 한 줄)
+  await expect(content).toHaveValue(/글자월드 캐릭터 닉네임:/)
+  await expect(content).toHaveValue(/세부 문의 유형/)
+  await expect(page.getByText('로그인·접속 불가')).toBeVisible()
+  await page.screenshot({
+    path: `${CATEGORY_SHOT_DIR}/client-support-prefilled-${isDesktop ? '1440' : 'pixel7'}.png`,
+    fullPage: true,
+  })
+
+  // Act — 양식을 건드리지 않은 채 바꾸면 묻지 않고 갈아 끼운다
+  await category.selectOption(OTHER_CATEGORY_LABEL)
+
+  // Assert
+  await expect(page.getByRole('dialog', { name: '작성 중인 내용이 지워집니다' })).toHaveCount(0)
+  await expect(content).toHaveValue(/건의 주제:/)
+
+  // Act — 사용자가 쓴 내용이 있으면 확인을 한 번 세운다
+  await content.fill('직접 쓴 문의 내용입니다.')
+  await category.selectOption(CATEGORY_LABEL)
+
+  const dialog = page.getByRole('dialog', { name: '작성 중인 내용이 지워집니다' })
+
+  // Assert — 확인 전에는 카테고리도 내용도 그대로다
+  await expect(dialog).toBeVisible()
+  await page.screenshot({
+    path: `${CATEGORY_SHOT_DIR}/client-support-confirm-${isDesktop ? '1440' : 'pixel7'}.png`,
+  })
+  await expect(category).toHaveValue(OTHER_CATEGORY_LABEL)
+  await expect(content).toHaveValue('직접 쓴 문의 내용입니다.')
+
+  // Act — 취소하면 아무 일도 일어나지 않는다
+  await dialog.getByRole('button', { name: '취소' }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(category).toHaveValue(OTHER_CATEGORY_LABEL)
+
+  // Act — 다시 바꾸고 이번에는 확인한다
+  await category.selectOption(CATEGORY_LABEL)
+  await page.getByRole('button', { name: '카테고리 변경' }).click()
+
+  // Assert
+  await expect(category).toHaveValue(CATEGORY_LABEL)
+  await expect(content).toHaveValue(/세부 문의 유형/)
+})
 
 test('should send anonymous visitors to login when they open 내 문의 내역', async ({ page }) => {
   // Arrange & Act
@@ -153,7 +230,7 @@ test('should accept an inquiry, list it, and surface the operator reply', async 
   const row = page.getByRole('link', { name: new RegExp(title) })
   await expect(row).toBeVisible()
   await expect(row).toContainText('접수 대기')
-  await expect(row).toContainText('계정 · 문의')
+  await expect(row).toContainText(`${CATEGORY_LABEL} · 문의`)
   await expect(row).toContainText('답변 0')
 
   if (isDesktop) {

@@ -1,9 +1,10 @@
 import { InquiryFilters } from '@/components/inquiries/InquiryFilters'
 import { InquiryTable } from '@/components/inquiries/InquiryTable'
-import { FormBanner, PageHeader } from '@/components/ui'
+import { Button, FormBanner, PageHeader } from '@/components/ui'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { INQUIRY_SORT_KEYS, getInquiries, getInquiryTabCounts } from '@/lib/data/inquiries'
+import { getInquiryCategoryFilterOptions } from '@/lib/data/inquiry-categories'
 import { parsePage, parseSort } from '@/lib/utils/table-query'
 import { parseInquiryFilters } from '@/lib/validation/inquiries'
 
@@ -53,16 +54,27 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
   const page = parsePage(params.page)
   const preset = presetFor(filters.source)
 
-  const [{ rows, count, hasError }, counts] = await Promise.all([
+  const [{ rows, count, hasError }, counts, categories] = await Promise.all([
     getInquiries(filters, { page, sortKey: sort.key, ascending: sort.direction === 'asc' }),
     getInquiryTabCounts(filters),
+    getInquiryCategoryFilterOptions(),
   ])
 
   return (
     <>
-      <PageHeader title={preset.title} description={preset.description} />
+      <PageHeader
+        title={preset.title}
+        description={preset.description}
+        /* 카테고리와 프리필 양식을 고치는 자리는 목록 헤더에서 한 번에 보여야 한다 —
+           사이드바에만 두면 문의를 보다가 "이 분류 이름을 바꾸자"는 순간에 찾지 못한다. */
+        action={
+          <Button href="/inquiries/categories" variant="secondary">
+            카테고리 관리
+          </Button>
+        }
+      />
 
-      <InquiryFilters params={params} filters={filters} counts={counts} />
+      <InquiryFilters params={params} filters={filters} counts={counts} categories={categories} />
 
       {hasError && (
         <div className="mb-3">

@@ -22,6 +22,11 @@ export const CACHE_TAGS = {
   /** 커뮤니티 목록(`getCommunityList`). 운영 숨김 · 삭제를 즉시 반영할 때 태운다. */
   communityList: 'community-list',
   faqs: 'faqs',
+  /**
+   * 1:1 문의 카테고리(`getInquiryCategories`). 라벨·설명·프리필 양식이 모두 여기 담긴다.
+   * 관리자가 카테고리를 고치면 이 태그를 태워야 사용자 폼의 프리필이 즉시 바뀐다.
+   */
+  inquiryCategories: 'inquiry-categories',
   /** 뉴스 목록(`getNewsList`). 발행 · 숨김 · 삭제를 즉시 반영할 때 태운다. */
   newsList: 'news-list',
   gacha: 'gacha',
