@@ -1,7 +1,7 @@
 import { Inter, Noto_Sans_KR } from 'next/font/google'
 import localFont from 'next/font/local'
 
-import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/constants/site'
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME } from '@/lib/constants/site'
 import { getSiteSettings } from '@/lib/data/site'
 
 import './globals.css'
@@ -89,15 +89,25 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = `${name} 공식 홈페이지`
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://maple-web-sigma.vercel.app'),
     title: { default: title, template: `%s | ${name}` },
     description: SITE_DESCRIPTION,
     applicationName: name,
+    keywords: SITE_KEYWORDS,
     openGraph: {
       type: 'website',
       locale: 'ko_KR',
       siteName: name,
       title,
       description: SITE_DESCRIPTION,
+      url: '/',
+      images: [OG_IMAGE],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: SITE_DESCRIPTION,
+      images: [OG_IMAGE.url],
     },
   }
 }

@@ -11,6 +11,7 @@ import { ViewCounter } from '@/components/board/ViewCounter'
 import { PageShell } from '@/components/layout/PageShell'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { COMMUNITY_CATEGORY_MAP } from '@/lib/constants/board'
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME } from '@/lib/constants/site'
 import { getPostById, getPostLikeState } from '@/lib/data/community'
 import { authorLabel } from '@/lib/utils/author-display'
 import { isEdited } from '@/lib/utils/authorship'
@@ -37,10 +38,24 @@ export async function generateMetadata(props: PageProps<'/community/[id]'>): Pro
     return { title: '찾을 수 없는 글' }
   }
 
+  const description = postSummaryText(post).slice(0, 120)
+
   return {
     title: post.title,
-    description: postSummaryText(post).slice(0, 120),
-    openGraph: { title: post.title, type: 'article' },
+    description,
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description,
+      siteName: SITE_NAME,
+      locale: 'ko_KR',
+      images: [OG_IMAGE],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      images: [OG_IMAGE.url],
+    },
   }
 }
 

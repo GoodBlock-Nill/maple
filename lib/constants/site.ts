@@ -15,7 +15,21 @@ export type NavItem = {
 export const SITE_NAME = '글자월드'
 
 export const SITE_DESCRIPTION =
-  '메이플스토리 월드에서 만나는 새로운 모험. 공지, 패치노트, 이벤트와 커뮤니티를 한곳에서.'
+  '추억은 그대로, 감성은 더 새롭게 빅뱅 이후 그 시절 메이플 감성을 담은 글자월드에서 지금 다시, 우리의 추억을 플레이해보세요!'
+
+/** OG/메타 `keywords`. */
+export const SITE_KEYWORDS = ['글자월드', '메이플스토리월드', 'MSW']
+
+/**
+ * OG 대표 이미지(960×540). `metadataBase` 기준으로 절대 URL 로 변환된다
+ * (`app/layout.tsx` `generateMetadata`).
+ */
+export const OG_IMAGE = {
+  url: '/images/og.png',
+  width: 960,
+  height: 540,
+  alt: '글자월드 — 추억은 그대로, 감성은 더 새롭게',
+}
 
 /** 히어로 H1. */
 export const SITE_HEADLINE = `새로운 즐거움의 시작, ${SITE_NAME}`
