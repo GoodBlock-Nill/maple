@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { expect, test } from '@playwright/test'
 
 import {
@@ -6,6 +8,7 @@ import {
   screenshotPath,
   signInAsAdmin,
 } from './inquiry-faq-helpers'
+import { makeTestVideo } from './video-fixture'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -31,11 +34,17 @@ const PNG_BASE64 =
 
 const ATTACHMENT_BUCKET = 'inquiry-attachments'
 
+/** 영상 픽스처를 만들 자리. 저장소에 바이너리를 넣지 않는다. */
+const VIDEO_FIXTURE_DIR =
+  '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-video'
+
 let service: SupabaseClient
 let fixtureUserId = ''
 let inquiryId = ''
 let cancelledInquiryId = ''
 let attachmentPaths: readonly string[] = []
+/** 빈 문자열이면 ffmpeg 이 없어 영상 픽스처를 만들지 못한 것이다(그 검증만 건너뛴다). */
+let videoName = ''
 
 test.describe.configure({ mode: 'serial' })
 
@@ -70,6 +79,29 @@ test.beforeAll(async () => {
   expect(uploadedPdf.error, 'PDF 첨부를 올리지 못했습니다').toBeNull()
   attachmentPaths = [imagePath, pdfPath]
 
+  /* 영상 첨부. 관리자 상세는 링크가 아니라 재생기를 세워야 한다 — 새 탭으로 열면
+     서명 URL 이 주소창과 방문 기록에 남고, 5분 뒤에는 돌아올 수도 없다. */
+  const videoAttachments: Record<string, unknown>[] = []
+  const videoSource = makeTestVideo(`${VIDEO_FIXTURE_DIR}/admin-inquiry-e2e.mp4`)
+
+  if (videoSource !== null) {
+    const videoPath = `${fixtureUserId}/${STAMP}-e2e-clip.mp4`
+    const videoBytes = readFileSync(videoSource)
+    const uploadedVideo = await service.storage
+      .from(ATTACHMENT_BUCKET)
+      .upload(videoPath, videoBytes, { contentType: 'video/mp4', upsert: true })
+
+    expect(uploadedVideo.error, '영상 첨부를 올리지 못했습니다').toBeNull()
+    videoName = 'e2e-clip.mp4'
+    attachmentPaths = [...attachmentPaths, videoPath]
+    videoAttachments.push({
+      name: videoName,
+      path: videoPath,
+      size: videoBytes.length,
+      mimeType: 'video/mp4',
+    })
+  }
+
   const inquiry = await service
     .from('inquiries')
     .insert({
@@ -82,6 +114,7 @@ test.beforeAll(async () => {
       attachments: [
         { name: 'e2e-shot.png', path: imagePath, size: imageBytes.length, mimeType: 'image/png' },
         { name: 'e2e-doc.pdf', path: pdfPath, size: pdfBytes.length, mimeType: 'application/pdf' },
+        ...videoAttachments,
       ],
       privacy_consent: true,
       status: 'pending',
@@ -164,6 +197,19 @@ test('답변을 등록하면 상태가 답변 완료가 되고 사용자 화면�
   const pdfLink = page.getByRole('link', { name: /e2e-doc\.pdf/ })
   await expect(pdfLink).toHaveAttribute('href', /object\/sign\/inquiry-attachments\/.*download=/)
 
+  /* 영상은 그 자리에서 재생한다. preload="metadata" 라 상세를 여는 것만으로
+     100MB 를 내려받지 않는다. */
+  if (videoName !== '') {
+    const player = page.getByLabel(videoName)
+
+    await expect(player).toBeVisible()
+    await expect(player).toHaveAttribute(
+      'src',
+      /\/storage\/v1\/object\/sign\/inquiry-attachments\//,
+    )
+    await expect(player).toHaveAttribute('preload', 'metadata')
+  }
+
   // 썸네일을 누르면 원본을 다이얼로그로 본다(새 탭으로 열어 서명 URL 을 노출하지 않는다).
   await thumbnail.click()
   await expect(page.getByRole('dialog')).toContainText('e2e-shot.png')
@@ -218,7 +264,8 @@ test('답변을 등록하면 상태가 답변 완료가 되고 사용자 화면�
 
   /* 사용자 화면의 답변 스레드가 기대하는 값이 그대로 채워져야 한다 — 작성자 이름과
      줄바꿈(whitespace-pre-line)이 살아 있는지 원문 텍스트로 확인한다. */
-  const replyItemText = (await userPage.locator('li').filter({ hasText: REPLY_TEXT }).first().textContent()) ?? ''
+  const replyItemText =
+    (await userPage.locator('li').filter({ hasText: REPLY_TEXT }).first().textContent()) ?? ''
 
   expect(replyItemText).toContain(REPLY_BODY)
   expect(replyItemText).toContain('운영자')

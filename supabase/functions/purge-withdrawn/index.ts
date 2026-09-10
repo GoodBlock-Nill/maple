@@ -6,6 +6,11 @@
  *      익명화하고 `member.purge` 감사 로그를 남긴 뒤 처리한 id 를 돌려준다.
  *   2) 각 id 에 대해 `auth.admin.deleteUser` 로 로그인 계정(이메일·간편로그인 식별자)을 지운다.
  *      실패하면 그 프로필의 `purged_at` 을 비워 다음 날 다시 태운다(한 건이 막혀도 나머지는 계속).
+ *   3) 곁다리 청소 — 접수되지 않은 채 24시간이 지난 1:1 문의 영상 첨부
+ *      (`inquiry-attachments/<uid>/pending/…`)를 지운다. 폼에 영상만 올려 두고 떠난
+ *      사용자의 파일은 아무 문의도 참조하지 않는다. SQL 로 storage.objects 를 지우면
+ *      실제 파일이 남으므로 경로만 함수로 받아 Storage API 로 지운다. 실패해도 위의
+ *      파기 결과에는 영향을 주지 않는다(개인정보 파기가 곁다리 청소에 막히면 안 된다).
  *
  * 인가 — 둘 중 하나.
  *   * `x-cron-secret` 헤더 == secret `CRON_SECRET` (pg_cron 이 Vault 에서 읽어 보낸다)
@@ -13,7 +18,7 @@
  *   게이트웨이 JWT 검증은 끈다(config.toml `[functions.purge-withdrawn] verify_jwt = false`).
  *
  * 요청  POST {} · 선택 body { "cutoffDays": 90 }(테스트용 · 1 이상 정수)
- * 응답  200 { ok, purged, authDeleted, failed: [{ id, reason }] }
+ * 응답  200 { ok, purged, authDeleted, pendingAttachmentsRemoved, failed: [{ id, reason }] }
  *       401 unauthorized · 405 method_not_allowed · 500 purge_failed · 503 not_configured
  */
 
@@ -24,6 +29,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 const DEFAULT_CUTOFF_DAYS = 90
 const MAX_CUTOFF_DAYS = 3650
+
+/** 접수 전 영상이 머무는 버킷과 유예 시간. 같은 날 이어서 쓰는 사용자를 자르지 않는다. */
+const ATTACHMENT_BUCKET = 'inquiry-attachments'
+const PENDING_ATTACHMENT_CUTOFF_HOURS = 24
 
 /** 길이가 달라도 같은 시간이 걸리도록 바이트 단위로 비교한다(타이밍 누출 방지). */
 function secretEquals(given: string, expected: string): boolean {
@@ -85,6 +94,46 @@ async function deleteAuthUser(service: SupabaseClient, id: string): Promise<Fail
   return { id, reason: error.message }
 }
 
+/**
+ * 버려진 pending 첨부 청소.
+ *
+ * 본 작업(개인정보 파기)과 독립이라 실패를 삼킨다 — 스토리지가 잠깐 흔들렸다고
+ * 파기 배치가 500 을 돌려주면 그날 파기 대상이 통째로 밀린다.
+ */
+async function sweepPendingAttachments(service: SupabaseClient): Promise<number> {
+  try {
+    const { data, error } = await service.rpc('stale_inquiry_pending_attachments', {
+      p_cutoff_hours: PENDING_ATTACHMENT_CUTOFF_HOURS,
+    })
+
+    if (error !== null) {
+      console.error('[purge-withdrawn] pending 첨부 조회 실패', error.message)
+
+      return 0
+    }
+
+    const paths = ((data as { path: string }[] | null) ?? []).map((row) => row.path)
+
+    if (paths.length === 0) {
+      return 0
+    }
+
+    const removed = await service.storage.from(ATTACHMENT_BUCKET).remove(paths)
+
+    if (removed.error !== null) {
+      console.error('[purge-withdrawn] pending 첨부 삭제 실패', removed.error.message)
+
+      return 0
+    }
+
+    return removed.data?.length ?? 0
+  } catch (thrown) {
+    console.error('[purge-withdrawn] pending 첨부 청소 중 예외', String(thrown))
+
+    return 0
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') {
     return json(405, { error: 'method_not_allowed' })
@@ -136,12 +185,18 @@ Deno.serve(async (request) => {
     }
   }
 
-  console.log(`[purge-withdrawn] purged=${ids.length} authDeleted=${ids.length - failed.length}`)
+  const pendingAttachmentsRemoved = await sweepPendingAttachments(service)
+
+  console.log(
+    `[purge-withdrawn] purged=${ids.length} authDeleted=${ids.length - failed.length} ` +
+      `pendingAttachmentsRemoved=${pendingAttachmentsRemoved}`,
+  )
 
   return json(200, {
     ok: true,
     purged: ids.length,
     authDeleted: ids.length - failed.length,
+    pendingAttachmentsRemoved,
     failed,
   })
 })

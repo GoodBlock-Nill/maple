@@ -32,6 +32,21 @@ export const INQUIRY_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024
 export const INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES = 12 * 1024 * 1024
 
 /**
+ * 영상 첨부.
+ *
+ * 위의 합계 상한이 적용되지 않는다 — 영상은 서버 액션 본문을 **거치지 않기**
+ * 때문이다. 브라우저가 세션 클라이언트로 버킷에 직접 올리고, 폼은 올라간 오브젝트의
+ * 경로만 실어 보낸다(`lib/supabase/upload-inquiry-video.ts`). 그래서 천장은 본문
+ * 상한이 아니라 버킷의 `file_size_limit`(200MiB)과 "운영자가 실제로 열어 볼 만한
+ * 길이"다. 100MB 는 폰으로 찍은 1~2분짜리 화면 녹화가 들어가는 크기다.
+ *
+ * 개수를 따로 두는 이유는 전체 상한(3개)을 영상만으로 채우면 재현 화면과 영상을
+ * 함께 낼 수 없기 때문이다. 2개까지만 받아 최소 한 자리를 이미지 쪽에 남긴다.
+ */
+export const INQUIRY_VIDEO_MAX_BYTES = 100 * 1024 * 1024
+export const INQUIRY_VIDEO_MAX_COUNT = 2
+
+/**
  * `next.config.ts` 의 `experimental.serverActions.bodySizeLimit` 값.
  *
  * 첨부 합계(12MB) + 본문 필드 + multipart 경계 문자열이 들어갈 여유를 둔다.
@@ -47,6 +62,7 @@ export const INQUIRY_ATTACHMENT_MAX_MB = Math.floor(INQUIRY_ATTACHMENT_MAX_BYTES
 export const INQUIRY_ATTACHMENT_TOTAL_MAX_MB = Math.floor(
   INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES / MEGABYTE,
 )
+export const INQUIRY_VIDEO_MAX_MB = Math.floor(INQUIRY_VIDEO_MAX_BYTES / MEGABYTE)
 
 export const POST_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
@@ -175,4 +191,81 @@ export function isUserScopedPath(path: string, userId: string): boolean {
   const isTraversal = rest.some((segment) => segment === '' || segment === '.' || segment === '..')
 
   return first === userId && rest.length > 0 && !isTraversal
+}
+
+/* ---------------------------------------------------------------------------
+ * inquiry-attachments — 접수 전에 브라우저가 직접 올리는 영상
+ * ------------------------------------------------------------------------ */
+
+/**
+ * 접수 전 영상이 머무는 폴더 이름.
+ *
+ * 접수된 첨부(`<uid>/<파일명>`)와 **깊이로** 구분된다. 이 한 세그먼트 차이가
+ * 두 가지를 결정한다.
+ *   * 야간 배치가 "버려진 파일"로 판정하는 범위
+ *     (`public.stale_inquiry_pending_attachments()`)
+ *   * 서버가 폼에서 받은 경로를 받아들일지 말지(`isInquiryPendingPath`)
+ * 그래서 문자열을 각 파일에 흩뿌리지 않고 여기 한곳에 둔다. 스토리지 정책은
+ * `<uid>/` 접두사만 보므로 pending 도 같은 권한으로 올리고 읽고 지운다.
+ */
+export const INQUIRY_PENDING_FOLDER = 'pending'
+
+/** `<uid>/pending`. 존재 확인(list)이 훑는 폴더다. */
+export function inquiryPendingFolder(userId: string): string {
+  return `${userId}/${INQUIRY_PENDING_FOLDER}`
+}
+
+export type InquiryPendingPathInput = {
+  userId: string
+  /** `crypto.randomUUID()` 결과. 원본 파일명은 경로에 쓰지 않는다. */
+  id: string
+  /** 확장자(점 없이). MIME 에서 뽑은 값이라 사용자가 정할 수 없다. */
+  extension: string
+}
+
+/**
+ * `<uid>/pending/<uuid>.<ext>`.
+ *
+ * 원본 파일명을 버리는 이유는 `buildPostImagePath` 와 같다 — 파일명 자체가
+ * 개인정보인 경우가 있고(촬영 앱이 장소·날짜를 넣는다), 같은 이름을 두 번 올리면
+ * 덮어쓰기가 난다. 보여 줄 이름은 폼이 따로 실어 보내 DB 메타에 남는다.
+ */
+export function buildInquiryPendingPath({
+  userId,
+  id,
+  extension,
+}: InquiryPendingPathInput): string {
+  if (userId.trim() === '') {
+    throw new Error('업로드 경로를 만들려면 사용자 id 가 필요합니다.')
+  }
+
+  if (!UUID_PATTERN.test(id)) {
+    throw new Error('업로드 경로의 파일명은 uuid 여야 합니다.')
+  }
+
+  const safeExtension = normalizeSegment(extension).toLowerCase()
+
+  if (safeExtension === '') {
+    throw new Error('업로드 경로에는 확장자가 필요합니다.')
+  }
+
+  return `${inquiryPendingFolder(userId)}/${id}.${safeExtension}`
+}
+
+/**
+ * 폼이 실어 보낸 경로가 **이 사용자의** pending 오브젝트인지 검사한다.
+ *
+ * 서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출되므로, 경로는 사용자가 정하는
+ * 값이라고 봐야 한다. 남의 uid 로 시작하는 경로를 그대로 옮기면 **남의 첨부를 내
+ * 문의로 끌어오는** 길이 열린다(옮기는 주체가 서비스 롤이라 RLS 도 막지 않는다).
+ * 그래서 여기서 uid · 폴더 · 깊이를 모두 못 박는다.
+ */
+export function isInquiryPendingPath(path: string, userId: string): boolean {
+  if (!isUserScopedPath(path, userId)) {
+    return false
+  }
+
+  const segments = path.split('/')
+
+  return segments.length === 3 && segments[1] === INQUIRY_PENDING_FOLDER
 }

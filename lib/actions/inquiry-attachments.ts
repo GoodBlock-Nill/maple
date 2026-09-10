@@ -1,3 +1,4 @@
+import { INQUIRY_ATTACHMENT_REMOVE_FIELD } from '@/lib/constants/support'
 import { buildUserScopedPath, isUserScopedPath, STORAGE_BUCKETS } from '@/lib/supabase/storage'
 
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
@@ -80,4 +81,32 @@ export async function removeAttachments(
   await supabase.storage
     .from(STORAGE_BUCKETS.inquiryAttachments)
     .remove(attachments.map((attachment) => attachment.path))
+}
+
+/** 첨부 편집 결과. `kept` 는 그대로 둘 것, `removed` 는 저장에 성공하면 지울 것. */
+export type AttachmentSplit = {
+  kept: readonly InquiryAttachment[]
+  removed: readonly InquiryAttachment[]
+}
+
+/**
+ * 수정 폼이 보낸 "삭제" 체크박스를 반영해 기존 첨부를 둘로 가른다.
+ *
+ * 값이 파일 이름이 아니라 오브젝트 키(path)라, 이름이 같은 파일이 여러 개여도
+ * 정확히 하나만 지워진다.
+ */
+export function splitAttachments(
+  attachments: readonly InquiryAttachment[],
+  formData: FormData,
+): AttachmentSplit {
+  const requested = new Set(
+    formData
+      .getAll(INQUIRY_ATTACHMENT_REMOVE_FIELD)
+      .filter((value): value is string => typeof value === 'string'),
+  )
+
+  return {
+    kept: attachments.filter((attachment) => !requested.has(attachment.path)),
+    removed: attachments.filter((attachment) => requested.has(attachment.path)),
+  }
 }

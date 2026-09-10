@@ -8,6 +8,7 @@ import {
   INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
 } from '@/lib/supabase/storage'
+import { INQUIRY_VIDEO_EXTENSIONS, INQUIRY_VIDEO_MIME_TYPES } from '@/lib/validation/inquiry-video'
 
 /**
  * 1:1 문의 입력 검증.
@@ -56,15 +57,23 @@ export const INQUIRY_ATTACHMENT_MIME_TYPES: readonly string[] = [
   'application/pdf',
 ]
 
-/** 파일 선택 대화상자에 넘길 `accept`. 확장자만 주면 일부 모바일 브라우저가 사진을 잠근다. */
+/**
+ * 파일 선택 대화상자에 넘길 `accept`.
+ *
+ * 확장자만 주면 일부 모바일 브라우저가 사진을 잠그고, MIME 만 주면 확장자로만
+ * 판단하는 환경이 파일을 잠근다 — 그래서 둘 다 적는다. 영상 형식도 여기에 들어가야
+ * 픽셀/아이폰의 갤러리 선택기가 동영상 탭을 함께 보여 준다.
+ */
 export const INQUIRY_ATTACHMENT_ACCEPT = [
   ...INQUIRY_ATTACHMENT_MIME_TYPES,
+  ...INQUIRY_VIDEO_MIME_TYPES,
   '.jpg',
   '.jpeg',
   '.png',
   '.gif',
   '.webp',
   '.pdf',
+  ...INQUIRY_VIDEO_EXTENSIONS,
 ].join(',')
 
 /** 값이 목록에 있는지만 본다. DB 컬럼이 text 라 enum 으로 좁힐 수 없다. */
@@ -173,8 +182,11 @@ export function validateInquiryAttachments(
   /* 수정 화면에서 그대로 두는 기존 첨부 수. 개수 제한은 DB CHECK
      (`inquiries_attachments_max_3`)와 같아야 하므로 남길 것까지 합쳐서 센다. */
   keptCount = 0,
+  /* 버킷에 직접 올라간 영상 수. 본문에는 실리지 않지만 같은 문의의 첨부라
+     개수에는 함께 들어간다(DB CHECK 는 셋을 구분하지 않는다). */
+  videoCount = 0,
 ): InquiryAttachmentCheck {
-  if (files.length + keptCount > INQUIRY_ATTACHMENT_MAX_COUNT) {
+  if (files.length + keptCount + videoCount > INQUIRY_ATTACHMENT_MAX_COUNT) {
     return {
       ok: false,
       message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개까지 올릴 수 있습니다.`,

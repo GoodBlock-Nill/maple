@@ -18,6 +18,9 @@ vi.mock('next/cache', () => ({
   revalidateTag: vi.fn(),
 }))
 
+/** 영상 확정 경로가 서비스 롤 클라이언트(`server-only`)를 끌고 온다. 테스트에서는 비운다. */
+vi.mock('server-only', () => ({}))
+
 const getCurrentUser = vi.fn()
 vi.mock('@/lib/auth/current-user', () => ({ getCurrentUser: () => getCurrentUser() }))
 

@@ -7,10 +7,13 @@ import {
   SelectedFileList,
 } from '@/components/support/InquiryAttachmentLists'
 import { FieldError } from '@/components/support/InquiryFormRow'
+import { InquiryVideoList } from '@/components/support/InquiryVideoList'
 import { SUPPORT_LABEL_CLASS } from '@/components/support/support-styles'
+import { useInquiryVideos } from '@/components/support/use-inquiry-videos'
 import { ATTACHMENT_NOTICE } from '@/lib/constants/support'
 import { downscaleImage } from '@/lib/utils/downscale-image'
 import { INQUIRY_ATTACHMENT_ACCEPT, validateInquiryAttachments } from '@/lib/validation/inquiry'
+import { INQUIRY_VIDEO_FIELD, isVideoAttachment } from '@/lib/validation/inquiry-video'
 
 import type { InquiryAttachment } from '@/types/domain'
 import type { ChangeEvent } from 'react'
@@ -21,7 +24,7 @@ type InquiryAttachmentFieldProps = {
   /** 서버 액션이 돌려준 오류. 선택 즉시 잡은 오류보다 오래 남는다. */
   error: string | undefined
   /**
-   * 제출을 막아야 하는 상태(준비 중 · 규칙에 어긋난 선택)를 폼에 알린다.
+   * 제출을 막아야 하는 상태(준비 중 · 업로드 중 · 규칙에 어긋난 선택)를 폼에 알린다.
    *
    * 규칙에 어긋난 선택에서도 잠그는 이유는 "첨부가 조용히 빠진 접수"를 막기
    * 위해서다 — 파일을 지우고 버튼을 열어 두면 오류를 못 본 사용자가 첨부 없는
@@ -31,17 +34,20 @@ type InquiryAttachmentFieldProps = {
 }
 
 /**
- * 첨부 입력.
+ * 첨부 입력. 이미지·PDF 와 영상이 **다른 길**로 간다.
  *
- * 파일은 폼과 함께 **서버 액션 본문**에 실려 간다. 본문 상한을 넘기면 액션이
+ * 이미지·PDF 는 폼과 함께 서버 액션 본문에 실려 간다. 본문 상한을 넘기면 액션이
  * 실행되기도 전에 요청이 500 으로 끊겨 사용자는 입력을 통째로 잃고 오류 화면만
  * 본다. 그래서 검사는 여기서, 즉 보내기 전에 한다 — 서버(`createInquiry`)의 같은
  * 검사는 직접 POST 를 막는 신뢰 경계이지 사용자 안내가 아니다.
  *
+ * 영상은 본문에 실을 수 없다(100MB). 고르는 즉시 브라우저가 버킷에 직접 올리고
+ * (`useInquiryVideos`), 폼에는 올라간 오브젝트의 경로만 숨은 필드로 싣는다.
+ * 그래서 **영상 파일은 input 의 FileList 에 남겨 두지 않는다** — 남겨 두면 본문에
+ * 그대로 실려 나가 상한을 넘긴다.
+ *
  * 고른 사진은 올리기 전에 한 번 줄인다(커뮤니티 본문 이미지와 같은 헬퍼).
  * 요즘 휴대폰 사진은 그대로 두면 한 장이 상한을 넘어 "사진만 첨부하면 실패"가 된다.
- *
- * 목록 두 종(기존 첨부 · 지금 고른 파일)은 `InquiryAttachmentLists` 가 그린다.
  */
 export function InquiryAttachmentField({
   attachments,
@@ -53,12 +59,14 @@ export function InquiryAttachmentField({
   const [selected, setSelected] = useState<readonly File[]>([])
   const [localError, setLocalError] = useState<string | null>(null)
   const [isPreparing, setIsPreparing] = useState(false)
+  const videos = useInquiryVideos()
 
   const keptCount = attachments.length - removedPaths.length
+  const isBlocked = isPreparing || localError !== null || videos.isBlocked
 
   useEffect(() => {
-    onBlockedChange?.(isPreparing || localError !== null)
-  }, [isPreparing, localError, onBlockedChange])
+    onBlockedChange?.(isBlocked)
+  }, [isBlocked, onBlockedChange])
 
   function clearSelection(): void {
     const input = inputRef.current
@@ -93,19 +101,28 @@ export function InquiryAttachmentField({
       return
     }
 
+    const pickedVideos = picked.filter((file) => isVideoAttachment(file.type))
+    const pickedFiles = picked.filter((file) => !isVideoAttachment(file.type))
+
     setIsPreparing(true)
 
-    const files = await Promise.all(picked.map(downscaleImage))
-    const check = validateInquiryAttachments(files, keptCount)
+    /* 영상부터 붙인다 — 전송이 곧바로 시작돼야 사용자가 기다리는 시간이 줄고,
+       이미지 개수 검사가 "몇 자리가 남았는지"를 정확히 알 수 있다. */
+    const videoOutcome =
+      pickedVideos.length === 0
+        ? { message: null, accepted: 0 }
+        : videos.addFiles(pickedVideos, keptCount + pickedFiles.length)
+
+    const files = await Promise.all(pickedFiles.map(downscaleImage))
+    const check = validateInquiryAttachments(files, keptCount, videos.count + videoOutcome.accepted)
 
     /* 어긋난 선택도 화면에는 남겨 둔다(무엇이 문제인지 보여야 다시 고를 수 있다).
        대신 제출은 잠기고, 첨부를 포기하려면 "첨부 지우기"로 명시적으로 비운다. */
-    setSelected(check.ok ? files : picked)
-    setLocalError(check.ok ? null : check.message)
+    setSelected(check.ok ? files : pickedFiles)
+    setLocalError(videoOutcome.message ?? (check.ok ? null : check.message))
 
-    if (check.ok) {
-      replaceFiles(input, files)
-    }
+    /* 어느 경우에도 영상은 input 에서 빠진다. 남으면 본문 상한을 넘겨 요청이 끊긴다. */
+    replaceFiles(input, check.ok ? files : pickedFiles)
 
     setIsPreparing(false)
   }
@@ -133,6 +150,11 @@ export function InquiryAttachmentField({
         />
       </label>
 
+      {/* 서버는 이 필드의 JSON 만 보고 영상 첨부를 확정한다(경로의 진위는 다시 검사한다). */}
+      <input type="hidden" name={INQUIRY_VIDEO_FIELD} value={videos.value} readOnly />
+
+      <InquiryVideoList rows={videos.rows} onRemove={videos.remove} onRetry={videos.retry} />
+
       <SelectedFileList files={selected} isPreparing={isPreparing} onClear={clearSelection} />
 
       <FieldError message={localError ?? error} />
@@ -141,7 +163,7 @@ export function InquiryAttachmentField({
 }
 
 /**
- * 고른 파일을 input 에 되돌려 넣는다(축소본이 전송되도록).
+ * 고른 파일을 input 에 되돌려 넣는다(축소본이 전송되도록 · 영상이 빠지도록).
  *
  * `DataTransfer` 가 없는 환경(구형 브라우저·jsdom)에서는 그대로 둔다 — 원본이
  * 올라갈 뿐이고, 크기 판정은 이미 끝났으므로 접수가 실패하지는 않는다.

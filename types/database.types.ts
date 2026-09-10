@@ -1180,6 +1180,12 @@ export type Database = {
         }
         Returns: string
       }
+      stale_inquiry_pending_attachments: {
+        Args: { p_cutoff_hours?: number; p_limit?: number }
+        Returns: {
+          path: string
+        }[]
+      }
       update_inquiry_category: {
         Args: {
           p_description: string

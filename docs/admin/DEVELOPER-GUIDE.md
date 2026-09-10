@@ -444,6 +444,49 @@ sequenceDiagram
   `INQUIRY_CATEGORY_FALLBACK`). 카테고리를 못 읽었다고 접수를 막으면 하필 장애 때 문의가 들어올 길이 사라진다.
   폴백에는 양식이 없으므로 접수는 되고 프리필만 빠진다.
 
+**1:1 문의 첨부 — 이미지·PDF 와 영상이 다른 길로 온다.** 한 문의에 붙는 첨부는 **최대 3개**다(DB CHECK
+`inquiries_attachments_max_3`). 그 안에서 규칙이 둘로 갈린다.
+
+| 종류       | 형식                         | 크기                   | 개수     | 전송 경로                      |
+| ---------- | ---------------------------- | ---------------------- | -------- | ------------------------------ |
+| 이미지·PDF | jpg · png · gif · webp · pdf | 각 5MB · **합계 12MB** | 3개 이내 | 폼 → 서버 액션 본문 → 스토리지 |
+| 영상       | mp4 · mov · webm · m4v       | 각 **100MB**           | **2개**  | 브라우저 → 스토리지 **직접**   |
+
+합계 12MB 는 버킷이 아니라 서버 액션 본문 상한(`next.config.ts` `bodySizeLimit` 14MB · `lib/supabase/storage.ts`)
+때문에 있다. 본문이 상한을 넘으면 액션이 실행되기도 전에 요청이 500 으로 끊겨 **아무 문구도 돌려줄 수 없다**.
+영상은 그 상한에 넣을 수 없어 길을 나눴다 — 상한을 100MB 로 올리면 모든 서버 액션이 한 요청에 그만큼을 받게 되고,
+파일은 어차피 서버를 한 번 더 거쳐 스토리지로 간다.
+
+- **직접 업로드.** 사용자가 영상을 고르는 즉시 브라우저가 `createSignedUploadUrl()` 로 서명 URL 을 받아
+  XHR 로 PUT 한다(`lib/supabase/upload-inquiry-video.ts`). XHR 을 쓰는 이유는 진행률과 취소 때문이다 —
+  supabase-js 의 `upload()` 는 fetch 기반이라 둘 다 안 된다. 화면(`components/support/InquiryVideoList.tsx`)은
+  이름·크기·진행률·취소·다시 시도를 한 줄에 그리고, 하나라도 올라가는 중이면 제출을 잠근다.
+- **pending 접두사 — 정책은 새로 만들지 않았다.** 접수 전 영상은
+  `inquiry-attachments/<uid>/pending/<uuid>.<확장자>` 에 머문다. 기존 정책 셋이 전부 **첫 세그먼트(= uid)만**
+  보므로 한 단계 깊은 pending 도 그대로 통과한다 — 업로드는 `inquiry_attachments_insert_own`, 읽기는
+  `inquiry_attachments_read_own`, 업로드 취소는 `inquiry_attachments_delete_own`(20260908001900). pending 이
+  하는 일은 권한 구분이 아니라 **"아직 아무 문의도 참조하지 않는 파일"의 표시**다(청소 대상 판정 · 서버의 경로 검사).
+- **확정(move).** 접수·수정이 성공하면 서버가 pending 오브젝트를 `<uid>/<uuid>-<파일명>`(기존 첨부와 같은 자리)로
+  옮기고 `inquiries.attachments` 에 같은 모양 `{ name, path, size, mimeType }` 으로 적는다
+  (`lib/actions/inquiry-videos.ts`). 옮기는 주체는 **서비스 롤**이다 — `move` 는 storage.objects 의 UPDATE 인데
+  이 버킷에는 사용자용 UPDATE 정책이 없다. 즉 **RLS 가 이 이동을 막아 주지 않으므로** 그 앞의 검사가 유일한
+  경계다. 세 가지를 본다 — 경로가 **이 사용자의** `<uid>/pending/…` 인가, 오브젝트가 실제로 있는가,
+  크기·형식이 규칙 안인가. 크기·형식은 폼이 신고한 값이 아니라 **스토리지가 아는 값**을 쓴다. 행 저장이 실패하면
+  옮긴 오브젝트를 지운다. `SUPABASE_SERVICE_ROLE_KEY` 가 없는 환경에서는 영상 첨부만 거절되고(안내 문구)
+  영상 없는 접수는 평소대로 동작한다.
+- **버려진 pending 청소.** 폼에 영상만 올려 두고 떠나면 아무 문의도 참조하지 않는 파일이 남는다.
+  **24시간이 지난 `<uid>/pending/…` 오브젝트는 야간 배치가 지운다** — `public.stale_inquiry_pending_attachments()`
+  (서비스 롤 전용)가 경로를 돌려주고, Edge Function `purge-withdrawn` 이 Storage API 로 지운다(응답의
+  `pendingAttachmentsRemoved`). SQL 로 `storage.objects` 행만 지우면 실제 파일이 남아 용량이 새기 때문에
+  두 단계로 나눴다. 이 청소는 개인정보 파기와 독립이라 실패해도 파기 결과를 막지 않는다.
+  **마이그레이션(`20260910000600_inquiry_video_attachments.sql`) 적용 후 `supabase functions deploy purge-withdrawn`
+  을 함께 해야 청소가 돈다.**
+- **보기.** 영상은 링크가 아니라 그 자리에서 재생한다 — 관리자 상세(`InquiryAttachments.tsx`)와 사용자 상세
+  (`InquiryAttachmentList.tsx`) 모두 `<video controls preload="metadata">` + 내려받기 링크다. `preload="metadata"`
+  라 상세를 여는 것만으로 100MB 를 내려받지 않는다. 서명 URL 은 5분짜리다.
+- **버킷.** `inquiry-attachments` 는 비공개 · `file_size_limit` 200MiB · `allowed_mime_types` 에 이미지 4종 · pdf ·
+  zip · txt(이메일 수신 첨부용) · 영상 4종이 들어 있다. 버킷 목록이 앱 목록보다 좁으면 업로드가 영문 400 으로 막힌다.
+
 **Legal.** 관리자는 `/legal/[slug]` 에서 개정본을 쌓고, 사용자 사이트는 `/policy/[slug]` 에서 **시행 중인 발행본**을 읽는다. "지금 시행 중인 문안"의 규칙은 DB 함수 `current_legal_version(slug)` 하나가 소유한다(`20260908002200_legal_documents.sql`).
 
 1. 발행본 중 `effective_date <= current_date` 인 것 → 시행일이 가장 늦은 것

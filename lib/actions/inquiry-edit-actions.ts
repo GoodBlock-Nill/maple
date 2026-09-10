@@ -4,7 +4,17 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
-import { readFiles, removeAttachments, uploadAttachments } from '@/lib/actions/inquiry-attachments'
+import {
+  readFiles,
+  removeAttachments,
+  splitAttachments,
+  uploadAttachments,
+} from '@/lib/actions/inquiry-attachments'
+import {
+  claimFormVideos,
+  readPendingVideos,
+  VIDEO_FORM_INVALID_MESSAGE,
+} from '@/lib/actions/inquiry-videos'
 import { isRlsViolation } from '@/lib/actions/pg-error'
 import {
   cooldownMessage,
@@ -13,7 +23,6 @@ import {
 } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
-  INQUIRY_ATTACHMENT_REMOVE_FIELD,
   INQUIRY_CANCELLED_PARAM,
   INQUIRY_EDIT_LOCKED_NOTICE,
   INQUIRY_UPDATED_PARAM,
@@ -135,28 +144,6 @@ function revalidateInquiry(id: string): void {
   revalidatePath(detailPath(id))
 }
 
-/** 첨부 편집 결과. `kept` 는 그대로 둘 것, `removed` 는 저장에 성공하면 지울 것. */
-type AttachmentSplit = {
-  kept: readonly InquiryAttachment[]
-  removed: readonly InquiryAttachment[]
-}
-
-function splitAttachments(
-  attachments: readonly InquiryAttachment[],
-  formData: FormData,
-): AttachmentSplit {
-  const requested = new Set(
-    formData
-      .getAll(INQUIRY_ATTACHMENT_REMOVE_FIELD)
-      .filter((value): value is string => typeof value === 'string'),
-  )
-
-  return {
-    kept: attachments.filter((attachment) => !requested.has(attachment.path)),
-    removed: attachments.filter((attachment) => requested.has(attachment.path)),
-  }
-}
-
 /**
  * 접수 대기 상태의 문의 수정.
  *
@@ -196,7 +183,15 @@ export async function updateInquiry(
 
   const { kept, removed } = splitAttachments(guard.inquiry.attachments, formData)
   const files = readFiles(formData, 'attachments')
-  const attachmentCheck = validateInquiryAttachments(files, kept.length)
+  /* 영상은 접수와 같은 길로 들어온다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
+     싣는다. 개수 제한은 남길 기존 첨부까지 합쳐서 센다. */
+  const videos = readPendingVideos(formData)
+
+  if (videos === null) {
+    return { fieldErrors: { attachments: VIDEO_FORM_INVALID_MESSAGE } }
+  }
+
+  const attachmentCheck = validateInquiryAttachments(files, kept.length, videos.length)
 
   if (!attachmentCheck.ok) {
     return { fieldErrors: { attachments: attachmentCheck.message } }
@@ -218,6 +213,14 @@ export async function updateInquiry(
     return { formError: uploaded.message }
   }
 
+  const claimed = await claimFormVideos(guard.user.id, videos)
+
+  if (!claimed.ok) {
+    await removeAttachments(guard.supabase, uploaded.attachments)
+
+    return { fieldErrors: { attachments: claimed.message } }
+  }
+
   const { error } = await guard.supabase
     .from('inquiries')
     .update({
@@ -226,7 +229,7 @@ export async function updateInquiry(
       type: parsed.data.type,
       title: parsed.data.title,
       content: parsed.data.content,
-      attachments: [...kept, ...uploaded.attachments],
+      attachments: [...kept, ...uploaded.attachments, ...claimed.claim.attachments],
     })
     .eq('id', id)
     .eq('user_id', guard.user.id)
@@ -234,6 +237,7 @@ export async function updateInquiry(
   if (error !== null) {
     // 방금 올린 파일만 되돌린다. 기존 첨부는 아직 행이 참조하고 있다.
     await removeAttachments(guard.supabase, uploaded.attachments)
+    await claimed.claim.rollback()
 
     /* 42501 은 RLS 거절이자 DB 가드의 거절 코드다. 그 사이에 상태가 올라갔다는
        뜻이므로 "실패"가 아니라 "지금은 못 고친다"고 알린다. */

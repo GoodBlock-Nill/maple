@@ -5,6 +5,11 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { readFiles, removeAttachments, uploadAttachments } from '@/lib/actions/inquiry-attachments'
+import {
+  claimFormVideos,
+  readPendingVideos,
+  VIDEO_FORM_INVALID_MESSAGE,
+} from '@/lib/actions/inquiry-videos'
 import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { INQUIRY_SUBMITTED_PARAM, MY_INQUIRIES_PATH } from '@/lib/constants/support'
@@ -71,7 +76,16 @@ export async function createInquiry(_prevState: FormState, formData: FormData): 
   }
 
   const files = readFiles(formData, 'attachments')
-  const attachmentCheck = validateInquiryAttachments(files)
+  /* 영상은 본문에 실려 오지 않는다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
+     싣는다(`lib/supabase/upload-inquiry-video.ts`). 여기서는 개수만 함께 세고,
+     경로의 진위는 아래 `claimFormVideos` 가 스토리지에 다시 물어본다. */
+  const videos = readPendingVideos(formData)
+
+  if (videos === null) {
+    return { fieldErrors: { attachments: VIDEO_FORM_INVALID_MESSAGE } }
+  }
+
+  const attachmentCheck = validateInquiryAttachments(files, 0, videos.length)
 
   if (!attachmentCheck.ok) {
     return { fieldErrors: { attachments: attachmentCheck.message } }
@@ -90,6 +104,14 @@ export async function createInquiry(_prevState: FormState, formData: FormData): 
     return { formError: uploaded.message }
   }
 
+  const claimed = await claimFormVideos(user.id, videos)
+
+  if (!claimed.ok) {
+    await removeAttachments(supabase, uploaded.attachments)
+
+    return { fieldErrors: { attachments: claimed.message } }
+  }
+
   const { data, error } = await supabase
     .from('inquiries')
     .insert({
@@ -99,7 +121,7 @@ export async function createInquiry(_prevState: FormState, formData: FormData): 
       type: parsed.data.type,
       title: parsed.data.title,
       content: parsed.data.content,
-      attachments: uploaded.attachments,
+      attachments: [...uploaded.attachments, ...claimed.claim.attachments],
       privacy_consent: true,
       /* `inquiries_insert_own` 정책이 pending 만 허용한다. 명시해 두면 기본값이
          바뀌어도 정책과 어긋나지 않는다. */
@@ -110,6 +132,7 @@ export async function createInquiry(_prevState: FormState, formData: FormData): 
 
   if (error !== null || data === null) {
     await removeAttachments(supabase, uploaded.attachments)
+    await claimed.claim.rollback()
 
     return { formError: FAILURE_MESSAGE }
   }

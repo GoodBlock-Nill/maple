@@ -2,6 +2,9 @@ import { execFileSync } from 'node:child_process'
 
 import { expect, test } from '@playwright/test'
 
+import { createServiceClient } from './service-role'
+import { makeTestVideo } from './video-fixture'
+
 import type { Page } from '@playwright/test'
 
 /**
@@ -25,6 +28,10 @@ const CATEGORY_SHOT_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-categories'
 
 const REPLY_CONTENT = '문의 주신 내용 확인했습니다. 순차적으로 처리해 드리겠습니다.'
+
+/** 영상 픽스처를 만들 자리. 저장소에 바이너리를 넣지 않는다. */
+const VIDEO_FIXTURE_DIR =
+  '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-video'
 
 /** 실행마다 새 계정이 생기므로 유니크 제약에 걸리지 않게 매번 다른 값을 만든다. */
 function randomDigits(length: number): string {
@@ -411,4 +418,78 @@ test('should refuse an oversized attachment before submitting and accept a real 
   await expect(attachmentLink).toBeVisible()
   await expect(attachmentLink).toHaveAttribute('href', /inquiry-attachments/)
   expect(inquiryId).not.toBe('')
+})
+
+/**
+ * 영상 첨부.
+ *
+ * 영상은 폼과 함께 가지 **않는다**. 100MB 짜리 파일이 서버 액션 본문에 실리면
+ * 상한(14MB)에 걸려 액션이 실행되기도 전에 요청이 끊긴다. 그래서 브라우저가 파일을
+ * 버킷에 직접 올리고, 폼에는 올라간 오브젝트의 경로만 숨은 필드로 싣는다.
+ * 이 테스트가 확인하는 것은 그 분리다 —
+ *
+ *   1) 고른 영상이 input 의 FileList 에 남지 않는다(= 본문에 실리지 않는다)
+ *   2) 업로드가 끝나야 제출이 열린다(첨부가 조용히 빠진 접수 방지)
+ *   3) 접수 후 상세에서 서명 URL 로 **재생**된다(링크가 아니라 재생기)
+ */
+test('should upload a video straight to storage and play it on the detail page', async ({
+  page,
+}) => {
+  // Arrange
+  const source = makeTestVideo(`${VIDEO_FIXTURE_DIR}/inquiry-e2e.mp4`)
+
+  test.skip(source === null, 'ffmpeg 이 없어 테스트용 mp4 를 만들 수 없습니다.')
+
+  await stubLogin(page, SUPPORT_PATH)
+
+  const fileInput = page.locator('input[name="attachments"]')
+  const hiddenField = page.locator('input[name="videoAttachments"]')
+  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+
+  // Act — 고르는 즉시 업로드가 시작된다
+  await fileInput.setInputFiles(source as string)
+
+  // Assert — 진행 상태가 보이고, 끝나면 "첨부 완료"가 된다
+  await expect(page.getByText('inquiry-e2e.mp4')).toBeVisible()
+  await expect(page.getByText('첨부 완료')).toBeVisible({ timeout: 60_000 })
+
+  /* 영상은 본문에 실리지 않는다 — input 은 비어 있고, 경로만 숨은 필드에 있다. */
+  expect(await fileInput.evaluate((input: HTMLInputElement) => input.files?.length ?? -1)).toBe(0)
+  await expect(hiddenField).toHaveValue(/\/pending\/[0-9a-f-]{36}\.mp4/)
+  await expect(submitButton).toBeEnabled()
+
+  // Act — 접수
+  const title = `E2E 영상 문의 ${Date.now()}`
+  const inquiryId = await submitInquiry(page, title)
+
+  await page
+    .getByRole('dialog', { name: '문의가 접수되었습니다' })
+    .getByRole('button', { name: '확인' })
+    .click()
+
+  // Assert — 상세는 링크가 아니라 재생기를 그린다(서명 URL 이 주소창에 남지 않게).
+  const player = page.locator('video')
+  await expect(player).toBeVisible()
+  await expect(player).toHaveAttribute('src', /\/storage\/v1\/object\/sign\/inquiry-attachments\//)
+  await expect(page.getByRole('link', { name: '내려받기' })).toBeVisible()
+
+  // Assert — 확정된 오브젝트는 pending 을 벗어나 접수된 첨부의 자리로 옮겨져 있다
+  const service = createServiceClient()
+
+  if (service !== null) {
+    const stored = await service
+      .from('inquiries')
+      .select('attachments')
+      .eq('id', inquiryId)
+      .single()
+    const attachments = (stored.data?.attachments ?? []) as { path: string; mimeType: string }[]
+
+    expect(attachments).toHaveLength(1)
+    expect(attachments[0]?.mimeType).toBe('video/mp4')
+    expect(attachments[0]?.path.includes('/pending/')).toBe(false)
+
+    // 뒷정리 — 남겨 두면 실행할 때마다 비공개 버킷에 영상이 쌓인다.
+    await service.storage.from('inquiry-attachments').remove([attachments[0]?.path ?? ''])
+    await service.from('inquiries').delete().eq('id', inquiryId)
+  }
 })

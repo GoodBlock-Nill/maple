@@ -20,9 +20,14 @@ function formatSize(bytes: number): string {
   return `${(bytes / (KILOBYTE * KILOBYTE)).toFixed(1)}MB`
 }
 
-/** 버킷이 허용하는 형식은 png · jpeg · gif · pdf 다(20260908000800_storage_buckets). */
+/** 버킷이 허용하는 형식은 이미지 · pdf · zip · txt · 영상 4종이다(20260910000600). */
 function isImage(attachment: InquiryAttachment): boolean {
   return attachment.mimeType.startsWith('image/')
+}
+
+/** 영상은 목록에서 바로 재생한다 — 새 탭으로 열면 서명 URL 이 주소창에 남는다. */
+function isVideo(attachment: InquiryAttachment): boolean {
+  return attachment.mimeType.startsWith('video/')
 }
 
 /**
@@ -46,11 +51,7 @@ function downloadHref(attachment: InquiryAttachment): string {
  * 이미지는 썸네일을 눌러 원본 크기로 본다. 새 탭으로 열면 서명 URL 이 주소창에
  * 노출되고 히스토리에 남는다.
  */
-export function InquiryAttachments({
-  attachments,
-}: {
-  attachments: readonly InquiryAttachment[]
-}) {
+export function InquiryAttachments({ attachments }: { attachments: readonly InquiryAttachment[] }) {
   const [preview, setPreview] = useState<InquiryAttachment | null>(null)
 
   if (attachments.length === 0) {
@@ -59,13 +60,15 @@ export function InquiryAttachments({
 
   return (
     <>
-      <ul className="flex flex-wrap gap-3">
+      <ul className="flex flex-wrap items-start gap-3">
         {attachments.map((attachment) => (
-          <li key={attachment.path}>
+          <li key={attachment.path} className={isVideo(attachment) ? 'w-full' : undefined}>
             {attachment.url === null ? (
               <span className="text-muted border-line rounded-panel border border-dashed px-3 py-2 text-[13px]">
                 {attachment.name} (링크 발급 실패)
               </span>
+            ) : isVideo(attachment) ? (
+              <VideoAttachment attachment={attachment} />
             ) : isImage(attachment) ? (
               <button
                 type="button"
@@ -110,5 +113,36 @@ export function InquiryAttachments({
         )}
       </Dialog>
     </>
+  )
+}
+
+/**
+ * 영상 첨부.
+ *
+ * `preload="metadata"` 라 상세를 여는 것만으로 100MB 를 내려받지 않는다. 운영자가
+ * 재생을 눌러야 실제 데이터가 흐른다. 원본이 필요하면 내려받기 링크를 쓴다.
+ */
+function VideoAttachment({ attachment }: { attachment: InquiryAttachment }) {
+  return (
+    <figure className="border-line rounded-panel flex max-w-[520px] flex-col gap-2 border p-3">
+      {/* 사용자가 올린 영상이라 자막 트랙이 없다. */}
+      <video
+        controls
+        preload="metadata"
+        src={attachment.url ?? undefined}
+        aria-label={attachment.name}
+        className="w-full rounded-[6px] bg-black"
+      />
+      <figcaption className="text-muted flex flex-wrap items-center gap-2 text-[13px]">
+        <span className="min-w-0 truncate">{attachment.name}</span>
+        <span>{formatSize(attachment.size)}</span>
+        <a
+          href={downloadHref(attachment)}
+          className="text-accent-strong font-semibold underline underline-offset-4"
+        >
+          내려받기
+        </a>
+      </figcaption>
+    </figure>
   )
 }

@@ -2,6 +2,8 @@ import {
   INQUIRY_ATTACHMENT_MAX_COUNT,
   INQUIRY_ATTACHMENT_MAX_MB,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+  INQUIRY_VIDEO_MAX_COUNT,
+  INQUIRY_VIDEO_MAX_MB,
 } from '@/lib/supabase/storage'
 import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
 
@@ -108,8 +110,9 @@ export const INQUIRY_TYPES: readonly string[] = ['문의', '신고', '제안']
  * 액션 본문 상한을 넘겨 실제로는 접수가 통째로 실패해서 쓸 수 없다.
  */
 export const ATTACHMENT_NOTICE =
-  `최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개, 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB · 합계 ` +
-  `${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB 이하. (확장자: jpg, png, gif, webp, pdf)`
+  `최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개 — 이미지·PDF 는 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB · 합계 ` +
+  `${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB, 영상은 각 ${INQUIRY_VIDEO_MAX_MB}MB · ` +
+  `${INQUIRY_VIDEO_MAX_COUNT}개까지. (jpg, png, gif, webp, pdf, mp4, mov, webm, m4v)`
 
 export const PRIVACY_CONSENT_LABEL = '개인정보 수집 및 이용에 동의합니다.'
 
