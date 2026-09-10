@@ -1,3 +1,5 @@
+import { Fragment } from 'react'
+
 import { PolicySectionArticle } from '@/components/policy/PolicySectionArticle'
 
 import type { PolicyFallback } from '@/lib/content/policy-fallback'
@@ -27,6 +29,18 @@ export function PolicyCodeBody({ fallback }: PolicyCodeBodyProps) {
 
   return (
     <>
+      {/* 첫머리 고지. 한 문단 안에서 줄만 나눈다 — 발행본 HTML(`<p>…<br />…</p>`) 과 같은 모양이다. */}
+      {fallback.notice === undefined ? null : (
+        <p className="text-ink-muted text-[17px] leading-[1.8]">
+          {fallback.notice.lines.map((line, index) => (
+            <Fragment key={line}>
+              {index === 0 ? null : <br />}
+              {line}
+            </Fragment>
+          ))}
+        </p>
+      )}
+
       <div className="flex flex-col gap-12">
         {fallback.sections.map((section) => (
           <PolicySectionArticle key={section.id} section={section} />
@@ -38,7 +52,10 @@ export function PolicyCodeBody({ fallback }: PolicyCodeBodyProps) {
           aria-labelledby="policy-addendum-heading"
           className="border-line-soft border-t pt-8"
         >
-          <h2 id="policy-addendum-heading" className="text-ink text-[22px] font-bold sm:text-[27px]">
+          <h2
+            id="policy-addendum-heading"
+            className="text-ink text-[22px] font-bold sm:text-[27px]"
+          >
             {fallback.addendum.title}
           </h2>
           <ul className="mt-4 flex flex-col gap-1.5 pl-1">

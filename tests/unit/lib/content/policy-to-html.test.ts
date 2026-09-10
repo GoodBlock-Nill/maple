@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { escapeHtml, inlineToHtml, policySectionsToHtml } from '@/lib/content/policy-to-html'
-import { OPERATING_POLICY_SECTIONS } from '@/lib/content/operating-policy'
+import {
+  OPERATING_POLICY_ADDENDUM,
+  OPERATING_POLICY_NOTICE,
+  OPERATING_POLICY_SECTIONS,
+} from '@/lib/content/operating-policy'
 import { PRIVACY_POLICY_SECTIONS } from '@/lib/content/privacy-policy'
 import { sanitizeLegalHtml } from '@/lib/sanitize/legal-html'
 
@@ -80,7 +84,9 @@ describe('policySectionsToHtml', () => {
   })
 
   it('should put the clause code in a leading strong without a space', () => {
-    expect(html).toContain('<p><strong>[1-1]</strong>운영팀이 <strong>본 정책</strong>을 시행합니다.</p>')
+    expect(html).toContain(
+      '<p><strong>[1-1]</strong>운영팀이 <strong>본 정책</strong>을 시행합니다.</p>',
+    )
   })
 
   it('should render a list with its intro paragraph in front', () => {
@@ -100,6 +106,18 @@ describe('policySectionsToHtml', () => {
 
   it('should not emit id attributes — anchors are added when rendering', () => {
     expect(html).not.toContain('id=')
+  })
+
+  /* 고지는 장이 아니다. `<h2>` 를 만들면 목차(`policyTocEntries`)가 원문에 없는
+     항목을 맨 앞에 올린다. */
+  it('should put the notice in front as one paragraph with line breaks', () => {
+    const withNotice = policySectionsToHtml({
+      sections: [SECTION],
+      notice: { lines: ['첫 줄', '둘째 줄'] },
+    })
+
+    expect(withNotice.startsWith('<p>첫 줄<br />둘째 줄</p><h2>1. 기본 원칙</h2>')).toBe(true)
+    expect(withNotice.match(/<h2>/gu)?.length).toBe(1)
   })
 
   it('should append the addendum as one more chapter', () => {
@@ -123,6 +141,22 @@ describe('변환 결과와 정제기의 합의', () => {
 
       expect(sanitizeLegalHtml(source)).toBe(source)
     }
+  })
+
+  /* 발행본은 고지·부칙까지 붙인 값이다. `<br />` 의 표기(자기 닫힘 슬래시)가
+     정제기와 어긋나면 시드본과 관리자 저장본이 한 글자 차이로 갈라진다. */
+  it('should survive the sanitizer unchanged with the notice and addendum attached', () => {
+    const source = policySectionsToHtml({
+      sections: OPERATING_POLICY_SECTIONS,
+      notice: OPERATING_POLICY_NOTICE,
+      addendum: OPERATING_POLICY_ADDENDUM,
+    })
+
+    expect(sanitizeLegalHtml(source)).toBe(source)
+    expect(source.startsWith('<p>본 서버는 넥슨(주)')).toBe(true)
+    expect(source.match(/<br \/>/gu)?.length).toBe(3)
+    // 10개 장 + 부칙. 고지는 장을 만들지 않는다.
+    expect(source.match(/<h2>/gu)?.length).toBe(OPERATING_POLICY_SECTIONS.length + 1)
   })
 
   it('should keep every chapter of the privacy policy', () => {

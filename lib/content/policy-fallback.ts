@@ -1,6 +1,7 @@
 import {
   OPERATING_POLICY_ADDENDUM,
   OPERATING_POLICY_EFFECTIVE_DATE,
+  OPERATING_POLICY_NOTICE,
   OPERATING_POLICY_SECTIONS,
   OPERATING_POLICY_TITLE,
   OPERATING_POLICY_VERSION,
@@ -20,7 +21,11 @@ import {
   PRIVACY_POLICY_VERSION,
 } from '@/lib/content/privacy-policy'
 
-import type { PolicyAddendum, PolicySection } from '@/lib/content/operating-policy/types'
+import type {
+  PolicyAddendum,
+  PolicyNotice,
+  PolicySection,
+} from '@/lib/content/operating-policy/types'
 import type { LegalSlug } from '@/lib/data/legal'
 
 /**
@@ -45,6 +50,8 @@ export type PolicyFallback = {
   /** `2026년 9월 18일` 표기. */
   effectiveDate: string
   sections: readonly PolicySection[]
+  /** 1장 앞에 오는 고지 블록. 목차에는 오르지 않는다. */
+  notice?: PolicyNotice
   addendum?: PolicyAddendum
   /** 구조화 문안이 없는 문서의 안내 문단(디스코드). */
   paragraphs: readonly string[]
@@ -97,6 +104,7 @@ export const POLICY_FALLBACKS: Record<LegalSlug, PolicyFallback> = {
     version: OPERATING_POLICY_VERSION,
     effectiveDate: OPERATING_POLICY_EFFECTIVE_DATE,
     sections: OPERATING_POLICY_SECTIONS,
+    notice: OPERATING_POLICY_NOTICE,
     addendum: OPERATING_POLICY_ADDENDUM,
     paragraphs: [],
     hasIpNotice: false,

@@ -76,7 +76,7 @@ export const SECTION_03B_SUBSECTIONS: readonly PolicySubsection[] = [
           {
             kind: 'table',
             headers: ['차수', '제재'],
-            rows: [['1차 (즉시 영구)', '영구 이용제한 + 수사 의뢰 검토']],
+            rows: [['1차 (즉시 영구)', '영구 이용제한']],
           },
         ],
       },

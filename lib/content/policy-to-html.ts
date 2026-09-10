@@ -1,6 +1,7 @@
 import type {
   PolicyAddendum,
   PolicyBlock,
+  PolicyNotice,
   PolicySection,
   PolicySubsection,
 } from '@/lib/content/operating-policy/types'
@@ -42,7 +43,10 @@ const BOLD_PATTERN = /\*\*(.+?)\*\*/gu
  * 이스케이프를 **먼저** 하면 `**` 가 그대로 남으므로 순서를 뒤집지 않는다.
  */
 export function inlineToHtml(text: string): string {
-  return escapeHtml(text).replace(BOLD_PATTERN, (_match, inner: string) => `<strong>${inner}</strong>`)
+  return escapeHtml(text).replace(
+    BOLD_PATTERN,
+    (_match, inner: string) => `<strong>${inner}</strong>`,
+  )
 }
 
 /**
@@ -132,13 +136,28 @@ function addendumToHtml(addendum: PolicyAddendum): string {
   return `${heading(2, addendum.title)}${listToHtml(addendum.items)}`
 }
 
+/**
+ * 첫머리 고지는 **한 문단 + `<br />`** 이다.
+ *
+ * 줄마다 `<p>` 를 따로 두면 본문 문단 간격(16px)이 네 번 들어가 인용 한 덩어리가
+ * 네 개의 문단으로 흩어진다. 제목을 붙이지 않는 것도 의도다 — `<h2>` 를 만들면
+ * `policyTocEntries()` 가 목차 맨 앞에 "고지"를 한 줄 올려 원문에 없는 장이 생긴다.
+ */
+function noticeToHtml(notice: PolicyNotice): string {
+  return `<p>${notice.lines.map(inlineToHtml).join('<br />')}</p>`
+}
+
 export type PolicyHtmlInput = {
   sections: readonly PolicySection[]
+  /** 1장 앞에 오는 고지 블록(운영정책의 넥슨·Toben 지식재산권 고지). */
+  notice?: PolicyNotice
   addendum?: PolicyAddendum
 }
 
-export function policySectionsToHtml({ sections, addendum }: PolicyHtmlInput): string {
+export function policySectionsToHtml({ sections, notice, addendum }: PolicyHtmlInput): string {
+  const head = notice === undefined ? '' : noticeToHtml(notice)
   const body = sections.map(sectionToHtml).join('')
+  const tail = addendum === undefined ? '' : addendumToHtml(addendum)
 
-  return addendum === undefined ? body : `${body}${addendumToHtml(addendum)}`
+  return `${head}${body}${tail}`
 }

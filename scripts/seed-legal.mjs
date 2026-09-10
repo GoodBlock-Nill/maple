@@ -98,9 +98,10 @@ const documents = [
     title: operating.OPERATING_POLICY_TITLE,
     version: operating.OPERATING_POLICY_VERSION,
     effectiveDate: toIsoDate(operating.OPERATING_POLICY_EFFECTIVE_DATE),
-    summary: '코드 문안(lib/content/operating-policy)을 옮긴 최초 발행본.',
+    summary: '운영정책 1차 수정본 반영(2026-09-18)',
     html: policySectionsToHtml({
       sections: operating.OPERATING_POLICY_SECTIONS,
+      notice: operating.OPERATING_POLICY_NOTICE,
       addendum: operating.OPERATING_POLICY_ADDENDUM,
     }),
   },
