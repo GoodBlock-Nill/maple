@@ -23,7 +23,7 @@ export const SECTION_12: PolicySection = {
       kind: 'list',
       intro:
         '① 운영자는 개인정보 처리에 관한 업무를 총괄하고 관련 불만 처리 및 피해 구제를 위하여 아래와 같이 개인정보 보호책임자를 지정합니다.',
-      items: ['개인정보 보호책임자: 글자월드 운영자', '이메일: contact@글자월드.co.kr'],
+      items: ['담당자: 글자월드 관리자', '이메일: care@gjstory.com'],
     },
     {
       kind: 'paragraph',

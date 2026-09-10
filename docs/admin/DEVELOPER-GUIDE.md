@@ -431,8 +431,9 @@ is_published and deleted_at is null and not is_hidden and published_at <= now()
 
 ### 5.5 쿠폰 — 발급(관리자) · 등록(사용자) · 지급(게임팀)
 
-`supabase/migrations/20260910000100_coupons.sql` · `admin/lib/{data,actions,validation}/coupon*` ·
-`admin/components/coupons/**`
+`supabase/migrations/20260910000100_coupons.sql` ·
+`supabase/migrations/20260910000200_my_coupon_redemptions.sql` ·
+`admin/lib/{data,actions,validation}/coupon*` · `admin/components/coupons/**`
 
 **콘솔은 아이템을 주지 않는다.** 실제 지급은 게임 안에서 사람이 하고, 콘솔은 "누가 무엇을
 신청했는지"를 모아 두었다가 처리 결과를 되받아 적는다. 이 전제가 화면 문구와 상태 이름을 전부
@@ -476,6 +477,28 @@ sequenceDiagram
   무작위 대입으로 코드 목록을 만들 수 있다. 사용자는 오직 RPC 로만 코드에 닿는다.
 - `coupon_redemptions` — 본인 행 select · 관리자 select/update. `authenticated` 에 **insert 권한
   자체를 주지 않는다**(정책이 아니라 권한으로 막는다).
+
+#### RPC `public.my_coupon_redemptions()` — 사용자 마이페이지 "쿠폰 등록 내역"
+
+SECURITY DEFINER · `authenticated` 전용. `auth.uid()` 의 등록 이력을 **최신순**으로 돌려준다
+(`id · coupon_name · reward_note · code_masked · msw_uid · msw_profile_code · status · admin_note ·
+created_at · processed_at`).
+
+`coupons` 에 사용자 select 정책을 여는 대신 이 함수를 둔 이유가 셋이다.
+
+- 등록 내역 화면은 **쿠폰 이름과 보상 안내**가 있어야 뜻이 있다. 임베드로는 읽히지 않는다.
+- 열람 범위가 "내 `coupon_redemptions` 행"으로 못 박히므로 코드 목록은 여전히 만들 수 없다.
+- 코드는 `public.mask_coupon_code()` 가 **DB 안에서** 가린다(`GLZA-TEST-0001` → `****-****-0001`).
+  구분자는 남기고 마지막 영숫자 4자만 보인다. 화면에서 가리는 방식은 개발자 도구 앞에서 무의미하다.
+
+**`admin_note` 는 거절 건에만 실린다.** 지급 완료 건의 메모는 운영 기록이라 나가지 않는다. 뒤집어
+말하면 **거절 사유는 사용자에게 그대로 보인다** — 콘솔의 거절 다이얼로그가 그 사실을 안내하고
+(`RedemptionStatusButton`), 비워 두면 사용자 화면에 "자세한 사유는 고객지원으로 문의해 주세요"가
+대신 뜬다. 사용자 쪽 상태 낱말은 **대기 중 / 지급 완료 / 거절**이고, 처리 소요 기간 표기는
+`lib/utils/coupon-result.ts` 의 `COUPON_DELIVERY_TIMEFRAME` 한 곳이 소유한다(운영팀이 바꾸는 값).
+
+경계 점검은 `node --env-file=.env.local tests/manual/coupon-history-rpc-check.mjs` 로 실제 DB 에 대고
+돌린다(다른 회원의 이력 비노출 · 마스킹 · anon 실행 거부 · `coupons` 열거 불가).
 
 #### RPC `public.redeem_coupon(p_code, p_msw_uid, p_msw_profile_code)`
 

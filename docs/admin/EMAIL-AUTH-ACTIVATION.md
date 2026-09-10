@@ -55,7 +55,7 @@ supabase config push
 node -e "
 const { createClient } = require('@supabase/supabase-js');
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-s.auth.admin.generateLink({ type: 'magiclink', email: 'qa+otp@글자월드.co.kr' })
+s.auth.admin.generateLink({ type: 'magiclink', email: 'qa+otp@gjstory.com' })
  .then(r => console.log(r.data?.properties?.email_otp?.length, r.error?.message));
 "
 ```
@@ -73,7 +73,7 @@ Supabase 기본 메일러는 **개발용**이다. 문서: https://supabase.com/d
 ## 3. Resend SMTP 연결
 
 이미 이메일 문의(`docs/admin/EMAIL-INQUIRY-ACTIVATION.md`)에서 Resend 도메인 인증을 했다면 그 도메인을
-그대로 쓴다. 발신 주소만 인증용으로 하나 더 정하면 된다(예: `no-reply@글자월드.co.kr`).
+그대로 쓴다. 발신 주소만 인증용으로 하나 더 정하면 된다(예: `no-reply@gjstory.com`).
 
 ### 3-1. 대시보드에서 켜기 (권장 — 비밀이 저장소에 남지 않는다)
 
@@ -81,14 +81,14 @@ Supabase 기본 메일러는 **개발용**이다. 문서: https://supabase.com/d
 2. Supabase 대시보드 → **Authentication → Emails → SMTP Settings** → _Enable Custom SMTP_.
 3. 값 입력:
 
-   | 항목         | 값                                           |
-   | ------------ | -------------------------------------------- |
-   | Host         | `smtp.resend.com`                            |
-   | Port         | `465` (TLS) 또는 `587`                       |
-   | Username     | `resend`                                     |
-   | Password     | Resend API 키                                |
-   | Sender email | `no-reply@글자월드.co.kr` (인증 완료 도메인) |
-   | Sender name  | `글자월드`                                   |
+   | 항목         | 값                                        |
+   | ------------ | ----------------------------------------- |
+   | Host         | `smtp.resend.com`                         |
+   | Port         | `465` (TLS) 또는 `587`                    |
+   | Username     | `resend`                                  |
+   | Password     | Resend API 키                             |
+   | Sender email | `no-reply@gjstory.com` (인증 완료 도메인) |
+   | Sender name  | `글자월드`                                |
 
 4. 저장 후 **Rate Limits** 탭에서 `Emails sent per hour` 를 올린다(초기 운영 기준 100~300 권장).
 
@@ -104,7 +104,7 @@ host = "smtp.resend.com"
 port = 465
 user = "resend"
 pass = "env(RESEND_SMTP_PASSWORD)"
-admin_email = "no-reply@xn--o39an51b2pfban6f.co.kr"  # 글자월드.co.kr
+admin_email = "no-reply@gjstory.com"
 sender_name = "글자월드"
 
 [auth.rate_limit]
@@ -113,7 +113,7 @@ email_sent = 100
 
 - `pass = "env(...)"` 는 **셸 환경 변수**를 읽는다. 키를 파일에 직접 적지 않는다.
   `RESEND_SMTP_PASSWORD=re_xxx supabase config push` 처럼 실행한다.
-- IDN 도메인은 puny 코드(`xn--…`)로 적는 편이 안전하다.
+- `gjstory.com` 은 ASCII 도메인이라 puny 코드 변환 없이 그대로 적는다.
 
 ## 4. 스팸함 대비
 
@@ -141,7 +141,7 @@ email_sent = 100
 node -e "
 const { createClient } = require('@supabase/supabase-js');
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const email = 'qa-signup-' + Date.now() + '@글자월드.co.kr';
+const email = 'qa-signup-' + Date.now() + '@gjstory.com';
 s.auth.admin.generateLink({ type: 'magiclink', email }).then(r =>
   console.log(email, r.data?.properties?.email_otp, r.error?.message));
 "

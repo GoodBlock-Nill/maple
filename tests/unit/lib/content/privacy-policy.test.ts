@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { PRIVACY_POLICY_SECTIONS } from '@/lib/content/privacy-policy'
+import { PRIVACY_POLICY_SECTIONS, PRIVACY_POLICY_VERSION } from '@/lib/content/privacy-policy'
 
 import type { PolicyBlock, PolicySection, PolicySubsection } from '@/lib/content/privacy-policy'
 
@@ -117,5 +117,34 @@ describe('회원 탈퇴 보존·파기 규정', () => {
     const text = (section7 === undefined ? [] : collectSectionText(section7)).join('\n')
 
     expect(text).toContain('매일 자동 배치로')
+  })
+})
+
+/**
+ * 개인정보 보호책임자 연락처 변경(2026-09-10, 시행일은 그대로 9/18).
+ * §8 은 §12 를 가리키는 조문 번호 참조가 실제 조문 번호와 일치해야 한다.
+ */
+describe('개인정보 보호책임자 연락처', () => {
+  const section8 = PRIVACY_POLICY_SECTIONS.find((section) => section.number === 8)
+  const section12 = PRIVACY_POLICY_SECTIONS.find((section) => section.number === 12)
+
+  it('should publish the current officer contact in §12', () => {
+    const text = (section12 === undefined ? [] : collectSectionText(section12)).join('\n')
+
+    expect(text).toContain('담당자: 글자월드 관리자')
+    expect(text).toContain('이메일: care@gjstory.com')
+    expect(text).not.toContain('글자월드 운영자')
+    expect(text).not.toContain('contact@글자월드.co.kr')
+  })
+
+  it('should reference §12 (not §10) as the officer section in §8', () => {
+    const text = (section8 === undefined ? [] : collectSectionText(section8)).join('\n')
+
+    expect(text).toContain('제12조의 개인정보 보호책임자 이메일')
+    expect(text).not.toContain('제10조의 개인정보 보호책임자')
+  })
+
+  it('should bump the document version while keeping the effective date', () => {
+    expect(PRIVACY_POLICY_VERSION).toBe('20260918-4')
   })
 })

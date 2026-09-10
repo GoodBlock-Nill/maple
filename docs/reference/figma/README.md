@@ -3,6 +3,10 @@
 - 파일: https://www.figma.com/design/3DWCpzRZFWOMhvlcTpbFlj/
 - 페이지: `Designs` (0:1), 데스크톱 1440px 기준. 모바일 시안 없음.
 
+> 이 디렉터리의 시안·스펙 문서에 나오는 연락처 이메일(옛 `contact@글자월드.co.kr`)은 참고용 디자인
+> 원본 표기다. 실제 서비스의 문의 이메일은 제품 결정으로 `care@gjstory.com` 으로 바뀌었다
+> (2026-09-10, `lib/constants/site.ts`). 이 문서들은 역사적 기록이라 고치지 않는다.
+
 | 화면 | 노드 ID | 스크린샷 |
 |---|---|---|
 | 홈 | `489:2183` (메뉴 드래그 변형 `461:9961`) | home.png |

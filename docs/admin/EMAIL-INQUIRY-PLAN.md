@@ -4,7 +4,7 @@
 
 ## 1. 배경과 목표
 
-사용자 사이트 푸터에는 연락 이메일(`site_settings.contact_email`, 현재 `contact@글자월드.co.kr`)이 노출된다. 1:1 문의 폼을 거치지 않고 **이메일로 바로 들어오는 문의**를 운영자가 메일함과 관리자 콘솔을 번갈아 보며 처리하고 있어, 고객지원 메뉴 안에서 같은 방식으로 처리하게 해 달라는 피드백이 있었다.
+사용자 사이트 푸터에는 연락 이메일(`site_settings.contact_email`, 현재 `care@gjstory.com`)이 노출된다. 1:1 문의 폼을 거치지 않고 **이메일로 바로 들어오는 문의**를 운영자가 메일함과 관리자 콘솔을 번갈아 보며 처리하고 있어, 고객지원 메뉴 안에서 같은 방식으로 처리하게 해 달라는 피드백이 있었다.
 
 목표는 셋이다.
 
@@ -32,7 +32,7 @@
 
 ### MX 를 바꾸지 않고 시작하는 방법 (권장 1단계)
 
-`contact@글자월드.co.kr` 이 지금 Google Workspace 같은 메일함이라면 MX 를 바꾸는 순간 그 메일함에는 메일이 오지 않는다. 그래서 1단계에서는 **메일함의 자동 전달(forwarding) 규칙**으로 제공자의 수신 주소(예: `inbound@in.글자월드.co.kr` 또는 제공자가 주는 수신 주소)로 복사본을 보내게 한다. DNS 는 발신용 SPF/DKIM 레코드만 추가하면 되고, 기존 메일함은 그대로 남아 **되돌리기도 규칙 삭제 한 번**이다. 안정화된 뒤 MX 이전을 검토한다.
+`care@gjstory.com` 이 지금 Google Workspace 같은 메일함이라면 MX 를 바꾸는 순간 그 메일함에는 메일이 오지 않는다. 그래서 1단계에서는 **메일함의 자동 전달(forwarding) 규칙**으로 제공자의 수신 주소(예: `inbound@in.gjstory.com` 또는 제공자가 주는 수신 주소)로 복사본을 보내게 한다. DNS 는 발신용 SPF/DKIM 레코드만 추가하면 되고, 기존 메일함은 그대로 남아 **되돌리기도 규칙 삭제 한 번**이다. 안정화된 뒤 MX 이전을 검토한다.
 
 ## 3. 전체 흐름
 
@@ -112,7 +112,7 @@ Edge Function 하나. Next 라우트 대신 Edge Function 을 쓰는 이유: 서
 기존 `replyToInquiryAction`(`admin/lib/actions/inquiries-actions.ts`)을 확장한다.
 
 - `source = 'email'` 인 문의에서 답신을 저장하면 **같은 트랜잭션 안에서** `inquiry_replies` 에 `direction='outbound', delivery_status='queued'` 로 넣고, 발송은 Edge Function `email-outbound` 를 호출해 처리한다(관리자 서버 액션이 제공자 API 키를 들고 있지 않게).
-- 발신 헤더: `From: 글자월드 고객지원 <support@글자월드.co.kr>`, `Reply-To: reply+<thread_key>@<수신 도메인>`, `In-Reply-To`/`References` 에 원본 `Message-ID`. 제목은 `Re: <원제목> [문의 #<짧은 id>]`.
+- 발신 헤더: `From: 글자월드 고객지원 <support@gjstory.com>`, `Reply-To: reply+<thread_key>@<수신 도메인>`, `In-Reply-To`/`References` 에 원본 `Message-ID`. 제목은 `Re: <원제목> [문의 #<짧은 id>]`.
 - 발송 결과(성공/실패)는 웹훅(`email.sent` · `email.bounced` 등)으로 받아 `delivery_status` 를 갱신한다. 실패는 콘솔 스레드에 "발송 실패 — 다시 보내기" 로 보인다.
 - 답신 저장 시 상태 전이는 1:1 문의와 동일(`answered`). 감사 로그는 `inquiry.email.reply` 로 남긴다.
 
@@ -141,9 +141,9 @@ Edge Function 하나. Next 라우트 대신 Edge Function 을 쓰는 이유: 서
 
 ## 9. 운영 설정 체크리스트 (개발 착수 전 결정·준비)
 
-1. 제공자 선택과 계정(권장 Resend). 발신 도메인(`글자월드.co.kr`) 인증 — DNS 에 DKIM·SPF·DMARC 레코드. IDN 도메인은 puny 코드(`xn--bj0b33kj0qqva.co.kr`)로 등록됨을 확인.
+1. 제공자 선택과 계정(권장 Resend). 발신 도메인(`gjstory.com`) 인증 — DNS 에 DKIM·SPF·DMARC 레코드. `gjstory.com` 은 ASCII 도메인이라 puny 코드 변환 없이 그대로 등록한다.
 2. 수신 방식 결정: **메일함 자동 전달**(권장 1단계) 또는 MX 이전. 전달이면 메일함 관리자가 규칙을 만든다.
-3. 발신 주소 확정(예: `support@글자월드.co.kr`)과 회신 도메인(`reply+…@` 를 받을 도메인, 제공자 수신 주소일 수 있음).
+3. 발신 주소 확정(예: `support@gjstory.com`)과 회신 도메인(`reply+…@` 를 받을 도메인, 제공자 수신 주소일 수 있음).
 4. Supabase Edge Function secret 3개: 제공자 API 키, 웹훅 서명 키, 서비스 롤 키(함수는 기본 제공).
 5. 개인정보처리방침 개정 초안(§8) — Legal 모듈로 발행.
 6. 접수 확인 메일 문안 확정(1건).
@@ -168,7 +168,7 @@ Edge Function 하나. Next 라우트 대신 Edge Function 을 쓰는 이유: 서
 
 ## 12. 열린 질문 (개발 착수 전 답이 필요)
 
-1. `contact@글자월드.co.kr` 은 현재 어떤 메일함인가(Google Workspace / 호스팅 메일 / 전달 전용)? 자동 전달 규칙을 만들 수 있는가?
+1. `care@gjstory.com` 은 현재 어떤 메일함인가(Google Workspace / 호스팅 메일 / 전달 전용)? 자동 전달 규칙을 만들 수 있는가?
 2. DNS 관리 주체는 누구인가(레코드 추가 권한)?
 3. 답신 발신 주소를 `contact@` 그대로 쓸지, `support@` 를 새로 둘지.
 4. 접수 확인 자동 메일을 보낼지(기본 제안: 보낸다, 하루 1회).

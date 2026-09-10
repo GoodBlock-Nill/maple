@@ -24,17 +24,19 @@ export const SITE_HEADLINE = `새로운 즐거움의 시작, ${SITE_NAME}`
 export const SITE_TAGLINE = `지금 바로 ${SITE_NAME}에서 당신만의 특별한 메이플 이야기를 펼쳐보세요.`
 
 /** `site_settings.contact_email` 폴백(화면 표기형). */
-export const CONTACT_EMAIL = 'contact@글자월드.co.kr'
+export const CONTACT_EMAIL = 'care@gjstory.com'
 
 /**
- * `mailto:` 링크용 ASCII(Punycode) 도메인 이메일.
+ * `mailto:` 링크용 이메일.
  *
- * 실제 푸터는 이 상수를 직접 읽지 않고 `toAsciiEmail()` 로 표기형을 변환해 쓴다
- * (관리자가 DB 에 어느 형태로 저장하든 같은 링크가 나와야 하므로). 여기 값은
- * 그 변환 결과가 지금과 같아야 한다는 **불변식**을 문서화하고 테스트가 대조할
- * 기준으로 남는다 — `tests/unit/utils/email.test.ts`.
+ * 예전 연락처(`contact@글자월드.co.kr`)는 한글(IDN) 도메인이라 `mailto:` href 에는
+ * ASCII(Punycode) 변환이 필요했다. 지금 도메인(`gjstory.com`)은 처음부터 ASCII 라
+ * 변환이 필요 없어 `CONTACT_EMAIL` 과 값이 같다 — 그래도 상수를 분리해 두는 이유는
+ * 관리자가 DB 에 다시 IDN 도메인을 입력하는 경우까지 대비한 `toAsciiEmail()` 변환
+ * 경로(`lib/utils/email.ts`)를 그대로 살려 두기 위해서다. 실제 푸터는 이 상수를
+ * 직접 읽지 않고 그 변환을 거쳐 쓴다 — `tests/unit/utils/email.test.ts`.
  */
-export const CONTACT_EMAIL_HREF = 'contact@xn--bj0b33kj0qqva.co.kr'
+export const CONTACT_EMAIL_HREF = 'care@gjstory.com'
 
 /**
  * `site_settings.copyright` 폴백. 시안 푸터 문구 그대로다.

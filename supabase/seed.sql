@@ -21,7 +21,7 @@ insert into public.site_settings (
   null,
   'https://discord.com/invite/5Vk9k5pPb',
   'https://www.youtube.com/@%EC%84%B8%EA%B8%80%EC%9E%90',
-  'contact@글자월드.co.kr',
+  'care@gjstory.com',
   '본 사이트는 넥슨(주)의 메이플스토리 월드 플랫폼에서 서비스되는 글자월드 월드의 공식 홈페이지입니다. ''MapleStory'' 및 관련 지식재산권은 NEXON Korea Corp.에 있습니다. ''MapleStory Worlds'' 및 관련 지식재산권은 Toben Studio Inc.에 있습니다.',
   '© 2026 글자월드. All rights reserved.',
   '세글자',

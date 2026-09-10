@@ -28,8 +28,12 @@ export const PRIVACY_POLICY_EFFECTIVE_DATE = '2026년 9월 18일'
 /**
  * 문서 버전 쿼리 파라미터. 개정본이 추가되면 버전 선택 UI가 이 값을 늘린다.
  * `-2`: 회원 탈퇴 90일 보존·파기 규정 추가(2026-09-09, 시행일은 그대로 9/18).
+ * `-3`: 개인정보 보호책임자 연락처 변경(2026-09-10, 시행일은 그대로 9/18).
+ * `-4`: 사이트 전역 문의 이메일을 `care@gjstory.com` 으로 통일(2026-09-10, 시행일은 그대로 9/18).
+ *       §12 본문 표기는 `-3` 에서 이미 `care@gjstory.com` 으로 바뀌어 문안 자체는 그대로다 —
+ *       이 버전은 사이트 전역(`CONTACT_EMAIL` 등) 변경이 마무리됐다는 발행 이력을 남긴다.
  */
-export const PRIVACY_POLICY_VERSION = '20260918-2'
+export const PRIVACY_POLICY_VERSION = '20260918-4'
 
 export const PRIVACY_POLICY_SECTIONS: readonly PolicySection[] = [
   SECTION_01,

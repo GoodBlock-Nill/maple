@@ -1,222 +1,909 @@
 <!doctype html>
 <html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>이메일 문의 파이프라인 가이드</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-</head>
-<body>
-<style>
-:root{
-  --ink:#1d2230;--ink-2:#4a5268;--ink-3:#7d859a;
-  --paper:#f3f5f9;--surface:#ffffff;--surface-2:#e9edf4;--line:#d7dce7;--line-soft:#e6eaf1;
-  --admin:#ff4fa8;--admin-soft:#ffe3f1;--admin-ink:#b3226f;
-  --client:#178f8a;--client-soft:#dcf3f1;--client-ink:#0f6b67;
-  --db:#4f5bd5;--db-soft:#e6e8fb;--db-ink:#3640a6;
-  --mail:#d97a1a;--mail-soft:#fbe9d6;--mail-ink:#8f4d07;
-  --warn:#c9861a;--warn-soft:#fbefd9;--warn-ink:#8a5a0b;
-  --ok:#1f9d55;--ok-soft:#dff5e7;--ok-ink:#15703c;
-  --danger:#c93a3a;--danger-soft:#fbe3e3;
-  --code-bg:#eef1f7;
-  --sans:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
-  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
-  --radius:10px;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
-    --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
-    --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
-    --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
-    --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
-    --mail:#f0a050;--mail-soft:#3d2a15;--mail-ink:#ffd2a1;
-    --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
-    --ok:#3fbf78;--ok-soft:#173526;--ok-ink:#9be3b8;
-    --danger:#ff7676;--danger-soft:#3d1f1f;
-    --code-bg:#252c3d;
-  }
-}
-:root[data-theme="dark"]{
-  --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
-  --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
-  --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
-  --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
-  --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
-  --mail:#f0a050;--mail-soft:#3d2a15;--mail-ink:#ffd2a1;
-  --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
-  --ok:#3fbf78;--ok-soft:#173526;--ok-ink:#9be3b8;
-  --danger:#ff7676;--danger-soft:#3d1f1f;
-  --code-bg:#252c3d;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
-a{color:inherit}
-code,pre{font-family:var(--mono)}
-code{background:var(--code-bg);padding:.1em .4em;border-radius:5px;font-size:.88em;overflow-wrap:anywhere}
-pre{background:var(--code-bg);border:1px solid var(--line-soft);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:14px 0}
-pre code{background:none;padding:0;font-size:inherit}
-h1,h2,h3,h4{text-wrap:balance;line-height:1.25;margin:0}
-h2{font-size:26px;font-weight:700;letter-spacing:-.01em}
-h3{font-size:18px;font-weight:700;margin-top:36px}
-p{margin:10px 0}
-ul,ol{padding-left:22px;margin:8px 0}
-li{margin:4px 0}
-.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1240px;margin:0 auto;padding:40px 28px 96px}
-@media (max-width:900px){.shell{grid-template-columns:1fr;gap:24px;padding:20px 16px 72px}}
-.index{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto}
-@media (max-width:900px){.index{position:static;max-height:none}}
-.index .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
-.index .brand b{color:var(--admin);letter-spacing:.1em}
-.index ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--line)}
-.index li{margin:0}
-.index a{display:block;padding:6px 12px;text-decoration:none;color:var(--ink-2);font-size:13.5px;border-left:2px solid transparent;margin-left:-2px}
-.index a:hover{color:var(--ink);border-left-color:var(--ink-3)}
-.index a:focus-visible{outline:2px solid var(--admin);outline-offset:2px;border-radius:4px}
-.index .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:8px}
-.index .meta{margin-top:18px;font-size:12px;color:var(--ink-3);line-height:1.6}
-@media (max-width:900px){.index ol{display:flex;flex-wrap:wrap;gap:4px 10px;border:0}.index a{padding:4px 0;border:0}.index .n{display:none}}
-main{max-width:860px;min-width:0}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
-.title h1{font-size:clamp(30px,4vw,42px);font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
-.title .lede{font-size:16.5px;color:var(--ink-2);max-width:68ch}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
-.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
-.chip.admin{background:var(--admin-soft);border-color:transparent;color:var(--admin-ink)}.chip.admin .dot{background:var(--admin)}
-.chip.client{background:var(--client-soft);border-color:transparent;color:var(--client-ink)}.chip.client .dot{background:var(--client)}
-.chip.db{background:var(--db-soft);border-color:transparent;color:var(--db-ink)}.chip.db .dot{background:var(--db)}
-.chip.mail{background:var(--mail-soft);border-color:transparent;color:var(--mail-ink)}.chip.mail .dot{background:var(--mail)}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>이메일 문의 파이프라인 가이드</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <style>
+      :root {
+        --ink: #1d2230;
+        --ink-2: #4a5268;
+        --ink-3: #7d859a;
+        --paper: #f3f5f9;
+        --surface: #ffffff;
+        --surface-2: #e9edf4;
+        --line: #d7dce7;
+        --line-soft: #e6eaf1;
+        --admin: #ff4fa8;
+        --admin-soft: #ffe3f1;
+        --admin-ink: #b3226f;
+        --client: #178f8a;
+        --client-soft: #dcf3f1;
+        --client-ink: #0f6b67;
+        --db: #4f5bd5;
+        --db-soft: #e6e8fb;
+        --db-ink: #3640a6;
+        --mail: #d97a1a;
+        --mail-soft: #fbe9d6;
+        --mail-ink: #8f4d07;
+        --warn: #c9861a;
+        --warn-soft: #fbefd9;
+        --warn-ink: #8a5a0b;
+        --ok: #1f9d55;
+        --ok-soft: #dff5e7;
+        --ok-ink: #15703c;
+        --danger: #c93a3a;
+        --danger-soft: #fbe3e3;
+        --code-bg: #eef1f7;
+        --sans:
+          'IBM Plex Sans KR', 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui,
+          sans-serif;
+        --mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+        --radius: 10px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --ink: #e6e9f1;
+          --ink-2: #b4bbcc;
+          --ink-3: #8790a6;
+          --paper: #141823;
+          --surface: #1e2433;
+          --surface-2: #262d3f;
+          --line: #333b52;
+          --line-soft: #2a3145;
+          --admin: #ff6fb8;
+          --admin-soft: #3a1f31;
+          --admin-ink: #ffb3d9;
+          --client: #3dbdb6;
+          --client-soft: #163634;
+          --client-ink: #9be6e1;
+          --db: #8a93ff;
+          --db-soft: #262a4d;
+          --db-ink: #c3c8ff;
+          --mail: #f0a050;
+          --mail-soft: #3d2a15;
+          --mail-ink: #ffd2a1;
+          --warn: #e0a03a;
+          --warn-soft: #3a2e15;
+          --warn-ink: #f3cf87;
+          --ok: #3fbf78;
+          --ok-soft: #173526;
+          --ok-ink: #9be3b8;
+          --danger: #ff7676;
+          --danger-soft: #3d1f1f;
+          --code-bg: #252c3d;
+        }
+      }
+      :root[data-theme='dark'] {
+        --ink: #e6e9f1;
+        --ink-2: #b4bbcc;
+        --ink-3: #8790a6;
+        --paper: #141823;
+        --surface: #1e2433;
+        --surface-2: #262d3f;
+        --line: #333b52;
+        --line-soft: #2a3145;
+        --admin: #ff6fb8;
+        --admin-soft: #3a1f31;
+        --admin-ink: #ffb3d9;
+        --client: #3dbdb6;
+        --client-soft: #163634;
+        --client-ink: #9be6e1;
+        --db: #8a93ff;
+        --db-soft: #262a4d;
+        --db-ink: #c3c8ff;
+        --mail: #f0a050;
+        --mail-soft: #3d2a15;
+        --mail-ink: #ffd2a1;
+        --warn: #e0a03a;
+        --warn-soft: #3a2e15;
+        --warn-ink: #f3cf87;
+        --ok: #3fbf78;
+        --ok-soft: #173526;
+        --ok-ink: #9be3b8;
+        --danger: #ff7676;
+        --danger-soft: #3d1f1f;
+        --code-bg: #252c3d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 15.5px;
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+      }
+      code,
+      pre {
+        font-family: var(--mono);
+      }
+      code {
+        background: var(--code-bg);
+        padding: 0.1em 0.4em;
+        border-radius: 5px;
+        font-size: 0.88em;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--line-soft);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 14px 0;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: inherit;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        text-wrap: balance;
+        line-height: 1.25;
+        margin: 0;
+      }
+      h2 {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 36px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      ul,
+      ol {
+        padding-left: 22px;
+        margin: 8px 0;
+      }
+      li {
+        margin: 4px 0;
+      }
+      .shell {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 48px;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 40px 28px 96px;
+      }
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+          gap: 24px;
+          padding: 20px 16px 72px;
+        }
+      }
+      .index {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        max-height: calc(100vh - 48px);
+        overflow: auto;
+      }
+      @media (max-width: 900px) {
+        .index {
+          position: static;
+          max-height: none;
+        }
+      }
+      .index .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        margin-bottom: 14px;
+      }
+      .index .brand b {
+        color: var(--admin);
+        letter-spacing: 0.1em;
+      }
+      .index ol {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-left: 2px solid var(--line);
+      }
+      .index li {
+        margin: 0;
+      }
+      .index a {
+        display: block;
+        padding: 6px 12px;
+        text-decoration: none;
+        color: var(--ink-2);
+        font-size: 13.5px;
+        border-left: 2px solid transparent;
+        margin-left: -2px;
+      }
+      .index a:hover {
+        color: var(--ink);
+        border-left-color: var(--ink-3);
+      }
+      .index a:focus-visible {
+        outline: 2px solid var(--admin);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      .index .n {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-3);
+        margin-right: 8px;
+      }
+      .index .meta {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--ink-3);
+        line-height: 1.6;
+      }
+      @media (max-width: 900px) {
+        .index ol {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 10px;
+          border: 0;
+        }
+        .index a {
+          padding: 4px 0;
+          border: 0;
+        }
+        .index .n {
+          display: none;
+        }
+      }
+      main {
+        max-width: 860px;
+        min-width: 0;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      .title h1 {
+        font-size: clamp(30px, 4vw, 42px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 6px 0 10px;
+      }
+      .title .lede {
+        font-size: 16.5px;
+        color: var(--ink-2);
+        max-width: 68ch;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12.5px;
+        font-weight: 500;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-2);
+      }
+      .chip .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ink-3);
+      }
+      .chip.admin {
+        background: var(--admin-soft);
+        border-color: transparent;
+        color: var(--admin-ink);
+      }
+      .chip.admin .dot {
+        background: var(--admin);
+      }
+      .chip.client {
+        background: var(--client-soft);
+        border-color: transparent;
+        color: var(--client-ink);
+      }
+      .chip.client .dot {
+        background: var(--client);
+      }
+      .chip.db {
+        background: var(--db-soft);
+        border-color: transparent;
+        color: var(--db-ink);
+      }
+      .chip.db .dot {
+        background: var(--db);
+      }
+      .chip.mail {
+        background: var(--mail-soft);
+        border-color: transparent;
+        color: var(--mail-ink);
+      }
+      .chip.mail .dot {
+        background: var(--mail);
+      }
 
-/* status board */
-.board{margin:26px 0 6px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-.board>div{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
-.board .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
-.board .v{font-size:15px;font-weight:700}
-.board .s{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;width:fit-content;padding:2px 9px;border-radius:999px}
-.s.done{background:var(--ok-soft);color:var(--ok-ink)}.s.done::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
-.s.todo{background:var(--warn-soft);color:var(--warn-ink)}.s.todo::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--warn)}
-.board .d{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+      /* status board */
+      .board {
+        margin: 26px 0 6px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+      }
+      .board > div {
+        min-width: 0;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .board .k {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      .board .v {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .board .s {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        width: fit-content;
+        padding: 2px 9px;
+        border-radius: 999px;
+      }
+      .s.done {
+        background: var(--ok-soft);
+        color: var(--ok-ink);
+      }
+      .s.done::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--ok);
+      }
+      .s.todo {
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+      }
+      .s.todo::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--warn);
+      }
+      .board .d {
+        font-size: 12.5px;
+        color: var(--ink-2);
+        line-height: 1.5;
+      }
 
-section{margin-top:56px;scroll-margin-top:24px}
-.sec-head{display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:18px}
-.sec-head .num{font-family:var(--mono);font-size:13px;color:var(--admin);font-weight:500}
-.src{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin:-8px 0 12px;overflow-wrap:anywhere}
-.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;background:var(--surface)}
-table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
-th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-soft)}
-th{font-weight:700;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;white-space:nowrap}
-tr:last-child td{border-bottom:0}
-.callout{border-radius:var(--radius);padding:12px 16px;margin:16px 0;border:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
-.callout .icon{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;padding:2px 7px;border-radius:5px;margin-top:3px;white-space:nowrap}
-.callout p{margin:0;font-size:14px;min-width:0;overflow-wrap:anywhere}
-.callout.warn{background:var(--warn-soft);border-color:transparent}.callout.warn .icon{background:var(--warn);color:#fff}
-.callout.rule{background:var(--surface-2);border-color:transparent}.callout.rule .icon{background:var(--ink);color:var(--paper)}
-.callout.mail{background:var(--mail-soft);border-color:transparent}.callout.mail .icon{background:var(--mail);color:#fff}
-.callout.ok{background:var(--ok-soft);border-color:transparent}.callout.ok .icon{background:var(--ok);color:#fff}
-.diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:16px 0;overflow-x:auto}
-.diagram .cap{font-size:12.5px;color:var(--ink-3);margin:0 0 8px;font-family:var(--mono)}
-pre.mermaid{background:none;border:0;padding:0;margin:0;overflow:visible;font-size:13px}
-.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:14px 0}
-.kv>div{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
-.kv .k{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-bottom:4px}
-.kv .v{font-size:14px}
-.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
-.steps li{counter-increment:s;position:relative;padding:10px 0 10px 34px;border-bottom:1px solid var(--line-soft)}
-.steps li::before{content:counter(s);position:absolute;left:0;top:13px;width:22px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--admin);font-weight:500}
-.steps li:last-child{border-bottom:0}
+      section {
+        margin-top: 56px;
+        scroll-margin-top: 24px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 18px;
+      }
+      .sec-head .num {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--admin);
+        font-weight: 500;
+      }
+      .src {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--ink-3);
+        margin: -8px 0 12px;
+        overflow-wrap: anywhere;
+      }
+      .tbl {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        margin: 14px 0;
+        background: var(--surface);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13.5px;
+        min-width: 560px;
+      }
+      th,
+      td {
+        padding: 9px 12px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      th {
+        font-weight: 700;
+        background: var(--surface-2);
+        color: var(--ink-2);
+        font-size: 12.5px;
+        white-space: nowrap;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .callout {
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        margin: 16px 0;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+      }
+      .callout .icon {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        padding: 2px 7px;
+        border-radius: 5px;
+        margin-top: 3px;
+        white-space: nowrap;
+      }
+      .callout p {
+        margin: 0;
+        font-size: 14px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .callout.warn {
+        background: var(--warn-soft);
+        border-color: transparent;
+      }
+      .callout.warn .icon {
+        background: var(--warn);
+        color: #fff;
+      }
+      .callout.rule {
+        background: var(--surface-2);
+        border-color: transparent;
+      }
+      .callout.rule .icon {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .callout.mail {
+        background: var(--mail-soft);
+        border-color: transparent;
+      }
+      .callout.mail .icon {
+        background: var(--mail);
+        color: #fff;
+      }
+      .callout.ok {
+        background: var(--ok-soft);
+        border-color: transparent;
+      }
+      .callout.ok .icon {
+        background: var(--ok);
+        color: #fff;
+      }
+      .diagram {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        margin: 16px 0;
+        overflow-x: auto;
+      }
+      .diagram .cap {
+        font-size: 12.5px;
+        color: var(--ink-3);
+        margin: 0 0 8px;
+        font-family: var(--mono);
+      }
+      pre.mermaid {
+        background: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        font-size: 13px;
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .kv > div {
+        min-width: 0;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+      }
+      .kv .k {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--ink-3);
+        margin-bottom: 4px;
+      }
+      .kv .v {
+        font-size: 14px;
+      }
+      .steps {
+        counter-reset: s;
+        list-style: none;
+        padding: 0;
+        margin: 14px 0;
+      }
+      .steps li {
+        counter-increment: s;
+        position: relative;
+        padding: 10px 0 10px 34px;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .steps li::before {
+        content: counter(s);
+        position: absolute;
+        left: 0;
+        top: 13px;
+        width: 22px;
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--admin);
+        font-weight: 500;
+      }
+      .steps li:last-child {
+        border-bottom: 0;
+      }
 
-/* conveyor */
-.conveyor{display:grid;gap:8px;margin:16px 0}.conveyor>div{min-width:0}
-.stage{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
-.stage .no{font-family:var(--mono);font-size:12px;color:var(--mail-ink);background:var(--mail-soft);border-radius:6px;text-align:center;padding:2px 0;margin-top:2px}
-.stage .what{font-size:14px;min-width:0;overflow-wrap:anywhere}
-.stage .what b{display:block;font-size:14.5px}
-.stage .out{font-family:var(--mono);font-size:11px;white-space:nowrap;padding:3px 8px;border-radius:6px;margin-top:2px}
-.out.pass{background:var(--ok-soft);color:var(--ok-ink)}
-.out.drop{background:var(--surface-2);color:var(--ink-2)}
-.out.reject{background:var(--danger-soft);color:var(--danger)}
-@media (max-width:600px){.stage{grid-template-columns:36px minmax(0,1fr)}.stage .out{grid-column:2;justify-self:start}}
-.tag{display:inline-block;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:999px}
-.tag.in{background:var(--client-soft);color:var(--client-ink)}
-.tag.outb{background:var(--admin-soft);color:var(--admin-ink)}
-footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
-@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
-</style>
+      /* conveyor */
+      .conveyor {
+        display: grid;
+        gap: 8px;
+        margin: 16px 0;
+      }
+      .conveyor > div {
+        min-width: 0;
+      }
+      .stage {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 14px;
+      }
+      .stage .no {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--mail-ink);
+        background: var(--mail-soft);
+        border-radius: 6px;
+        text-align: center;
+        padding: 2px 0;
+        margin-top: 2px;
+      }
+      .stage .what {
+        font-size: 14px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .stage .what b {
+        display: block;
+        font-size: 14.5px;
+      }
+      .stage .out {
+        font-family: var(--mono);
+        font-size: 11px;
+        white-space: nowrap;
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin-top: 2px;
+      }
+      .out.pass {
+        background: var(--ok-soft);
+        color: var(--ok-ink);
+      }
+      .out.drop {
+        background: var(--surface-2);
+        color: var(--ink-2);
+      }
+      .out.reject {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+      @media (max-width: 600px) {
+        .stage {
+          grid-template-columns: 36px minmax(0, 1fr);
+        }
+        .stage .out {
+          grid-column: 2;
+          justify-self: start;
+        }
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 500;
+        padding: 1px 8px;
+        border-radius: 999px;
+      }
+      .tag.in {
+        background: var(--client-soft);
+        color: var(--client-ink);
+      }
+      .tag.outb {
+        background: var(--admin-soft);
+        color: var(--admin-ink);
+      }
+      footer {
+        margin-top: 64px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        font-size: 12.5px;
+        color: var(--ink-3);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        html {
+          scroll-behavior: smooth;
+        }
+      }
+    </style>
 
-<div class="shell">
-<nav class="index" aria-label="목차">
-  <div class="brand">글자월드 <b>ADMIN</b></div>
-  <ol>
-    <li><a href="#s1"><span class="n">01</span>무엇을 만들었나</a></li>
-    <li><a href="#s2"><span class="n">02</span>왜 이 구조인가</a></li>
-    <li><a href="#s3"><span class="n">03</span>전체 흐름</a></li>
-    <li><a href="#s4"><span class="n">04</span>데이터 모델</a></li>
-    <li><a href="#s5"><span class="n">05</span>수신 파이프라인</a></li>
-    <li><a href="#s6"><span class="n">06</span>발신 · 스레딩</a></li>
-    <li><a href="#s7"><span class="n">07</span>관리자 콘솔 변경</a></li>
-    <li><a href="#s8"><span class="n">08</span>보안 · 개인정보</a></li>
-    <li><a href="#s9"><span class="n">09</span>활성화 체크리스트</a></li>
-    <li><a href="#s10"><span class="n">10</span>되돌리기 · 운영</a></li>
-    <li><a href="#s11"><span class="n">11</span>코드 지도</a></li>
-    <li><a href="#s12"><span class="n">12</span>근거 · 가정 · 후속</a></li>
-  </ol>
-  <p class="meta">최종 갱신 2026-09-09<br>기준 커밋 <code>9a7fdae</code><br>원문 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code><br><code>docs/admin/EMAIL-INQUIRY-ACTIVATION.md</code></p>
-</nav>
+    <div class="shell">
+      <nav class="index" aria-label="목차">
+        <div class="brand">글자월드 <b>ADMIN</b></div>
+        <ol>
+          <li>
+            <a href="#s1"><span class="n">01</span>무엇을 만들었나</a>
+          </li>
+          <li>
+            <a href="#s2"><span class="n">02</span>왜 이 구조인가</a>
+          </li>
+          <li>
+            <a href="#s3"><span class="n">03</span>전체 흐름</a>
+          </li>
+          <li>
+            <a href="#s4"><span class="n">04</span>데이터 모델</a>
+          </li>
+          <li>
+            <a href="#s5"><span class="n">05</span>수신 파이프라인</a>
+          </li>
+          <li>
+            <a href="#s6"><span class="n">06</span>발신 · 스레딩</a>
+          </li>
+          <li>
+            <a href="#s7"><span class="n">07</span>관리자 콘솔 변경</a>
+          </li>
+          <li>
+            <a href="#s8"><span class="n">08</span>보안 · 개인정보</a>
+          </li>
+          <li>
+            <a href="#s9"><span class="n">09</span>활성화 체크리스트</a>
+          </li>
+          <li>
+            <a href="#s10"><span class="n">10</span>되돌리기 · 운영</a>
+          </li>
+          <li>
+            <a href="#s11"><span class="n">11</span>코드 지도</a>
+          </li>
+          <li>
+            <a href="#s12"><span class="n">12</span>근거 · 가정 · 후속</a>
+          </li>
+        </ol>
+        <p class="meta">
+          최종 갱신 2026-09-09<br />기준 커밋 <code>9a7fdae</code><br />원문
+          <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code><br /><code
+            >docs/admin/EMAIL-INQUIRY-ACTIVATION.md</code
+          >
+        </p>
+      </nav>
 
-<main>
-<header class="title">
-  <div class="eyebrow">New Feature · 고객지원</div>
-  <h1>이메일 문의 파이프라인</h1>
-  <p class="lede">푸터의 연락 이메일로 들어오는 문의를 관리자 콘솔 <strong>고객지원 › 이메일 문의</strong>에서 1:1 문의와 같은 방식으로 접수·답신·스레딩하는 기능입니다. 코드·DB·Edge Function은 모두 배포되어 있고, 메일 주소와 제공자 계정이 생기면 비밀값 설정만으로 켜집니다.</p>
-  <div class="chips">
-    <span class="chip mail"><span class="dot"></span>Resend · 수신 웹훅 + 발신 API</span>
-    <span class="chip db"><span class="dot"></span>Supabase · Edge Function 2개</span>
-    <span class="chip admin"><span class="dot"></span>관리자 콘솔 · 고객지원 모듈</span>
-    <span class="chip client"><span class="dot"></span>사용자 사이트 · 변경 없음</span>
-  </div>
-  <div class="board" aria-label="구성 요소 상태">
-    <div><span class="k">DB</span><span class="v">마이그레이션</span><span class="s done">적용됨</span><span class="d"><code>20260909000300_email_inquiries.sql</code></span></div>
-    <div><span class="k">Edge Function</span><span class="v">email-inbound</span><span class="s done">배포됨</span><span class="d">서명 없는 요청 401 · 비밀값 없으면 503</span></div>
-    <div><span class="k">Edge Function</span><span class="v">email-outbound</span><span class="s done">배포됨</span><span class="d">운영자 JWT 필수 · 비밀값 없으면 503</span></div>
-    <div><span class="k">Admin</span><span class="v">이메일 문의 화면</span><span class="s done">배포됨</span><span class="d"><code>/inquiries?source=email</code></span></div>
-    <div><span class="k">Provider</span><span class="v">Resend 계정 · DNS · 웹훅 · secret</span><span class="s todo">미완</span><span class="d">§09 활성화 체크리스트</span></div>
-  </div>
-</header>
+      <main>
+        <header class="title">
+          <div class="eyebrow">New Feature · 고객지원</div>
+          <h1>이메일 문의 파이프라인</h1>
+          <p class="lede">
+            푸터의 연락 이메일로 들어오는 문의를 관리자 콘솔
+            <strong>고객지원 › 이메일 문의</strong>에서 1:1 문의와 같은 방식으로
+            접수·답신·스레딩하는 기능입니다. 코드·DB·Edge Function은 모두 배포되어 있고, 메일 주소와
+            제공자 계정이 생기면 비밀값 설정만으로 켜집니다.
+          </p>
+          <div class="chips">
+            <span class="chip mail"><span class="dot"></span>Resend · 수신 웹훅 + 발신 API</span>
+            <span class="chip db"><span class="dot"></span>Supabase · Edge Function 2개</span>
+            <span class="chip admin"><span class="dot"></span>관리자 콘솔 · 고객지원 모듈</span>
+            <span class="chip client"><span class="dot"></span>사용자 사이트 · 변경 없음</span>
+          </div>
+          <div class="board" aria-label="구성 요소 상태">
+            <div>
+              <span class="k">DB</span><span class="v">마이그레이션</span
+              ><span class="s done">적용됨</span
+              ><span class="d"><code>20260909000300_email_inquiries.sql</code></span>
+            </div>
+            <div>
+              <span class="k">Edge Function</span><span class="v">email-inbound</span
+              ><span class="s done">배포됨</span
+              ><span class="d">서명 없는 요청 401 · 비밀값 없으면 503</span>
+            </div>
+            <div>
+              <span class="k">Edge Function</span><span class="v">email-outbound</span
+              ><span class="s done">배포됨</span
+              ><span class="d">운영자 JWT 필수 · 비밀값 없으면 503</span>
+            </div>
+            <div>
+              <span class="k">Admin</span><span class="v">이메일 문의 화면</span
+              ><span class="s done">배포됨</span
+              ><span class="d"><code>/inquiries?source=email</code></span>
+            </div>
+            <div>
+              <span class="k">Provider</span><span class="v">Resend 계정 · DNS · 웹훅 · secret</span
+              ><span class="s todo">미완</span><span class="d">§09 활성화 체크리스트</span>
+            </div>
+          </div>
+        </header>
 
-<section id="s1">
-  <div class="sec-head"><span class="num">01</span><h2>무엇을 만들었나</h2></div>
-  <ol class="steps">
-    <li>이메일로 온 문의가 <strong>관리자 콘솔 고객지원 메뉴</strong>에 1:1 문의와 같은 모양으로 쌓입니다(출처 뱃지 "이메일").</li>
-    <li>운영자가 콘솔에서 답신을 쓰면 <strong>이메일로 발송</strong>되고 같은 화면의 스레드에 "보낸 답신"으로 남습니다. 발송 상태(대기·발송됨·실패)와 "다시 보내기"가 있습니다.</li>
-    <li>사용자가 그 답신에 <strong>회신</strong>하면 같은 문의 스레드에 "받은 메일"로 붙고, 상태가 답변 완료 → 처리 중으로 되돌아옵니다.</li>
-  </ol>
-  <div class="callout rule"><span class="icon">원칙</span><p>새 인프라는 제공자 계정 하나만. 기존 1:1 문의의 테이블·화면·권한·감사 로그를 그대로 재사용합니다. 사용자 사이트 코드는 바뀐 것이 없습니다.</p></div>
-</section>
+        <section id="s1">
+          <div class="sec-head">
+            <span class="num">01</span>
+            <h2>무엇을 만들었나</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              이메일로 온 문의가 <strong>관리자 콘솔 고객지원 메뉴</strong>에 1:1 문의와 같은
+              모양으로 쌓입니다(출처 뱃지 "이메일").
+            </li>
+            <li>
+              운영자가 콘솔에서 답신을 쓰면 <strong>이메일로 발송</strong>되고 같은 화면의 스레드에
+              "보낸 답신"으로 남습니다. 발송 상태(대기·발송됨·실패)와 "다시 보내기"가 있습니다.
+            </li>
+            <li>
+              사용자가 그 답신에 <strong>회신</strong>하면 같은 문의 스레드에 "받은 메일"로 붙고,
+              상태가 답변 완료 → 처리 중으로 되돌아옵니다.
+            </li>
+          </ol>
+          <div class="callout rule">
+            <span class="icon">원칙</span>
+            <p>
+              새 인프라는 제공자 계정 하나만. 기존 1:1 문의의 테이블·화면·권한·감사 로그를 그대로
+              재사용합니다. 사용자 사이트 코드는 바뀐 것이 없습니다.
+            </p>
+          </div>
+        </section>
 
-<section id="s2">
-  <div class="sec-head"><span class="num">02</span><h2>왜 이 구조인가</h2></div>
-  <div class="tbl"><table>
-    <thead><tr><th>방식</th><th>구조</th><th>장점</th><th>단점 · 위험</th></tr></thead>
-    <tbody>
-      <tr><td><strong>A. 제공자 수신 웹훅</strong> (채택)</td><td>메일 → 제공자 → HTTPS 웹훅 → Edge Function → DB</td><td>파싱·첨부·SPF/DKIM 판정을 제공자가 해 줌. 서명 검증 하나로 인증</td><td>MX 변경 또는 전달 설정 필요</td></tr>
-      <tr><td>B. Cloudflare Email Routing + Worker</td><td>MX → Cloudflare → Worker → 우리 함수</td><td>무료, DNS가 Cloudflare면 간단</td><td>MIME 파싱을 우리가 짊어짐</td></tr>
-      <tr><td>C. IMAP 폴링</td><td>크론이 메일함을 주기적으로 읽음</td><td>DNS 변경 없음</td><td>메일함 비밀번호 보관, 중복·유실·파싱 전부 우리 몫. 가장 취약</td></tr>
-      <tr><td>D. 수동 등록</td><td>운영자가 메일을 폼에 붙여 넣음</td><td>개발 최소</td><td>자동화 없음</td></tr>
-    </tbody>
-  </table></div>
-  <ul>
-    <li>관리자 초대·비밀번호 재설정 메일용 <strong>커스텀 SMTP</strong>가 어차피 필요합니다. 같은 제공자(Resend)에서 수신까지 쓰면 관리할 서비스가 늘지 않습니다.</li>
-    <li>우리가 보관하는 비밀은 <strong>API 키와 웹훅 서명 키 둘</strong>뿐이며, 전부 Edge Function secret에만 있습니다. 관리자 콘솔(Vercel)에는 새 환경 변수가 없습니다.</li>
-    <li>제공자 차이는 <code>_shared/email/resend.ts</code> 어댑터 한 파일에 가둬 Postmark 등을 나중에 추가할 수 있습니다.</li>
-  </ul>
-  <div class="callout mail"><span class="icon">1단계</span><p><strong>MX를 바꾸지 않고 시작합니다.</strong> 기존 <code>contact@</code> 메일함의 자동 전달 규칙으로 제공자 수신 주소에 복사본을 보냅니다. 메일함은 그대로 백업이 되고, 되돌리기는 규칙 삭제 한 번입니다. 안정화 뒤 수신 전용 서브도메인(<code>in.글자월드.co.kr</code>)의 MX만 Resend로 둡니다.</p></div>
-</section>
+        <section id="s2">
+          <div class="sec-head">
+            <span class="num">02</span>
+            <h2>왜 이 구조인가</h2>
+          </div>
+          <div class="tbl">
+            <table>
+              <thead>
+                <tr>
+                  <th>방식</th>
+                  <th>구조</th>
+                  <th>장점</th>
+                  <th>단점 · 위험</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>A. 제공자 수신 웹훅</strong> (채택)</td>
+                  <td>메일 → 제공자 → HTTPS 웹훅 → Edge Function → DB</td>
+                  <td>파싱·첨부·SPF/DKIM 판정을 제공자가 해 줌. 서명 검증 하나로 인증</td>
+                  <td>MX 변경 또는 전달 설정 필요</td>
+                </tr>
+                <tr>
+                  <td>B. Cloudflare Email Routing + Worker</td>
+                  <td>MX → Cloudflare → Worker → 우리 함수</td>
+                  <td>무료, DNS가 Cloudflare면 간단</td>
+                  <td>MIME 파싱을 우리가 짊어짐</td>
+                </tr>
+                <tr>
+                  <td>C. IMAP 폴링</td>
+                  <td>크론이 메일함을 주기적으로 읽음</td>
+                  <td>DNS 변경 없음</td>
+                  <td>메일함 비밀번호 보관, 중복·유실·파싱 전부 우리 몫. 가장 취약</td>
+                </tr>
+                <tr>
+                  <td>D. 수동 등록</td>
+                  <td>운영자가 메일을 폼에 붙여 넣음</td>
+                  <td>개발 최소</td>
+                  <td>자동화 없음</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul>
+            <li>
+              관리자 초대·비밀번호 재설정 메일용 <strong>커스텀 SMTP</strong>가 어차피 필요합니다.
+              같은 제공자(Resend)에서 수신까지 쓰면 관리할 서비스가 늘지 않습니다.
+            </li>
+            <li>
+              우리가 보관하는 비밀은 <strong>API 키와 웹훅 서명 키 둘</strong>뿐이며, 전부 Edge
+              Function secret에만 있습니다. 관리자 콘솔(Vercel)에는 새 환경 변수가 없습니다.
+            </li>
+            <li>
+              제공자 차이는 <code>_shared/email/resend.ts</code> 어댑터 한 파일에 가둬 Postmark 등을
+              나중에 추가할 수 있습니다.
+            </li>
+          </ul>
+          <div class="callout mail">
+            <span class="icon">1단계</span>
+            <p>
+              <strong>MX를 바꾸지 않고 시작합니다.</strong> 기존 <code>contact@</code> 메일함의 자동
+              전달 규칙으로 제공자 수신 주소에 복사본을 보냅니다. 메일함은 그대로 백업이 되고,
+              되돌리기는 규칙 삭제 한 번입니다. 안정화 뒤 수신 전용
+              서브도메인(<code>in.gjstory.com</code>)의 MX만 Resend로 둡니다.
+            </p>
+          </div>
+        </section>
 
-<section id="s3">
-  <div class="sec-head"><span class="num">03</span><h2>전체 흐름</h2></div>
-  <div class="diagram"><p class="cap">메일 → 제공자 → email-inbound → DB → 콘솔 → email-outbound → 사용자 → 회신</p>
-<pre class="mermaid">
+        <section id="s3">
+          <div class="sec-head">
+            <span class="num">03</span>
+            <h2>전체 흐름</h2>
+          </div>
+          <div class="diagram">
+            <p class="cap">
+              메일 → 제공자 → email-inbound → DB → 콘솔 → email-outbound → 사용자 → 회신
+            </p>
+            <pre class="mermaid">
 flowchart LR
     U[사용자 메일] -->|contact@ 로 발송| MB[기존 메일함]
     MB -->|자동 전달| IN[Resend 수신 주소]
@@ -227,49 +914,195 @@ flowchart LR
     ADM -->|답신 저장 → 운영자 JWT 로 호출| OUT[Edge Function<br/>email-outbound]
     OUT -->|Resend 발송 · Reply-To reply+key@| U
     U -->|회신| IN
-</pre></div>
-  <p>수신·발신 모두 <strong>서비스 롤은 Edge Function 안에서만</strong> 씁니다. 관리자 콘솔은 기존대로 세션 클라이언트 + RLS로 읽고 쓰며, 발신 함수는 운영자의 JWT를 확인한 뒤에만 동작합니다.</p>
-</section>
+</pre>
+          </div>
+          <p>
+            수신·발신 모두 <strong>서비스 롤은 Edge Function 안에서만</strong> 씁니다. 관리자 콘솔은
+            기존대로 세션 클라이언트 + RLS로 읽고 쓰며, 발신 함수는 운영자의 JWT를 확인한 뒤에만
+            동작합니다.
+          </p>
+        </section>
 
-<section id="s4">
-  <div class="sec-head"><span class="num">04</span><h2>데이터 모델</h2></div>
-  <p class="src">supabase/migrations/20260909000300_email_inquiries.sql · 원격 적용 완료</p>
-  <div class="kv">
-    <div><div class="k">inquiries (추가 열)</div><div class="v"><code>source</code> web|email(기본 web) · <code>email_from</code> · <code>email_from_name</code> · <code>email_message_id</code>(유니크, 중복 수신 방지) · <code>email_auth</code> jsonb(spf/dkim/dmarc) · <code>email_thread_key</code>(24자 hex, 유니크)</div></div>
-    <div><div class="k">inquiry_replies (추가 열)</div><div class="v"><code>direction</code> outbound|inbound · <code>email_message_id</code>(발송 id, 유니크) · <code>delivery_status</code> queued|sent|failed</div></div>
-    <div><div class="k">email_inbound_events</div><div class="v">웹훅 전달 id(svix-id) 저장. 같은 전달을 두 번 처리하지 않음. anon·authenticated 권한 회수(서비스 롤 전용)</div></div>
-    <div><div class="k">제약 · 버킷</div><div class="v">동의 제약을 <code>privacy_consent or source='email'</code>로 완화. <code>inquiry-attachments</code> 버킷 MIME에 webp·zip·txt 추가(기존 png·jpeg·gif·pdf)</div></div>
-  </div>
-  <ul>
-    <li>이메일 문의는 <code>category='email'</code>, <code>type='general'</code>, <code>user_id=null</code>. 발신자 주소가 회원 이메일과 같아도 <strong>연결하지 않습니다</strong>(주소는 위조 가능).</li>
-    <li>사용자 사이트의 "내 문의 내역"은 <code>user_id</code>로 조회하므로 이메일 문의는 보이지 않습니다(의도).</li>
-    <li>RLS 추가 없음 — 관리자 읽기·쓰기는 기존 <code>inquiries_select_admin</code> · <code>inquiry_replies_admin_all</code>이 열고, 웹훅 insert는 서비스 롤입니다.</li>
-  </ul>
-</section>
+        <section id="s4">
+          <div class="sec-head">
+            <span class="num">04</span>
+            <h2>데이터 모델</h2>
+          </div>
+          <p class="src">supabase/migrations/20260909000300_email_inquiries.sql · 원격 적용 완료</p>
+          <div class="kv">
+            <div>
+              <div class="k">inquiries (추가 열)</div>
+              <div class="v">
+                <code>source</code> web|email(기본 web) · <code>email_from</code> ·
+                <code>email_from_name</code> · <code>email_message_id</code>(유니크, 중복 수신 방지)
+                · <code>email_auth</code> jsonb(spf/dkim/dmarc) · <code>email_thread_key</code>(24자
+                hex, 유니크)
+              </div>
+            </div>
+            <div>
+              <div class="k">inquiry_replies (추가 열)</div>
+              <div class="v">
+                <code>direction</code> outbound|inbound · <code>email_message_id</code>(발송 id,
+                유니크) · <code>delivery_status</code> queued|sent|failed
+              </div>
+            </div>
+            <div>
+              <div class="k">email_inbound_events</div>
+              <div class="v">
+                웹훅 전달 id(svix-id) 저장. 같은 전달을 두 번 처리하지 않음. anon·authenticated 권한
+                회수(서비스 롤 전용)
+              </div>
+            </div>
+            <div>
+              <div class="k">제약 · 버킷</div>
+              <div class="v">
+                동의 제약을 <code>privacy_consent or source='email'</code>로 완화.
+                <code>inquiry-attachments</code> 버킷 MIME에 webp·zip·txt 추가(기존
+                png·jpeg·gif·pdf)
+              </div>
+            </div>
+          </div>
+          <ul>
+            <li>
+              이메일 문의는 <code>category='email'</code>, <code>type='general'</code>,
+              <code>user_id=null</code>. 발신자 주소가 회원 이메일과 같아도
+              <strong>연결하지 않습니다</strong>(주소는 위조 가능).
+            </li>
+            <li>
+              사용자 사이트의 "내 문의 내역"은 <code>user_id</code>로 조회하므로 이메일 문의는
+              보이지 않습니다(의도).
+            </li>
+            <li>
+              RLS 추가 없음 — 관리자 읽기·쓰기는 기존 <code>inquiries_select_admin</code> ·
+              <code>inquiry_replies_admin_all</code>이 열고, 웹훅 insert는 서비스 롤입니다.
+            </li>
+          </ul>
+        </section>
 
-<section id="s5">
-  <div class="sec-head"><span class="num">05</span><h2>수신 파이프라인 — email-inbound</h2></div>
-  <p class="src">supabase/functions/email-inbound/{index,received,attachments,delivery,ack}.ts · 공용 로직 _shared/email/*</p>
-  <div class="conveyor">
-    <div class="stage"><span class="no">1</span><div class="what"><b>Svix 서명 검증</b>헤더 <code>svix-id</code>·<code>svix-timestamp</code>·<code>svix-signature</code>, HMAC-SHA256(<code>id.timestamp.body</code>). 타임스탬프 5분 창.</div><span class="out reject">실패 401</span></div>
-    <div class="stage"><span class="no">2</span><div class="what"><b>전달 중복 제거</b><code>email_inbound_events</code>에 svix-id가 있으면 이미 처리한 재시도.</div><span class="out drop">200 · 무시</span></div>
-    <div class="stage"><span class="no">3</span><div class="what"><b>이벤트 분기</b><code>email.received</code>는 수신 처리, <code>email.sent/delivered/bounced/failed/complained</code>는 답신 행의 <code>delivery_status</code> 갱신.</div><span class="out pass">계속</span></div>
-    <div class="stage"><span class="no">4</span><div class="what"><b>본문 조회</b>웹훅에는 메타데이터만 오므로 <code>GET /emails/receiving/{id}</code>로 text·html·headers를 읽는다(인라인이 있으면 그대로 사용).</div><span class="out pass">계속</span></div>
-    <div class="stage"><span class="no">5</span><div class="what"><b>메일 중복 제거</b><code>email_message_id</code> 유니크 — 같은 메일은 두 번 접수되지 않는다.</div><span class="out drop">200 · 무시</span></div>
-    <div class="stage"><span class="no">6</span><div class="what"><b>자동응답 루프 차단</b><code>Auto-Submitted</code>, <code>Precedence: bulk|junk|list</code>, <code>X-Autoreply</code>, <code>no-reply@</code>, 우리 발신 주소.</div><span class="out drop">200 · 저장 안 함</span></div>
-    <div class="stage"><span class="no">7</span><div class="what"><b>스레드 판정</b>수신 주소 <code>reply+&lt;key&gt;@</code>(1차) 또는 <code>In-Reply-To</code>가 우리가 보낸 id와 일치(2차) → 기존 문의의 <span class="tag in">받은 메일</span>. 상태 답변 완료 → 처리 중. 아니면 새 문의.</div><span class="out pass">계속</span></div>
-    <div class="stage"><span class="no">8</span><div class="what"><b>본문 정제</b>text 우선. html만 있으면 허용 목록으로 정제 후 텍스트화. 20,000자 상한. <code>Authentication-Results</code>에서 spf/dkim/dmarc를 읽어 <code>email_auth</code>에 저장(차단하지 않고 뱃지로만).</div><span class="out pass">계속</span></div>
-    <div class="stage"><span class="no">9</span><div class="what"><b>첨부</b>허용 MIME 7종(png·jpeg·gif·webp·pdf·zip·txt), 개당 10MB, 최대 3개. 만료되는 <code>download_url</code>에서 받아 <code>inquiry-attachments/email/&lt;id&gt;/</code>에 저장. 제외분은 본문 끝에 파일명 표기.</div><span class="out pass">계속</span></div>
-    <div class="stage"><span class="no">10</span><div class="what"><b>레이트 리밋</b>같은 발신자 시간당 20건 초과 → 저장은 하되 <code>closed</code> + 본문 머리 <code>[자동 종료: 과다 수신]</code>.</div><span class="out pass">저장</span></div>
-    <div class="stage"><span class="no">11</span><div class="what"><b>접수 확인 메일</b>(<code>EMAIL_INQUIRY_ACK=on</code>) 발신자당 24시간 1회. 개인정보처리방침 링크 포함.</div><span class="out pass">200</span></div>
-  </div>
-  <div class="callout warn"><span class="icon">재시도</span><p>DB 오류는 500으로 돌려 제공자가 재시도하게 둡니다(5초·5분·30분·2시간·5시간·10시간). 2·5단계의 두 겹 중복 제거가 재시도를 안전하게 만듭니다.</p></div>
-</section>
+        <section id="s5">
+          <div class="sec-head">
+            <span class="num">05</span>
+            <h2>수신 파이프라인 — email-inbound</h2>
+          </div>
+          <p class="src">
+            supabase/functions/email-inbound/{index,received,attachments,delivery,ack}.ts · 공용
+            로직 _shared/email/*
+          </p>
+          <div class="conveyor">
+            <div class="stage">
+              <span class="no">1</span>
+              <div class="what">
+                <b>Svix 서명 검증</b>헤더
+                <code>svix-id</code>·<code>svix-timestamp</code>·<code>svix-signature</code>,
+                HMAC-SHA256(<code>id.timestamp.body</code>). 타임스탬프 5분 창.
+              </div>
+              <span class="out reject">실패 401</span>
+            </div>
+            <div class="stage">
+              <span class="no">2</span>
+              <div class="what">
+                <b>전달 중복 제거</b><code>email_inbound_events</code>에 svix-id가 있으면 이미
+                처리한 재시도.
+              </div>
+              <span class="out drop">200 · 무시</span>
+            </div>
+            <div class="stage">
+              <span class="no">3</span>
+              <div class="what">
+                <b>이벤트 분기</b><code>email.received</code>는 수신 처리,
+                <code>email.sent/delivered/bounced/failed/complained</code>는 답신 행의
+                <code>delivery_status</code> 갱신.
+              </div>
+              <span class="out pass">계속</span>
+            </div>
+            <div class="stage">
+              <span class="no">4</span>
+              <div class="what">
+                <b>본문 조회</b>웹훅에는 메타데이터만 오므로
+                <code>GET /emails/receiving/{id}</code>로 text·html·headers를 읽는다(인라인이 있으면
+                그대로 사용).
+              </div>
+              <span class="out pass">계속</span>
+            </div>
+            <div class="stage">
+              <span class="no">5</span>
+              <div class="what">
+                <b>메일 중복 제거</b><code>email_message_id</code> 유니크 — 같은 메일은 두 번
+                접수되지 않는다.
+              </div>
+              <span class="out drop">200 · 무시</span>
+            </div>
+            <div class="stage">
+              <span class="no">6</span>
+              <div class="what">
+                <b>자동응답 루프 차단</b><code>Auto-Submitted</code>,
+                <code>Precedence: bulk|junk|list</code>, <code>X-Autoreply</code>,
+                <code>no-reply@</code>, 우리 발신 주소.
+              </div>
+              <span class="out drop">200 · 저장 안 함</span>
+            </div>
+            <div class="stage">
+              <span class="no">7</span>
+              <div class="what">
+                <b>스레드 판정</b>수신 주소 <code>reply+&lt;key&gt;@</code>(1차) 또는
+                <code>In-Reply-To</code>가 우리가 보낸 id와 일치(2차) → 기존 문의의
+                <span class="tag in">받은 메일</span>. 상태 답변 완료 → 처리 중. 아니면 새 문의.
+              </div>
+              <span class="out pass">계속</span>
+            </div>
+            <div class="stage">
+              <span class="no">8</span>
+              <div class="what">
+                <b>본문 정제</b>text 우선. html만 있으면 허용 목록으로 정제 후 텍스트화. 20,000자
+                상한. <code>Authentication-Results</code>에서 spf/dkim/dmarc를 읽어
+                <code>email_auth</code>에 저장(차단하지 않고 뱃지로만).
+              </div>
+              <span class="out pass">계속</span>
+            </div>
+            <div class="stage">
+              <span class="no">9</span>
+              <div class="what">
+                <b>첨부</b>허용 MIME 7종(png·jpeg·gif·webp·pdf·zip·txt), 개당 10MB, 최대 3개.
+                만료되는 <code>download_url</code>에서 받아
+                <code>inquiry-attachments/email/&lt;id&gt;/</code>에 저장. 제외분은 본문 끝에 파일명
+                표기.
+              </div>
+              <span class="out pass">계속</span>
+            </div>
+            <div class="stage">
+              <span class="no">10</span>
+              <div class="what">
+                <b>레이트 리밋</b>같은 발신자 시간당 20건 초과 → 저장은 하되 <code>closed</code> +
+                본문 머리 <code>[자동 종료: 과다 수신]</code>.
+              </div>
+              <span class="out pass">저장</span>
+            </div>
+            <div class="stage">
+              <span class="no">11</span>
+              <div class="what">
+                <b>접수 확인 메일</b>(<code>EMAIL_INQUIRY_ACK=on</code>) 발신자당 24시간 1회.
+                개인정보처리방침 링크 포함.
+              </div>
+              <span class="out pass">200</span>
+            </div>
+          </div>
+          <div class="callout warn">
+            <span class="icon">재시도</span>
+            <p>
+              DB 오류는 500으로 돌려 제공자가 재시도하게 둡니다(5초·5분·30분·2시간·5시간·10시간).
+              2·5단계의 두 겹 중복 제거가 재시도를 안전하게 만듭니다.
+            </p>
+          </div>
+        </section>
 
-<section id="s6">
-  <div class="sec-head"><span class="num">06</span><h2>발신 · 스레딩 — email-outbound</h2></div>
-  <div class="diagram"><p class="cap">콘솔 답신 → 저장(queued) → 함수 호출 → Resend 발송 → 상태 이벤트</p>
-<pre class="mermaid">
+        <section id="s6">
+          <div class="sec-head">
+            <span class="num">06</span>
+            <h2>발신 · 스레딩 — email-outbound</h2>
+          </div>
+          <div class="diagram">
+            <p class="cap">콘솔 답신 → 저장(queued) → 함수 호출 → Resend 발송 → 상태 이벤트</p>
+            <pre class="mermaid">
 sequenceDiagram
     actor OP as 운영자
     participant AC as replyToInquiryAction
@@ -295,99 +1128,321 @@ sequenceDiagram
     end
     U->>RS: 답장 (To: reply+key@)
     RS->>OF: email.received → email-inbound 가 스레드에 "받은 메일" 추가
-</pre></div>
-  <ul>
-    <li>제목은 <code>Re: &lt;원제목&gt; [문의 #&lt;짧은 id&gt;]</code>. 본문은 답신 내용 + 서명 푸터.</li>
-    <li>발송 실패는 스레드에 <span class="tag outb">보낸 답신 · 실패</span> 칩과 <strong>다시 보내기</strong>(<code>resendInquiryEmailAction</code>)로 보입니다. 답신은 항상 저장되어 있으므로 설정 뒤에도 보낼 수 있습니다.</li>
-    <li>감사 로그: <code>inquiry.email.reply</code> · <code>inquiry.email.resend</code>.</li>
-  </ul>
-</section>
+</pre>
+          </div>
+          <ul>
+            <li>
+              제목은 <code>Re: &lt;원제목&gt; [문의 #&lt;짧은 id&gt;]</code>. 본문은 답신 내용 +
+              서명 푸터.
+            </li>
+            <li>
+              발송 실패는 스레드에 <span class="tag outb">보낸 답신 · 실패</span> 칩과
+              <strong>다시 보내기</strong>(<code>resendInquiryEmailAction</code>)로 보입니다. 답신은
+              항상 저장되어 있으므로 설정 뒤에도 보낼 수 있습니다.
+            </li>
+            <li>
+              감사 로그: <code>inquiry.email.reply</code> · <code>inquiry.email.resend</code>.
+            </li>
+          </ul>
+        </section>
 
-<section id="s7">
-  <div class="sec-head"><span class="num">07</span><h2>관리자 콘솔 변경</h2></div>
-  <div class="kv">
-    <div><div class="k">사이드바</div><div class="v">고객지원 › <strong>1:1 문의</strong>(<code>?source=web</code>) · <strong>이메일 문의</strong>(<code>?source=email</code>) · FAQ. 쿼리를 인식하는 활성 판정(<code>isPathActive</code> · <code>navBreadcrumb</code>).</div></div>
-    <div><div class="k">목록 InquiryTable · InquiryFilters</div><div class="v">출처 필터(전체/웹/이메일), 출처 뱃지, 이메일 행은 계정 칸에 발신자 주소, SPF/DKIM/DMARC 중 하나라도 fail이면 "인증 실패" 경고 뱃지. 검색은 발신자 주소도 대상.</div></div>
-    <div><div class="k">상세 InquiryEmailMeta</div><div class="v">From(이름·주소) · Message-ID · 수신 시각 · SPF/DKIM/DMARC 칩. 계정 ID·개인정보 동의 행은 숨김.</div></div>
-    <div><div class="k">스레드 InquiryEmailThreadItem</div><div class="v"><span class="tag in">받은 메일</span> 왼쪽 · <span class="tag outb">보낸 답신</span> 오른쪽(강조). 발송 상태 칩과 실패 시 다시 보내기(<code>InquiryResendButton</code>).</div></div>
-    <div><div class="k">답신 폼</div><div class="v">버튼 "이메일로 답신 보내기", 힌트 "사용자의 메일 주소로 발송됩니다. 계정 정보나 개인정보는 적지 마세요." 2,000자 카운터 유지.</div></div>
-    <div><div class="k">권한 · 문구</div><div class="v">모듈 <code>inquiries</code>(read/write). 오류 문구는 개발자 가이드 §7 규약(<code>actionFailure</code>, "…하지 못했습니다 + 다음 행동"). 이메일 문의에는 접수 취소가 없습니다.</div></div>
-  </div>
-</section>
+        <section id="s7">
+          <div class="sec-head">
+            <span class="num">07</span>
+            <h2>관리자 콘솔 변경</h2>
+          </div>
+          <div class="kv">
+            <div>
+              <div class="k">사이드바</div>
+              <div class="v">
+                고객지원 › <strong>1:1 문의</strong>(<code>?source=web</code>) ·
+                <strong>이메일 문의</strong>(<code>?source=email</code>) · FAQ. 쿼리를 인식하는 활성
+                판정(<code>isPathActive</code> · <code>navBreadcrumb</code>).
+              </div>
+            </div>
+            <div>
+              <div class="k">목록 InquiryTable · InquiryFilters</div>
+              <div class="v">
+                출처 필터(전체/웹/이메일), 출처 뱃지, 이메일 행은 계정 칸에 발신자 주소,
+                SPF/DKIM/DMARC 중 하나라도 fail이면 "인증 실패" 경고 뱃지. 검색은 발신자 주소도
+                대상.
+              </div>
+            </div>
+            <div>
+              <div class="k">상세 InquiryEmailMeta</div>
+              <div class="v">
+                From(이름·주소) · Message-ID · 수신 시각 · SPF/DKIM/DMARC 칩. 계정 ID·개인정보 동의
+                행은 숨김.
+              </div>
+            </div>
+            <div>
+              <div class="k">스레드 InquiryEmailThreadItem</div>
+              <div class="v">
+                <span class="tag in">받은 메일</span> 왼쪽 ·
+                <span class="tag outb">보낸 답신</span> 오른쪽(강조). 발송 상태 칩과 실패 시 다시
+                보내기(<code>InquiryResendButton</code>).
+              </div>
+            </div>
+            <div>
+              <div class="k">답신 폼</div>
+              <div class="v">
+                버튼 "이메일로 답신 보내기", 힌트 "사용자의 메일 주소로 발송됩니다. 계정 정보나
+                개인정보는 적지 마세요." 2,000자 카운터 유지.
+              </div>
+            </div>
+            <div>
+              <div class="k">권한 · 문구</div>
+              <div class="v">
+                모듈 <code>inquiries</code>(read/write). 오류 문구는 개발자 가이드 §7
+                규약(<code>actionFailure</code>, "…하지 못했습니다 + 다음 행동"). 이메일 문의에는
+                접수 취소가 없습니다.
+              </div>
+            </div>
+          </div>
+        </section>
 
-<section id="s8">
-  <div class="sec-head"><span class="num">08</span><h2>보안 · 개인정보</h2></div>
-  <div class="tbl"><table>
-    <thead><tr><th>위험</th><th>대응</th></tr></thead>
-    <tbody>
-      <tr><td>위조 웹훅</td><td>Svix 서명 + 5분 타임스탬프 창. 서명 키는 함수 secret</td></tr>
-      <tr><td>재전송 · 중복</td><td>전달 id(<code>email_inbound_events</code>) + 메일 <code>Message-ID</code> 유니크, 두 겹</td></tr>
-      <tr><td>메일 폭탄 · 루프</td><td>자동응답 헤더 무시, 발신자 시간당 20건, 접수 확인 1일 1회, 우리 발신 주소 무시</td></tr>
-      <tr><td>악성 첨부 · HTML</td><td>MIME 허용 목록 7종, 10MB, 3개. HTML은 정제 후 텍스트화, 콘솔은 항상 평문 렌더</td></tr>
-      <tr><td>발신자 위조로 회원 사칭</td><td>메일 주소를 회원 식별에 쓰지 않음(<code>user_id</code> 항상 null). 답신 폼 힌트로 계정 정보 기재 금지</td></tr>
-      <tr><td>서비스 롤 · API 키 노출</td><td>Edge Function secret에만 존재. 관리자 콘솔은 운영자 JWT로 함수를 호출만</td></tr>
-      <tr><td>개인정보 수집 근거</td><td>폼 동의 체크박스가 없으므로 <strong>개인정보처리방침에 이메일 문의 수집 항목·보유 기간 조항 추가</strong>(Legal 모듈로 발행) + 접수 확인 메일에 방침 링크</td></tr>
-      <tr><td>발신 도메인 신뢰</td><td>SPF·DKIM·DMARC 레코드 등록. 없으면 답신이 스팸함으로 감</td></tr>
-    </tbody>
-  </table></div>
-</section>
+        <section id="s8">
+          <div class="sec-head">
+            <span class="num">08</span>
+            <h2>보안 · 개인정보</h2>
+          </div>
+          <div class="tbl">
+            <table>
+              <thead>
+                <tr>
+                  <th>위험</th>
+                  <th>대응</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>위조 웹훅</td>
+                  <td>Svix 서명 + 5분 타임스탬프 창. 서명 키는 함수 secret</td>
+                </tr>
+                <tr>
+                  <td>재전송 · 중복</td>
+                  <td>
+                    전달 id(<code>email_inbound_events</code>) + 메일
+                    <code>Message-ID</code> 유니크, 두 겹
+                  </td>
+                </tr>
+                <tr>
+                  <td>메일 폭탄 · 루프</td>
+                  <td>
+                    자동응답 헤더 무시, 발신자 시간당 20건, 접수 확인 1일 1회, 우리 발신 주소 무시
+                  </td>
+                </tr>
+                <tr>
+                  <td>악성 첨부 · HTML</td>
+                  <td>
+                    MIME 허용 목록 7종, 10MB, 3개. HTML은 정제 후 텍스트화, 콘솔은 항상 평문 렌더
+                  </td>
+                </tr>
+                <tr>
+                  <td>발신자 위조로 회원 사칭</td>
+                  <td>
+                    메일 주소를 회원 식별에 쓰지 않음(<code>user_id</code> 항상 null). 답신 폼
+                    힌트로 계정 정보 기재 금지
+                  </td>
+                </tr>
+                <tr>
+                  <td>서비스 롤 · API 키 노출</td>
+                  <td>Edge Function secret에만 존재. 관리자 콘솔은 운영자 JWT로 함수를 호출만</td>
+                </tr>
+                <tr>
+                  <td>개인정보 수집 근거</td>
+                  <td>
+                    폼 동의 체크박스가 없으므로
+                    <strong>개인정보처리방침에 이메일 문의 수집 항목·보유 기간 조항 추가</strong
+                    >(Legal 모듈로 발행) + 접수 확인 메일에 방침 링크
+                  </td>
+                </tr>
+                <tr>
+                  <td>발신 도메인 신뢰</td>
+                  <td>SPF·DKIM·DMARC 레코드 등록. 없으면 답신이 스팸함으로 감</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-<section id="s9">
-  <div class="sec-head"><span class="num">09</span><h2>활성화 체크리스트</h2></div>
-  <p class="src">docs/admin/EMAIL-INQUIRY-ACTIVATION.md · 메일 주소와 Resend 계정이 준비된 뒤</p>
-  <ol class="steps">
-    <li><strong>결정</strong> — 발신 주소(제안 <code>support@글자월드.co.kr</code>), 회신 도메인(<code>in.글자월드.co.kr</code>), 접수 확인 메일 on/off, 방침 개정. IDN 도메인은 DNS·제공자 화면에서 puny 코드(<code>xn--bj0b33kj0qqva.co.kr</code>)로 보입니다.</li>
-    <li><strong>메일함</strong> — 발신 주소 메일함(또는 별칭) 생성. 일부 메일 클라이언트는 Reply-To 대신 From으로 답장하므로 받을 수 있는 주소여야 합니다. 기존 <code>contact@</code>는 그대로.</li>
-    <li><strong>Resend 도메인 인증</strong> — Domains › Add Domain → Records 탭의 DKIM·SPF(+Return-Path MX)·DMARC 레코드를 DNS에 그대로 추가 → Verified.</li>
-    <li><strong>수신</strong> — Emails › Receiving. 1단계 테스트는 계정에 주어지는 <code>&lt;id&gt;.resend.app</code> 주소로 충분. 자체 도메인은 <code>in.</code> 서브도메인에만 MX 추가(루트 MX는 건드리지 않음).</li>
-    <li><strong>웹훅</strong> — Endpoint <code>https://zafouiovmsfebfkjuyos.supabase.co/functions/v1/email-inbound</code>, 이벤트 <code>email.received</code> + <code>email.sent</code>·<code>delivered</code>·<code>bounced</code>·<code>failed</code>·<code>complained</code>. Signing Secret(<code>whsec_…</code>)과 발신+수신 읽기 권한 API 키(<code>re_…</code>) 복사.</li>
-    <li><strong>secret 설정</strong>(저장소 루트, 재배포 불필요)
-<pre><code>supabase secrets set \
+        <section id="s9">
+          <div class="sec-head">
+            <span class="num">09</span>
+            <h2>활성화 체크리스트</h2>
+          </div>
+          <p class="src">
+            docs/admin/EMAIL-INQUIRY-ACTIVATION.md · 메일 주소와 Resend 계정이 준비된 뒤
+          </p>
+          <ol class="steps">
+            <li>
+              <strong>결정</strong> — 발신 주소(제안 <code>support@gjstory.com</code>), 회신
+              도메인(<code>in.gjstory.com</code>), 접수 확인 메일 on/off, 방침 개정.
+              <code>gjstory.com</code> 은 ASCII 도메인이라 puny 코드 변환 없이 DNS·제공자 화면에
+              그대로 보입니다.
+            </li>
+            <li>
+              <strong>메일함</strong> — 발신 주소 메일함(또는 별칭) 생성. 일부 메일 클라이언트는
+              Reply-To 대신 From으로 답장하므로 받을 수 있는 주소여야 합니다. 기존
+              <code>contact@</code>는 그대로.
+            </li>
+            <li>
+              <strong>Resend 도메인 인증</strong> — Domains › Add Domain → Records 탭의
+              DKIM·SPF(+Return-Path MX)·DMARC 레코드를 DNS에 그대로 추가 → Verified.
+            </li>
+            <li>
+              <strong>수신</strong> — Emails › Receiving. 1단계 테스트는 계정에 주어지는
+              <code>&lt;id&gt;.resend.app</code> 주소로 충분. 자체 도메인은
+              <code>in.</code> 서브도메인에만 MX 추가(루트 MX는 건드리지 않음).
+            </li>
+            <li>
+              <strong>웹훅</strong> — Endpoint
+              <code>https://zafouiovmsfebfkjuyos.supabase.co/functions/v1/email-inbound</code>,
+              이벤트 <code>email.received</code> +
+              <code>email.sent</code
+              >·<code>delivered</code>·<code>bounced</code>·<code>failed</code>·<code>complained</code>.
+              Signing Secret(<code>whsec_…</code>)과 발신+수신 읽기 권한 API 키(<code>re_…</code>)
+              복사.
+            </li>
+            <li>
+              <strong>secret 설정</strong>(저장소 루트, 재배포 불필요)
+              <pre><code>supabase secrets set \
   RESEND_API_KEY='re_…' \
   RESEND_WEBHOOK_SECRET='whsec_…' \
-  EMAIL_FROM='글자월드 고객지원 &lt;support@xn--bj0b33kj0qqva.co.kr&gt;' \
-  EMAIL_REPLY_DOMAIN='in.xn--bj0b33kj0qqva.co.kr' \
+  EMAIL_FROM='글자월드 고객지원 &lt;support@gjstory.com&gt;' \
+  EMAIL_REPLY_DOMAIN='in.gjstory.com' \
   EMAIL_INQUIRY_ACK='on' \
-  CLIENT_SITE_URL='https://maple-web-sigma.vercel.app'</code></pre></li>
-    <li><strong>자동 전달</strong> — <code>contact@</code> 메일함에서 Resend 수신 주소로 전달 규칙 추가("받은편지함에 복사본 유지"). Google Workspace의 전달 확인 메일은 Resend 대시보드 Receiving에서 코드 확인.</li>
-    <li><strong>왕복 테스트</strong> — 외부 메일 발송(PNG 1개 첨부) → 1분 내 콘솔 접수 대기 확인(From·Message-ID·인증 칩·첨부) → 접수 확인 메일 수신 → 콘솔 답신 → 메일 수신(From·Reply-To 확인) → 답장 → 스레드에 받은 메일 + 상태 처리 중 → 존재하지 않는 주소로 답신해 실패 칩·다시 보내기 확인.</li>
-  </ol>
-  <div class="tbl"><table>
-    <thead><tr><th>secret</th><th>필수</th><th>뜻</th></tr></thead>
-    <tbody>
-      <tr><td><code>RESEND_API_KEY</code></td><td>예</td><td>수신 본문 조회 + 발송. 없으면 수신 503(재시도), 발송 503 not_configured</td></tr>
-      <tr><td><code>RESEND_WEBHOOK_SECRET</code></td><td>예</td><td>Svix 서명 키. 없으면 수신 함수는 모든 요청을 503으로 거절</td></tr>
-      <tr><td><code>EMAIL_FROM</code></td><td>예</td><td>답신·접수 확인 메일의 From. 인증된 도메인</td></tr>
-      <tr><td><code>EMAIL_REPLY_DOMAIN</code></td><td>권장</td><td><code>reply+&lt;key&gt;@&lt;값&gt;</code>. 비우면 회신 스레딩은 In-Reply-To에만 의존</td></tr>
-      <tr><td><code>EMAIL_INQUIRY_ACK</code></td><td>선택</td><td><code>on</code>이면 접수 확인 메일(24시간 1회). 기본 꺼짐</td></tr>
-      <tr><td><code>CLIENT_SITE_URL</code></td><td>선택</td><td>접수 확인 메일의 방침 링크 기준 주소</td></tr>
-    </tbody>
-  </table></div>
-  <div class="callout ok"><span class="icon">확인</span><p>안 뜨면 Resend Webhooks › Attempts의 응답 코드를 봅니다. 401 서명 키 불일치 · 503 secret 누락 · 500 DB 오류(Supabase Edge Functions › Logs).</p></div>
-</section>
+  CLIENT_SITE_URL='https://maple-web-sigma.vercel.app'</code></pre>
+            </li>
+            <li>
+              <strong>자동 전달</strong> — <code>contact@</code> 메일함에서 Resend 수신 주소로 전달
+              규칙 추가("받은편지함에 복사본 유지"). Google Workspace의 전달 확인 메일은 Resend
+              대시보드 Receiving에서 코드 확인.
+            </li>
+            <li>
+              <strong>왕복 테스트</strong> — 외부 메일 발송(PNG 1개 첨부) → 1분 내 콘솔 접수 대기
+              확인(From·Message-ID·인증 칩·첨부) → 접수 확인 메일 수신 → 콘솔 답신 → 메일
+              수신(From·Reply-To 확인) → 답장 → 스레드에 받은 메일 + 상태 처리 중 → 존재하지 않는
+              주소로 답신해 실패 칩·다시 보내기 확인.
+            </li>
+          </ol>
+          <div class="tbl">
+            <table>
+              <thead>
+                <tr>
+                  <th>secret</th>
+                  <th>필수</th>
+                  <th>뜻</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>RESEND_API_KEY</code></td>
+                  <td>예</td>
+                  <td>수신 본문 조회 + 발송. 없으면 수신 503(재시도), 발송 503 not_configured</td>
+                </tr>
+                <tr>
+                  <td><code>RESEND_WEBHOOK_SECRET</code></td>
+                  <td>예</td>
+                  <td>Svix 서명 키. 없으면 수신 함수는 모든 요청을 503으로 거절</td>
+                </tr>
+                <tr>
+                  <td><code>EMAIL_FROM</code></td>
+                  <td>예</td>
+                  <td>답신·접수 확인 메일의 From. 인증된 도메인</td>
+                </tr>
+                <tr>
+                  <td><code>EMAIL_REPLY_DOMAIN</code></td>
+                  <td>권장</td>
+                  <td>
+                    <code>reply+&lt;key&gt;@&lt;값&gt;</code>. 비우면 회신 스레딩은 In-Reply-To에만
+                    의존
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>EMAIL_INQUIRY_ACK</code></td>
+                  <td>선택</td>
+                  <td><code>on</code>이면 접수 확인 메일(24시간 1회). 기본 꺼짐</td>
+                </tr>
+                <tr>
+                  <td><code>CLIENT_SITE_URL</code></td>
+                  <td>선택</td>
+                  <td>접수 확인 메일의 방침 링크 기준 주소</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout ok">
+            <span class="icon">확인</span>
+            <p>
+              안 뜨면 Resend Webhooks › Attempts의 응답 코드를 봅니다. 401 서명 키 불일치 · 503
+              secret 누락 · 500 DB 오류(Supabase Edge Functions › Logs).
+            </p>
+          </div>
+        </section>
 
-<section id="s10">
-  <div class="sec-head"><span class="num">10</span><h2>되돌리기 · 운영</h2></div>
-  <div class="tbl"><table>
-    <thead><tr><th>상황</th><th>조치</th></tr></thead>
-    <tbody>
-      <tr><td>수신 중단</td><td>메일함 자동 전달 규칙 삭제. MX를 옮겼다면 MX 원복</td></tr>
-      <tr><td>웹훅만 중단</td><td>Resend에서 엔드포인트 비활성화, 또는 <code>supabase secrets unset RESEND_WEBHOOK_SECRET</code>(503)</td></tr>
-      <tr><td>발송 중단</td><td><code>supabase secrets unset RESEND_API_KEY</code> — 답신은 저장되고 나중에 다시 보내기</td></tr>
-      <tr><td>접수 확인 메일만 중단</td><td><code>supabase secrets set EMAIL_INQUIRY_ACK=off</code></td></tr>
-    </tbody>
-  </table></div>
-  <ul>
-    <li>함수 로그: Supabase 대시보드 › Edge Functions › Logs. 원문 오류는 여기에만 남고 콘솔에는 고정 문구만.</li>
-    <li>정상 문의가 루프 차단에 걸렸다는 민원이 오면 <code>_shared/email/loop-guard.ts</code>의 규칙을 봅니다.</li>
-    <li>Resend 무료 구간 월 3,000건 · 일 100건. 수신이 같은 한도를 쓰는지는 첫 달 사용량으로 확인.</li>
-    <li>이미 접수된 이메일 문의는 1:1 문의와 같은 보유·파기 기준을 따릅니다.</li>
-  </ul>
-</section>
+        <section id="s10">
+          <div class="sec-head">
+            <span class="num">10</span>
+            <h2>되돌리기 · 운영</h2>
+          </div>
+          <div class="tbl">
+            <table>
+              <thead>
+                <tr>
+                  <th>상황</th>
+                  <th>조치</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>수신 중단</td>
+                  <td>메일함 자동 전달 규칙 삭제. MX를 옮겼다면 MX 원복</td>
+                </tr>
+                <tr>
+                  <td>웹훅만 중단</td>
+                  <td>
+                    Resend에서 엔드포인트 비활성화, 또는
+                    <code>supabase secrets unset RESEND_WEBHOOK_SECRET</code>(503)
+                  </td>
+                </tr>
+                <tr>
+                  <td>발송 중단</td>
+                  <td>
+                    <code>supabase secrets unset RESEND_API_KEY</code> — 답신은 저장되고 나중에 다시
+                    보내기
+                  </td>
+                </tr>
+                <tr>
+                  <td>접수 확인 메일만 중단</td>
+                  <td><code>supabase secrets set EMAIL_INQUIRY_ACK=off</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul>
+            <li>
+              함수 로그: Supabase 대시보드 › Edge Functions › Logs. 원문 오류는 여기에만 남고
+              콘솔에는 고정 문구만.
+            </li>
+            <li>
+              정상 문의가 루프 차단에 걸렸다는 민원이 오면
+              <code>_shared/email/loop-guard.ts</code>의 규칙을 봅니다.
+            </li>
+            <li>
+              Resend 무료 구간 월 3,000건 · 일 100건. 수신이 같은 한도를 쓰는지는 첫 달 사용량으로
+              확인.
+            </li>
+            <li>이미 접수된 이메일 문의는 1:1 문의와 같은 보유·파기 기준을 따릅니다.</li>
+          </ul>
+        </section>
 
-<section id="s11">
-  <div class="sec-head"><span class="num">11</span><h2>코드 지도</h2></div>
-<pre><code>supabase/
+        <section id="s11">
+          <div class="sec-head">
+            <span class="num">11</span>
+            <h2>코드 지도</h2>
+          </div>
+          <pre><code>supabase/
   migrations/20260909000300_email_inquiries.sql   열 추가 · 제약 · email_inbound_events · 버킷 MIME
   config.toml                                     [functions.email-inbound] verify_jwt = false (Svix 서명으로 인증)
   functions/
@@ -416,37 +1471,72 @@ admin/
 
 tests/unit/email/*.test.ts               79개 (normalize · loop-guard · thread · content · subject · svix)
 admin/tests/unit/inquiry-email-auth.test.ts · inquiries-validation · nav</code></pre>
-  <p>검증 결과: 클라이언트 856 · 관리자 513 단위 테스트 통과, 타입·린트·Deno 검사 통과. 배포된 두 함수는 서명 없는 요청을 401, 잘못된 본문을 400, 비밀값 없음을 503으로 응답하는 것을 실제 호출로 확인했습니다.</p>
-</section>
+          <p>
+            검증 결과: 클라이언트 856 · 관리자 513 단위 테스트 통과, 타입·린트·Deno 검사 통과.
+            배포된 두 함수는 서명 없는 요청을 401, 잘못된 본문을 400, 비밀값 없음을 503으로 응답하는
+            것을 실제 호출로 확인했습니다.
+          </p>
+        </section>
 
-<section id="s12">
-  <div class="sec-head"><span class="num">12</span><h2>근거 · 가정 · 후속</h2></div>
-  <h3>Resend 공식 문서에서 확인한 것</h3>
-  <ul>
-    <li>수신 이벤트 <code>email.received</code>의 <code>data</code>에는 메타데이터만 있고 본문·헤더는 <code>GET /emails/receiving/{email_id}</code>로 읽는다. 첨부는 <code>…/attachments</code>의 만료되는 <code>download_url</code>.</li>
-    <li>서명 헤더 <code>svix-id</code>·<code>svix-timestamp</code>·<code>svix-signature</code>, HMAC-SHA256(<code>whsec_</code> 뒤 base64 키, <code>id.timestamp.body</code>).</li>
-    <li>발송 <code>POST /emails</code>: <code>reply_to</code>, <code>headers</code>(In-Reply-To·References), <code>Idempotency-Key</code>, 동기 응답 <code>{ id }</code>. <code>User-Agent</code> 없으면 403.</li>
-    <li>웹훅은 at-least-once, 재시도 5초·5분·30분·2시간·5시간·10시간.</li>
-  </ul>
-  <h3>문서에 없어 관용적으로 처리한 것</h3>
-  <ul>
-    <li>SPF/DKIM/DMARC 필드 — <code>Authentication-Results</code> 헤더에서 읽고, 제공자 필드가 있으면 우선. 없으면 뱃지 없음.</li>
-    <li>발송 응답 <code>id</code>와 RFC Message-ID의 관계 — 답신 행에는 발송 id를 저장. 회신 스레딩은 <code>reply+key</code>가 1차, In-Reply-To 매칭은 세 가지 꼴을 모두 시도.</li>
-    <li>웹훅에 본문이 인라인으로 실리면 API 조회 없이 사용(타 제공자 대비).</li>
-  </ul>
-  <h3>후속 과제</h3>
-  <ul>
-    <li>실제 메일 왕복 검증(활성화 후 §09-8).</li>
-    <li>개인정보처리방침 개정본 발행(이메일 문의 수집 항목·보유 기간).</li>
-    <li>2단계: 안정화 뒤 수신 서브도메인 MX 이전, Postmark 등 어댑터 추가 여부.</li>
-  </ul>
-</section>
+        <section id="s12">
+          <div class="sec-head">
+            <span class="num">12</span>
+            <h2>근거 · 가정 · 후속</h2>
+          </div>
+          <h3>Resend 공식 문서에서 확인한 것</h3>
+          <ul>
+            <li>
+              수신 이벤트 <code>email.received</code>의 <code>data</code>에는 메타데이터만 있고
+              본문·헤더는 <code>GET /emails/receiving/{email_id}</code>로 읽는다. 첨부는
+              <code>…/attachments</code>의 만료되는 <code>download_url</code>.
+            </li>
+            <li>
+              서명 헤더
+              <code>svix-id</code>·<code>svix-timestamp</code>·<code>svix-signature</code>,
+              HMAC-SHA256(<code>whsec_</code> 뒤 base64 키, <code>id.timestamp.body</code>).
+            </li>
+            <li>
+              발송 <code>POST /emails</code>: <code>reply_to</code>,
+              <code>headers</code>(In-Reply-To·References), <code>Idempotency-Key</code>, 동기 응답
+              <code>{ id }</code>. <code>User-Agent</code> 없으면 403.
+            </li>
+            <li>웹훅은 at-least-once, 재시도 5초·5분·30분·2시간·5시간·10시간.</li>
+          </ul>
+          <h3>문서에 없어 관용적으로 처리한 것</h3>
+          <ul>
+            <li>
+              SPF/DKIM/DMARC 필드 — <code>Authentication-Results</code> 헤더에서 읽고, 제공자 필드가
+              있으면 우선. 없으면 뱃지 없음.
+            </li>
+            <li>
+              발송 응답 <code>id</code>와 RFC Message-ID의 관계 — 답신 행에는 발송 id를 저장. 회신
+              스레딩은 <code>reply+key</code>가 1차, In-Reply-To 매칭은 세 가지 꼴을 모두 시도.
+            </li>
+            <li>웹훅에 본문이 인라인으로 실리면 API 조회 없이 사용(타 제공자 대비).</li>
+          </ul>
+          <h3>후속 과제</h3>
+          <ul>
+            <li>실제 메일 왕복 검증(활성화 후 §09-8).</li>
+            <li>개인정보처리방침 개정본 발행(이메일 문의 수집 항목·보유 기간).</li>
+            <li>2단계: 안정화 뒤 수신 서브도메인 MX 이전, Postmark 등 어댑터 추가 여부.</li>
+          </ul>
+        </section>
 
-<footer>글자월드 이메일 문의 파이프라인 가이드 · 최종 갱신 2026-09-09 · 기준 커밋 9a7fdae · 원문 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>docs/admin/EMAIL-INQUIRY-ACTIVATION.md</code></footer>
-</main>
-</div>
+        <footer>
+          글자월드 이메일 문의 파이프라인 가이드 · 최종 갱신 2026-09-09 · 기준 커밋 9a7fdae · 원문
+          <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> ·
+          <code>docs/admin/EMAIL-INQUIRY-ACTIVATION.md</code>
+        </footer>
+      </main>
+    </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: true, theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "neutral", fontFamily: "IBM Plex Sans KR, sans-serif" })</script>
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'neutral',
+        fontFamily: 'IBM Plex Sans KR, sans-serif',
+      })
+    </script>
+  </body>
 </html>

@@ -23,26 +23,26 @@ Supabase Edge Function secret 에만 들어가고, 관리자 콘솔(Vercel)에�
 | 항목                   | 기본 제안                                                         | 결정 |
 | ---------------------- | ----------------------------------------------------------------- | ---- |
 | 제공자                 | Resend (발신·수신·웹훅 한 계정)                                   |      |
-| 발신 주소 `EMAIL_FROM` | `글자월드 고객지원 <support@글자월드.co.kr>`                      |      |
-| 회신 도메인            | `in.글자월드.co.kr` (수신 전용 서브도메인, MX 를 Resend 로)       |      |
+| 발신 주소 `EMAIL_FROM` | `글자월드 고객지원 <support@gjstory.com>`                         |      |
+| 회신 도메인            | `in.gjstory.com` (수신 전용 서브도메인, MX 를 Resend 로)          |      |
 | 수신 방식              | 1단계: 기존 `contact@` 메일함의 **자동 전달** → 2단계: MX 이전    |      |
 | 접수 확인 자동 메일    | 켠다(`EMAIL_INQUIRY_ACK=on`, 발신자당 하루 1회)                   |      |
 | 개인정보처리방침 개정  | "이메일 문의 시 수집 항목·보유 기간" 조항 추가 후 Legal 에서 발행 |      |
 
-> IDN 도메인(`글자월드.co.kr`)은 DNS·제공자 화면에서 **puny 코드**(`xn--…`)로 보인다. 같은 도메인이다.
+> `gjstory.com` 은 처음부터 ASCII 도메인이라 DNS·제공자 화면에서 별도 puny 코드 변환 없이 그대로 보인다.
 
 ## 1. 메일함 만들기
 
-1. `support@글자월드.co.kr`(발신 주소) 메일함 또는 별칭을 만든다. 답신의 From 이 되고, 사용자가 우리
+1. `support@gjstory.com`(발신 주소) 메일함 또는 별칭을 만든다. 답신의 From 이 되고, 사용자가 우리
    답신에 답장하면 Reply-To(`reply+…@in.…`)로 가지만 일부 클라이언트는 From 으로 보내므로 **받을 수
    있는 주소**여야 한다.
-2. 이미 있는 `contact@글자월드.co.kr` 은 그대로 둔다(사이트 푸터에 노출 중, `site_settings.contact_email`).
+2. 이미 있는 `care@gjstory.com` 은 그대로 둔다(사이트 푸터에 노출 중, `site_settings.contact_email`).
 
 ## 2. Resend 계정 · 발신 도메인 인증
 
 문서: https://resend.com/docs/add-a-domain · https://resend.com/docs/dashboard/domains/introduction
 
-1. https://resend.com 가입 → Domains › Add Domain → `글자월드.co.kr`(또는 발신 전용 서브도메인).
+1. https://resend.com 가입 → Domains › Add Domain → `gjstory.com`(또는 발신 전용 서브도메인).
 2. **Records 탭에 나오는 레코드를 그대로** DNS 에 추가한다. 값은 도메인마다 생성되므로 이 문서에 적지
    않는다. 종류는 셋이다.
    - **DKIM** — TXT(또는 CNAME) `resend._domainkey.<도메인>`
@@ -56,8 +56,8 @@ Supabase Edge Function secret 에만 들어가고, 관리자 콘솔(Vercel)에�
 
 1. Emails › **Receiving** 탭. 계정마다 `<id>.resend.app` 수신 서브도메인이 바로 주어진다 — **1단계
    테스트는 이 주소로 충분하다**(`test@<id>.resend.app`).
-2. 자체 도메인으로 받으려면 수신 전용 서브도메인 `in.글자월드.co.kr` 의 **MX 레코드**를 Resend 가 안내하는
-   값으로 추가한다. 기존 메일함의 MX(`글자월드.co.kr` 루트)는 건드리지 않는다.
+2. 자체 도메인으로 받으려면 수신 전용 서브도메인 `in.gjstory.com` 의 **MX 레코드**를 Resend 가 안내하는
+   값으로 추가한다. 기존 메일함의 MX(`gjstory.com` 루트)는 건드리지 않는다.
 3. 회신 주소 형식은 `reply+<24자 hex>@<회신 도메인>` 이다. Resend 수신 도메인은 로컬파트 전체를 받으므로
    별도 캐치올 설정이 필요 없다(운영 중 확인).
 
@@ -83,8 +83,8 @@ https://resend.com/docs/dashboard/webhooks/event-types
 supabase secrets set \
   RESEND_API_KEY='re_xxxxxxxxxxxxxxxxxxxxxxxx' \
   RESEND_WEBHOOK_SECRET='whsec_xxxxxxxxxxxxxxxxxxxxxxxx' \
-  EMAIL_FROM='글자월드 고객지원 <support@xn--bj0b33kj0qqva.co.kr>' \
-  EMAIL_REPLY_DOMAIN='in.xn--bj0b33kj0qqva.co.kr' \
+  EMAIL_FROM='글자월드 고객지원 <support@gjstory.com>' \
+  EMAIL_REPLY_DOMAIN='in.gjstory.com' \
   EMAIL_INQUIRY_ACK='on' \
   CLIENT_SITE_URL='https://maple-web-sigma.vercel.app'
 
@@ -105,9 +105,9 @@ secret 을 바꾼 뒤 재배포는 필요 없다(다음 호출부터 반영).
 
 ## 6. 메일함 자동 전달 규칙 (1단계 수신)
 
-`contact@글자월드.co.kr` 메일함(Google Workspace 등)의 **자동 전달**을 Resend 수신 주소로 건다.
+`care@gjstory.com` 메일함(Google Workspace 등)의 **자동 전달**을 Resend 수신 주소로 건다.
 
-- 전달 대상: `inbound@<id>.resend.app` 또는 `contact@in.글자월드.co.kr`(3-2 를 했다면)
+- 전달 대상: `inbound@<id>.resend.app` 또는 `contact@in.gjstory.com`(3-2 를 했다면)
 - "복사본을 받은편지함에 남기기"로 설정한다 — 메일함은 그대로 백업이 된다.
 - Google Workspace 는 전달 대상 주소 확인 메일을 보낸다. 그 확인 메일은 Resend 대시보드 Emails › Receiving
   에서 열어 코드를 확인할 수 있다.
@@ -116,7 +116,7 @@ secret 을 바꾼 뒤 재배포는 필요 없다(다음 호출부터 반영).
 
 ## 7. 왕복 테스트
 
-1. **수신** — 외부 메일(개인 Gmail 등)에서 `contact@글자월드.co.kr` 로 제목·본문·PNG 첨부 1개를 보낸다.
+1. **수신** — 외부 메일(개인 Gmail 등)에서 `care@gjstory.com` 로 제목·본문·PNG 첨부 1개를 보낸다.
 2. 1분 안에 관리자 콘솔 **고객지원 › 이메일 문의** 에 `접수 대기` 로 뜨는지 확인한다.
    - 목록의 계정 칸에 발신자 주소, 상세의 문의 정보에 From · Message-ID · SPF/DKIM/DMARC 칩.
    - 첨부가 `첨부파일` 에 보이면 Storage 업로드까지 정상.
