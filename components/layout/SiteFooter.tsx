@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { FooterColumn } from '@/components/layout/FooterColumn'
 import { FOOTER_CONFIG } from '@/components/layout/footer-variants'
 import { Logo } from '@/components/layout/Logo'
 import { FOOTER_MENU_LINKS, POLICY_LINKS, SITE_TAGLINE, SNS_LINKS } from '@/lib/constants/site'
@@ -10,7 +11,6 @@ import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
 
 import type { FooterVariant } from '@/components/layout/footer-variants'
-import type { NavItem } from '@/lib/constants/site'
 import type { CSSProperties } from 'react'
 
 /** 마스코트 좌표가 기준으로 삼는 시안 폭. */
@@ -106,10 +106,10 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           <div className="flex flex-col gap-10 lg:flex-row lg:gap-[100px]">
             <div className="flex w-full max-w-[309px] flex-col items-start">
               <Logo width={109} height={40} />
-              <p className="mt-[15px] text-body-lg leading-[25px] text-white">{SITE_TAGLINE}</p>
+              <p className="text-body-lg mt-[15px] leading-[25px] text-white">{SITE_TAGLINE}</p>
               <a
                 href={contactEmail.href}
-                className="rounded-pill text-ink hover:bg-sheet mt-[34px] inline-flex bg-white px-10 py-[15px] text-body-lg leading-6 font-semibold transition-colors"
+                className="rounded-pill text-ink hover:bg-sheet text-body-lg mt-[34px] inline-flex bg-white px-10 py-[15px] leading-6 font-semibold transition-colors"
               >
                 {contactEmail.display}
               </a>
@@ -135,35 +135,6 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
         </div>
       </div>
     </footer>
-  )
-}
-
-type FooterColumnProps = {
-  title: string
-  links: readonly NavItem[]
-  className?: string
-}
-
-function FooterColumn({ title, links, className }: FooterColumnProps) {
-  return (
-    <nav aria-label={title} className={className}>
-      <p className="text-label-lg leading-none font-medium text-white">{title}</p>
-      {/* 링크 줄 간격은 시안 기준 28px(글자 16 + 간격 12, lg 이상). 폰에서는 tap-area
-          확장(±14px)이 이웃 링크와 겹치지 않도록 28px 로 벌린다(행 44px). `leading-none` 은
-          인라인 <a> 가 아니라 <li> 스트럿에 걸려야 실제 높이가 줄어든다. */}
-      <ul className="mt-[14px] flex flex-col gap-7 leading-none lg:gap-3">
-        {links.map((link) => (
-          <li key={link.href}>
-            <Link
-              href={link.href}
-              className="tap-area rounded-pill text-ink-soft text-ui-sm whitespace-nowrap transition-colors hover:text-white"
-            >
-              {link.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
   )
 }
 

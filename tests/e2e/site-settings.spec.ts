@@ -40,7 +40,12 @@ test.describe('푸터 — 연락처 · 저작권', () => {
 })
 
 test.describe('소개 페이지', () => {
-  test('should render the creator panel from settings', async ({ page }) => {
+  // 오너 요청: 소개 메뉴는 기본 비활성화(`FEATURES.aboutDisabled`, 기본 ON)라
+  // `/about` 이 `/` 로 리다이렉트된다(`tests/e2e/smoke.spec.ts` 가 그 리다이렉트를
+  // 검증한다). 크리에이터 패널의 DB 연동 자체는 여전히 유효한 회귀 검증이므로
+  // 지우지 않고 skip 으로 남긴다 — 오너가 `NEXT_PUBLIC_FEATURE_ABOUT_DISABLED=false`
+  // 로 다시 열면 이 skip 을 지운다.
+  test.skip('should render the creator panel from settings', async ({ page }) => {
     await page.goto('/about')
 
     // sr-only h1 은 크리에이터 이름으로 만들어진다.

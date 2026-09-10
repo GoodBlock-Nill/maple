@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
 import { Logo } from '@/components/layout/Logo'
-import { matchesPath } from '@/components/layout/navigation'
+import { isNavItemHidden, matchesPath } from '@/components/layout/navigation'
 import { UserAvatar } from '@/components/layout/UserAvatar'
 import { useFocusTrap } from '@/components/layout/use-focus-trap'
 import { Button } from '@/components/ui/Button'
@@ -184,7 +184,7 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
 
         <nav aria-label="모바일 메뉴" className="flex-1 overflow-y-auto px-4 py-5">
           <ul className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.filter((item) => !isNavItemHidden(item.href)).map((item) => {
               const isActive = matchesPath(item.href, pathname)
 
               return (

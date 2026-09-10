@@ -25,4 +25,13 @@ export const FEATURES = {
    */
   guideOpen: process.env.NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON !== 'true',
   rankingOpen: process.env.NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON !== 'true',
+  /**
+   * 소개(About) 메뉴 비활성화(오너 요청 — "버튼이 안 보이게"). 가이드·랭킹과
+   * 반대로 기본값이 ON(비활성화)이다 — 오너가 다시 열고 싶을 때 배포 환경
+   * 변수를 리터럴 `'false'` 로 명시해야만 켜진다(오탈자·빈 문자열로 실수
+   * 노출되지 않도록 화이트리스트 방식). 켜져 있으면 헤더·드로어·푸터 메뉴
+   * 목록에서 소개 항목이 통째로 빠지고(자리표시 없음), `proxy.ts` 가
+   * `/about`(과 하위 경로)을 `/` 로 돌려보낸다.
+   */
+  aboutDisabled: process.env.NEXT_PUBLIC_FEATURE_ABOUT_DISABLED !== 'false',
 } as const

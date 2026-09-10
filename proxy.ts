@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { isWithdrawnProfile } from '@/lib/auth/lifecycle'
+import { FEATURES } from '@/lib/constants/features'
 import { updateSession } from '@/lib/supabase/middleware'
 import {
   ACCOUNT_PATH,
@@ -81,6 +82,17 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/reset-password': '/login',
 }
 
+/**
+ * 비활성화된 소개 메뉴가 가리키는 경로 접두사.
+ *
+ * 가이드·랭킹의 "서비스 준비 중"은 페이지 컴포넌트 안에서 안내 카드로 막지만
+ * (`app/(public)/guide/page.tsx` 참고), 소개는 오너 요청으로 메뉴 항목 자체를
+ * 비활성화한다 — 주소창으로 직접 들어오거나 옛 링크를 눌러도 화면이 남아
+ * 있으면 안 되므로 URL 단계에서 홈으로 돌려보낸다. `FEATURES.aboutDisabled`
+ * 가 꺼지면(오너가 배포 환경 변수를 `false` 로 바꾸면) 이 리다이렉트도 함께 풀린다.
+ */
+const ABOUT_DISABLED_PREFIX = '/about'
+
 const LOGIN_PATH = '/login'
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
@@ -137,6 +149,12 @@ async function readGateProfile(
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl
+
+  if (FEATURES.aboutDisabled && matchesPrefix(pathname, [ABOUT_DISABLED_PREFIX])) {
+    // 302(임시). 오너가 플래그를 다시 켜면 경로도 바로 살아난다.
+    return NextResponse.redirect(new URL('/', request.url), 302)
+  }
+
   const legacyTarget = LEGACY_REDIRECTS[pathname]
 
   if (legacyTarget !== undefined) {

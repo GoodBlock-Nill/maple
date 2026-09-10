@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { matchesPath } from '@/components/layout/navigation'
+import { isNavItemHidden, matchesPath } from '@/components/layout/navigation'
 import { NAV_ITEMS } from '@/lib/constants/site'
 import { cn } from '@/lib/utils/cn'
 
@@ -18,7 +18,7 @@ export function SiteNav({ id, className }: SiteNavProps) {
   return (
     <nav id={id} aria-label="주 메뉴" className={className}>
       <ul className="flex items-center gap-[50px]">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => !isNavItemHidden(item.href)).map((item) => {
           const isActive = matchesPath(item.href, pathname)
 
           return (

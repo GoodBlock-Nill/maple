@@ -7,6 +7,7 @@ import { HeroMediaFrame } from '@/components/about/HeroMediaFrame'
 import { ImageHero } from '@/components/about/ImageHero'
 import { VideoHero } from '@/components/about/VideoHero'
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { FEATURES } from '@/lib/constants/features'
 import { getActiveHeroBanner } from '@/lib/data/hero-banner'
 import { getSiteSettings } from '@/lib/data/site'
 import { resolveAboutVideoUrl, resolveCreator } from '@/lib/data/site-view'
@@ -94,6 +95,9 @@ export const metadata: Metadata = {
   title: '소개',
   description:
     '메이플스토리의 역사를 함께해 온 2세대 최초 만렙 크리에이터가 만든 글자월드를 소개합니다.',
+  // 오너 요청: 메뉴 비활성화 동안은 검색 노출도 막는다. 실제 요청은 proxy.ts 가
+  // `/` 로 돌려보내 이 화면까지 오지 않지만, 태그 자체도 광고하지 않도록 이중으로 막는다.
+  ...(FEATURES.aboutDisabled ? { robots: { index: false, follow: false } } : {}),
 }
 
 /**

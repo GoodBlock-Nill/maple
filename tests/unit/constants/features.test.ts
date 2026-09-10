@@ -10,6 +10,7 @@ const FEATURE_ENV_KEYS = [
   'NEXT_PUBLIC_FEATURE_POSTING_REQUIRES_MSW',
   'NEXT_PUBLIC_FEATURE_GUIDE_COMING_SOON',
   'NEXT_PUBLIC_FEATURE_RANKING_COMING_SOON',
+  'NEXT_PUBLIC_FEATURE_ABOUT_DISABLED',
 ] as const
 
 type FeatureEnvKey = (typeof FEATURE_ENV_KEYS)[number]
@@ -149,5 +150,47 @@ describe('FEATURES.guideOpen / FEATURES.rankingOpen', () => {
     // Assert
     expect(FEATURES.rankingOpen).toBe(false)
     expect(FEATURES.guideOpen).toBe(true)
+  })
+})
+
+// 오너 요청: 소개 메뉴는 가이드·랭킹과 반대로 기본값이 ON(비활성화)이다 —
+// 오너가 다시 열고 싶을 때만 배포 환경 변수를 리터럴 'false' 로 바꾼다.
+describe('FEATURES.aboutDisabled', () => {
+  it('should default to disabled when the env var is unset', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({})
+
+    // Assert
+    expect(FEATURES.aboutDisabled).toBe(true)
+  })
+
+  it('should stay disabled for any value other than the literal string "false"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_ABOUT_DISABLED: 'true',
+    })
+
+    // Assert
+    expect(FEATURES.aboutDisabled).toBe(true)
+  })
+
+  it('should stay disabled for an empty string or typo values', async () => {
+    // Arrange & Act
+    const emptyString = await importFeaturesWithEnv({ NEXT_PUBLIC_FEATURE_ABOUT_DISABLED: '' })
+    const typo = await importFeaturesWithEnv({ NEXT_PUBLIC_FEATURE_ABOUT_DISABLED: 'False' })
+
+    // Assert
+    expect(emptyString.FEATURES.aboutDisabled).toBe(true)
+    expect(typo.FEATURES.aboutDisabled).toBe(true)
+  })
+
+  it('should turn off only when set to the literal string "false"', async () => {
+    // Arrange & Act
+    const { FEATURES } = await importFeaturesWithEnv({
+      NEXT_PUBLIC_FEATURE_ABOUT_DISABLED: 'false',
+    })
+
+    // Assert
+    expect(FEATURES.aboutDisabled).toBe(false)
   })
 })
