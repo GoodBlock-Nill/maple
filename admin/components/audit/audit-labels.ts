@@ -21,6 +21,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   post: '게시글',
   comment: '댓글',
   inquiry: '1:1 문의',
+  inquiry_category: '문의 카테고리',
   coupon: '쿠폰',
   coupon_redemption: '쿠폰 등록',
   faq: 'FAQ',
@@ -45,6 +46,7 @@ const VERB_LABELS: Record<string, string> = {
   restore: '복구',
   answer: '답변',
   reply: '답변',
+  resend: '재발송',
   resolve: '처리',
   dismiss: '기각',
   suspend: '정지',
@@ -61,6 +63,7 @@ const VERB_LABELS: Record<string, string> = {
 const SEGMENT_LABELS: Record<string, string> = {
   snapshot: '스냅샷',
   promote_existing: '기존 계정 승격',
+  email: '이메일',
 }
 
 /**

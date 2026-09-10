@@ -132,6 +132,18 @@ describe('audit labels', () => {
     expect(auditActionLabel('mystery.blorp')).toBe('mystery.blorp')
   })
 
+  it('should translate inquiry_category actions', () => {
+    expect(auditActionLabel('inquiry_category.create')).toBe('문의 카테고리 등록')
+    expect(auditActionLabel('inquiry_category.update')).toBe('문의 카테고리 수정')
+    expect(auditActionLabel('inquiry_category.delete')).toBe('문의 카테고리 삭제')
+    expect(auditActionLabel('inquiry_category.reorder')).toBe('문의 카테고리 순서 변경')
+  })
+
+  it('should translate inquiry email actions with translated middle segment', () => {
+    expect(auditActionLabel('inquiry.email.reply')).toBe('1:1 문의 이메일 답변')
+    expect(auditActionLabel('inquiry.email.resend')).toBe('1:1 문의 이메일 재발송')
+  })
+
   it('should translate target tables', () => {
     expect(auditTableLabel('gacha_items')).toBe('확률형 아이템')
     expect(auditTableLabel(null)).toBe('-')
