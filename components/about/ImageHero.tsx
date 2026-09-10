@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { HeroMediaFrame } from '@/components/about/HeroMediaFrame'
+import { HeroMediaFrame, MEDIA_BOX_SIZES } from '@/components/about/HeroMediaFrame'
 
 /**
  * 소개 페이지 상단 영역의 **이미지 배너** 버전.
@@ -28,7 +28,7 @@ export function ImageHero({ src, alt, href }: ImageHeroProps) {
       alt={alt}
       fill
       priority
-      sizes="(min-width: 1024px) 804px, 100vw"
+      sizes={MEDIA_BOX_SIZES}
       unoptimized={isExternal}
       className="object-cover object-center"
     />

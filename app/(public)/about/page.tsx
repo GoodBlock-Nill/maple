@@ -1,7 +1,9 @@
 import Image from 'next/image'
 
 import { CreatorPanel } from '@/components/about/CreatorPanel'
+import { resolveAboutHeroMedia } from '@/components/about/hero-media'
 import { HeroCharacters } from '@/components/about/HeroCharacters'
+import { HeroMediaFrame } from '@/components/about/HeroMediaFrame'
 import { ImageHero } from '@/components/about/ImageHero'
 import { VideoHero } from '@/components/about/VideoHero'
 import { SiteFooter } from '@/components/layout/SiteFooter'
@@ -9,14 +11,11 @@ import { getActiveHeroBanner } from '@/lib/data/hero-banner'
 import { getSiteSettings } from '@/lib/data/site'
 import { resolveAboutVideoUrl, resolveCreator } from '@/lib/data/site-view'
 import { hasPublicAsset } from '@/lib/utils/asset'
-import { extractYoutubeId, youtubeThumbnail } from '@/lib/utils/youtube'
 
-import type { HeroBanner } from '@/types/domain'
+import type { AboutHeroMedia } from '@/components/about/hero-media'
 import type { Metadata } from 'next'
 import type { CSSProperties } from 'react'
 
-/** 유튜브 URL 을 읽지 못했을 때 히어로가 쓰는 로컬 스틸. */
-const FALLBACK_STILL = '/images/about/video-still.png'
 const BAND_BG = '/images/about/band-bg.png'
 const VINES = '/images/about/vines.png'
 
@@ -24,17 +23,28 @@ const VINES = '/images/about/vines.png'
 const DESIGN_WIDTH = 1440
 
 /**
- * 소개 페이지는 1440 한 장으로 그려진 전면 일러스트다.
+ * 소개 페이지는 1440 한 장으로 그려진 전면 일러스트다. 씬은 폭 기준을 둘 쓴다.
  *
- * 좁은 화면에서 좌표를 그대로 쓰면 캐릭터 행·덩굴·풀숲이 화면 밖으로 밀려
- * 잘리므로, 모든 세로 좌표를 프레임 폭(`--about-w`)에 비례시켜 통째로 축소한다.
- * 1440 이상에서는 `--about-w` 가 1440 으로 고정되어 시안 좌표와 정확히 같다.
+ * - `--hero-w`: **뷰포트 폭 전체**. 히어로 배경·캐릭터·영상 상자·덩굴·밴드 배경처럼
+ *   화면을 가로로 꽉 채우는 일러스트 레이어가 따른다. 1440 아래에서는 좌표를
+ *   그대로 쓰면 캐릭터 행·덩굴·풀숲이 화면 밖으로 밀려 잘리므로 통째로 줄고,
+ *   1440 위에서는 같은 비율로 커진다 — 예전처럼 1440 에서 멈추면 넓은 화면에서
+ *   일러스트만 가운데 작게 남고 좌우에 빈 띠가 생긴다(오너 요청 2026-09-10).
+ * - `--about-w`: 시안 폭(1440)에서 멈추는 본문 기준. 양피지 패널처럼 글을 담아
+ *   무한정 넓어지면 안 되는 블록이 따른다.
+ *
+ * `100cqw` 는 씬 자신의 콘텐츠 폭이라 세로 스크롤바를 뺀 값이다 — `100vw` 로 잡으면
+ * 스크롤바 폭만큼 넘쳐 가로 스크롤이 생긴다(씬 자신을 컨테이너로 선언해 둔다).
  */
-const SCENE_STYLE = { '--about-w': `min(100vw, ${DESIGN_WIDTH}px)` } as CSSProperties
+const SCENE_STYLE = {
+  containerType: 'inline-size',
+  '--hero-w': '100cqw',
+  '--about-w': `min(100cqw, ${DESIGN_WIDTH}px)`,
+} as CSSProperties
 
-/** 시안 좌표(px)를 프레임 폭 비례 길이로 바꾼다. */
+/** 시안 좌표(px)를 히어로(뷰포트) 폭 비례 길이로 바꾼다. */
 function scaled(px: number): string {
-  return `calc(var(--about-w, ${DESIGN_WIDTH}px) * ${(px / DESIGN_WIDTH).toFixed(7)})`
+  return `calc(var(--hero-w, ${DESIGN_WIDTH}px) * ${(px / DESIGN_WIDTH).toFixed(7)})`
 }
 
 /** 밴드 상단의 페이지 좌표. 아래 오프셋은 모두 이 값을 뺀 값이다. */
@@ -87,38 +97,24 @@ export const metadata: Metadata = {
 }
 
 /**
- * 상단 영역(1440×763)에 무엇을 그릴지 정한다.
- *
- * 1) 관리자 히어로 배너(사이트 설정)가 노출 중이면 그것이 우선한다 — 유튜브면
- *    영상 히어로, 이미지면 이미지 히어로.
- * 2) 배너가 없으면 기존처럼 `site_settings.youtube_url` 의 영상을 튼다. 채널
- *    주소처럼 영상 ID 를 못 뽑는 값이면 null 이 되어 중립 포스터로 떨어진다 —
- *    무관한 영상을 자동으로 트는 것보다 안전하다.
+ * 상단 영역(시안 1440×763)을 그린다. 무엇을 그릴지는 `resolveAboutHeroMedia` 가 정한다.
+ * 영상도 이미지도 없으면 시안의 히어로 배경만 남고 상자·재생 버튼은 그리지 않는다.
  */
-function renderTopMedia(banner: HeroBanner | null, defaultVideoUrl: string, title: string) {
-  if (banner !== null && banner.mediaType === 'image' && banner.imageUrl !== null) {
-    return <ImageHero src={banner.imageUrl} alt={banner.title} href={banner.linkUrl} />
+function renderTopMedia(media: AboutHeroMedia | null) {
+  if (media === null) {
+    return <HeroMediaFrame />
   }
 
-  if (banner !== null && banner.mediaType === 'youtube' && banner.youtubeId !== null) {
-    return (
-      <VideoHero
-        videoId={banner.youtubeId}
-        thumbnail={banner.imageUrl ?? youtubeThumbnail(banner.youtubeId)}
-        title={banner.title}
-        isExternalThumbnail={banner.imageUrl !== null && !banner.imageUrl.startsWith('/')}
-      />
-    )
+  if (media.kind === 'image') {
+    return <ImageHero src={media.src} alt={media.alt} href={media.href} />
   }
-
-  const videoId = extractYoutubeId(defaultVideoUrl)
-  const localStill = hasPublicAsset(FALLBACK_STILL) ? FALLBACK_STILL : null
 
   return (
     <VideoHero
-      videoId={videoId}
-      thumbnail={videoId === null ? localStill : youtubeThumbnail(videoId)}
-      title={title}
+      videoId={media.videoId}
+      thumbnail={media.thumbnail}
+      title={media.title}
+      isExternalThumbnail={media.isExternalThumbnail}
     />
   )
 }
@@ -126,15 +122,16 @@ function renderTopMedia(banner: HeroBanner | null, defaultVideoUrl: string, titl
 export default async function AboutPage(_props: PageProps<'/about'>) {
   const [settings, banner] = await Promise.all([getSiteSettings(), getActiveHeroBanner()])
   const creator = resolveCreator(settings)
+  const media = resolveAboutHeroMedia(
+    banner,
+    resolveAboutVideoUrl(settings),
+    `${creator.name} 크리에이터 소개 영상`,
+  )
 
   return (
     <>
       <div style={SCENE_STYLE} className="relative isolate overflow-x-clip bg-[#bfb9ff]">
-        {renderTopMedia(
-          banner,
-          resolveAboutVideoUrl(settings),
-          `${creator.name} 크리에이터 소개 영상`,
-        )}
+        {renderTopMedia(media)}
 
         {/* 보라→시안 돌 질감 밴드. */}
         <div className="relative bg-[linear-gradient(180deg,#bfb9ff_0%,#bfb9ff_50%,#76eaff_100%)]">
@@ -149,9 +146,12 @@ export default async function AboutPage(_props: PageProps<'/about'>) {
                 alt=""
                 width={1440}
                 height={1328}
+                /* 원본 2880 (2x). sizes 가 없으면 뷰포트가 아무리 넓어도 1x 후보
+                   (1920)만 골라 넓은 화면에서 흐려진다. */
+                sizes="100vw"
                 style={{ top: BAND_BG_TOP }}
-                /* 1440 이하에서는 프레임과 같은 폭, 그 이상에서는 화면을 채운다
-                   (좌우에 밋밋한 그라데이션 띠가 남지 않게). */
+                /* 어느 폭에서도 화면을 가로로 채운다(좌우에 밋밋한 그라데이션 띠가
+                   남지 않게). 높이는 폭에 따라와 히어로 풀숲과 이음매가 유지된다. */
                 className="absolute left-0 h-auto w-full max-w-none"
               />
             ) : null}
@@ -164,30 +164,31 @@ export default async function AboutPage(_props: PageProps<'/about'>) {
             <div
               aria-hidden
               style={{ top: VINES_TOP }}
-              className="pointer-events-none absolute left-1/2 hidden w-[var(--about-w)] -translate-x-1/2 lg:block"
+              className="pointer-events-none absolute inset-x-0 hidden lg:block"
             >
               <Image
                 src={VINES}
                 alt=""
                 width={1440}
                 height={472}
+                /* TODO(asset): 원본이 1440 1x 라 1920 이상에서는 확대된다. 2x 재수출 필요. */
+                sizes="100vw"
                 className="h-auto w-full max-w-none"
               />
             </div>
           ) : null}
 
-          {/* 시안: 양피지 패널 page x 59, w 1341 · 패널 아래 39px 뒤 푸터. */}
-          <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-20 pb-16 lg:pt-[calc(var(--about-w)*0.2534722)] lg:pr-[calc(var(--about-w)*0.0277778)] lg:pb-[calc(var(--about-w)*0.0270833)] lg:pl-[calc(var(--about-w)*0.0409722)]">
+          {/* 시안: 양피지 패널 page x 59, w 1341 · 패널 아래 39px 뒤 푸터.
+              위 여백만 `--hero-w` 를 따른다 — 위에 깔린 덩굴·검은 잎사귀가 뷰포트
+              폭에 비례해 내려오므로, 1440 에 고정하면 넓은 화면에서 패널이 그 위로 올라탄다. */}
+          <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-20 pb-16 lg:pt-[calc(var(--hero-w)*0.2534722)] lg:pr-[calc(var(--about-w)*0.0277778)] lg:pb-[calc(var(--about-w)*0.0270833)] lg:pl-[calc(var(--about-w)*0.0409722)]">
             <CreatorPanel creator={creator} />
           </div>
         </div>
 
         {/* 나무 단상·풀숲(정지 PNG) + 캐릭터 7종(GIF). 히어로 위에서 시작해
             밴드 위쪽까지 이어진다. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-0 left-1/2 hidden w-[var(--about-w)] -translate-x-1/2 lg:block"
-        >
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 hidden lg:block">
           <HeroCharacters />
         </div>
 
