@@ -100,6 +100,13 @@ export default async function DashboardPage(props: PageProps<'/'>) {
           testId="stat-inquiries"
         />
         <StatCard
+          label="처리 대기 쿠폰"
+          value={format(metrics.pendingCouponRedemptions)}
+          hint="지급·거절을 아직 기록하지 않은 등록"
+          tone={isPositive(metrics.pendingCouponRedemptions) ? 'warn' : 'default'}
+          testId="stat-coupon-redemptions"
+        />
+        <StatCard
           label="탈퇴 대기"
           value={format(metrics.withdrawnPending)}
           hint={`파기까지 ${PURGE_RETENTION_DAYS}일 · 그 안에 재로그인하면 복구`}

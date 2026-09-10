@@ -1,6 +1,6 @@
 # 글자월드 관리자 콘솔 개발자 가이드
 
-최종 갱신 2026-09-09 · 기준 커밋 a7b6c82
+최종 갱신 2026-09-10 · 기준 커밋 a7b6c82 (+ 쿠폰 모듈 20260910000100)
 
 이 문서는 관리자 콘솔(`admin/`)과 사용자 사이트의 연동을 **유지·확장**하는 개발팀을 위한 것이다. 기획 의도는 `docs/admin/PLAN.md`, 코드 배치는 `admin/README.md`, DB 계약은 `supabase/README.md` 가 각각 단일 출처다. 이 문서는 그 셋을 잇는 실무 지도다. 모든 항목에 근거 파일 경로를 붙였다.
 
@@ -139,11 +139,11 @@ sequenceDiagram
 - `guard_admin_roles()` — 시스템 역할의 수정·삭제 차단, `key`/`is_system`/`created_at` 불변화. `postgres` · `supabase_admin` 만 빠져나간다.
 - `guard_profile_role()` — **SECURITY INVOKER 여야 한다.** DEFINER 로 두면 `current_user` 가 함수 소유자로 평가되어 가드가 통째로 사라진다(20260908001000 의 사고). 슈퍼어드민이 아닌 관리자는 `role` · `admin_role_id` 를 바꿀 수 없다.
 
-### 3.2 모듈 13개
+### 3.2 모듈 14개
 
 단일 출처는 `admin/lib/auth/permissions.ts` 의 `ADMIN_MODULES` 다. 마이그레이션의 시드 권한과 키가 같아야 한다.
 
-`dashboard` · `news` · `community` · `reports` · `members` · `inquiries` · `faqs` · `gacha` · `rankings` · `settings` · `legal` · `admins` · `audit`
+`dashboard` · `news` · `community` · `reports` · `members` · `coupons` · `inquiries` · `faqs` · `gacha` · `rankings` · `settings` · `legal` · `admins` · `audit`
 
 - 등급은 `none < read < write`(`LEVEL_RANK`). `write` 는 `read` 를 포함한다.
 - 값이 없는 모듈은 `none` 으로 읽는다(`permissionLevel`) — **닫힘 실패**. 모듈을 새로 추가해도 기존 역할에서 자동으로 열리지 않는다.
@@ -194,6 +194,7 @@ flowchart TD
 | `community` | `/community/posts`<br>`/community/comments` | `read`                                                   | `admin/lib/actions/moderation-actions.ts`                                |
 | `reports`   | `/reports`                                  | `read`                                                   | `admin/lib/actions/reports-actions.ts`                                   |
 | `members`   | `/members`<br>`/members/[id]`               | `read`                                                   | `admin/lib/actions/members-actions.ts`                                   |
+| `coupons`   | `/coupons`<br>`/coupons/[id]`               | `read`                                                   | `coupons-actions.ts` · `coupon-redemption-actions.ts`                    |
 | `inquiries` | `/inquiries`<br>`/inquiries/[id]`           | `read`                                                   | `admin/lib/actions/inquiries-actions.ts`                                 |
 | `faqs`      | `/faqs`                                     | `read`                                                   | `admin/lib/actions/faqs-actions.ts`                                      |
 | `gacha`     | `/gacha`<br>`/gacha/new`<br>`/gacha/[id]`   | `read`<br>`write`<br>`write`                             | `admin/lib/actions/gacha-actions.ts`                                     |
@@ -401,6 +402,10 @@ sequenceDiagram
 (`inquiries.source = 'email'`, 2026-09-09)는 `user_id` 가 null 이라 사용자 사이트에 아예 보이지 않는다 —
 발송은 Edge Function `email-outbound` 가 한다(`docs/admin/EMAIL-INQUIRY-PLAN.md`).
 
+**쿠폰에도 태그가 없다.** 쿠폰 목록은 RLS 에 일반 사용자 select 정책이 아예 없어 사용자 사이트가
+읽지 못하고(코드 열거 차단), 마이페이지의 등록 폼과 내 등록 내역은 세션마다 직접 읽는다. 태울 태그가
+없으므로 `coupons-actions.ts` 는 `revalidateClient()` 를 부르지 않는다 — 문의와 같은 이유다.
+
 ### 5.4 "관리자 화면 표시 ↔ 실제 클라이언트"
 
 **히어로 배너.** 사용자 사이트가 읽는 자리는 홈이 아니라 **소개 화면(`/about`) 상단 영상 영역** 이다(`lib/data/hero-banner.ts` 헤더 · 2026-09-09 제품 결정). 규칙은 `sort_order` 오름차순 · 노출 기간(`starts_at`~`ends_at`) 안 · `is_active` 인 것들 중 **첫 한 장** 이다(`admin/components/settings/HeroBannerList.tsx`). 배너가 없으면 사이트 설정의 유튜브 주소 영상이 나온다. 기간 판정은 캐시 시점 기준이라 최대 300초 늦게 바뀔 수 있다. 배너 종류는 `hero_banners.media_type`(`image` | `youtube`)이고, DB 제약 `hero_banners_media_shape` 가 종류와 주소의 불일치를 원천 차단한다 (`supabase/migrations/20260909000100_hero_banner_media.sql`).
@@ -423,6 +428,129 @@ is_published and deleted_at is null and not is_hidden and published_at <= now()
 관리자 화면의 상태 뱃지는 같은 조건을 `deriveNewsVisibility()`(`admin/lib/constants/news.ts`)로 계산해 `visible` / `scheduled` / `invisible` 로 보여 준다. 숨김(`is_hidden`, 운영 행위)과 소프트 삭제(`deleted_at`, 작성자 행위)는 다른 축이다. 숨긴 글은 **작성자에게도 보이지 않는다** (`posts_select_own` 에 `and not is_hidden`) — 예외를 두면 운영 조치가 무의미해진다.
 
 **랭킹.** 사용자 사이트는 `rank_type` 별 **가장 최근 `snapshot_at`** 만 읽는다. 그래서 새 스냅샷을 넣는 순간 교체가 끝난 것과 같고, "지우고 넣기"를 하지 않는다(`rankings-actions.ts` 헤더).
+
+### 5.5 쿠폰 — 발급(관리자) · 등록(사용자) · 지급(게임팀)
+
+`supabase/migrations/20260910000100_coupons.sql` · `admin/lib/{data,actions,validation}/coupon*` ·
+`admin/components/coupons/**`
+
+**콘솔은 아이템을 주지 않는다.** 실제 지급은 게임 안에서 사람이 하고, 콘솔은 "누가 무엇을
+신청했는지"를 모아 두었다가 처리 결과를 되받아 적는다. 이 전제가 화면 문구와 상태 이름을 전부
+결정한다 — '지급완료'는 지급하는 버튼이 아니라 **지급했다고 적는** 버튼이다.
+
+```mermaid
+sequenceDiagram
+    actor A as 운영자
+    participant C as /coupons
+    participant DB as coupons · coupon_redemptions
+    actor U as 사용자(마이페이지)
+    participant R as redeem_coupon() RPC
+    actor G as 게임팀
+
+    A->>C: 쿠폰 만들기(코드 · 기간 · 한도)
+    C->>DB: insert coupons (+ coupon.create 감사 로그)
+    A-->>U: 코드 배포(공지 · 배너)
+    U->>R: 코드 + MSW UID + 프로필 코드
+    R->>DB: 검증 후 insert coupon_redemptions (status=pending)
+    R-->>U: { ok, coupon_name, reward_note } 또는 { ok:false, code }
+    A->>C: 상세에서 'UID 복사'
+    C-->>G: UID 목록(줄바꿈 구분)
+    G-->>A: 지급 완료 통보
+    A->>DB: 지급완료/거절 (+ coupon_redemption.status 감사 로그)
+```
+
+#### 테이블
+
+| 테이블                      | 요점                                                                                                                                                                                                                                                |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `public.coupons`            | `code`(표기용) + `code_normalized`(**생성 열** = `upper` + 공백 제거, 유니크). 하이픈은 남긴다. `name`≤60 · `description`≤300 · `reward_note`≤200 · `starts_at`/`ends_at` · `max_redemptions`(null=무제한) · `per_user_limit`(기본 1) · `is_active` |
+| `public.coupon_redemptions` | `coupon_id`(**on delete restrict**) · `user_id`(on delete set null) · `nickname_snapshot` · `msw_uid` · `msw_profile_code` · `status` · `admin_note`≤300 · `processed_by`/`processed_at`                                                            |
+
+`user_id` 가 끊겨도 행은 남는다 — 게임팀과의 대사(對査) 근거는 프로필이 아니라 **MSW UID** 다.
+그래서 닉네임은 등록 시점 스냅샷으로 함께 저장한다. `coupon_id` 를 `restrict` 로 둔 것은 화면 규칙
+("등록 0건일 때만 삭제")의 두 번째 겹이다 — REST 직접 호출에도 같은 규칙이 걸린다.
+
+#### RLS
+
+- `coupons` — 관리자만 읽고 쓴다(`is_admin()`). **일반 사용자용 select 정책을 두지 않는다.** 두면
+  무작위 대입으로 코드 목록을 만들 수 있다. 사용자는 오직 RPC 로만 코드에 닿는다.
+- `coupon_redemptions` — 본인 행 select · 관리자 select/update. `authenticated` 에 **insert 권한
+  자체를 주지 않는다**(정책이 아니라 권한으로 막는다).
+
+#### RPC `public.redeem_coupon(p_code, p_msw_uid, p_msw_profile_code)`
+
+SECURITY DEFINER · `authenticated` 전용. **예외를 던지지 않는다** — PostgREST 가 예외를 4xx/5xx 로
+바꾸며 제약명·컬럼명을 그대로 실어 보내기 때문이다. 성공·실패 모두 200 + jsonb 다.
+
+```jsonc
+// 성공
+{ "ok": true, "redemption_id": "…", "coupon_name": "…", "reward_note": "성장의 비약 10개" }
+// 실패
+{ "ok": false, "code": "expired" }
+```
+
+| `code`                     | 뜻                                                   |
+| -------------------------- | ---------------------------------------------------- |
+| `unauthorized`             | 로그인하지 않았다(`auth.uid()` 없음)                 |
+| `withdrawn`                | 탈퇴 대기(`profiles.deleted_at`)이거나 프로필이 없다 |
+| `suspended`                | 제재 중(`suspended_until > now()`)                   |
+| `invalid_code`             | 없는 코드 **또는 비활성 코드**                       |
+| `invalid_msw_uid`          | UID 형식 오류(숫자 10~20자)                          |
+| `invalid_msw_profile_code` | 프로필 코드 형식 오류(`#` + 영문 소문자·숫자 4~10자) |
+| `msw_uid_taken`            | 다른 회원이 이미 그 UID 를 쓰고 있다                 |
+| `msw_profile_code_taken`   | 다른 회원이 이미 그 프로필 코드를 쓰고 있다          |
+| `not_started`              | `starts_at` 이전                                     |
+| `expired`                  | `ends_at` 이후(종료 시각 **정각 포함**)              |
+| `limit_reached`            | 전체 한도 소진                                       |
+| `already_redeemed`         | 이 회원의 `per_user_limit` 소진                      |
+
+- 없는 코드와 꺼진 코드를 모두 `invalid_code` 로 묶는 것은 의도다. "비활성 쿠폰입니다"는 코드의
+  존재를 알려 주는 문장이다.
+- 입력은 관대하게 받는다 — 코드는 대문자화 + 공백 제거, 프로필 코드는 소문자화·트림.
+- **거절(rejected)된 등록은 한도를 소모하지 않는다**(전체·1인 모두). 잘못 온 신청을 거절했는데
+  수량이 줄면 정상 신청자가 만나는 "품절"을 설명할 수 없다.
+- 프로필의 `msw_uid` · `msw_profile_code` 가 **비어 있을 때만** 채운다. 이미 다른 값이 있으면
+  덮어쓰지 않는다 — 계정 연동은 "내 정보"에서 바꾸는 일이다.
+- 동시 등록은 쿠폰 행 `for update` 로 직렬화한다. 잠그지 않으면 마지막 한 장을 두 사람이 통과한다.
+- **감사 로그를 남기지 않는다.** RPC 는 사용자 행위이고 `audit_logs` 는 관리자 행위 기록이다.
+
+#### 상태
+
+- 쿠폰(파생값, 컬럼 아님): `active` 활성 · `scheduled` 시작 전 · `expired` 기간 만료 · `inactive` 비활성.
+  판정은 `deriveCouponStatus()`(`admin/lib/validation/coupons.ts`)가 소유하고, 목록 필터는 같은 식을
+  **질의 조건**으로 옮긴다(`admin/lib/data/coupons.ts` `applyStatusFilter`) — 화면에서 거르면
+  페이지네이션이 어긋난다.
+- 등록 내역: `pending` 처리 대기 → `delivered` 지급 완료 | `rejected` 거절. **되돌리는 전이는 없다**
+  (`COUPON_REDEMPTION_TRANSITIONS`). 게임 안에서 회수할 수단이 콘솔에 없어, 상태만 되돌리면 두 번
+  지급된다. 잘못 눌렀다면 메모에 사유를 적는 것이 정확한 기록이다.
+
+#### 권한 · 화면
+
+- 모듈 `coupons`(라벨 **쿠폰**). 페이지는 `read`, 쓰기 액션은 전부 `requirePermission('coupons','write')`.
+  마이그레이션이 `super_admin` 에 `coupons: write` 를 채운다 — 채우지 않으면 값이 없는 모듈은
+  `none` 으로 읽혀(닫힘 실패) **슈퍼어드민도** 화면을 열지 못한다(§3.6-1·2).
+- `/coupons` 목록 — 코드 · 이름 · 기간 · 사용 n/한도 · 상태 · 생성일. 등록·수정은 다이얼로그,
+  비활성화·활성화·삭제는 확인 다이얼로그(§7.4). **하드 삭제는 등록 0건일 때만** 버튼이 나온다.
+- `/coupons/[id]` 상세 — 요약 + 등록 내역 표(닉네임 · MSW UID · 프로필 코드 · 등록일 · 상태 ·
+  처리자/처리일 · 메모) + 상태 탭 + **UID 복사**. 복사는 CSV 가 아니라 줄바꿈 구분 평문이다 —
+  받는 쪽이 사내 도구 입력칸에 그대로 붙여 넣는다. 대상은 **지금 화면에 보이는 목록**이라
+  "대기 건만 넘긴다"가 탭 하나로 끝난다.
+- 코드 자동 생성은 `0/O/1/I` 를 뺀 32자 알파벳으로 `GLZA-XXXX-XXXX` 를 만든다
+  (`admin/lib/validation/coupon-code.ts`). 손으로 적은 코드에는 경고만 하고 막지 않는다 — 이미
+  인쇄물에 나간 코드를 그대로 등록해야 할 때가 있다.
+- 대시보드에 **처리 대기 쿠폰** 카드가 있다(집계 실패는 `null` → "집계 실패", §7.6).
+- 회원 상세에는 **이름** · **마케팅 수신거부** · **쿠폰 등록 n건**이 읽기 전용으로 붙는다. 세 값 모두
+  바꾸는 주체는 본인(마이페이지)이다.
+
+#### 함께 추가된 `profiles` 세 칸 · `avatars` 버킷
+
+`name`(≤20) · `marketing_sms_opt_out` · `marketing_email_opt_out` 은 마이페이지 시안(§4)이 요구한다.
+`guard_profile_role()` 은 **블랙리스트**라 새 컬럼은 그대로 소유자에게 열린다 — 트리거·정책을 고칠
+것이 없다. 다만 `name` 은 개인정보라 `purge_withdrawn_profiles()` 의 삭제 목록에 함께 넣었고,
+콘솔의 즉시 파기(`member-lifecycle-actions.ts` `purgeProfile()`)도 같이 고쳤다(§10-11).
+
+스토리지 버킷 `avatars` 는 공개 읽기 + `<uid>/` 접두사 쓰기(10MiB · png/jpeg/webp)로
+`post-images`(20260908000800)와 같은 형태다.
 
 ---
 
@@ -458,6 +586,7 @@ await writeAuditLog(actor.id, {
 | 신고        | `report.resolve` `report.dismiss`                                                                                                                         |
 | 회원        | `member.suspend` `member.unsuspend` `member.nickname.force_change`                                                                                        |
 | 문의        | `inquiry.status` `inquiry.reply`                                                                                                                          |
+| 쿠폰        | `coupon.create` `coupon.update` `coupon.activate` `coupon.deactivate` `coupon.delete` `coupon_redemption.status`                                          |
 | FAQ         | `faq.create` `faq.update` `faq.delete` `faq.publish` `faq.reorder`                                                                                        |
 | 가이드      | `gacha.create` `gacha.update` `gacha.delete`                                                                                                              |
 | 랭킹        | `rankings.snapshot.rollback`                                                                                                                              |
@@ -681,7 +810,8 @@ pnpm typecheck && pnpm --filter @maple/admin typecheck
     Edge Function `purge-withdrawn` 은 **기준 기간을 넘긴 프로필을 한꺼번에** 훑는 배치 경로다
     (크론이 빈 본문 + `x-cron-secret` 으로 호출한다 — 대상 지정 인자가 없다). 그래서
     `purgeMemberNowAction`(`admin/lib/actions/member-lifecycle-actions.ts`)은 서비스 롤로 **한 명분만**
-    같은 필드를 지우고 `auth.admin.deleteUser` 까지 부른다. 배치 함수가 지우는 컬럼이 바뀌면 이 액션도
+    같은 필드를 지우고 `auth.admin.deleteUser` 까지 부른다. 목록은 2026-09-10 에 `name` 이 늘어
+    양쪽을 함께 고쳤다(20260910000100 §8). 배치 함수가 지우는 컬럼이 바뀌면 이 액션도
     함께 고쳐야 한다 — 어긋나면 관리자 경로로 지운 계정에만 개인정보가 남는다
     (`admin/tests/unit/member-lifecycle-actions.test.ts` 가 필드 목록을 고정한다).
 12. **탈퇴는 감사 로그에 두 줄이 남는다.** `profiles.deleted_at` 이 바뀌면 DB 트리거

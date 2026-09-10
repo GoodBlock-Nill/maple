@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { StatCard } from '@/components/ui/StatCard'
 import { hasPermission } from '@/lib/auth/permissions'
 import { requirePermission } from '@/lib/auth/require-admin'
+import { countRedemptionsByMember } from '@/lib/data/coupon-redemptions'
 import { getMember, getMemberActivity } from '@/lib/data/members'
 import { getReportsFor } from '@/lib/data/reports'
 import { buildHref, firstValue } from '@/lib/utils/table-query'
@@ -38,7 +39,13 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
   }
 
   const lifecycle = memberLifecycle(member)
-  const activity = await getMemberActivity(id)
+  /* 쿠폰 등록 건수는 `coupons` 모듈을 읽을 수 있는 운영자에게만 보여 준다 — 회원
+     권한만 가진 사람에게 다른 모듈의 수치를 흘리지 않는다. RLS 는 이 구분을 모른다. */
+  const canReadCoupons = hasPermission(actor.permissions, 'coupons', 'read')
+  const [activity, couponCount] = await Promise.all([
+    getMemberActivity(id),
+    canReadCoupons ? countRedemptionsByMember(id) : Promise.resolve(null),
+  ])
   const requested = firstValue(searchParams.tab)
   const tab: ActivityTab = ACTIVITY_TABS.includes(requested as ActivityTab)
     ? (requested as ActivityTab)
@@ -71,6 +78,7 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
 
       <MemberProfileCard
         member={member}
+        couponCount={couponCount}
         actions={
           canWrite ? (
             <MemberActions

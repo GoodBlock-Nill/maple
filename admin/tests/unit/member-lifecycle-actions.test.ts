@@ -213,6 +213,7 @@ describe('purgeMemberNowAction — 파기', () => {
     expect(update?.payload).toMatchObject({
       email: null,
       nickname: ANONYMIZED,
+      name: null,
       avatar_url: null,
       provider_id: null,
       msw_uid: null,

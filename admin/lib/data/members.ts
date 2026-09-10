@@ -14,6 +14,8 @@ import type { MemberListParams } from '@/lib/validation/member-list-params'
 export type MemberProfile = {
   id: string
   nickname: string
+  /** 마이페이지에서 본인이 적는 실명(선택). 없으면 null. */
+  name: string | null
   email: string | null
   avatarUrl: string | null
   provider: string | null
@@ -23,6 +25,10 @@ export type MemberProfile = {
   suspensionReason: string | null
   mswUid: string | null
   mswProfileCode: string | null
+  /** 마케팅 SMS 수신거부. `true` 면 보내지 않는다. 바꾸는 주체는 본인뿐이다. */
+  marketingSmsOptOut: boolean
+  /** 마케팅 이메일 수신거부. */
+  marketingEmailOptOut: boolean
   /** 탈퇴 요청 시각. `null` 이면 정상. 판정은 `lib/validation/member-status.ts` 가 한다. */
   deletedAt: string | null
   /** 개인정보 파기 시각. `null` 이면 아직 파기 전(보존 기간 중이거나 정상). */
@@ -86,13 +92,14 @@ const ACTIVITY_LIMIT = 20
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const PROFILE_COLUMNS =
-  'id, nickname, email, avatar_url, provider, provider_id, role, suspended_until, suspension_reason, msw_uid, msw_profile_code, deleted_at, purged_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, created_at, updated_at'
+  'id, nickname, name, email, avatar_url, provider, provider_id, role, suspended_until, suspension_reason, msw_uid, msw_profile_code, marketing_sms_opt_out, marketing_email_opt_out, deleted_at, purged_at, terms_agreed_at, privacy_agreed_at, age_confirmed_at, created_at, updated_at'
 
 /* 컬럼 목록과 타입이 어긋나면 매퍼가 조용히 undefined 를 넣는다. 스키마에서 파생시킨다. */
 type ProfileRow = Pick<
   Tables<'profiles'>,
   | 'id'
   | 'nickname'
+  | 'name'
   | 'email'
   | 'avatar_url'
   | 'provider'
@@ -102,6 +109,8 @@ type ProfileRow = Pick<
   | 'suspension_reason'
   | 'msw_uid'
   | 'msw_profile_code'
+  | 'marketing_sms_opt_out'
+  | 'marketing_email_opt_out'
   | 'deleted_at'
   | 'purged_at'
   | 'terms_agreed_at'
@@ -115,6 +124,7 @@ function toProfile(row: ProfileRow): MemberProfile {
   return {
     id: row.id,
     nickname: row.nickname,
+    name: row.name,
     email: row.email,
     avatarUrl: row.avatar_url,
     provider: row.provider,
@@ -124,6 +134,8 @@ function toProfile(row: ProfileRow): MemberProfile {
     suspensionReason: row.suspension_reason,
     mswUid: row.msw_uid,
     mswProfileCode: row.msw_profile_code,
+    marketingSmsOptOut: row.marketing_sms_opt_out,
+    marketingEmailOptOut: row.marketing_email_opt_out,
     deletedAt: row.deleted_at,
     purgedAt: row.purged_at,
     termsAgreedAt: row.terms_agreed_at,

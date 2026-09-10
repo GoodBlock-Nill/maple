@@ -16,6 +16,7 @@ export type NavIcon =
   | 'community'
   | 'report'
   | 'member'
+  | 'coupon'
   | 'support'
   | 'guide'
   | 'ranking'
@@ -67,6 +68,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   { label: '신고', href: '/reports', icon: 'report', module: 'reports' },
   { label: '회원', href: '/members', icon: 'member', module: 'members' },
+  /* 쿠폰은 회원 바로 아래다 — 등록 내역이 회원과 1:1 로 이어지고, 운영자가 두 화면을
+     오가며 같은 사람을 확인한다. 하위 메뉴를 두지 않는 이유는 '쿠폰 만들기'가 별도
+     라우트가 아니라 목록 위의 다이얼로그이기 때문이다(FAQ 와 같은 형태). */
+  { label: '쿠폰', href: '/coupons', icon: 'coupon', module: 'coupons' },
   {
     label: '고객지원',
     href: '/inquiries?source=web',

@@ -35,6 +35,7 @@ export const ADMIN_MODULES = [
   { key: 'community', label: '커뮤니티' },
   { key: 'reports', label: '신고' },
   { key: 'members', label: '회원' },
+  { key: 'coupons', label: '쿠폰' },
   { key: 'inquiries', label: '1:1 문의' },
   { key: 'faqs', label: 'FAQ' },
   { key: 'gacha', label: '가이드' },

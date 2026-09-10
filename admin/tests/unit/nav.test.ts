@@ -13,6 +13,7 @@ describe('NAV_ITEMS', () => {
       '/community/posts',
       '/reports',
       '/members',
+      '/coupons',
       '/inquiries?source=web',
       '/gacha',
       '/rankings',
@@ -130,9 +131,11 @@ describe('isPathActive', () => {
 })
 
 describe('isNavItemActive', () => {
-  const dashboard = NAV_ITEMS[0]
-  const community = NAV_ITEMS[2]
-  const support = NAV_ITEMS[5]
+  /* 인덱스로 집으면 메뉴를 하나 끼워 넣을 때마다 무관한 테스트가 깨진다.
+     이 블록이 확인하려는 것은 자리 번호가 아니라 활성 판정 규칙이다. */
+  const dashboard = NAV_ITEMS.find((item) => item.href === '/')
+  const community = NAV_ITEMS.find((item) => item.href === '/community/posts')
+  const support = NAV_ITEMS.find((item) => item.href.startsWith('/inquiries'))
 
   it('should treat the dashboard as active only on the exact root path', () => {
     expect(dashboard).toBeDefined()

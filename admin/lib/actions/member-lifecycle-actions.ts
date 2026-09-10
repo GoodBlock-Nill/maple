@@ -134,6 +134,8 @@ async function purgeProfile(memberId: string, purgedAt: string): Promise<string 
     .update({
       email: null,
       nickname,
+      // 이름은 본인이 적은 실명이다. 배치 함수(purge_withdrawn_profiles)와 목록이 같아야 한다.
+      name: null,
       avatar_url: null,
       provider_id: null,
       msw_uid: null,

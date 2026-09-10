@@ -23,9 +23,12 @@ import type { ReactNode } from 'react'
 export function MemberProfileCard({
   member,
   actions,
+  couponCount = null,
 }: {
   member: MemberProfile
   actions: ReactNode
+  /** 쿠폰 등록 건수. 집계가 깨졌거나 권한이 없으면 `null` 이고 칸을 그리지 않는다. */
+  couponCount?: number | null
 }) {
   /* 현재 시각 비교는 헬퍼에 맡긴다. 컴포넌트 본문에서 `Date.now()` 를 직접 부르면
      렌더가 순수하지 않게 되고(react-hooks/purity) 값이 렌더마다 흔들린다. */
@@ -52,6 +55,8 @@ export function MemberProfileCard({
 
       <CardBody className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
         <MemberField label="회원 ID" value={member.id} mono />
+        {/* 이름은 본인이 마이페이지에서 적는 선택 항목이다. 파기된 계정에서는 지워진다. */}
+        {!isPurged && <MemberField label="이름" value={member.name ?? '-'} />}
         <MemberField label="가입일" value={formatDateTime(member.createdAt)} />
         <MemberField label="최근 수정" value={formatDateTime(member.updatedAt)} />
         <MemberField label="가입 방식" value={member.provider ?? 'email'} />
@@ -66,6 +71,19 @@ export function MemberProfileCard({
               mono
             />
           </>
+        )}
+        {!isPurged && (
+          <MemberField
+            label="마케팅 수신거부"
+            value={
+              <OptOutValue sms={member.marketingSmsOptOut} email={member.marketingEmailOptOut} />
+            }
+          />
+        )}
+        {/* 쿠폰 등록 건수. `/coupons` 는 쿠폰 목록이라 회원으로 좁힐 자리가 없다 —
+            링크 대신 숫자만 두고, 상세는 쿠폰별 화면에서 본다. */}
+        {couponCount !== null && (
+          <MemberField label="쿠폰 등록" value={`${couponCount.toLocaleString('ko-KR')}건`} />
         )}
         <MemberField label="이용약관 동의" value={formatDateTime(member.termsAgreedAt)} />
         <MemberField label="개인정보 동의" value={formatDateTime(member.privacyAgreedAt)} />
@@ -90,6 +108,21 @@ export function MemberProfileCard({
       </CardBody>
     </Card>
   )
+}
+
+/**
+ * 마케팅 수신거부 두 칸.
+ *
+ * `false / false` 를 "-" 로 두면 "설정한 적 없음"과 "수신 동의"가 같은 모양이 된다.
+ * 광고성 정보 수신 여부는 분쟁이 나는 값이라, 지금 상태를 늘 말로 적는다.
+ * 값을 바꾸는 주체는 본인뿐이므로 이 카드에서는 읽기 전용이다.
+ */
+function OptOutValue({ sms, email }: { sms: boolean; email: boolean }) {
+  if (!sms && !email) {
+    return <span className="text-muted">없음 (SMS · 이메일 모두 수신)</span>
+  }
+
+  return <span>{[sms ? 'SMS' : null, email ? '이메일' : null].filter(Boolean).join(' · ')}</span>
 }
 
 /**

@@ -21,6 +21,8 @@ const DOMAIN_LABELS: Record<string, string> = {
   post: '게시글',
   comment: '댓글',
   inquiry: '1:1 문의',
+  coupon: '쿠폰',
+  coupon_redemption: '쿠폰 등록',
   faq: 'FAQ',
   report: '신고',
   legal: '약관',
@@ -50,6 +52,9 @@ const VERB_LABELS: Record<string, string> = {
   invite: '초대',
   revoke: '권한 회수',
   rename: '닉네임 변경',
+  activate: '활성화',
+  deactivate: '비활성화',
+  status: '상태 변경',
 }
 
 /** `rankings.snapshot.apply` 처럼 중간 마디가 있는 경우의 보조 표기. */
@@ -70,6 +75,10 @@ const ACTION_LABELS: Record<string, string> = {
   'member.restore': '탈퇴 복구(본인)',
   'member.purge': '개인정보 파기',
   'member.force_withdraw': '강제 탈퇴',
+  /* 조합으로 만들면 `coupon.create`(쿠폰 등록)와 `coupon_redemption.*`(쿠폰 등록 …)이
+     같은 말이 되어 목록에서 구분되지 않는다. 만드는 쪽은 '생성'으로 떼어 놓는다. */
+  'coupon.create': '쿠폰 생성',
+  'coupon_redemption.status': '쿠폰 등록 처리',
 }
 
 export function auditActionLabel(action: string): string {
@@ -104,6 +113,8 @@ const TABLE_LABELS: Record<string, string> = {
   comments: '댓글',
   inquiries: '1:1 문의',
   inquiry_replies: '문의 답변',
+  coupons: '쿠폰',
+  coupon_redemptions: '쿠폰 등록',
   faqs: 'FAQ',
   reports: '신고',
   admin_invites: '관리자 초대',

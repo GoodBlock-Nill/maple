@@ -42,6 +42,13 @@ const PATHS: Record<NavIcon, ReactElement> = {
       <path d="M5 20a7 7 0 0 1 14 0" />
     </>
   ),
+  /* 티켓 — 한쪽에 절취선을 둔 쿠폰. 마이페이지 쿠폰 탭 아이콘과 같은 은유다. */
+  coupon: (
+    <>
+      <path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4V7Z" />
+      <path d="M13 7v2M13 11v2M13 15v2" />
+    </>
+  ),
   support: (
     <>
       <path d="M4 6h16v10H4z" />

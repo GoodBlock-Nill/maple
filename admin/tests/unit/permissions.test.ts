@@ -91,6 +91,7 @@ describe('ADMIN_MODULES', () => {
       'community',
       'reports',
       'members',
+      'coupons',
       'inquiries',
       'faqs',
       'gacha',

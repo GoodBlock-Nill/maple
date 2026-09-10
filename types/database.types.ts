@@ -251,6 +251,129 @@ export type Database = {
           },
         ]
       }
+      coupon_redemptions: {
+        Row: {
+          admin_note: string | null
+          coupon_id: string
+          created_at: string
+          id: string
+          msw_profile_code: string
+          msw_uid: string
+          nickname_snapshot: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          coupon_id: string
+          created_at?: string
+          id?: string
+          msw_profile_code: string
+          msw_uid: string
+          nickname_snapshot?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          coupon_id?: string
+          created_at?: string
+          id?: string
+          msw_profile_code?: string
+          msw_uid?: string
+          nickname_snapshot?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          code_normalized: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          name: string
+          per_user_limit: number
+          reward_note: string | null
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          code_normalized?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          name: string
+          per_user_limit?: number
+          reward_note?: string | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          code_normalized?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          name?: string
+          per_user_limit?: number
+          reward_note?: string | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_inbound_events: {
         Row: {
           id: string
@@ -730,8 +853,11 @@ export type Database = {
           deleted_at: string | null
           email: string | null
           id: string
+          marketing_email_opt_out: boolean
+          marketing_sms_opt_out: boolean
           msw_profile_code: string | null
           msw_uid: string | null
+          name: string | null
           nickname: string
           privacy_agreed_at: string | null
           provider: string | null
@@ -751,8 +877,11 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           id: string
+          marketing_email_opt_out?: boolean
+          marketing_sms_opt_out?: boolean
           msw_profile_code?: string | null
           msw_uid?: string | null
+          name?: string | null
           nickname: string
           privacy_agreed_at?: string | null
           provider?: string | null
@@ -772,8 +901,11 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           id?: string
+          marketing_email_opt_out?: boolean
+          marketing_sms_opt_out?: boolean
           msw_profile_code?: string | null
           msw_uid?: string | null
+          name?: string | null
           nickname?: string
           privacy_agreed_at?: string | null
           provider?: string | null
@@ -977,6 +1109,10 @@ export type Database = {
       purge_withdrawn_profiles: {
         Args: { p_cutoff?: string }
         Returns: string[]
+      }
+      redeem_coupon: {
+        Args: { p_code: string; p_msw_profile_code: string; p_msw_uid: string }
+        Returns: Json
       }
       replace_ranking_snapshot: {
         Args: {
