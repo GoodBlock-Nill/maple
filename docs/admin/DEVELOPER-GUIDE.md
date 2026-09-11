@@ -549,6 +549,40 @@ is_published and deleted_at is null and not is_hidden and published_at <= now()
 
 관리자 화면의 상태 뱃지는 같은 조건을 `deriveNewsVisibility()`(`admin/lib/constants/news.ts`)로 계산해 `visible` / `scheduled` / `invisible` 로 보여 준다. 숨김(`is_hidden`, 운영 행위)과 소프트 삭제(`deleted_at`, 작성자 행위)는 다른 축이다. 숨긴 글은 **작성자에게도 보이지 않는다** (`posts_select_own` 에 `and not is_hidden`) — 예외를 두면 운영 조치가 무의미해진다.
 
+**뉴스 카테고리 템플릿(2026-09-11).** 카테고리마다 "글을 어떻게 시작할 것인가"를 미리 적어 두는 양식이다
+(`public.news_category_templates`, 마이그레이션 `20260911000100`). 관리 화면은 `/news/templates`(뉴스 목록 헤더의
+**카테고리 템플릿** 버튼 · 사이드바 뉴스 하위), 권한은 뉴스와 같은 `news` 모듈이되 **`write` 전용**이다 — 편집·되돌리기
+말고는 아무것도 없는 화면이라 읽기 전용 관리자에게 열어 줄 이유가 없다.
+
+| 열                                | 쓰임                                                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `category_key` (+ 고정값 `board`) | `board_categories(board='news')` 의 key. 복합 FK 라 없는 카테고리를 가리킬 수 없고, 카테고리당 한 행뿐이다. |
+| `title_template`                  | 제목 칸이 **비어 있을 때만** 채운다(≤ 100자 = `NEWS_TITLE_MAX`).                                            |
+| `summary_template`                | 요약 칸이 비어 있을 때만 채운다(≤ 200자 = `NEWS_SUMMARY_MAX`).                                              |
+| `body_template`                   | 본문 프리필(Tiptap HTML · ≤ 20000자). 뉴스 본문과 **같은 정제기**를 통과한 값만 저장된다.                   |
+| `is_active`                       | 끄면 그 카테고리에서 아무것도 채우지 않는다. 문안은 그대로 남는다.                                          |
+
+- **상한이 글 필드와 같은 숫자인 것이 핵심이다.** 템플릿이 더 관대하면 "불러왔는데 글로는 저장할 수 없는" 문안이
+  만들어진다(DB CHECK · zod · `maxLength` 가 모두 같은 값).
+- **화면 문구는 '카테고리' 로 통일한다(2026-09-11 운영 요청).** 코드·주석에서 쓰던 '말머리'는 관리자 화면에 쓰지 않는다 —
+  같은 것을 두 이름으로 부르면 운영자가 다른 기능으로 읽는다(뉴스 목록 필터·표 머리글이 이미 '카테고리' 다).
+- **자리표시자는 치환되지 않는다.** `{{날짜}}` 는 운영자가 직접 고쳐 쓰는 평범한 글자다. DB·앱 어디에도 치환 코드가
+  없고, 화면의 안내 문구가 그 사실을 적는다.
+- **프리필 동작**(`admin/lib/utils/news-template-prefill.ts` · `components/news/use-news-template-prefill.ts`).
+  새 글에서 카테고리를 고르면 제목·요약은 **빈 칸에만**, 본문은 갈아 끼운다. 본문이 비었거나 **직전에 적용한 템플릿
+  그대로**면 묻지 않고, 운영자가 쓴 내용이 남아 있을 때만 확인 모달("작성 중인 내용이 지워집니다")을 세운다. 취소해도
+  카테고리 변경은 남는다 — 바꾸려던 것은 글의 카테고리이고 템플릿은 그에 딸린 편의다. **기존 글 수정 화면에서는 자동
+  적용하지 않는다**(발행된 본문이 카테고리 한 번 바꿨다고 덮이면 복구할 길이 없다). 대신 '템플릿 불러오기' 버튼이 같은
+  확인을 거쳐 적용한다.
+- **본문은 상위 상태로 올리지 않는다.** 판정이 필요한 순간에만 폼의 숨은 input 에서 읽고(`readEditorBody`), 갈아 끼울
+  때만 `key` 를 올려 `PostEditor` 를 다시 마운트한다 — 에디터를 제어 컴포넌트로 만들면 한 글자마다 리렌더되어 한글
+  조합이 끊긴다.
+- **기본값으로 되돌리기.** 원본은 코드 상수(`admin/lib/constants/news-templates.ts`)이고, 마이그레이션 시드와 **같은
+  생성기에서 나온 같은 문자열**이라 되돌린 결과가 첫 배포 상태와 정확히 같다. 되돌리는 것은 문안 셋뿐이고 사용 여부는
+  건드리지 않는다. 성공하면 목록으로 돌아간다 — 편집 폼의 비제어 입력이 옛 문안을 계속 보여 주지 않게 하려는 것이다.
+- **사용자 사이트 캐시는 태우지 않는다.** 템플릿은 글이 되기 전의 양식이고, RLS 가 관리자에게만 열려 있어 사용자
+  사이트는 이 테이블을 읽지도 못한다(`revalidatePath` 로 관리자 화면 셋만 비운다 — 목록 · 편집 · 새 글 작성).
+
 **랭킹.** 사용자 사이트는 `rank_type` 별 **가장 최근 `snapshot_at`** 만 읽는다. 그래서 새 스냅샷을 넣는 순간 교체가 끝난 것과 같고, "지우고 넣기"를 하지 않는다(`rankings-actions.ts` 헤더).
 
 ### 5.5 쿠폰 — 발급(관리자) · 등록(사용자) · 지급(게임팀)
@@ -726,7 +760,7 @@ await writeAuditLog(actor.id, {
 
 | 도메인      | action                                                                                                                                                    |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 뉴스        | `news.create` `news.update` `news.publish` `news.hide` `news.unhide` `news.delete` `news.restore`                                                         |
+| 뉴스        | `news.create` `news.update` `news.publish` `news.hide` `news.unhide` `news.delete` `news.restore` `news_template.update` `news_template.reset`            |
 | 커뮤니티    | `community.post.hide` `…unhide` `…delete` `…restore` `…bulk_hide` — `community.comment.*` 도 같은 접미사                                                  |
 | 신고        | `report.resolve` `report.dismiss`                                                                                                                         |
 | 회원        | `member.suspend` `member.unsuspend` `member.nickname.force_change`                                                                                        |
