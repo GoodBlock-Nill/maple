@@ -21,8 +21,12 @@ export type CommunityCategory = 'chat' | 'question' | 'info'
  */
 export type ContentFormat = 'markdown' | 'html'
 
-/** 뉴스 목록 표시 방식. URL `?view=` 값과 1:1 대응한다. */
-export type NewsView = 'tile' | 'detail' | 'row'
+/**
+ * 뉴스 목록 표시 방식. URL `?view=` 값과 1:1 대응한다.
+ * 시안 v2 는 카드형(2열 그리드)과 가로형(행 목록) 둘만 쓴다 — 썸네일 자산이
+ * 없는 "자세히" 뷰는 범위에서 빠졌다(docs/reference/figma/news-v2-spec.md §1).
+ */
+export type NewsView = 'card' | 'list'
 
 /** 커뮤니티 정렬 기준. URL `?sort=` 값과 1:1 대응한다. */
 export type CommunitySort = 'latest' | 'views' | 'likes'
@@ -40,6 +44,8 @@ export type NewsItem = {
   publishedAt: string
   /** 작성자가 본문을 실제로 고친 시각. 한 번도 고치지 않았으면 null 이다. */
   editedAt: string | null
+  /** 목록 상단 고정 글. 카드형 목록에서만 핀 아이콘으로 드러난다(정렬은 데이터 계층 담당). */
+  isPinned: boolean
   /** 없으면 목록의 "자세히" 뷰에서 회색 플레이스홀더를 그린다. */
   thumbnail?: string
 }

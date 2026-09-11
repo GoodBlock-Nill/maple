@@ -28,6 +28,7 @@ const newsRow: NewsSource = {
   view_count: 160745,
   published_at: '2026-05-19T10:00:00.000Z',
   edited_at: null,
+  is_pinned: false,
 }
 
 const postRow: PostSource = {
@@ -61,6 +62,7 @@ describe('toNewsItem', () => {
       views: 160745,
       publishedAt: newsRow.published_at,
       editedAt: null,
+      isPinned: false,
     })
   })
 
@@ -80,6 +82,14 @@ describe('toNewsItem', () => {
 
     // Assert
     expect(result.contentFormat).toBe('markdown')
+  })
+
+  it('should carry the pinned flag so the card view can show the pin icon', () => {
+    // Arrange & Act
+    const result = toNewsItem({ ...newsRow, is_pinned: true })
+
+    // Assert
+    expect(result.isPinned).toBe(true)
   })
 
   it('should carry the edited timestamp so the detail view can show a "수정됨" marker', () => {

@@ -60,6 +60,7 @@ export type NewsSource = Pick<
   | 'view_count'
   | 'published_at'
   | 'edited_at'
+  | 'is_pinned'
 >
 
 /** 이전/다음 글 조회는 목록 컬럼의 부분집합만 읽는다. */
@@ -114,6 +115,7 @@ export function toNewsItem(row: NewsSource): NewsItem {
     views: row.view_count,
     publishedAt: row.published_at,
     editedAt: row.edited_at,
+    isPinned: row.is_pinned,
     ...(row.thumbnail_url === null ? {} : { thumbnail: row.thumbnail_url }),
   }
 }

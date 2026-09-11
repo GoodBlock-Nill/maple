@@ -34,8 +34,13 @@ import type {
  * 관리자가 뉴스를 숨기거나 지우면 `POST /api/revalidate` 로 이 태그를 태운다.
  */
 
+/**
+ * 목록·상세가 같은 컬럼 집합을 읽는다(`toNewsItem` 하나로 매핑하므로 갈라 둘 이유가 없다).
+ * `is_pinned` 는 이미 목록 정렬 키였는데, 카드형 목록이 핀 아이콘으로 그리면서
+ * 값 자체도 필요해졌다(docs/reference/figma/news-v2-spec.md §4).
+ */
 const NEWS_COLUMNS =
-  'id, category_key, title, summary, content, content_format, thumbnail_url, view_count, published_at, edited_at'
+  'id, category_key, title, summary, content, content_format, thumbnail_url, view_count, published_at, edited_at, is_pinned'
 
 async function fetchNewsList(
   category: NewsCategory | null,

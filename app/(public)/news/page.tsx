@@ -1,14 +1,17 @@
 import { CategoryChips } from '@/components/board/CategoryChips'
 import { ListSheet } from '@/components/board/ListSheet'
 import { LoadMoreButton } from '@/components/board/LoadMoreButton'
+import { NewsCardGrid } from '@/components/board/NewsCardGrid'
 import { NewsList } from '@/components/board/NewsList'
+import { NewsViewMenu } from '@/components/board/NewsViewMenu'
 import { SearchForm } from '@/components/board/SearchForm'
 import { PageShell } from '@/components/layout/PageShell'
 import { NEWS_CATEGORIES, NEWS_CATEGORY_VALUES } from '@/lib/constants/board'
 import { getNewsList } from '@/lib/data/news'
 import { buildHref, parseOptionalOption, parsePage, parseQuery } from '@/lib/utils/list-query'
+import { newsViewParam, parseNewsView } from '@/lib/utils/news-view'
 
-import type { NewsCategory } from '@/types/domain'
+import type { NewsCategory, NewsView } from '@/types/domain'
 import type { Metadata } from 'next'
 
 /**
@@ -31,10 +34,18 @@ export default async function NewsPage(props: PageProps<'/news'>) {
   const category = parseOptionalOption<NewsCategory>(searchParams.category, NEWS_CATEGORY_VALUES)
   const q = parseQuery(searchParams.q)
   const page = parsePage(searchParams.page)
+  const view = parseNewsView(searchParams.view)
+  /* 기본 보기(card)는 URL 에서 빼 둔다 — 칩·검색·더보기 링크가 전부 이 값을 실어 나른다. */
+  const keptView = newsViewParam(view)
 
   const list = await getNewsList({ category, q, page })
 
-  const categoryHref = (value: NewsCategory | null) => buildHref(NEWS_PATH, { category: value, q })
+  const categoryHref = (value: NewsCategory | null) =>
+    buildHref(NEWS_PATH, { category: value, q, view: keptView })
+  const viewHref = (value: NewsView) =>
+    buildHref(NEWS_PATH, { category, q, view: newsViewParam(value) })
+  /* 링크는 서버에서 미리 만들어 넘긴다 — 클라이언트 컴포넌트에 함수를 넘길 수 없다. */
+  const viewHrefs: Record<NewsView, string> = { card: viewHref('card'), list: viewHref('list') }
 
   return (
     <PageShell variant="news" title={NEWS_TITLE}>
@@ -52,18 +63,21 @@ export default async function NewsPage(props: PageProps<'/news'>) {
           <SearchForm
             action={NEWS_PATH}
             defaultValue={q}
-            keep={{ category }}
+            keep={{ category, view: keptView }}
             className="w-full lg:w-[300px]"
           />
+          <NewsViewMenu current={view} hrefs={viewHrefs} />
         </div>
       </div>
 
-      <ListSheet className="mt-6">
-        <NewsList items={list.items} />
+      {/* 카드형은 폰에서 트레이 여백을 12 로 줄인다(시안 v2 §3) — 카드 자체 패딩이 20 이라
+          기본 16 을 그대로 두면 좁은 화면에서 본문 폭이 눈에 띄게 깎인다. */}
+      <ListSheet className={view === 'card' ? 'mt-6 p-3 lg:p-4' : 'mt-6'}>
+        {view === 'card' ? <NewsCardGrid items={list.items} /> : <NewsList items={list.items} />}
       </ListSheet>
 
       <LoadMoreButton
-        href={buildHref(NEWS_PATH, { category, q, page: page + 1 })}
+        href={buildHref(NEWS_PATH, { category, q, page: page + 1, view: keptView })}
         shown={list.shown}
         total={list.total}
       />

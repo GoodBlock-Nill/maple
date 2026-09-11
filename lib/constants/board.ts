@@ -1,5 +1,5 @@
 import type { BadgeColor } from '@/lib/constants/categories'
-import type { CommunityCategory, CommunitySort, NewsCategory } from '@/types/domain'
+import type { CommunityCategory, CommunitySort, NewsCategory, NewsView } from '@/types/domain'
 
 /** 목록 한 페이지에 추가로 쌓이는 건수. "더보기"는 1~N 페이지를 누적 표시한다. */
 export const BOARD_PAGE_SIZE = 10
@@ -33,6 +33,17 @@ export const COMMUNITY_CATEGORIES = [
   { value: 'info', label: '정보', badge: 'info' },
 ] as const satisfies readonly CategoryOption<CommunityCategory>[]
 
+/**
+ * 뉴스 목록 보기 방식. 배열 순서가 곧 드롭다운 항목 순서다(시안 v2 §1 — 가로형 → 카드형).
+ */
+export const NEWS_VIEWS = [
+  { value: 'list', label: '가로형' },
+  { value: 'card', label: '카드형' },
+] as const satisfies readonly BoardOption<NewsView>[]
+
+/** 시안이 보여 주는 기본 화면은 카드형이다. 잘못된 `?view=` 값도 여기로 떨어진다. */
+export const DEFAULT_NEWS_VIEW: NewsView = 'card'
+
 export const COMMUNITY_SORTS = [
   { value: 'latest', label: '최신순' },
   { value: 'likes', label: '인기순' },
@@ -55,6 +66,8 @@ export const COMMUNITY_CATEGORY_VALUES = COMMUNITY_CATEGORIES.map((item) => item
 
 export const COMMUNITY_SORT_VALUES = COMMUNITY_SORTS.map((item) => item.value)
 
+export const NEWS_VIEW_VALUES = NEWS_VIEWS.map((item) => item.value)
+
 /**
  * `noUncheckedIndexedAccess` 아래에서도 `MAP[value]` 가 undefined 로 좁혀지지
  * 않도록 완전한 Record 로 만든다.
@@ -73,6 +86,8 @@ export const NEWS_CATEGORY_MAP = toLookup(NEWS_CATEGORIES)
 export const COMMUNITY_CATEGORY_MAP = toLookup(COMMUNITY_CATEGORIES)
 
 export const COMMUNITY_SORT_MAP = toLookup(COMMUNITY_SORTS)
+
+export const NEWS_VIEW_MAP = toLookup(NEWS_VIEWS)
 
 /** 카테고리 칩 맨 앞의 "전체" 항목 라벨. */
 export const ALL_CATEGORY_LABEL = '전체'
