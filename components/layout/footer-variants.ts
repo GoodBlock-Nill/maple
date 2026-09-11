@@ -173,18 +173,30 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
       mobileWidth: 160,
     },
   },
+  /**
+   * 고객지원 — v2 시안(§7, 고객지원_푸터 166:13652)은 마이페이지 v2 와 같은
+   * 패널 모양이다: 1200 폭 @ x=120, 안쪽 패딩 40/140, 연락처는 알약 대신
+   * "문의하기" 텍스트 블록, 좌측 블록 폭 371. 패널 톤도 시안 실측 평균 휘도
+   * 100~125(눈 숲 위)로 `glass-panel-sub` 보다 `glass-panel-dark` 가 맞는다.
+   */
   support: {
     background: '/images/support/footer-bg.png',
     backgroundColor: '#fafafa',
     needsGrassPatch: false,
     height: 631,
     panelTop: subPanelTop(631),
-    panelClass: 'glass-panel-sub',
+    panelClass: 'glass-panel-dark',
+    panelMaxWidth: 1200,
+    panelPaddingX: 140,
+    panelPaddingTop: 40,
+    brandWidth: 371,
+    contactStyle: 'text',
     mascot: {
       src: '/images/support/mascot-footer.gif',
       width: 216,
       height: 198,
-      left: 1154,
+      /* 시안 v2 실측 좌표 — 현행(1154)에서 40px 왼쪽으로. */
+      left: 1094,
       top: 236,
       mobileWidth: 140,
     },

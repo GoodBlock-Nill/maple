@@ -28,11 +28,14 @@ export function SiteNav({ id, className }: SiteNavProps) {
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   /* 시안 헤더 GNB 만 Inter Semibold 16 이다(본문 Switzer 와 다르다). */
-                  'font-ui rounded-pill relative inline-flex items-center text-[16px] font-semibold',
-                  'text-ink tracking-[-0.2px] whitespace-nowrap transition-opacity',
-                  'after:rounded-pill after:absolute after:inset-x-0 after:-bottom-1.5 after:h-0.5',
-                  'after:bg-ink after:transition-transform after:duration-200',
-                  isActive ? 'after:scale-x-100' : 'after:scale-x-0 hover:opacity-65',
+                  'font-ui inline-flex items-center text-[16px] font-semibold',
+                  'tracking-[-0.2px] whitespace-nowrap transition-[color,opacity]',
+                  /* 활성: 텍스트 #e8308a + 텍스트 상자 바로 아래 2px 밑줄(시안 §1 실측,
+                     border-bottom 방식 — 기존 after 검은 밑줄을 대체한다).
+                     비활성: 기존 #2a2a2a(text-ink) + 호버 시 옅어짐 유지. */
+                  isActive
+                    ? 'border-b-2 border-[#e8308a] pb-1 text-[#e8308a]'
+                    : 'text-ink border-b-2 border-transparent pb-1 hover:opacity-65',
                 )}
               >
                 {item.label}

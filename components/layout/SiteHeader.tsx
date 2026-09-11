@@ -26,10 +26,16 @@ type SiteHeaderProps = {
 export function SiteHeader({ user = null }: SiteHeaderProps) {
   return (
     <div className="pointer-events-none sticky top-5 z-50 flex h-0 items-start justify-center px-4">
-      <HeaderGlass className="rounded-bar flex w-full max-w-[1140px] items-center gap-4 px-5 py-[15px] lg:w-auto lg:max-w-none lg:gap-[53px]">
+      <HeaderGlass className="rounded-bar flex w-full max-w-[1140px] items-center gap-4 px-5 py-[15px] lg:max-w-[1200px] lg:gap-8 lg:px-6">
         <Logo />
-        <SiteNav id="site-desktop-nav" className="hidden lg:block" />
-        <AuthMenu user={user} id="site-desktop-auth" className="ml-auto hidden lg:flex" />
+        {/* 시안(§1): 로고 뒤 gap 32 다음은 flex-1 영역 — 좌측 GNB, 우측 계정 메뉴가
+            justify-between 으로 바 끝까지 벌어진다(현행은 내용 폭만큼 hug 했다). */}
+        <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-between">
+          <SiteNav id="site-desktop-nav" />
+          {/* AuthMenu 내부 클래스는 'items-center' 만 기본 제공하므로 'flex' 를 직접
+              전달한다(표시 여부는 이 래퍼의 hidden/lg:flex 가 이미 맡는다). */}
+          <AuthMenu user={user} id="site-desktop-auth" className="flex" />
+        </div>
         <div className="ml-auto flex items-center gap-2 lg:hidden">
           {/* 미로그인일 때만 노출한다. 로그인 상태의 로그아웃은 드로어 안에 있다.
               시안(auth-v2 모바일)의 알약은 데스크톱과 같은 흰 알약이다. */}

@@ -13,6 +13,8 @@ describe('FOOTER_CONFIG — panelClass', () => {
     expect(FOOTER_CONFIG.home.panelClass).toBe('glass-panel-dark')
     expect(FOOTER_CONFIG.about.panelClass).toBe('glass-panel-dark')
     expect(FOOTER_CONFIG.mypage.panelClass).toBe('glass-panel-dark')
+    // 고객지원 v2(§7)는 시안 실측 휘도가 마이페이지 v2 와 같은 어두운 톤이다.
+    expect(FOOTER_CONFIG.support.panelClass).toBe('glass-panel-dark')
   })
 
   it('should keep the light glass panel for pale-background variants', () => {
@@ -20,7 +22,6 @@ describe('FOOTER_CONFIG — panelClass', () => {
     expect(FOOTER_CONFIG.news.panelClass).toBe('glass-panel-sub')
     expect(FOOTER_CONFIG.community.panelClass).toBe('glass-panel-sub')
     expect(FOOTER_CONFIG.guide.panelClass).toBe('glass-panel-sub')
-    expect(FOOTER_CONFIG.support.panelClass).toBe('glass-panel-sub')
     expect(FOOTER_CONFIG.ranking.panelClass).toBe('glass-panel-ranking')
   })
 })
