@@ -1,6 +1,8 @@
+import Link from 'next/link'
+
 import { InquiryFilters } from '@/components/inquiries/InquiryFilters'
 import { InquiryTable } from '@/components/inquiries/InquiryTable'
-import { Button, FormBanner, PageHeader } from '@/components/ui'
+import { Badge, Button, FormBanner, PageHeader } from '@/components/ui'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { INQUIRY_SORT_KEYS, getInquiries, getInquiryTabCounts } from '@/lib/data/inquiries'
@@ -8,7 +10,8 @@ import {
   getInquiryCategoryFilterOptions,
   getInquiryTypeFilterOptions,
 } from '@/lib/data/inquiry-categories'
-import { parsePage, parseSort } from '@/lib/utils/table-query'
+import { getMember } from '@/lib/data/members'
+import { buildHref, parsePage, parseSort } from '@/lib/utils/table-query'
 import { parseInquiryFilters } from '@/lib/validation/inquiries'
 
 import type { InquirySource } from '@/lib/validation/inquiries'
@@ -57,13 +60,15 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
   const page = parsePage(params.page)
   const preset = presetFor(filters.source)
 
-  const [{ rows, count, hasError }, counts, categories, types] = await Promise.all([
+  const [{ rows, count, hasError }, counts, categories, types, scopedMember] = await Promise.all([
     getInquiries(filters, { page, sortKey: sort.key, ascending: sort.direction === 'asc' }),
     getInquiryTabCounts(filters),
     getInquiryCategoryFilterOptions(),
     /* 유형 옵션은 고른 카테고리에 매달려 있다. 카테고리를 바꾸고 '검색'을 누르면
        다음 화면에서 그 카테고리의 세부 유형만 남는다(GET 폼이라 왕복이 곧 갱신이다). */
     getInquiryTypeFilterOptions(filters.category),
+    // 회원 상세의 "전체 보기"(`?user=<id>`)로 들어왔을 때만 닉네임을 한 번 더 읽는다.
+    filters.userId === null ? Promise.resolve(null) : getMember(filters.userId),
   ])
 
   return (
@@ -79,6 +84,19 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
           </Button>
         }
       />
+
+      {filters.userId !== null && (
+        <div className="mb-3 flex items-center gap-2 text-[13px]">
+          <span className="text-muted">회원 필터</span>
+          <Badge tone="accent">{scopedMember?.nickname ?? '(탈퇴한 회원)'}</Badge>
+          <Link
+            href={buildHref('/inquiries', params, { user: null })}
+            className="text-accent-strong hover:underline"
+          >
+            해제
+          </Link>
+        </div>
+      )}
 
       <InquiryFilters
         params={params}

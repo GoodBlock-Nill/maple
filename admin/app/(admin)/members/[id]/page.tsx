@@ -15,11 +15,13 @@ import { hasPermission } from '@/lib/auth/permissions'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { countRedemptionsByMember } from '@/lib/data/coupon-redemptions'
 import { getMember, getMemberActivity } from '@/lib/data/members'
+import { getMemberInquiries } from '@/lib/data/member-inquiries'
 import { getReportsFor } from '@/lib/data/reports'
 import { buildHref, firstValue } from '@/lib/utils/table-query'
 import { memberLifecycle } from '@/lib/validation/member-status'
 import { isSuspended } from '@/lib/validation/members'
 
+import type { MemberInquirySummary } from '@/lib/data/member-inquiries'
 import type { ReportItem } from '@/lib/data/reports'
 import type { Metadata } from 'next'
 
@@ -33,6 +35,9 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
   const [{ id }, searchParams] = await Promise.all([props.params, props.searchParams])
   const [actor, member] = await Promise.all([requirePermission('members', 'read'), getMember(id)])
   const canWrite = hasPermission(actor.permissions, 'members', 'write')
+  /* 문의는 별도 모듈이다 — 회원 읽기 권한만으로 다른 모듈(1:1 문의)의 내용을
+     보여 주지 않는다. 아래 쿠폰 건수와 같은 이유. */
+  const canReadInquiries = hasPermission(actor.permissions, 'inquiries', 'read')
 
   if (member === null) {
     notFound()
@@ -51,9 +56,12 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
     ? (requested as ActivityTab)
     : 'posts'
 
-  /* 신고 목록은 보고 있는 탭에서만 읽는다. 두 목록을 늘 읽으면 게시글 탭 한 번에
-     쓰이지도 않는 질의가 여섯 개 붙는다. */
-  const reports = await loadReports(tab, id, activity.posts, activity.comments)
+  /* 신고 목록·문의 목록은 보고 있는 탭에서만 읽는다. 늘 읽으면 게시글 탭 한 번에
+     쓰이지도 않는 질의가 붙는다. */
+  const [reports, memberInquiries] = await Promise.all([
+    loadReports(tab, id, activity.posts, activity.comments),
+    loadMemberInquiries(tab, id, canReadInquiries),
+  ])
   const path = `/members/${id}`
 
   return (
@@ -112,11 +120,18 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
           comments: activity.commentCount,
           'reports-made': activity.reportsMadeCount,
           'reports-received': activity.reportedCount,
+          inquiries: activity.inquiryCount,
         }}
         buildHref={(next) => buildHref(path, searchParams, { tab: next })}
         posts={activity.posts}
         comments={activity.comments}
         reports={reports}
+        inquiries={memberInquiries.rows}
+        inquiriesHasError={memberInquiries.hasError}
+        canReadInquiries={canReadInquiries}
+        inquiriesMoreHref={
+          activity.inquiryCount > memberInquiries.rows.length ? `/inquiries?user=${id}` : null
+        }
       />
     </>
   )
@@ -145,4 +160,23 @@ async function loadReports(
   }
 
   return []
+}
+
+/**
+ * 탭에 필요한 문의 목록.
+ *
+ * `inquiries:read` 가 없으면 조회 자체를 건너뛴다 — RLS 를 믿고 그냥 읽으면
+ * 빈 표(0건)와 "권한 없음"을 구분할 수 없어, 권한 없는 운영자에게 "문의가
+ * 없다"로 잘못 보일 수 있다.
+ */
+async function loadMemberInquiries(
+  tab: ActivityTab,
+  memberId: string,
+  canRead: boolean,
+): Promise<{ rows: readonly MemberInquirySummary[]; hasError: boolean }> {
+  if (tab !== 'inquiries' || !canRead) {
+    return { rows: [], hasError: false }
+  }
+
+  return getMemberInquiries(memberId)
 }

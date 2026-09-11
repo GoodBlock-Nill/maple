@@ -88,7 +88,9 @@ export type MemberListResult = {
   hasError: boolean
 }
 
-const ACTIVITY_LIMIT = 20
+/** 회원 상세 활동 탭 한 건당 상한. `member-inquiries.ts` 가 같은 숫자를 쓴다 —
+ *  탭마다 보여 주는 건수가 달라 보이면 운영자가 "왜 이 탭만 더 보이냐"고 묻는다. */
+export const ACTIVITY_LIMIT = 20
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const PROFILE_COLUMNS =

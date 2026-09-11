@@ -191,6 +191,17 @@ function parseDateParam(raw: string | string[] | undefined): string | null {
   return Number.isNaN(new Date(`${value}T00:00:00Z`).getTime()) ? null : value
 }
 
+/* `profiles.id` 는 uuid 다. 모양이 아닌 값은 필터를 걸지 않는다(= 전체) — 회원
+   상세("전체 보기")가 항상 uuid 를 실어 보내므로 실사용에서는 걸릴 일이 없고,
+   임의 문자열이 `eq()` 값으로 그대로 흘러가는 것만 막으면 된다. */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function parseUserIdParam(raw: string | string[] | undefined): string | null {
+  const value = firstValue(raw)
+
+  return value !== null && UUID_PATTERN.test(value) ? value : null
+}
+
 export type InquiryFilters = {
   tab: InquiryStatusTab
   statuses: readonly InquiryStatus[]
@@ -205,6 +216,8 @@ export type InquiryFilters = {
   /** `YYYY-MM-DD` (한국시간 기준 날짜). 데이터 계층이 UTC 경계로 환산한다. */
   from: string | null
   to: string | null
+  /** 회원 상세에서 넘어온 `?user=<id>` 필터. null 이면 전체 회원. */
+  userId: string | null
 }
 
 export function parseInquiryFilters(params: QueryParams): InquiryFilters {
@@ -227,6 +240,7 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
     search: sanitizeInquirySearch(params.q),
     from: parseDateParam(params.from),
     to: parseDateParam(params.to),
+    userId: parseUserIdParam(params.user),
   }
 }
 

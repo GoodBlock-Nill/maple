@@ -217,6 +217,21 @@ describe('parseInquiryFilters', () => {
     expect(parseInquiryFilters({ from: '2026/09/08' }).from).toBeNull()
     expect(parseInquiryFilters({ to: '2026-13-40' }).to).toBeNull()
   })
+
+  /* 회원 상세의 "전체 보기"(`/inquiries?user=<id>`)가 쓰는 필터다. `profiles.id`
+     는 uuid 라 모양이 아닌 값은 걸지 않는다(= 전체) — 임의 문자열이 `eq()` 값으로
+     그대로 흘러가지 않게 한다. */
+  it('회원 필터는 uuid 모양일 때만 받는다', () => {
+    const memberId = '11111111-2222-4333-8444-555555555555'
+
+    expect(parseInquiryFilters({ user: memberId }).userId).toBe(memberId)
+    expect(parseInquiryFilters({ user: memberId.toUpperCase() }).userId).toBe(
+      memberId.toUpperCase(),
+    )
+    expect(parseInquiryFilters({}).userId).toBeNull()
+    expect(parseInquiryFilters({ user: 'not-a-uuid' }).userId).toBeNull()
+    expect(parseInquiryFilters({ user: ['a', memberId] }).userId).toBeNull()
+  })
 })
 
 describe('statusesForTab', () => {

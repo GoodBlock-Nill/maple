@@ -136,6 +136,11 @@ function applyCommonFilters<TQuery extends FilterableQuery<TQuery>>(
     next = next.not('cancelled_at', 'is', null)
   }
 
+  if (filters.userId !== null) {
+    // 회원 상세의 "전체 보기" 링크(`/inquiries?user=<id>`)가 쓰는 필터다.
+    next = next.eq('user_id', filters.userId)
+  }
+
   if (filters.category !== null) {
     next = next.eq('category', filters.category)
   }

@@ -50,10 +50,13 @@ export function InquiryFilters({
   const tabs = isEmail
     ? INQUIRY_STATUS_TABS.filter((tab) => tab.value !== 'cancelled')
     : INQUIRY_STATUS_TABS
-  const resetHref =
-    filters.source === null
-      ? `${LIST_PATH}?status=${filters.tab}`
-      : `${LIST_PATH}?status=${filters.tab}&source=${filters.source}`
+  /* 회원 상세에서 넘어온 `user` 스코프는 초기화에서도 유지한다 — "검색 조건을
+     지운다"는 뜻이지 "이 회원 밖으로 나간다"는 뜻이 아니다. */
+  const resetHref = buildHref(
+    LIST_PATH,
+    {},
+    { status: filters.tab, source: filters.source, user: filters.userId },
+  )
 
   return (
     <div className="mb-4 flex flex-col gap-3">
@@ -90,6 +93,7 @@ export function InquiryFilters({
       >
         <input type="hidden" name="status" value={filters.tab} />
         {sort !== null && <input type="hidden" name="sort" value={sort} />}
+        {filters.userId !== null && <input type="hidden" name="user" value={filters.userId} />}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-ink text-[13px] font-semibold">출처</span>

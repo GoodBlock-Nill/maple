@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { MemberInquiriesTab } from '@/components/members/MemberInquiriesTab'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Table, type Column } from '@/components/ui/Table'
@@ -14,11 +15,18 @@ import {
 } from '@/lib/validation/moderation'
 
 import type { BadgeTone } from '@/components/ui/Badge'
+import type { MemberInquirySummary } from '@/lib/data/member-inquiries'
 import type { MemberCommentSummary, MemberPostSummary } from '@/lib/data/members'
 import type { ReportItem } from '@/lib/data/reports'
 import type { ContentStatus } from '@/lib/validation/moderation'
 
-export const ACTIVITY_TABS = ['posts', 'comments', 'reports-made', 'reports-received'] as const
+export const ACTIVITY_TABS = [
+  'posts',
+  'comments',
+  'reports-made',
+  'reports-received',
+  'inquiries',
+] as const
 
 export type ActivityTab = (typeof ACTIVITY_TABS)[number]
 
@@ -27,6 +35,7 @@ const TAB_LABEL: Record<ActivityTab, string> = {
   comments: '댓글',
   'reports-made': '신고함',
   'reports-received': '신고받음',
+  inquiries: '1:1 문의',
 }
 
 const STATUS_TONE: Record<ContentStatus, BadgeTone> = {
@@ -48,6 +57,10 @@ export function MemberActivityPanel({
   posts,
   comments,
   reports,
+  inquiries,
+  inquiriesHasError,
+  canReadInquiries,
+  inquiriesMoreHref,
 }: {
   active: ActivityTab
   counts: Record<ActivityTab, number>
@@ -55,6 +68,13 @@ export function MemberActivityPanel({
   posts: readonly MemberPostSummary[]
   comments: readonly MemberCommentSummary[]
   reports: readonly ReportItem[]
+  inquiries: readonly MemberInquirySummary[]
+  /** 문의 목록 조회가 깨졌는지. */
+  inquiriesHasError: boolean
+  /** `inquiries:read` 없는 운영자에게는 행을 보여 주지 않는다(members:read 만으로는 부족). */
+  canReadInquiries: boolean
+  /** 표시한 건수보다 실제 건수가 많을 때만 온다 — `/inquiries?user=<id>`. */
+  inquiriesMoreHref: string | null
 }) {
   return (
     <Card>
@@ -105,6 +125,15 @@ export function MemberActivityPanel({
           emptyMessage={
             active === 'reports-made' ? '접수한 신고가 없습니다.' : '받은 신고가 없습니다.'
           }
+        />
+      )}
+
+      {active === 'inquiries' && (
+        <MemberInquiriesTab
+          canRead={canReadInquiries}
+          rows={inquiries}
+          hasError={inquiriesHasError}
+          moreHref={inquiriesMoreHref}
         />
       )}
     </Card>
