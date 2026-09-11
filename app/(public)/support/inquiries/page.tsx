@@ -1,16 +1,19 @@
 import { redirect } from 'next/navigation'
 
+import { FlashNotice } from '@/components/board/FlashNotice'
 import { PageShell } from '@/components/layout/PageShell'
 import { InquiryList } from '@/components/support/InquiryList'
 import { SupportCard } from '@/components/support/SupportCard'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
+  INQUIRY_CANCELLED_NOTICE,
+  INQUIRY_CANCELLED_PARAM,
   MY_INQUIRIES_DESCRIPTION,
   MY_INQUIRIES_HEADING,
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { getMyInquiries } from '@/lib/data/inquiries'
-import { parsePage } from '@/lib/utils/list-query'
+import { firstValue, parsePage } from '@/lib/utils/list-query'
 
 import type { Metadata } from 'next'
 
@@ -40,6 +43,9 @@ export default async function MyInquiriesPage(props: PageProps<'/support/inquiri
   const searchParams = await props.searchParams
   const page = parsePage(searchParams.page)
   const list = await getMyInquiries(user.id, page)
+  /* 접수 취소 리다이렉트(`?cancelled=1`)로만 켜지는 1회성 안내 — 취소한 문의는
+     이 목록에 더 이상 보이지 않으므로 안내를 여기서 대신 보여 준다. */
+  const isCancelled = firstValue(searchParams[INQUIRY_CANCELLED_PARAM]) === '1'
 
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
@@ -48,6 +54,9 @@ export default async function MyInquiriesPage(props: PageProps<'/support/inquiri
         heading={MY_INQUIRIES_HEADING}
         description={MY_INQUIRIES_DESCRIPTION}
       >
+        {isCancelled ? (
+          <FlashNotice param={INQUIRY_CANCELLED_PARAM} message={INQUIRY_CANCELLED_NOTICE} />
+        ) : null}
         <InquiryList list={list} />
       </SupportCard>
       <div className="pb-16 xl:pb-0" />

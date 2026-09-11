@@ -47,6 +47,11 @@ export function applyInquiryFilters<TQuery extends FilterableQuery<TQuery>>(
   if (filters.cancelledOnly) {
     // 취소 판정은 사용자 사이트와 같다 — cancelled_at 하나만 본다.
     next = next.not('cancelled_at', 'is', null)
+  } else {
+    /* '취소됨' 탭이 아니면 취소분을 뺀다(오너 요청, 2026-09-11) — 사용자 목록에서
+       사라진 문의가 관리자의 '종료'·'전체' 탭에는 남아 있으면 두 화면의 뜻이
+       어긋난다. 취소분은 오직 '취소됨' 탭에서만 감사할 수 있다. */
+    next = next.is('cancelled_at', null)
   }
 
   if (filters.userId !== null) {

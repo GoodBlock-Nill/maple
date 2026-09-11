@@ -289,3 +289,26 @@ test('사용자가 취소한 접수는 접수 취소로 표시되고 읽기 전�
   await expect(page.getByRole('button', { name: '상태 변경' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: '종료' })).toHaveCount(0)
 })
+
+/**
+ * 오너 요청(2026-09-11): 접수 취소는 기본 목록에서 사라지고 '취소됨' 탭에서만 보인다.
+ *
+ * 취소는 항상 `status='closed'` 로 기록되므로, 그동안 '종료'·'전체' 탭에도 함께
+ * 잡혔다. 사용자 목록에서 사라진 문의가 관리자의 기본 목록에는 남아 있으면 두
+ * 화면의 뜻이 어긋난다.
+ */
+test('취소된 접수는 종료 · 전체 탭에서 빠지고 취소됨 탭에서만 보인다', async ({ page }) => {
+  await signInAsAdmin(page)
+
+  // Assert — 종료 탭에는 취소분이 없다(정상 종료와 섞이지 않는다).
+  await page.goto(`/inquiries?status=closed&q=${STAMP}`)
+  await expect(page.getByRole('row').filter({ hasText: CANCELLED_TITLE })).toHaveCount(0)
+
+  // Assert — 전체 탭에도 없다.
+  await page.goto(`/inquiries?status=all&q=${STAMP}`)
+  await expect(page.getByRole('row').filter({ hasText: CANCELLED_TITLE })).toHaveCount(0)
+
+  // Assert — 취소됨 탭에서만 보인다.
+  await page.goto(`/inquiries?status=cancelled&q=${STAMP}`)
+  await expect(page.getByRole('row').filter({ hasText: CANCELLED_TITLE })).toBeVisible()
+})

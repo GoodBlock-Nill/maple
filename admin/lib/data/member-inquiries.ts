@@ -49,6 +49,8 @@ export async function getMemberInquiries(memberId: string): Promise<MemberInquir
     .from('inquiries')
     .select(MEMBER_INQUIRY_COLUMNS)
     .eq('user_id', memberId)
+    // 취소한 문의는 회원 상세에서도 뺀다 — 사용자·관리자 목록과 같은 규칙이다.
+    .is('cancelled_at', null)
     .order('created_at', { ascending: false })
     .limit(ACTIVITY_LIMIT)
 

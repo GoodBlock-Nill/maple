@@ -26,6 +26,11 @@ vi.mock('@/lib/supabase/server', () => ({
         gte: () => builder,
         lt: () => builder,
         not: () => builder,
+        is: (column: string, value: unknown) => {
+          state.filters.push({ column, value })
+
+          return builder
+        },
         or: () => builder,
         order: () => builder,
         range: () => builder,
@@ -73,5 +78,33 @@ describe('getInquiries — 회원 필터', () => {
     })
 
     expect(state.filters.some((entry) => entry.column === 'user_id')).toBe(false)
+  })
+})
+
+describe('getInquiries — 접수 취소 제외 (오너 요청, 2026-09-11)', () => {
+  it("기본 탭(예: '종료')은 취소분을 뺀다", async () => {
+    const filters = parseInquiryFilters({ status: 'closed' })
+
+    await getInquiries(filters, {
+      page: 1,
+      sortKey: 'created_at',
+      ascending: false,
+      viewerId: null,
+    })
+
+    expect(state.filters).toContainEqual({ column: 'cancelled_at', value: null })
+  })
+
+  it("'취소됨' 탭은 취소분 제외 필터를 걸지 않는다(취소분만 보여야 한다)", async () => {
+    const filters = parseInquiryFilters({ status: 'cancelled' })
+
+    await getInquiries(filters, {
+      page: 1,
+      sortKey: 'created_at',
+      ascending: false,
+      viewerId: null,
+    })
+
+    expect(state.filters).not.toContainEqual({ column: 'cancelled_at', value: null })
   })
 })

@@ -130,6 +130,9 @@ export async function getMyInquiries(
     .from('inquiries')
     .select(INQUIRY_LIST_COLUMNS, { count: 'exact' })
     .eq('user_id', userId)
+    // 접수 취소한 문의는 목록에서 사라진다(오너 요청, 2026-09-11). 상세는 직접
+    // 주소로만 남는다 — `getMyInquiry` 는 이 조건을 걸지 않는다.
+    .is('cancelled_at', null)
     .order('created_at', { ascending: false })
     .range(from, to)
 

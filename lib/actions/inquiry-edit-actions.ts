@@ -295,6 +295,8 @@ export async function cancelInquiry(id: string, _prevState: FormState): Promise<
 
   revalidateInquiry(id)
 
-  // 취소한 문의도 상세는 남는다(이력). 1회성 안내만 붙여 같은 화면으로 돌려보낸다.
-  redirect(`${detailPath(id)}?${INQUIRY_CANCELLED_PARAM}=1`)
+  /* 취소한 문의는 목록에서 사라진다(오너 요청, 2026-09-11) — 그래서 상세가 아니라
+     목록으로 돌려보낸다. 상세는 이력으로 남아 직접 주소로는 계속 열리지만(읽기
+     전용), 더 이상 그 화면으로 링크하지 않는다. */
+  redirect(`${MY_INQUIRIES_PATH}?${INQUIRY_CANCELLED_PARAM}=1`)
 }

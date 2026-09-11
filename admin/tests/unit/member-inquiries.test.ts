@@ -31,6 +31,11 @@ vi.mock('@/lib/supabase/server', () => ({
 
           return builder
         },
+        is: (column: string, value: unknown) => {
+          state.filters.push({ column, value })
+
+          return builder
+        },
         order: (column: string, options: { ascending: boolean }) => {
           state.orderedBy = { column, ascending: options.ascending }
 
@@ -67,9 +72,18 @@ describe('getMemberInquiries', () => {
   it('회원의 user_id 로만 좁히고, 최신순 · 상한 건수로 읽는다', async () => {
     await getMemberInquiries(MEMBER_ID)
 
-    expect(state.filters).toEqual([{ column: 'user_id', value: MEMBER_ID }])
+    expect(state.filters).toEqual([
+      { column: 'user_id', value: MEMBER_ID },
+      { column: 'cancelled_at', value: null },
+    ])
     expect(state.orderedBy).toEqual({ column: 'created_at', ascending: false })
     expect(state.limitedTo).toBe(20)
+  })
+
+  it('취소한 문의는 뺀다(오너 요청, 2026-09-11)', async () => {
+    await getMemberInquiries(MEMBER_ID)
+
+    expect(state.filters).toContainEqual({ column: 'cancelled_at', value: null })
   })
 
   it('목록 컬럼(카테고리 · 유형 · 상태 · 출처 · 답변 수)을 그대로 매핑한다', async () => {

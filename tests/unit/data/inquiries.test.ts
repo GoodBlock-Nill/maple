@@ -76,6 +76,14 @@ describe('getMyInquiries', () => {
     // Act & Assert
     await expect(getMyInquiries(USER_ID)).rejects.toThrow('문의 내역을 불러오지 못했습니다')
   })
+
+  it('should exclude cancelled inquiries so they disappear from the list', async () => {
+    // Arrange & Act — 오너 요청(2026-09-11): 접수 취소한 문의는 목록에서 사라진다.
+    await getMyInquiries(USER_ID)
+
+    // Assert
+    expect(stub.isFilters).toContainEqual(['cancelled_at', null])
+  })
 })
 
 describe('getMyInquiry', () => {

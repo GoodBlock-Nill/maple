@@ -275,10 +275,11 @@ describe('cancelInquiry', () => {
     const message = await runAndCatch(cancelInquiry(INQUIRY_ID, EMPTY_FORM_STATE))
     const payload = stub.updates[0] as { status: string; cancelled_at: string }
 
-    // Assert
+    // Assert — 취소 후에는 목록으로 돌려보낸다(오너 요청, 2026-09-11). 목록에서
+    // 더 이상 이 문의가 보이지 않으므로 안내는 상세가 아니라 그 화면에 붙는다.
     expect(payload.status).toBe('closed')
     expect(Number.isNaN(new Date(payload.cancelled_at).getTime())).toBe(false)
-    expect(message).toBe(`${REDIRECT_PREFIX}${DETAIL_PATH}?cancelled=1`)
+    expect(message).toBe(`${REDIRECT_PREFIX}/support/inquiries?cancelled=1`)
   })
 
   it('should cancel an inquiry that is already being handled', async () => {

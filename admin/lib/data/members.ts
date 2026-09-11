@@ -263,7 +263,12 @@ export async function getMemberActivity(id: string): Promise<MemberActivity> {
       .eq('author_id', id)
       .order('created_at', { ascending: false })
       .limit(ACTIVITY_LIMIT),
-    supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('user_id', id),
+    // 취소한 문의는 지표 카드·탭 건수에서도 뺀다(회원 상세 문의 목록과 같은 조건).
+    supabase
+      .from('inquiries')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', id)
+      .is('cancelled_at', null),
     supabase.from('reports').select('id', { count: 'exact', head: true }).eq('reporter_id', id),
     countActivity(supabase, [id]),
   ])

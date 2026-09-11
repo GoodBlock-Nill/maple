@@ -505,9 +505,29 @@ test('should let the owner edit a pending inquiry and then cancel it', async ({
   await expect(confirmDialog).toContainText('취소한 문의는 되돌릴 수 없습니다.')
   await confirmDialog.getByRole('button', { name: '접수 취소' }).click()
 
+  /* 오너 요청(2026-09-11): 취소 후에는 목록으로 돌아간다 — 취소한 문의가 그
+     목록에서 사라졌기 때문에 안내도 상세가 아니라 이 화면에 붙는다. */
+  await page.waitForURL(new RegExp(`${LIST_PATH}\\?cancelled=1$`))
   await expect(page.getByText('문의 접수를 취소했습니다.')).toBeVisible()
 
-  // Assert — 뱃지는 접수 취소, 소유자 액션은 사라진다
+  // Assert — 취소한 문의는 더 이상 목록에 없다
+  await expect(page.getByRole('link', { name: new RegExp(editedTitle) })).toHaveCount(0)
+
+  if (isDesktop) {
+    await page.screenshot({
+      path: `${SCREENSHOT_DIR}/inquiry-cancelled-list-1440.png`,
+      fullPage: true,
+    })
+  }
+
+  // Act — 새로고침해도 안내는 다시 뜨지 않는다(1회성)
+  await page.reload()
+  await expect(page.getByText('문의 접수를 취소했습니다.')).toHaveCount(0)
+
+  // Assert — 상세는 직접 주소로는 여전히 열린다(이력, 읽기 전용) — 뱃지는 접수
+  // 취소, 소유자 액션(수정 · 접수 취소)은 사라진다.
+  await page.goto(`${LIST_PATH}/${inquiryId}`)
+  await expect(page.getByRole('heading', { name: editedTitle })).toBeVisible()
   await expect(card.getByText('접수 취소')).toBeVisible()
   await expect(card.getByText('종료')).toHaveCount(0)
   await expect(card.getByRole('link', { name: '수정' })).toHaveCount(0)
@@ -522,9 +542,9 @@ test('should let the owner edit a pending inquiry and then cancel it', async ({
   await expect(page).toHaveURL(new RegExp(`${LIST_PATH}/${inquiryId}`))
   await expect(page.getByText('접수 대기 상태의 문의만 수정할 수 있습니다.')).toBeVisible()
 
-  // Assert — 목록에서도 접수 취소로 보인다
+  // Assert — 목록에는 여전히 보이지 않는다
   await page.goto(LIST_PATH)
-  await expect(page.getByRole('link', { name: new RegExp(editedTitle) })).toContainText('접수 취소')
+  await expect(page.getByRole('link', { name: new RegExp(editedTitle) })).toHaveCount(0)
 })
 
 /**

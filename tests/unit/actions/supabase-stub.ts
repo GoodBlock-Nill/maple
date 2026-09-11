@@ -45,6 +45,8 @@ export type SupabaseStub = {
   deletes: Record<string, unknown>[]
   /** `order()` 에 넘어온 `[column, options]` 호출 순서. 동률 정렬 키 검증용. */
   orders: [string, unknown][]
+  /** `is()` 에 넘어온 `[column, value]` 호출 순서. `cancelled_at is null` 필터 검증용. */
+  isFilters: [string, unknown][]
 }
 
 const EMPTY_RESULT: StubResult = { data: null, error: null }
@@ -55,6 +57,7 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
   const updates: unknown[] = []
   const deletes: Record<string, unknown>[] = []
   const orders: [string, unknown][] = []
+  const isFilters: [string, unknown][] = []
   const rpcCalls: { name: string; args: unknown }[] = []
   const uploads: StorageUpload[] = []
   const removals: string[][] = []
@@ -68,8 +71,14 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
        기록하지 않는다(조회는 결과 큐로 검증한다). */
     let deleteFilter: Record<string, unknown> | null = null
 
-    for (const method of ['select', 'is', 'not', 'ilike', 'limit', 'range']) {
+    for (const method of ['select', 'not', 'ilike', 'limit', 'range']) {
       builder[method] = () => builder
+    }
+
+    builder.is = (column: string, value: unknown) => {
+      isFilters.push([column, value])
+
+      return builder
     }
 
     builder.order = (column: string, options: unknown) => {
@@ -160,6 +169,7 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     updates,
     deletes,
     orders,
+    isFilters,
     rpcCalls,
     uploads,
     removals,
