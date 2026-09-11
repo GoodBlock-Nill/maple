@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 
 type FieldErrorProps = {
   message: string | undefined
+  /** 필드의 `aria-describedby` 가 가리킬 id. 없으면 붙이지 않는다. */
+  id?: string
 }
 
 /**
@@ -12,13 +14,13 @@ type FieldErrorProps = {
  * `role="alert"` 이라 제출 직후 스크린 리더가 읽는다. 색만으로 구분하지 않도록
  * 문구 자체가 무엇을 고쳐야 하는지 말한다.
  */
-export function FieldError({ message }: FieldErrorProps) {
+export function FieldError({ message, id }: FieldErrorProps) {
   if (message === undefined) {
     return null
   }
 
   return (
-    <p role="alert" className="text-badge-red text-[15px] font-medium">
+    <p id={id} role="alert" className="text-badge-red text-[15px] font-medium">
       {message}
     </p>
   )

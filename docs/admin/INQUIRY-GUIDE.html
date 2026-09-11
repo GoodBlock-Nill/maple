@@ -717,7 +717,7 @@ stateDiagram-v2
   <div class="sec-head"><span class="num">07</span><h2>테스트 · 검증</h2></div>
 
   <h3>7.1 단위 테스트</h3>
-  <p>2026-09-11 실행 결과: <strong>사용자 사이트 170개(15파일) · 관리자 80개(5파일) 통과</strong>.</p>
+  <p>2026-09-11 실행 결과: <strong>사용자 사이트 179개(17파일) · 관리자 80개(5파일) 통과</strong>.</p>
   <div class="tbl"><table>
     <thead><tr><th>파일</th><th>건수</th><th>무엇을 고정하나</th></tr></thead>
     <tbody>
@@ -730,9 +730,10 @@ stateDiagram-v2
       <tr><td><code>tests/unit/actions/inquiry-videos.test.ts</code></td><td>11</td><td><code>claimPendingVideos</code> 의 세 검사와 롤백 · 서비스 롤 부재</td></tr>
       <tr><td><code>tests/unit/data/inquiries.test.ts</code></td><td>10</td><td>jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑</td></tr>
       <tr><td><code>tests/unit/supabase/inquiry-pending-path.test.ts</code></td><td>9</td><td>pending 경로 조립과 <code>isInquiryPendingPath</code>(깊이 · uid · 트래버설)</td></tr>
-      <tr><td><code>tests/unit/support/InquiryAttachmentField.test.tsx</code> · <code>InquiryAttachmentVideo.test.tsx</code></td><td>8 · 8</td><td>선택 → 축소 → 잠금 · 영상이 <code>input.files</code> 에서 빠지는지 · 진행률/취소/다시 시도</td></tr>
+      <tr><td><code>tests/unit/support/InquiryAttachmentField.test.tsx</code> · <code>InquiryAttachmentVideo.test.tsx</code></td><td>9 · 8</td><td>선택 → 축소 → 잠금 · 삭제 체크의 켜짐 표시 · 영상이 <code>input.files</code> 에서 빠지는지 · 진행률/취소/다시 시도</td></tr>
       <tr><td><code>tests/unit/utils/inquiry-prefill.test.ts</code></td><td>8</td><td><code>isDiscardableContent</code> · <code>withLegacyCategory</code></td></tr>
       <tr><td><code>tests/unit/utils/inquiry-permissions.test.ts</code></td><td>5</td><td><code>canEditInquiry</code> · <code>canCancelInquiry</code> · 취소 판정</td></tr>
+      <tr><td><code>tests/unit/support/InquiryConsentField.test.tsx</code> · <code>InquiryForm.test.tsx</code></td><td>5 · 3</td><td>동의 체크박스가 보이는지 · 켜짐 표시(흰 체크) · 라벨 클릭 · 오류 연결 · 동의 없이는 제출 잠김</td></tr>
       <tr><td><code>tests/unit/data/inquiry-categories.test.ts</code> · <code>support/InquirySubmittedDialog.test.tsx</code></td><td>4 · 4</td><td>폴백 · 캐시 태그 · 접수 완료 모달</td></tr>
       <tr><td><code>admin/tests/unit/inquiries-validation.test.ts</code></td><td>33</td><td>상태 전이표 · 탭 파싱 · 검색어 정제 · 기간 경계(KST) · 계정 ID 마스킹 · 답변 스키마</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-category-actions.test.ts</code></td><td>18</td><td>RPC 호출 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화</td></tr>
@@ -751,7 +752,7 @@ cd admin &amp;&amp; pnpm test -- tests/unit/inquir</code></pre>
   <div class="tbl"><table>
     <thead><tr><th>파일</th><th>건수</th><th>시나리오</th></tr></thead>
     <tbody>
-      <tr><td><code>tests/e2e/support-inquiries.spec.ts</code></td><td>8</td><td>프리필·교체 확인 모달 / 필수 항목 잠금 / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 실제 이미지 통과 / <strong>영상 직접 업로드 후 상세에서 재생</strong></td></tr>
+      <tr><td><code>tests/e2e/support-inquiries.spec.ts</code></td><td>9</td><td>프리필·교체 확인 모달 / 필수 항목 잠금 / <strong>동의 체크박스가 보이고 켜짐 표시가 뜨는지</strong> / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 실제 이미지 통과 / <strong>영상 직접 업로드 후 상세에서 재생</strong></td></tr>
       <tr><td><code>admin/tests/e2e/inquiries.spec.ts</code></td><td>3</td><td>새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + <strong>사용자 화면에 노출</strong> / 취소된 접수는 읽기 전용</td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-categories.spec.ts</code></td><td>2</td><td>등록·개명·프리필 수정·삭제가 <strong>사용자 폼에 반영</strong> / 접수된 문의가 있으면 삭제 대신 비활성화 안내</td></tr>
     </tbody>
@@ -818,6 +819,7 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
       <tr><td><code>app/(auth)/account/inquiries/page.tsx</code></td><td>마이페이지 문의내역 탭(첫 10건 표)</td></tr>
       <tr><td><code>components/support/InquiryForm.tsx</code></td><td>접수·수정 공용 폼 · 필수 항목 잠금 · 동의</td></tr>
       <tr><td><code>components/support/InquiryFields.tsx</code></td><td>계정 ID · 카테고리/유형 · 제목 · 내용 마크업</td></tr>
+      <tr><td><code>components/support/InquiryConsentField.tsx</code> · <code>SupportCheckbox.tsx</code></td><td>개인정보 수집·이용 동의 줄 · 보이는 체크박스(켜짐 = 흰 체크)</td></tr>
       <tr><td><code>components/support/use-inquiry-prefill.ts</code></td><td>프리필 상태 기계 · 확인 모달 · 자동 성장 textarea</td></tr>
       <tr><td><code>components/support/InquiryAttachmentField.tsx</code> · <code>InquiryAttachmentLists.tsx</code></td><td>파일 선택 · 축소 · 잠금 · 기존 첨부 삭제 체크</td></tr>
       <tr><td><code>components/support/use-inquiry-videos.ts</code> · <code>InquiryVideoList.tsx</code></td><td>영상 업로드 행 상태 · 진행률 · 취소 · 다시 시도</td></tr>

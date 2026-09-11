@@ -31,6 +31,10 @@ const SUBTYPE_SHOT_DIR =
 const CATEGORY_SHOT_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-categories'
 
+/** 동의 체크박스 회귀 화면. 리포트에 함께 싣는다. */
+const CONSENT_SHOT_DIR =
+  '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-consent/e2e'
+
 const REPLY_CONTENT = '문의 주신 내용 확인했습니다. 순차적으로 처리해 드리겠습니다.'
 
 /** 영상 픽스처를 만들 자리. 저장소에 바이너리를 넣지 않는다. */
@@ -255,6 +259,66 @@ test('should keep the submit locked until every required field is filled', async
 
   // Assert — 첨부 없이도 열린다(첨부는 선택 항목이다)
   await expect(submitButton).toBeEnabled()
+})
+
+/**
+ * 동의 체크박스가 눈에 보이는가.
+ *
+ * 2026-09-11 오너 제보 — `appearance: none` 이 네이티브 체크 표시까지 지워서 켠
+ * 상태가 표시 없는 검은 사각형으로 보였다. "체크박스가 DOM 에 있다"로는 다시
+ * 잡지 못하는 결함이라, **상자 크기**와 **켜짐 표시**를 화면에서 직접 확인한다.
+ */
+test('should show a visible consent checkbox that marks itself when checked', async ({
+  page,
+}, testInfo) => {
+  // Arrange
+  const isDesktop = testInfo.project.name === 'chromium'
+
+  if (isDesktop) {
+    await page.setViewportSize({ width: 1440, height: 1200 })
+  }
+
+  await stubLogin(page, SUPPORT_PATH)
+
+  const consent = page.locator('input[name="consent"]')
+  const mark = page.getByTestId('support-checkbox-mark')
+
+  // Assert — 상자가 보이고 실제로 자리를 차지한다(시안 30×30)
+  await expect(consent).toBeVisible()
+  await expect(consent).not.toBeChecked()
+
+  const box = await consent.boundingBox()
+
+  expect(box).not.toBeNull()
+  expect(box?.width ?? 0).toBeGreaterThan(0)
+  expect(box?.height ?? 0).toBeGreaterThan(0)
+
+  // Assert — 꺼진 상태에는 체크 표시가 없다
+  await expect(mark).toHaveCount(0)
+
+  // Act — 키보드만으로 켠다(스페이스). 마우스 없이도 동의할 수 있어야 한다
+  await consent.focus()
+  await page.keyboard.press('Space')
+
+  // Assert — 상태와 표시가 함께 바뀐다
+  await expect(consent).toBeChecked()
+  await expect(mark).toBeVisible()
+
+  const markBox = await mark.boundingBox()
+
+  expect(markBox?.width ?? 0).toBeGreaterThan(0)
+  expect(markBox?.height ?? 0).toBeGreaterThan(0)
+
+  await consent.screenshot({
+    path: `${CONSENT_SHOT_DIR}/consent-checked-${isDesktop ? '1440' : 'pixel7'}.png`,
+  })
+
+  // Act — 라벨을 눌러 끈다
+  await page.getByText('개인정보 수집 및 이용에 동의합니다.').click()
+
+  // Assert
+  await expect(consent).not.toBeChecked()
+  await expect(mark).toHaveCount(0)
 })
 
 test('should send anonymous visitors to login when they open 내 문의 내역', async ({ page }) => {

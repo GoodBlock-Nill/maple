@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { InquiryAttachmentField } from '@/components/support/InquiryAttachmentField'
+import { CHECK_MARK_TEST_ID } from '@/components/support/SupportCheckbox'
 import {
   INQUIRY_ATTACHMENT_MAX_BYTES,
   INQUIRY_ATTACHMENT_MAX_MB,
@@ -175,5 +176,32 @@ describe('InquiryAttachmentField', () => {
 
     // Assert
     expect(screen.getByText('첨부파일을 올리지 못했습니다.')).toBeInTheDocument()
+  })
+
+  it('should show a check mark on the removal box once it is ticked', async () => {
+    /* 수정 화면의 삭제 체크박스도 접수 폼의 동의 체크박스와 같은 부품이다 —
+       켠 표시가 없으면 "무엇이 지워질지"를 화면에서 알 수 없다. */
+    // Arrange
+    const user = userEvent.setup()
+
+    render(
+      <InquiryAttachmentField
+        attachments={[{ name: 'old.png', path: 'uid/old.png', size: 1024, mimeType: 'image/png' }]}
+        error={undefined}
+      />,
+    )
+
+    // Assert — 꺼진 상태에는 표시가 없다.
+    const removal = screen.getByRole('checkbox')
+
+    expect(removal).toBeVisible()
+    expect(screen.queryByTestId(CHECK_MARK_TEST_ID)).not.toBeInTheDocument()
+
+    // Act
+    await user.click(removal)
+
+    // Assert
+    expect(removal).toBeChecked()
+    expect(screen.getByTestId(CHECK_MARK_TEST_ID)).toBeInTheDocument()
   })
 })

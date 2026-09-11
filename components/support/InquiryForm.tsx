@@ -5,8 +5,8 @@ import { useActionState, useCallback, useEffect, useMemo, useRef, useState } fro
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
 import { InquiryAttachmentField } from '@/components/support/InquiryAttachmentField'
+import { InquiryConsentField } from '@/components/support/InquiryConsentField'
 import { InquiryFields } from '@/components/support/InquiryFields'
-import { FieldError } from '@/components/support/InquiryFormRow'
 import { InquirySubmitButton } from '@/components/support/InquirySubmitButton'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { createInquiry } from '@/lib/actions/inquiry-actions'
@@ -17,9 +17,6 @@ import {
   LOGIN_REQUIRED_INQUIRY_NOTICE,
   MY_INQUIRIES_HEADING,
   MY_INQUIRIES_PATH,
-  PRIVACY_CONSENT_LABEL,
-  PRIVACY_CONSENT_LINK_LABEL,
-  PRIVACY_POLICY_PATH,
 } from '@/lib/constants/support'
 import { isInquiryFormFilled } from '@/lib/validation/inquiry'
 
@@ -136,28 +133,7 @@ export function InquiryForm({
       />
 
       {/* 동의는 접수 시점에 이미 받아 저장돼 있다. 수정 화면에서 다시 묻지 않는다. */}
-      {isEditMode ? null : (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <input
-              id="inquiry-consent"
-              name="consent"
-              type="checkbox"
-              className="focus-visible:outline-focus size-[30px] shrink-0 appearance-none rounded-[5px] border-[1.5px] border-[#d5d9df] bg-white checked:border-[#2a2a2a] checked:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2"
-            />
-            <label htmlFor="inquiry-consent" className="text-ui text-[#1e2938]">
-              {PRIVACY_CONSENT_LABEL}
-            </label>
-            <Link
-              href={PRIVACY_POLICY_PATH}
-              className="tap-area text-ui text-[#0067ff] underline underline-offset-2"
-            >
-              {PRIVACY_CONSENT_LINK_LABEL}
-            </Link>
-          </div>
-          <FieldError message={fieldErrors.consent} />
-        </div>
-      )}
+      {isEditMode ? null : <InquiryConsentField error={fieldErrors.consent} />}
 
       <div className="flex flex-col gap-2">
         <InquirySubmitButton

@@ -528,28 +528,29 @@ stateDiagram-v2
 
 ### 7.1 단위 테스트
 
-2026-09-11 실행 결과: **사용자 사이트 170개(15파일) · 관리자 80개(5파일) 통과**.
+2026-09-11 실행 결과: **사용자 사이트 179개(17파일) · 관리자 80개(5파일) 통과**.
 
-| 파일                                                                                     | 건수  | 무엇을 고정하나                                                                             |
-| ---------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
-| `tests/unit/validation/inquiry.test.ts`                                                  | 39    | 필수 항목 · 계정 ID 서식 · 상한 · CRLF · 세부 유형 대조 · 첨부 검증 · `isInquiryFormFilled` |
-| `tests/unit/actions/inquiry-edit-actions.test.ts`                                        | 15    | 수정 가능 상태 · 옛 카테고리/유형 허용 · 첨부 분리 · 쿨다운 · 42501 문구 · 취소             |
-| `tests/unit/support/InquiryFields.test.tsx`                                              | 13    | 프리필 교체 · 확인 모달 · 유형 셀렉트 잠금과 hidden '기타' · 계정 ID 프리필                 |
-| `tests/unit/validation/inquiry-video.test.ts`                                            | 13    | 영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(`null` vs `[]`)                              |
-| `tests/unit/constants/support.test.ts`                                                   | 12    | 상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지                             |
-| `tests/unit/actions/inquiry-actions.test.ts`                                             | 11    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect                        |
-| `tests/unit/actions/inquiry-videos.test.ts`                                              | 11    | `claimPendingVideos` 의 세 검사와 롤백 · 서비스 롤 부재                                     |
-| `tests/unit/data/inquiries.test.ts`                                                      | 10    | jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑                                            |
-| `tests/unit/supabase/inquiry-pending-path.test.ts`                                       | 9     | pending 경로 조립과 `isInquiryPendingPath`(깊이 · uid · 트래버설)                           |
-| `tests/unit/support/InquiryAttachmentField.test.tsx` · `InquiryAttachmentVideo.test.tsx` | 8 · 8 | 선택 → 축소 → 잠금 · 영상이 `input.files` 에서 빠지는지 · 진행률/취소/다시 시도             |
-| `tests/unit/utils/inquiry-prefill.test.ts`                                               | 8     | `isDiscardableContent` · `withLegacyCategory`                                               |
-| `tests/unit/utils/inquiry-permissions.test.ts`                                           | 5     | `canEditInquiry` · `canCancelInquiry` · 취소 판정                                           |
-| `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 4 · 4 | 폴백 · 캐시 태그 · 접수 완료 모달                                                           |
-| `admin/tests/unit/inquiries-validation.test.ts`                                          | 33    | 상태 전이표 · 탭 파싱 · 검색어 정제 · 기간 경계(KST) · 마스킹 · 답변 스키마                 |
-| `admin/tests/unit/inquiry-category-actions.test.ts`                                      | 18    | RPC 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화                      |
-| `admin/tests/unit/inquiry-categories-validation.test.ts`                                 | 16    | 라벨/설명/프리필 상한 · `toCategoryKey` · 세부 유형 중복·개수·길이                          |
-| `admin/tests/unit/inquiry-email-actions.test.ts`                                         | 7     | 다시 보내기 — 방향 · 출처 · 이미 보낸 답신 차단 · 감사 로그                                 |
-| `admin/tests/unit/inquiry-email-auth.test.ts`                                            | 6     | `parseEmailAuth` · `hasEmailAuthFailure`(`none`·null 은 실패가 아니다)                      |
+| 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                         |
+| ---------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------- |
+| `tests/unit/validation/inquiry.test.ts`                                                  | 39    | 필수 항목 · 계정 ID 서식 · 상한 · CRLF · 세부 유형 대조 · 첨부 검증 · `isInquiryFormFilled`             |
+| `tests/unit/actions/inquiry-edit-actions.test.ts`                                        | 15    | 수정 가능 상태 · 옛 카테고리/유형 허용 · 첨부 분리 · 쿨다운 · 42501 문구 · 취소                         |
+| `tests/unit/support/InquiryFields.test.tsx`                                              | 13    | 프리필 교체 · 확인 모달 · 유형 셀렉트 잠금과 hidden '기타' · 계정 ID 프리필                             |
+| `tests/unit/validation/inquiry-video.test.ts`                                            | 13    | 영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(`null` vs `[]`)                                          |
+| `tests/unit/constants/support.test.ts`                                                   | 12    | 상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지                                         |
+| `tests/unit/actions/inquiry-actions.test.ts`                                             | 11    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect                                    |
+| `tests/unit/actions/inquiry-videos.test.ts`                                              | 11    | `claimPendingVideos` 의 세 검사와 롤백 · 서비스 롤 부재                                                 |
+| `tests/unit/data/inquiries.test.ts`                                                      | 10    | jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑                                                        |
+| `tests/unit/supabase/inquiry-pending-path.test.ts`                                       | 9     | pending 경로 조립과 `isInquiryPendingPath`(깊이 · uid · 트래버설)                                       |
+| `tests/unit/support/InquiryAttachmentField.test.tsx` · `InquiryAttachmentVideo.test.tsx` | 9 · 8 | 선택 → 축소 → 잠금 · 삭제 체크의 켜짐 표시 · 영상이 `input.files` 에서 빠지는지 · 진행률/취소/다시 시도 |
+| `tests/unit/utils/inquiry-prefill.test.ts`                                               | 8     | `isDiscardableContent` · `withLegacyCategory`                                                           |
+| `tests/unit/utils/inquiry-permissions.test.ts`                                           | 5     | `canEditInquiry` · `canCancelInquiry` · 취소 판정                                                       |
+| `tests/unit/support/InquiryConsentField.test.tsx` · `InquiryForm.test.tsx`               | 5 · 3 | 동의 체크박스가 보이는지 · 켜짐 표시(흰 체크) · 라벨 클릭 · 오류 연결 · 동의 없이는 제출 잠김           |
+| `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 4 · 4 | 폴백 · 캐시 태그 · 접수 완료 모달                                                                       |
+| `admin/tests/unit/inquiries-validation.test.ts`                                          | 33    | 상태 전이표 · 탭 파싱 · 검색어 정제 · 기간 경계(KST) · 마스킹 · 답변 스키마                             |
+| `admin/tests/unit/inquiry-category-actions.test.ts`                                      | 18    | RPC 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화                                  |
+| `admin/tests/unit/inquiry-categories-validation.test.ts`                                 | 16    | 라벨/설명/프리필 상한 · `toCategoryKey` · 세부 유형 중복·개수·길이                                      |
+| `admin/tests/unit/inquiry-email-actions.test.ts`                                         | 7     | 다시 보내기 — 방향 · 출처 · 이미 보낸 답신 차단 · 감사 로그                                             |
+| `admin/tests/unit/inquiry-email-auth.test.ts`                                            | 6     | `parseEmailAuth` · `hasEmailAuthFailure`(`none`·null 은 실패가 아니다)                                  |
 
 ```bash
 # 사용자 사이트
@@ -561,11 +562,11 @@ cd admin && pnpm test -- tests/unit/inquir
 
 ### 7.2 E2E
 
-| 파일                                         | 건수 | 시나리오                                                                                                                                                                   |
-| -------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/e2e/support-inquiries.spec.ts`        | 8    | 프리필·교체 확인 모달 / 필수 항목 잠금 / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** |
-| `admin/tests/e2e/inquiries.spec.ts`          | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                        |
-| `admin/tests/e2e/inquiry-categories.spec.ts` | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                           |
+| 파일                                         | 건수 | 시나리오                                                                                                                                                                                                                   |
+| -------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/e2e/support-inquiries.spec.ts`        | 9    | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** |
+| `admin/tests/e2e/inquiries.spec.ts`          | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                        |
+| `admin/tests/e2e/inquiry-categories.spec.ts` | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                           |
 
 1. **스텁 로그인** — 사용자 e2e 는 `/login?next=…` → `button[name="provider"][value="google"]` 클릭. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩(닉네임 · 월드 UID · 약관 3종)을 거치고, 데모 계정 폴백이면 곧장 목적지에 도착합니다.
 2. **관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.** `ADMIN_E2E_SECRETS`(기본값은 스크래치패드의 `admin-bootstrap.env`)를 실행 중에만 읽고, 서비스 롤은 `.env.local` 에서 읽어 픽스처·검증에만 씁니다.
@@ -637,6 +638,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `app/(auth)/account/inquiries/page.tsx`                                                             | 마이페이지 문의내역 탭(첫 10건 표)                           |
 | `components/support/InquiryForm.tsx`                                                                | 접수·수정 공용 폼 · 필수 항목 잠금 · 동의                    |
 | `components/support/InquiryFields.tsx`                                                              | 계정 ID · 카테고리/유형 · 제목 · 내용 마크업                 |
+| `components/support/InquiryConsentField.tsx` · `SupportCheckbox.tsx`                                | 개인정보 수집·이용 동의 줄 · 보이는 체크박스(켜짐 = 흰 체크) |
 | `components/support/use-inquiry-prefill.ts`                                                         | 프리필 상태 기계 · 확인 모달 · 자동 성장 textarea            |
 | `components/support/InquiryAttachmentField.tsx` · `InquiryAttachmentLists.tsx`                      | 파일 선택 · 축소 · 잠금 · 기존 첨부 삭제 체크                |
 | `components/support/use-inquiry-videos.ts` · `InquiryVideoList.tsx`                                 | 영상 업로드 행 상태 · 진행률 · 취소 · 다시 시도              |

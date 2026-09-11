@@ -1,3 +1,4 @@
+import { SupportCheckbox } from '@/components/support/SupportCheckbox'
 import {
   INQUIRY_ATTACHMENT_REMOVE_FIELD,
   INQUIRY_ATTACHMENT_REMOVE_LABEL,
@@ -43,12 +44,12 @@ export function ExistingAttachmentList({ attachments, onToggle }: ExistingAttach
         {attachments.map((attachment) => (
           <li key={attachment.path}>
             <label className={ROW_CLASS}>
-              <input
-                type="checkbox"
+              {/* 접수 폼의 동의 체크박스와 같은 부품 — 켜진 상태에 흰 체크가 뜬다. */}
+              <SupportCheckbox
                 name={INQUIRY_ATTACHMENT_REMOVE_FIELD}
                 value={attachment.path}
-                onChange={(event) => onToggle(attachment.path, event.target.checked)}
-                className="focus-visible:outline-focus size-5 shrink-0 appearance-none rounded-[4px] border-[1.5px] border-[#d5d9df] bg-white checked:border-[#2a2a2a] checked:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2"
+                boxClassName="size-5"
+                onChange={(isRemoved) => onToggle(attachment.path, isRemoved)}
               />
               <span className="min-w-0 truncate">{attachment.name}</span>
               <span className="text-ink-muted shrink-0">{formatFileSize(attachment.size)}</span>
