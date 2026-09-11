@@ -177,7 +177,7 @@ where d.slug = 'privacy'
 on conflict (document_id, version) do nothing;
 
 insert into public.legal_documents (slug, title)
-values ('discord', '디스코드 운영정책')
+values ('discord', '글자월드 디스코드 운영정책')
 on conflict (slug) do nothing;
 
 insert into public.legal_document_versions (
@@ -185,10 +185,10 @@ insert into public.legal_document_versions (
 )
 select
   d.id,
-  '20260918-5',
-  date '2026-09-18',
-  $legal$<p>글자월드 공식 디스코드 서버는 모두가 안전하게 즐길 수 있는 공간을 목표로 운영됩니다.</p><p>정식 운영정책 문안은 준비 중입니다. 확정되는 대로 이 페이지에 게시합니다.</p>$legal$,
-  '확정 문안 이전의 안내 문단.',
+  '20260911-1',
+  date '2026-09-11',
+  $legal$<p>글자월드 공식 디스코드에 오신 것을 환영합니다.<br />본 서버는 글자월드 이용자들이 자유롭게 소통하고 정보를 나누는 공간입니다.<br />모든 멤버는 아래 운영정책을 숙지하고 준수해 주시기 바랍니다.</p><h2>1. 기본 원칙</h2><p><strong>[1-1]</strong>본 서버는 글자월드 이용자들이 자유롭게 소통하고 정보를 나누는 공간입니다.</p><p><strong>[1-2]</strong>모든 멤버는 본 운영정책을 숙지하고 준수해야 합니다.</p><h2>2. 금지행위</h2><p><strong>[2-1]</strong>욕설, 비속어, 혐오 발언, 차별적 표현 사용을 금지합니다.</p><p><strong>[2-2]</strong>특정 유저를 비방, 모욕, 괴롭히는 행위를 금지합니다.</p><p><strong>[2-3]</strong>도배 행위를 금지합니다. 동일하거나 유사한 메시지·이모지의 반복 전송을 포함합니다.</p><p><strong>[2-4]</strong>타 서버, 외부 커뮤니티, SNS, 상업적 광고 링크 무단 공유를 금지합니다.</p><p><strong>[2-5]</strong>타인의 개인정보 유출 또는 공유를 금지합니다.</p><p><strong>[2-6]</strong>저작권이 있는 콘텐츠 무단 게시를 금지합니다.</p><p><strong>[2-7]</strong>허위 정보 유포, 운영진 또는 타인 사칭 행위를 금지합니다.</p><p><strong>[2-8]</strong>게임 내 버그, 취약점, 핵·매크로 등 불법 프로그램 정보 공유를 금지합니다.</p><p><strong>[2-9]</strong>커뮤니티 기준에 부합하지 않는 닉네임, 프로필 사진 사용을 금지합니다.</p><p><strong>[2-10]</strong>미성년자를 포함한 모든 유저에 대한 성적·불건전한 표현 및 행위를 금지합니다.</p><h2>3. 제재</h2><p><strong>[3-1]</strong>위 항목에 해당하는 댓글, 이미지 등의 불건전한 정도에 따라 구체적으로 해당되지 않는 사항이라도 기타 사회 통념상 수용하기 어려운 글 등록, 업로드 하거나 서버 운영에 지장을 초래할 경우 별도의 경고 없이 서버에서 추방 또는 영구 차단될 수 있습니다.</p><h2>4. 기타</h2><p><strong>[4-1]</strong>이용규칙에 포함되지 않는 내용은 Discord에서 제공되는 'Discord 커뮤니티 가이드라인' (https://discord.com/guidelines) 을 따릅니다.</p>$legal$,
+  '운영자 확정 문안(2026-09-11) 반영',
   true,
   now()
 from public.legal_documents d

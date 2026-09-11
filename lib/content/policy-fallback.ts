@@ -1,4 +1,11 @@
 import {
+  DISCORD_POLICY_EFFECTIVE_DATE,
+  DISCORD_POLICY_NOTICE,
+  DISCORD_POLICY_SECTIONS,
+  DISCORD_POLICY_TITLE,
+  DISCORD_POLICY_VERSION,
+} from '@/lib/content/discord-policy'
+import {
   OPERATING_POLICY_ADDENDUM,
   OPERATING_POLICY_EFFECTIVE_DATE,
   OPERATING_POLICY_NOTICE,
@@ -54,16 +61,12 @@ export type PolicyFallback = {
   /** 1장 앞에 오는 고지 블록. 목차에는 오르지 않는다. */
   notice?: PolicyNotice
   addendum?: PolicyAddendum
-  /** 구조화 문안이 없는 문서의 안내 문단(디스코드). */
+  /** 구조화 문안이 없는 문서를 위한 안내 문단. 지금은 쓰는 문서가 없지만
+      `PolicyCodeBody` 가 `sections.length === 0` 일 때 대신 그리는 경로라 남겨 둔다. */
   paragraphs: readonly string[]
   /** 넥슨 IP 고지를 이 문서에 싣는지 여부. */
   hasIpNotice: boolean
 }
-
-const DISCORD_PARAGRAPHS = [
-  '글자월드 공식 디스코드 서버는 모두가 안전하게 즐길 수 있는 공간을 목표로 운영됩니다.',
-  '정식 운영정책 문안은 준비 중입니다. 확정되는 대로 이 페이지에 게시합니다.',
-] as const
 
 export const POLICY_FALLBACKS: Record<LegalSlug, PolicyFallback> = {
   privacy: {
@@ -80,12 +83,13 @@ export const POLICY_FALLBACKS: Record<LegalSlug, PolicyFallback> = {
   },
   discord: {
     heading: '디스코드 운영정책',
-    title: '디스코드 운영정책',
-    description: DISCORD_PARAGRAPHS[0],
-    version: PRIVACY_POLICY_VERSION,
-    effectiveDate: PRIVACY_POLICY_EFFECTIVE_DATE,
-    sections: [],
-    paragraphs: DISCORD_PARAGRAPHS,
+    title: DISCORD_POLICY_TITLE,
+    description: '글자월드 공식 디스코드 서버 이용 시 지켜야 할 금지행위와 제재 기준을 안내합니다.',
+    version: DISCORD_POLICY_VERSION,
+    effectiveDate: DISCORD_POLICY_EFFECTIVE_DATE,
+    sections: DISCORD_POLICY_SECTIONS,
+    notice: DISCORD_POLICY_NOTICE,
+    paragraphs: [],
     hasIpNotice: false,
   },
   marketing: {

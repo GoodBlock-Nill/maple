@@ -52,11 +52,12 @@ registerHooks({
   },
 })
 
-const { policySectionsToHtml, escapeHtml } = await import('../lib/content/policy-to-html.ts')
+const { policySectionsToHtml } = await import('../lib/content/policy-to-html.ts')
 const { sanitizeLegalHtml } = await import('../lib/sanitize/legal-html.ts')
 const operating = await import('../lib/content/operating-policy.ts')
 const privacy = await import('../lib/content/privacy-policy.ts')
 const marketing = await import('../lib/content/marketing-consent.ts')
+const discord = await import('../lib/content/discord-policy.ts')
 
 /** `2026년 9월 18일` → `2026-09-18`. 시행일의 단일 출처는 코드의 그 문자열이다. */
 function toIsoDate(korean) {
@@ -68,13 +69,6 @@ function toIsoDate(korean) {
 
   return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`
 }
-
-/* 디스코드 운영정책은 확정 문안이 아직 없다. 사용자 사이트가 지금 보여 주는
-   안내 문단을 그대로 최초 발행본으로 심어, 관리자에서 곧바로 갈아 끼울 수 있게 한다. */
-const DISCORD_PARAGRAPHS = [
-  '글자월드 공식 디스코드 서버는 모두가 안전하게 즐길 수 있는 공간을 목표로 운영됩니다.',
-  '정식 운영정책 문안은 준비 중입니다. 확정되는 대로 이 페이지에 게시합니다.',
-]
 
 const documents = [
   {
@@ -90,11 +84,14 @@ const documents = [
   },
   {
     slug: 'discord',
-    title: '디스코드 운영정책',
-    version: privacy.PRIVACY_POLICY_VERSION,
-    effectiveDate: toIsoDate(privacy.PRIVACY_POLICY_EFFECTIVE_DATE),
-    summary: '확정 문안 이전의 안내 문단.',
-    html: DISCORD_PARAGRAPHS.map((text) => `<p>${escapeHtml(text)}</p>`).join(''),
+    title: discord.DISCORD_POLICY_TITLE,
+    version: discord.DISCORD_POLICY_VERSION,
+    effectiveDate: toIsoDate(discord.DISCORD_POLICY_EFFECTIVE_DATE),
+    summary: '운영자 확정 문안(2026-09-11) 반영',
+    html: policySectionsToHtml({
+      sections: discord.DISCORD_POLICY_SECTIONS,
+      notice: discord.DISCORD_POLICY_NOTICE,
+    }),
   },
   {
     slug: 'operating',
