@@ -1,13 +1,8 @@
 import Link from 'next/link'
 
-import {
-  BOARD_ROW_CLASS,
-  BOARD_ROW_HEAD_CLASS,
-  BOARD_ROW_HEAD_TITLE_SLOT_CLASS,
-  BOARD_ROW_TITLE_CLASS,
-} from '@/components/board/board-styles'
 import { MetaRow } from '@/components/board/MetaRow'
-import { Badge } from '@/components/ui/Badge'
+import { NewsCardHead } from '@/components/board/NewsCardHead'
+import { NEWS_CARD_CLASS, NEWS_CARD_TITLE_CLASS } from '@/components/board/news-card-styles'
 import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
 
 import type { NewsItem } from '@/types/domain'
@@ -16,21 +11,20 @@ type NewsRowProps = {
   item: NewsItem
 }
 
-/** "가로형" 뷰. 제목 1줄 + 우측 뱃지, 아래 메타 한 줄. */
+/**
+ * "리스트형" 뷰의 행 1개(시안 v2 §5). 카드형과 같은 표면·패딩·세로 gap 을 그대로
+ * 쓰고, 요약 줄만 뺀다 — 위에서부터 [뱃지 · 핀] / [제목 한 줄] / [메타].
+ */
 export function NewsRow({ item }: NewsRowProps) {
   const category = NEWS_CATEGORY_MAP[item.category]
 
   return (
-    <Link href={`/news/${item.id}`} className={BOARD_ROW_CLASS}>
-      <div className={BOARD_ROW_HEAD_CLASS}>
-        <h3 className={BOARD_ROW_TITLE_CLASS + ' ' + BOARD_ROW_HEAD_TITLE_SLOT_CLASS}>
-          {item.title}
-        </h3>
-        <Badge size="md" color={category.badge} className="order-1 sm:order-2">
-          {category.label}
-        </Badge>
-      </div>
-      <MetaRow date={item.publishedAt} views={item.views} />
+    <Link href={`/news/${item.id}`} className={NEWS_CARD_CLASS}>
+      <NewsCardHead badge={category.badge} label={category.label} isPinned={item.isPinned} />
+
+      <h3 className={NEWS_CARD_TITLE_CLASS}>{item.title}</h3>
+
+      <MetaRow date={item.publishedAt} views={item.views} className="mt-auto" />
     </Link>
   )
 }

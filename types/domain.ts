@@ -23,8 +23,8 @@ export type ContentFormat = 'markdown' | 'html'
 
 /**
  * 뉴스 목록 표시 방식. URL `?view=` 값과 1:1 대응한다.
- * 시안 v2 는 카드형(2열 그리드)과 가로형(행 목록) 둘만 쓴다 — 썸네일 자산이
- * 없는 "자세히" 뷰는 범위에서 빠졌다(docs/reference/figma/news-v2-spec.md §1).
+ * 시안 v2 는 카드형(2열 그리드)과 리스트형(1열 행 목록) 둘만 쓴다 — 썸네일 자산이
+ * 없는 "자세히" 뷰는 범위에서 빠졌다(docs/reference/figma/news-v2-spec.md §1, §5).
  */
 export type NewsView = 'card' | 'list'
 

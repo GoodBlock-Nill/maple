@@ -14,13 +14,13 @@ function newsHref(view: NewsView, page = 1): string {
 }
 
 describe('NEWS_VIEWS', () => {
-  it('should list 가로형 before 카드형 when rendered as menu items', () => {
+  it('should list 리스트형 before 카드형 when rendered as menu items', () => {
     // Arrange & Act
     const entries = NEWS_VIEWS.map((option) => [option.value, option.label])
 
     // Assert — 배열 순서가 곧 드롭다운 순서다(시안 v2 §1).
     expect(entries).toEqual([
-      ['list', '가로형'],
+      ['list', '리스트형'],
       ['card', '카드형'],
     ])
   })

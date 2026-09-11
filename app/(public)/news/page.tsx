@@ -70,9 +70,9 @@ export default async function NewsPage(props: PageProps<'/news'>) {
         </div>
       </div>
 
-      {/* 카드형은 폰에서 트레이 여백을 12 로 줄인다(시안 v2 §3) — 카드 자체 패딩이 20 이라
-          기본 16 을 그대로 두면 좁은 화면에서 본문 폭이 눈에 띄게 깎인다. */}
-      <ListSheet className={view === 'card' ? 'mt-6 p-3 lg:p-4' : 'mt-6'}>
+      {/* 카드형·리스트형 둘 다 폰에서 트레이 여백을 12 로 줄인다(시안 v2 §3·§5) — 두 뷰가
+          같은 카드 표면(패딩 20)을 쓰므로 기본 16 을 그대로 두면 본문 폭이 눈에 띄게 깎인다. */}
+      <ListSheet className="mt-6 p-3 lg:p-4">
         {view === 'card' ? <NewsCardGrid items={list.items} /> : <NewsList items={list.items} />}
       </ListSheet>
 

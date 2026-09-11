@@ -1,9 +1,9 @@
 /**
- * 카드형 뉴스 목록 전용 클래스(시안 v2 §2·§3).
+ * 카드형·리스트형 뉴스 목록 공용 클래스(시안 v2 §2·§3·§5).
  *
  * 표면(테두리·그림자·hover 반응)은 `board-styles.ts` 의 `BOARD_CARD_CLASS` 와
- * 같은 값을 **복사**해 둔다. 행 목록과 카드는 지금은 같은 표면이지만 서로 다른
- * 시안을 따라가는 중이라, 한쪽을 손볼 때 다른 쪽이 끌려가지 않도록 분리했다.
+ * 같은 값을 **복사**해 둔다. 리스트형(`NewsRow`)이 요약 줄만 빼고 카드형과 같은
+ * 표면·패딩·gap 을 그대로 쓰므로(시안 v2 §5), 두 뷰가 이 파일을 함께 쓴다.
  */
 const NEWS_CARD_SURFACE_CLASS =
   'rounded-panel border-line-soft bg-surface shadow-chip block border ' +
@@ -31,3 +31,6 @@ export const NEWS_CARD_TITLE_CLASS =
  */
 export const NEWS_CARD_SUMMARY_CLASS =
   'text-ink-muted line-clamp-2 text-[16px] leading-[24px] font-medium lg:text-[17px] lg:leading-[25px]'
+
+/** 리스트형(§5) 행 사이 gap 16(현행 카드형과 달리 1열이라 grid 대신 flex 로 쌓는다). */
+export const NEWS_ROW_LIST_CLASS = 'flex flex-col gap-4'

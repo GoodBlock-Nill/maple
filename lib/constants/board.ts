@@ -34,10 +34,10 @@ export const COMMUNITY_CATEGORIES = [
 ] as const satisfies readonly CategoryOption<CommunityCategory>[]
 
 /**
- * 뉴스 목록 보기 방식. 배열 순서가 곧 드롭다운 항목 순서다(시안 v2 §1 — 가로형 → 카드형).
+ * 뉴스 목록 보기 방식. 배열 순서가 곧 드롭다운 항목 순서다(시안 v2 §5 — 리스트형 → 카드형).
  */
 export const NEWS_VIEWS = [
-  { value: 'list', label: '가로형' },
+  { value: 'list', label: '리스트형' },
   { value: 'card', label: '카드형' },
 ] as const satisfies readonly BoardOption<NewsView>[]
 

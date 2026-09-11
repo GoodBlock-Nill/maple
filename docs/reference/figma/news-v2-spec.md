@@ -38,3 +38,12 @@
 - `NewsItem` 에 `isPinned: boolean` 추가(`news.is_pinned` 컬럼을 `NEWS_LIST_COLUMNS` 에 포함, 매퍼 반영). 상세·인접글 등 다른 사용처는
   기본 false 로 무해하게.
 - `summary` 는 이미 있음(관리자 입력). 없을 때는 본문에서 파생하지 않는다(빈 문자열 → 요약 줄 생략).
+
+## 5. 리스트형 (229:6096 "뉴스목록_시안_2" 두 번째 프레임, 2026-09-11 추가) — `docs/reference/figma/news-v2/list-row-pc.png`
+- 가로형 → **"리스트형"** 으로 이름이 바뀌었다(툴바 버튼 라벨·드롭다운 항목 모두). 버튼 **120×45**, 아이콘 `view-list.svg`(fa7-solid:list-ul, 25).
+- 행 = 카드형 카드와 같은 표면을 **1168 전체 폭 1열**로: white · border #cdd3db · radius 20 · padding 24 · drop-shadow 3단 · 세로 gap 24 ·
+  높이 165. 행 사이 gap **16**(현행 12). 트레이는 카드형과 동일(#ededed · radius 20 · padding 16).
+  1. 머리줄: 카테고리 뱃지 … 우측 고정 핀 24(`is_pinned` 만)
+  2. 제목 Switzer Medium 27/24 tracking −0.2 #2a2a2a 한 줄 말줄임 (**요약 없음**)
+  3. 메타 줄(`clock-12` 날짜 · `eye-15` 조회수, 16px) — 현행 `MetaRow`
+- 즉 기존 `NewsRow`(제목 + 우측 뱃지 한 줄, 메타) 레이아웃은 폐기하고 카드형과 같은 세로 구조로 바꾼다. 모바일은 padding 20, 제목 22.

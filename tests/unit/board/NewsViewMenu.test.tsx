@@ -31,7 +31,7 @@ describe('NewsViewMenu', () => {
     openMenu()
 
     // Assert — 항목은 실제 링크라 서버가 그린 목록과 상태가 어긋날 수 없다.
-    expect(screen.getByRole('menuitemradio', { name: '가로형' })).toHaveAttribute(
+    expect(screen.getByRole('menuitemradio', { name: '리스트형' })).toHaveAttribute(
       'href',
       '/news?view=list',
     )
@@ -46,7 +46,7 @@ describe('NewsViewMenu', () => {
     openMenu()
 
     // Assert
-    expect(screen.getByRole('menuitemradio', { name: '가로형' })).toHaveAttribute(
+    expect(screen.getByRole('menuitemradio', { name: '리스트형' })).toHaveAttribute(
       'aria-checked',
       'true',
     )
@@ -64,7 +64,7 @@ describe('NewsViewMenu', () => {
     openMenu()
 
     // Assert
-    expect(screen.getByRole('menuitemradio', { name: '가로형' })).toHaveFocus()
+    expect(screen.getByRole('menuitemradio', { name: '리스트형' })).toHaveFocus()
   })
 
   it('should close and restore focus when Escape is pressed', () => {

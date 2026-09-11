@@ -13,13 +13,21 @@ import type { NewsView } from '@/types/domain'
 const TRIGGER_ICON_SIZE = 25
 const MENU_ICON_SIZE = 24
 
-const CARD_ICON_SRC = '/images/news/v2/view-card.svg'
+/** 보기 모드 → 아이콘 자산(시안 v2 §1·§5). */
+const VIEW_ICON_SRC: Record<NewsView, string> = {
+  card: '/images/news/v2/view-card.svg',
+  list: '/images/news/v2/view-list.svg',
+}
 
-/** 트리거 — 104×45 흰 상자(`board-control` = h45 · radius 10 · border #cdd3db · 3단 그림자). */
+/**
+ * 트리거 — 흰 상자(`board-control` = h45 · radius 10 · border #cdd3db · 3단 그림자).
+ * 라벨 길이에 따라 폭이 달라진다(시안 실측: 카드형 104×45, 리스트형 120×45) — 고정 폭 대신
+ * 내용에 맡긴다.
+ */
 const TRIGGER_CLASS =
   'board-control text-ink focus-visible:outline-focus flex w-[45px] shrink-0 items-center ' +
   'justify-center gap-2 text-ui font-medium focus-visible:outline-2 focus-visible:outline-offset-2 ' +
-  'sm:w-[104px] sm:px-3'
+  'sm:w-auto sm:px-3'
 
 /** 드롭다운 상자 — white · radius 10 · padding 4 · shadow 0 10 15 -3 / 0 4 6 -4. */
 const PANEL_CLASS =
@@ -38,33 +46,8 @@ type ViewIconProps = {
   size: number
 }
 
-/** 가로형 아이콘은 내보낸 자산이 없어 시안 모양(가로 막대 2개)을 인라인으로 그린다. */
 function ViewIcon({ view, size }: ViewIconProps) {
-  if (view === 'card') {
-    return <Image src={CARD_ICON_SRC} alt="" width={size} height={size} aria-hidden />
-  }
-
-  return (
-    <svg
-      viewBox="0 0 25 25"
-      width={size}
-      height={size}
-      fill="none"
-      aria-hidden
-      className="shrink-0"
-    >
-      <rect
-        x="2.5"
-        y="4.5"
-        width="20"
-        height="6.5"
-        rx="2.5"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <rect x="2.5" y="14" width="20" height="6.5" rx="2.5" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  )
+  return <Image src={VIEW_ICON_SRC[view]} alt="" width={size} height={size} aria-hidden />
 }
 
 type NewsViewMenuProps = {

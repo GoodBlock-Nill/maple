@@ -1,21 +1,16 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { MetaRow } from '@/components/board/MetaRow'
+import { NewsCardHead } from '@/components/board/NewsCardHead'
 import {
   NEWS_CARD_BODY_CLASS,
   NEWS_CARD_CLASS,
-  NEWS_CARD_HEAD_CLASS,
   NEWS_CARD_SUMMARY_CLASS,
   NEWS_CARD_TITLE_CLASS,
 } from '@/components/board/news-card-styles'
-import { Badge } from '@/components/ui/Badge'
 import { NEWS_CATEGORY_MAP } from '@/lib/constants/board'
 
 import type { NewsItem } from '@/types/domain'
-
-/** 고정 글 핀 — 시안 실측 24px. */
-const PIN_SIZE = 24
 
 type NewsCardProps = {
   item: NewsItem
@@ -32,20 +27,7 @@ export function NewsCard({ item }: NewsCardProps) {
 
   return (
     <Link href={`/news/${item.id}`} className={NEWS_CARD_CLASS}>
-      <div className={NEWS_CARD_HEAD_CLASS}>
-        <Badge size="md" color={category.badge}>
-          {category.label}
-        </Badge>
-        {item.isPinned ? (
-          <Image
-            src="/images/news/v2/pin.png"
-            alt="고정된 글"
-            width={PIN_SIZE}
-            height={PIN_SIZE}
-            className="shrink-0"
-          />
-        ) : null}
-      </div>
+      <NewsCardHead badge={category.badge} label={category.label} isPinned={item.isPinned} />
 
       <div className={NEWS_CARD_BODY_CLASS}>
         <h3 className={NEWS_CARD_TITLE_CLASS}>{item.title}</h3>
