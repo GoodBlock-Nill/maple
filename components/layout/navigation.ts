@@ -22,7 +22,7 @@ export function isNavItemHidden(href: string): boolean {
  * 헤더 GNB 와 모바일 드로어는 준비 중 항목도 **보여 준다** — 눌러 들어가면
  * 페이지가 "준비 중" 안내 카드를 그린다(시안 v2 §1 도 회색 글자로 남겨 둔다).
  * 반면 푸터는 시안 v2 §5 에서 준비 중 항목을 아예 빼므로, 이 판정은 지금
- * `FooterColumn` 만 쓴다.
+ * 푸터 링크(`FooterLegalLinks`)와 헤더가 쓴다.
  */
 export function isNavItemComingSoon(href: string): boolean {
   if (href === '/guide') {

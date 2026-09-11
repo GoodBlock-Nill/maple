@@ -1,16 +1,11 @@
 import Image from 'next/image'
-import Link from 'next/link'
 
-import { FooterColumn } from '@/components/layout/FooterColumn'
 import { FOOTER_CONFIG, FOOTER_PANEL_DEFAULTS } from '@/components/layout/footer-variants'
+import { FooterIpNotice } from '@/components/layout/FooterIpNotice'
+import { FooterLegalLinks } from '@/components/layout/FooterLegalLinks'
 import { Logo } from '@/components/layout/Logo'
-import {
-  FOOTER_MENU_LINKS,
-  FOOTER_POLICY_LINKS,
-  SITE_TAGLINE,
-  SNS_LINKS,
-} from '@/lib/constants/site'
-import { resolveContactEmail, resolveCopyright } from '@/lib/data/site-view'
+import { FOOTER_POLICY_LINKS } from '@/lib/constants/site'
+import { resolveContactEmail, resolveCopyright, resolveIpNotice } from '@/lib/data/site-view'
 import { getSiteSettings } from '@/lib/data/site'
 import { hasPublicAsset } from '@/lib/utils/asset'
 import { cn } from '@/lib/utils/cn'
@@ -39,9 +34,9 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
   const settings = await getSiteSettings()
   const contactEmail = resolveContactEmail(settings)
   const copyright = resolveCopyright(settings)
+  const ipNotice = resolveIpNotice(settings)
   const config = FOOTER_CONFIG[variant]
   const { mascot } = config
-  const contactStyle = config.contactStyle ?? FOOTER_PANEL_DEFAULTS.contactStyle
   const background = hasPublicAsset(config.background)
     ? config.background
     : (config.backgroundFallback ?? null)
@@ -53,7 +48,6 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
     '--footer-panel-max': `${config.panelMaxWidth ?? FOOTER_PANEL_DEFAULTS.panelMaxWidth}px`,
     '--footer-panel-px': `${config.panelPaddingX ?? FOOTER_PANEL_DEFAULTS.panelPaddingX}px`,
     '--footer-panel-pt': `${config.panelPaddingTop ?? FOOTER_PANEL_DEFAULTS.panelPaddingTop}px`,
-    '--footer-brand-width': `${config.brandWidth ?? FOOTER_PANEL_DEFAULTS.brandWidth}px`,
     '--mascot-right': `${FOOTER_WIDTH - mascot.left - mascot.width}px`,
     '--mascot-top': `${mascot.top}px`,
     '--mascot-width': `${mascot.width}px`,
@@ -88,7 +82,7 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
         />
       ) : null}
 
-      <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-16 pb-12 xl:h-[var(--footer-height)] xl:px-0 xl:pt-[var(--footer-panel-top)] xl:pb-[70px]">
+      <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-16 pb-12 xl:min-h-[var(--footer-height)] xl:px-0 xl:pt-[var(--footer-panel-top)] xl:pb-[70px]">
         {hasPublicAsset(mascot.src) ? (
           <Image
             src={mascot.src}
@@ -110,89 +104,40 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
           className={cn(
             config.panelClass,
             'footer-ink rounded-panel mx-auto w-full max-w-[var(--footer-panel-max)] px-6 py-8 sm:px-10',
-            'xl:h-[353px] xl:px-[var(--footer-panel-px)] xl:pt-[var(--footer-panel-pt)] xl:pb-10',
+            /* 시안 패널 높이는 353 이지만 IP 고지 4줄이 들어가면 그 안에 안 맞을 수
+               있다 — `h-` 대신 `min-h-` 를 써서 실제로 넘치면 패널이 늘어나게 두고
+               잘리지 않게 한다(위·아래 섹션 배경 위 자유 배치라 늘어나도 안전하다).
+               마스코트는 절대 위치라 늘어난 높이의 영향을 받지 않는다. */
+            'xl:min-h-[353px] xl:px-[var(--footer-panel-px)] xl:pt-[var(--footer-panel-pt)] xl:pb-10',
           )}
         >
-          <div className="flex flex-col gap-10 lg:flex-row lg:gap-[100px]">
-            <div className="flex w-full flex-col items-start lg:w-[var(--footer-brand-width)]">
-              <Logo width={109} height={40} />
-              {/* 태그라인 줄바꿈 위치는 시안 그대로여야 해서 폭을 309 로 묶는다 —
-                  좌측 블록이 더 넓은 변형(마이페이지 v2 371)에서도 같은 자리에서 접힌다. */}
-              <p className="text-body-lg mt-[15px] max-w-[309px] leading-[25px] text-white">
-                {SITE_TAGLINE}
-              </p>
+          {/* 시안 v3(footer-v3-home.png) §5 — 로고 · 연락처+약관 한 줄 · 구분선 ·
+              IP 고지+저작권을 세로 한 줄(gap 20)로 쌓는다. 폭 열은 폰과 데스크톱이
+              같은 순서라 lg 분기가 필요 없다(SNS 버튼은 오너 지시로 뺐다). */}
+          <div className="flex w-full flex-col items-start gap-5">
+            <Logo width={109} height={40} />
 
-              {contactStyle === 'text' ? (
-                /* 시안 v2 §5 — 알약 대신 "문의하기" 제목 + 메일 주소 텍스트. */
-                <div className="mt-8 flex flex-col gap-2">
-                  <p className="text-[18px] leading-[26px] font-medium text-white">문의하기</p>
-                  <a
-                    href={contactEmail.href}
-                    className="w-fit text-[16px] leading-[22px] text-white transition-opacity hover:opacity-80"
-                  >
-                    {contactEmail.display}
-                  </a>
-                </div>
-              ) : (
-                <a
-                  href={contactEmail.href}
-                  className="rounded-pill text-ink hover:bg-sheet text-body-lg mt-[34px] inline-flex bg-white px-10 py-[15px] leading-6 font-semibold transition-colors"
-                >
+            <div className="flex flex-col gap-3">
+              <p className="font-ui text-[16px] leading-[22px] font-medium text-[#fafafa]">
+                문의 :{' '}
+                <a href={contactEmail.href} className="transition-opacity hover:opacity-80">
                   {contactEmail.display}
                 </a>
-              )}
+              </p>
+              <FooterLegalLinks links={FOOTER_POLICY_LINKS} />
             </div>
 
-            {/* 폰에서는 두 열이 나란히 선다(시안 v2 모바일 푸터). `lg:contents` 로
-                lg 이상에서는 이 래퍼가 사라져 세 블록이 한 줄의 flex 아이템이 된다.
+            <hr className="w-full border-0 border-t border-white/40" />
 
-                시안의 Legal 열은 x 889(마이페이지 변형) 에서 시작한다. Menu 열 폭은
-                최장 링크 "커뮤니티" 의 글자 폭으로 정해지는데 Figma 쪽 한글 서체가
-                Pretendard 보다 2px 넓다 → 시안 실측 폭을 최소값으로 고정한다. */}
-            <div className="flex gap-16 lg:contents">
-              <FooterColumn title="Menu" links={FOOTER_MENU_LINKS} className="lg:min-w-[58px]" />
-              <FooterColumn title="Legal" links={FOOTER_POLICY_LINKS} />
+            <div className="flex flex-col gap-6">
+              <FooterIpNotice notice={ipNotice} />
+              <p className="font-ui text-[15px] leading-[22px] font-medium text-[#c2c2c2]">
+                {copyright}
+              </p>
             </div>
-          </div>
-
-          {/* 시안의 구분선은 패널 안쪽 폭(998) 이 아니라 992 이고, 가운데가 아니라
-              콘텐츠 왼쪽 끝에 붙는다(실측 x 220~1211). */}
-          <hr className="mt-6 w-full max-w-[992px] border-0 border-t border-white/40" />
-
-          {/* 시안 푸터에는 IP 고지 문단이 없다. 넣으면 패널이 353px 을 넘겨
-              모든 행이 밀리므로 `/policy/privacy` 로 옮겼다. */}
-          <div className="mt-[23px] flex w-full flex-col items-center gap-5 sm:flex-row sm:justify-between">
-            <p className="text-ink-soft text-ui-sm font-medium">{copyright}</p>
-            <SnsList />
           </div>
         </div>
       </div>
     </footer>
-  )
-}
-
-function SnsList() {
-  return (
-    <ul className="flex items-center gap-1.5">
-      {SNS_LINKS.map((sns) => (
-        <li key={sns.href}>
-          <Link
-            href={sns.href}
-            prefetch={false}
-            aria-label={sns.label}
-            className="tap-area flex size-8 items-center justify-center rounded-[7px] bg-[#edf1f4] transition-opacity hover:opacity-80"
-          >
-            <Image
-              src={sns.icon}
-              alt=""
-              width={Math.round(sns.width)}
-              height={Math.round(sns.height)}
-              style={{ width: sns.width, height: sns.height }}
-              className={sns.hasOwnPlate ? 'size-8 rounded-[7px]' : undefined}
-            />
-          </Link>
-        </li>
-      ))}
-    </ul>
   )
 }

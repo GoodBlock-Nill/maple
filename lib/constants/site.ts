@@ -98,40 +98,17 @@ export const FOOTER_POLICY_LINKS: readonly NavItem[] = POLICY_LINKS.filter(
   (link) => link.href !== '/policy/marketing',
 )
 
-export type SnsLink = NavItem & {
-  icon: string
-  /** 아이콘 SVG 자체 크기(px). 32×32 플레이트 안에 중앙 정렬한다. */
-  width: number
-  height: number
-  /** SVG가 배경 플레이트를 직접 그리는지 여부. */
-  hasOwnPlate: boolean
-}
-
-export const SNS_LINKS: readonly SnsLink[] = [
-  {
-    label: '유튜브',
-    href: '/sns/youtube',
-    icon: '/images/brand/sns-youtube.svg',
-    width: 32,
-    height: 32,
-    hasOwnPlate: true,
-  },
-  {
-    label: '디스코드',
-    href: DISCORD_URL,
-    icon: '/images/brand/sns-discord.svg',
-    width: 16,
-    height: 12.2,
-    hasOwnPlate: false,
-  },
-]
-
 /**
  * IP 고지 문구.
  *
- * 시안 푸터(home.png)에는 이 문단이 없고, 넣으면 글래스 패널이 353px 을
- * 넘겨 아래 행 위치가 전부 밀린다. 그래서 푸터에서는 빼고 개인정보처리방침
- * 페이지(`/policy/privacy`)에서만 노출한다.
+ * 시안 v3 푸터(footer-v3-home.png)는 이 문단을 패널 안에 4줄로 넣는다.
+ * `\n` 로 줄을 나눠 저장한다 — `FooterIpNotice` 가 `splitIpNoticeLines()` 로
+ * 그 줄들을 `<br>` 로 이어 붙인다(`lib/utils/ip-notice.ts`).
  * `site_settings.ip_notice` 폴백 — 최종 문구는 관리자에서 갱신한다.
  */
-export const IP_NOTICE = `본 사이트는 넥슨(주)의 메이플스토리 월드 플랫폼에서 서비스되는 ${SITE_NAME} 월드의 공식 홈페이지입니다. 'MapleStory' 및 관련 지식재산권은 NEXON Korea Corp.에 있습니다. 'MapleStory Worlds' 및 관련 지식재산권은 Toben Studio Inc.에 있습니다.`
+export const IP_NOTICE = [
+  '본 서버는 넥슨(주)의 메이플스토리월드 플랫폼에서 공식 출시된 글자월드입니다.',
+  "'MapleStory' 및 관련 지식재산권은 NEXON Korea Corp.에 있습니다.",
+  "'MapleStory Worlds' 및 관련 지식재산권은 Toben Studio Inc.에 있습니다.",
+  '본 서비스는 이용약관 및 가이드라인을 준수하여 운영됩니다.',
+].join('\n')

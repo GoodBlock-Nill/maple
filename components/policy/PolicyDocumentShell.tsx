@@ -73,14 +73,20 @@ type PolicyIpNoticeProps = {
   notice: string
 }
 
-/** 지식재산권 고지. 시안 푸터에 자리가 없어 개인정보처리방침 말미로 옮긴 블록이다. */
+/**
+ * 지식재산권 고지. 시안 v3 푸터는 이 문단을 패널 안에 넣지만(`FooterIpNotice`),
+ * 개인정보처리방침 본문에도 같은 문구를 한 번 더 싣는다. `ip_notice` 는 4줄을
+ * `\n` 로 구분해 저장하므로 `whitespace-pre-line` 으로 그 줄바꿈을 그대로 살린다.
+ */
 export function PolicyIpNotice({ notice }: PolicyIpNoticeProps) {
   return (
     <section aria-labelledby="ip-notice" className="border-line-soft border-t pt-8">
       <h2 id="ip-notice" className="text-ink text-[22px] font-bold sm:text-[27px]">
         지식재산권 고지
       </h2>
-      <p className="text-ink-muted mt-4 text-[17px] leading-[1.8]">{notice}</p>
+      <p className="text-ink-muted mt-4 text-[17px] leading-[1.8] whitespace-pre-line">
+        {notice}
+      </p>
     </section>
   )
 }
