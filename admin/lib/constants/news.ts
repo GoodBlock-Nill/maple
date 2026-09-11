@@ -75,6 +75,19 @@ export function newsCategoryTone(key: string): BadgeTone {
 export const NEWS_TITLE_MAX = 100
 export const NEWS_SUMMARY_MAX = 200
 
+/**
+ * 상단 고정 최대 개수(2026-09-11 운영 요청).
+ *
+ * 세는 대상은 "클라이언트에 실제로 뜰 수 있는" 고정 글뿐이다 — 발행 중
+ * (`is_published`) 이고 숨김·삭제가 아닌 글. 임시저장·숨김 글에 고정 표시만
+ * 미리 걸어 두는 것은 이 한도에 넣지 않는다(클라이언트에 어차피 보이지 않는다).
+ * 같은 기준을 서버 액션(`news-actions.ts`)의 사전 검사와 DB 트리거
+ * (`guard_news_pin_limit`, `20260911000500_news_pin_limit.sql`)가 함께 쓴다.
+ */
+export const NEWS_PIN_LIMIT = 3
+
+export const NEWS_PIN_LIMIT_MESSAGE = `상단 고정은 최대 ${NEWS_PIN_LIMIT}개까지 가능합니다. 다른 글의 고정을 해제한 뒤 다시 시도해 주세요.`
+
 /* ---------------------------------------------------------------------------
  * 상태
  * ------------------------------------------------------------------------ */

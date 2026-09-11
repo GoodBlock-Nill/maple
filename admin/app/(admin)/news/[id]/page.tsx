@@ -12,7 +12,7 @@ import {
   NEWS_VISIBILITY_TONE,
 } from '@/lib/constants/news'
 import { requirePermission } from '@/lib/auth/require-admin'
-import { getNewsPost, listNewsCategories } from '@/lib/data/news'
+import { getNewsPost, getPinnedNewsSummary, listNewsCategories } from '@/lib/data/news'
 import { listNewsTemplateOptions } from '@/lib/data/news-templates'
 import { clientSiteUrl } from '@/lib/supabase/env'
 import { formatDateTime } from '@/lib/utils/format-date'
@@ -38,6 +38,9 @@ export default async function EditNewsPage(props: PageProps<'/news/[id]'>) {
     notFound()
   }
 
+  /* `getPinnedNewsSummary()` 는 이 글 자신을 뺀다 — 이미 고정된 글을 그대로
+     저장할 때 스스로를 한도에 넣어 세면 안 된다(`checkPinLimit` 과 같은 기준). */
+  const pinnedSummary = await getPinnedNewsSummary(post.id)
   const siteUrl = clientSiteUrl()
 
   return (
@@ -66,7 +69,12 @@ export default async function EditNewsPage(props: PageProps<'/news/[id]'>) {
         }
       />
 
-      <NewsForm categories={categories} templates={templates} post={post} />
+      <NewsForm
+        categories={categories}
+        templates={templates}
+        post={post}
+        pinnedCount={pinnedSummary.hasError ? 0 : pinnedSummary.count}
+      />
 
       <div className="mt-6" data-testid="news-preview">
         <NewsPreview post={post} clientSiteUrl={siteUrl} />

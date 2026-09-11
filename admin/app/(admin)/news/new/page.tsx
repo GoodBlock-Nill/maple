@@ -1,7 +1,7 @@
 import { NewsForm } from '@/components/news/NewsForm'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { requirePermission } from '@/lib/auth/require-admin'
-import { listNewsCategories } from '@/lib/data/news'
+import { getPinnedNewsSummary, listNewsCategories } from '@/lib/data/news'
 import { listNewsTemplateOptions } from '@/lib/data/news-templates'
 
 import type { Metadata } from 'next'
@@ -16,9 +16,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function NewNewsPage() {
   await requirePermission('news', 'write')
-  const [categories, templates] = await Promise.all([
+  const [categories, templates, pinnedSummary] = await Promise.all([
     listNewsCategories(),
     listNewsTemplateOptions(),
+    getPinnedNewsSummary(),
   ])
 
   return (
@@ -28,7 +29,12 @@ export default async function NewNewsPage() {
         description="카테고리를 고르면 그 카테고리의 템플릿이 제목·본문을 채웁니다. 임시저장으로 두었다가 나중에 발행하거나, 시각을 지정해 예약 발행할 수 있습니다."
       />
 
-      <NewsForm categories={categories} templates={templates} post={null} />
+      <NewsForm
+        categories={categories}
+        templates={templates}
+        post={null}
+        pinnedCount={pinnedSummary.hasError ? 0 : pinnedSummary.count}
+      />
     </>
   )
 }

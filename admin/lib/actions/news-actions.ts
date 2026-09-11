@@ -8,10 +8,13 @@ import { writeAuditLog } from '@/lib/audit'
 import { requirePermission } from '@/lib/auth/require-admin'
 import {
   NEWS_BOARD,
+  NEWS_PIN_LIMIT,
+  NEWS_PIN_LIMIT_MESSAGE,
   newsAuditSnapshot,
   type NewsSnapshot,
   type NewsSnapshotRow,
 } from '@/lib/constants/news'
+import { getPinnedNewsSummary } from '@/lib/data/news'
 import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { sanitizePostHtml } from '@/lib/sanitize/post-html'
 import { createClient } from '@/lib/supabase/server'
@@ -36,6 +39,29 @@ const NEWS_PATH = '/news'
 const SAVE_FAILURE = '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 const SNAPSHOT_COLUMNS =
   'id, title, category_key, is_published, published_at, is_hidden, deleted_at'
+
+/**
+ * DB 트리거(`guard_news_pin_limit`, `20260911000500_news_pin_limit.sql`)가
+ * 던지는 메시지. 동시 요청이 사전 검사(`checkPinLimit`)를 함께 통과해 버리는
+ * 경우의 최종 방어선이라, 원문을 그대로 보여 주지 않고 같은 한국어 문구로 옮긴다.
+ */
+const PIN_LIMIT_TRIGGER_MESSAGE = 'news_pin_limit_exceeded'
+
+function isPinLimitTriggerError(message: string): boolean {
+  return message.includes(PIN_LIMIT_TRIGGER_MESSAGE)
+}
+
+/**
+ * 저장 실패 → 화면 문구.
+ *
+ * 한도 초과(레이스로 사전 검사를 통과해 버린 경우)는 필드 오류로, 그 밖의 실패는
+ * 고정 문장의 폼 오류로 돌려준다. 원문은 호출부가 `console.error` 로만 남긴다.
+ */
+function saveErrorState(message: string): FormState {
+  return isPinLimitTriggerError(message)
+    ? { fieldErrors: { isPinned: NEWS_PIN_LIMIT_MESSAGE } }
+    : { formError: SAVE_FAILURE }
+}
 
 /**
  * 사용자 사이트의 뉴스 목록 캐시를 태운다.
@@ -110,12 +136,57 @@ function toColumns(input: NewsFormInput, content: string, current: NewsPublishSt
   }
 }
 
+/**
+ * 상단 고정 3개 한도 사전 검사.
+ *
+ * 저장을 시도하기 전에 미리 세어 친절한 안내(현재 고정된 제목)를 필드 오류로
+ * 돌려준다. 이 검사가 통과한 직후 다른 요청이 끼어들어도(레이스) 마지막 방어선은
+ * DB 트리거(`guard_news_pin_limit`)다 — `createNews`/`updateNews` 의 catch 가
+ * 그 트리거 오류를 같은 문구로 옮긴다.
+ */
+async function checkPinLimit(
+  input: NewsFormInput,
+  current: NewsPublishState | null,
+  excludeId?: string,
+): Promise<FormState | null> {
+  if (!input.isPinned) {
+    return null
+  }
+
+  /* 임시저장은 한도에 넣지 않는다 — 클라이언트에 보이지 않는 고정 표시는 세지
+     않는다(`getPinnedNewsSummary()` 와 같은 기준). */
+  if (!resolvePublishPlan(input, current).isPublished) {
+    return null
+  }
+
+  const summary = await getPinnedNewsSummary(excludeId)
+
+  if (summary.hasError || summary.count < NEWS_PIN_LIMIT) {
+    return null
+  }
+
+  const titles = summary.posts.map((post) => post.title).join(', ')
+
+  return {
+    fieldErrors: {
+      isPinned:
+        titles === '' ? NEWS_PIN_LIMIT_MESSAGE : `${NEWS_PIN_LIMIT_MESSAGE} (현재 고정: ${titles})`,
+    },
+  }
+}
+
 async function createNews(
   actorId: string,
   actorNickname: string,
   input: NewsFormInput,
   content: string,
 ): Promise<FormState> {
+  const pinLimitError = await checkPinLimit(input, null)
+
+  if (pinLimitError !== null) {
+    return pinLimitError
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('posts')
@@ -131,7 +202,7 @@ async function createNews(
   if (error !== null) {
     console.error('[news] 작성 실패', error.message)
 
-    return { formError: SAVE_FAILURE }
+    return saveErrorState(error.message)
   }
 
   const after = newsAuditSnapshot(data)
@@ -171,15 +242,21 @@ async function updateNews(
     return { formError: '글을 찾을 수 없습니다.' }
   }
 
+  const currentPublishState: NewsPublishState = {
+    isPublished: current.is_published,
+    publishedAt: current.published_at,
+  }
+
+  const pinLimitError = await checkPinLimit(input, currentPublishState, postId)
+
+  if (pinLimitError !== null) {
+    return pinLimitError
+  }
+
   const before = newsAuditSnapshot(current)
   const { data, error } = await supabase
     .from('posts')
-    .update(
-      toColumns(input, content, {
-        isPublished: current.is_published,
-        publishedAt: current.published_at,
-      }),
-    )
+    .update(toColumns(input, content, currentPublishState))
     .eq('id', postId)
     .select(SNAPSHOT_COLUMNS)
     .single()
@@ -187,7 +264,7 @@ async function updateNews(
   if (error !== null) {
     console.error('[news] 수정 실패', error.message)
 
-    return { formError: SAVE_FAILURE }
+    return saveErrorState(error.message)
   }
 
   const after = newsAuditSnapshot(data)
@@ -275,7 +352,14 @@ export async function newsStateAction(
   if (error !== null) {
     console.error('[news] 상태 변경 실패', intent, error.message)
 
-    return { formError: '처리하지 못했습니다. 잠시 후 다시 시도해 주세요.' }
+    /* 숨김 해제가 상단 고정 글을 한도 위로 되돌릴 수 있다 — DB 트리거
+       (`guard_news_pin_limit`)가 막는다. 이 화면(일괄 처리 바)에는 필드가 없어
+       formError 로만 안내한다. */
+    return {
+      formError: isPinLimitTriggerError(error.message)
+        ? NEWS_PIN_LIMIT_MESSAGE
+        : '처리하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    }
   }
 
   for (const row of current ?? []) {

@@ -37,6 +37,8 @@ export const NEWS_DEFAULT_SORT: SortState = { key: 'published_at', direction: 'd
 export type NewsListParams = {
   category: NewsCategoryKey | null
   status: NewsStatus | null
+  /** true 면 `is_pinned = true` 인 글만 본다(상태 필터와 별개 축). */
+  pinned: boolean
   q: string
   sort: SortState
   page: number
@@ -172,6 +174,10 @@ export async function listNews(params: NewsListParams): Promise<NewsListResult> 
 
   query = applyNewsStatusFilter(query, params.status, now.toISOString())
 
+  if (params.pinned) {
+    query = query.eq('is_pinned', true)
+  }
+
   if (params.category !== null) {
     query = query.eq('category_key', params.category)
   }
@@ -214,6 +220,58 @@ export async function listNews(params: NewsListParams): Promise<NewsListResult> 
   })
 
   return { items, total: count ?? 0, hasError: false }
+}
+
+export type PinnedNewsPost = {
+  id: string
+  title: string
+}
+
+export type PinnedNewsSummary = {
+  /** 한도(`NEWS_PIN_LIMIT`)에 세는 고정 글 수. */
+  count: number
+  /** 현재 고정된 글의 제목 — 한도 초과 안내의 힌트로 쓴다. */
+  posts: readonly PinnedNewsPost[]
+  hasError: boolean
+}
+
+/**
+ * 상단 고정 한도(3개) 집계.
+ *
+ * 세는 조건은 DB 트리거(`guard_news_pin_limit`,
+ * `20260911000500_news_pin_limit.sql`)와 **반드시 같아야 한다** — 여기가
+ * "몇 개까지 고정할 수 있는지" 화면에 보여 주는 유일한 근거이고, 트리거가
+ * 최종 검사다. 둘이 어긋나면 화면은 "더 고정할 수 있다"고 하는데 저장은
+ * 거절되는 일이 생긴다.
+ *
+ * `excludeId` 는 수정 중인 글 자신이다 — 이미 고정된 글을 그대로 저장할 때
+ * 스스로를 한도에 넣어 세면 안 된다.
+ */
+export async function getPinnedNewsSummary(excludeId?: string): Promise<PinnedNewsSummary> {
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('posts')
+    .select('id, title', { count: 'exact' })
+    .eq('board', NEWS_BOARD)
+    .eq('is_pinned', true)
+    .eq('is_published', true)
+    .eq('is_hidden', false)
+    .is('deleted_at', null)
+
+  if (excludeId !== undefined) {
+    query = query.neq('id', excludeId)
+  }
+
+  const { data, count, error } = await query.order('updated_at', { ascending: false })
+
+  if (error !== null) {
+    console.error('[news] 고정 집계 실패', error.message)
+
+    return { count: 0, posts: [], hasError: true }
+  }
+
+  return { count: count ?? 0, posts: data ?? [], hasError: false }
 }
 
 /** 작성/수정 화면이 쓰는 단건. 삭제된 글도 읽는다(복구 화면에서 내용을 확인해야 한다). */

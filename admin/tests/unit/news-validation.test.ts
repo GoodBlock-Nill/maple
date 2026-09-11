@@ -6,6 +6,7 @@ import {
   isoToKstLocal,
   kstLocalToIso,
   newsFormSchema,
+  parseNewsPinnedFilter,
   resolvePublishPlan,
 } from '@/lib/validation/news'
 
@@ -34,7 +35,9 @@ describe('newsFormSchema', () => {
   })
 
   it('should reject a category outside the allow list', () => {
-    expect(errorsOf({ ...VALID, categoryKey: 'chat' }).categoryKey).toBe('카테고리를 선택해 주세요.')
+    expect(errorsOf({ ...VALID, categoryKey: 'chat' }).categoryKey).toBe(
+      '카테고리를 선택해 주세요.',
+    )
   })
 
   it('should require a title', () => {
@@ -102,6 +105,26 @@ describe('newsFormSchema', () => {
     })
 
     expect(result.success).toBe(true)
+  })
+})
+
+describe('parseNewsPinnedFilter', () => {
+  it('should read ?pinned=1 as true', () => {
+    expect(parseNewsPinnedFilter('1')).toBe(true)
+  })
+
+  it('should treat a missing param as false', () => {
+    expect(parseNewsPinnedFilter(null)).toBe(false)
+  })
+
+  it('should treat ?pinned=0 as false', () => {
+    expect(parseNewsPinnedFilter('0')).toBe(false)
+  })
+
+  it('should ignore unexpected values instead of throwing', () => {
+    expect(parseNewsPinnedFilter('true')).toBe(false)
+    expect(parseNewsPinnedFilter('yes')).toBe(false)
+    expect(parseNewsPinnedFilter('')).toBe(false)
   })
 })
 

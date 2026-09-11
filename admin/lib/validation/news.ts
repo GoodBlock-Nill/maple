@@ -134,6 +134,23 @@ export const newsFormSchema = z
 
 export type NewsFormInput = z.infer<typeof newsFormSchema>
 
+/* ---------------------------------------------------------------------------
+ * 목록 필터 — 고정만 보기
+ *
+ * 상태 필터(`isNewsStatus`, `lib/constants/news.ts`)와 다른 축이라 별도 쿼리
+ * 파라미터(`?pinned=1`)로 둔다. 뒤섞으면 "숨김이면서 고정"처럼 두 축이 겹치는
+ * 글을 상태 필터 하나로는 걸러낼 수 없다.
+ * ------------------------------------------------------------------------ */
+
+const newsPinnedFilterSchema = z.enum(['0', '1']).transform((value) => value === '1')
+
+/** `?pinned=1` → true. 없거나 다른 값이면 필터 없음(false)으로 떨어진다. */
+export function parseNewsPinnedFilter(raw: string | null): boolean {
+  const parsed = newsPinnedFilterSchema.safeParse(raw ?? '0')
+
+  return parsed.success && parsed.data
+}
+
 /** 발행 설정 → `posts` 의 두 컬럼. 목록의 상태 판정과 짝을 이룬다. */
 export type NewsPublishPlan = {
   isPublished: boolean

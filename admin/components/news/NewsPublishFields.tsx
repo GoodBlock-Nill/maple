@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 
+import { FormError } from '@/components/ui/FormField'
 import { Input } from '@/components/ui/Input'
+import { pinIndicator } from '@/lib/utils/news-pin'
 import { NEWS_PUBLISH_MODES, type NewsPublishMode } from '@/lib/validation/news'
 
 /**
@@ -29,16 +31,24 @@ type NewsPublishFieldsProps = {
   /** `2026-09-08T17:30` 형태(한국 시간). */
   defaultScheduledAt: string
   defaultPinned: boolean
+  /** 이 글을 뺀, 지금 고정된 다른 글 수(`getPinnedNewsSummary()`). */
+  pinnedCount: number
   scheduleError?: string
+  /** 저장 시도 후 서버가 돌려준 한도 초과 안내(`checkPinLimit`). */
+  pinError?: string
 }
 
 export function NewsPublishFields({
   defaultMode,
   defaultScheduledAt,
   defaultPinned,
+  pinnedCount,
   scheduleError,
+  pinError,
 }: NewsPublishFieldsProps) {
   const [mode, setMode] = useState<NewsPublishMode>(defaultMode)
+  const [pinned, setPinned] = useState(defaultPinned)
+  const indicator = pinIndicator(pinnedCount, pinned)
 
   return (
     <fieldset className="flex flex-col gap-3">
@@ -75,16 +85,27 @@ export function NewsPublishFields({
         />
       )}
 
-      <label className="border-line flex items-center gap-2 border-t pt-3 text-[13px]">
+      <label
+        className="border-line flex items-center gap-2 border-t pt-3 text-[13px] has-disabled:opacity-60"
+        title={
+          indicator.disabled ? `상단 고정은 최대 ${indicator.limit}개까지 가능합니다.` : undefined
+        }
+      >
         <input
           type="checkbox"
           name="isPinned"
-          defaultChecked={defaultPinned}
-          className="accent-accent size-4"
+          checked={pinned}
+          disabled={indicator.disabled}
+          onChange={(event) => setPinned(event.target.checked)}
+          className="accent-accent size-4 disabled:cursor-not-allowed"
         />
         <span className="text-ink font-semibold">상단 고정</span>
-        <span className="text-muted text-[12px]">목록 맨 위에 먼저 보여 줍니다.</span>
+        <span className="text-muted text-[12px]">
+          목록 맨 위에 먼저 보여 줍니다. 고정 {indicator.count}/{indicator.limit}
+        </span>
       </label>
+
+      <FormError message={pinError} />
     </fieldset>
   )
 }

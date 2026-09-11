@@ -39,6 +39,8 @@ type NewsFormProps = {
   templates: readonly NewsTemplate[]
   /** 수정 모드일 때의 기존 글. 새 글이면 null. */
   post: NewsDetail | null
+  /** 이 글을 뺀, 지금 고정된 다른 글 수(`getPinnedNewsSummary()`). */
+  pinnedCount: number
 }
 
 /**
@@ -68,7 +70,7 @@ function initialMode(post: NewsDetail | null): NewsPublishMode {
   return post.status === 'scheduled' ? 'schedule' : 'now'
 }
 
-export function NewsForm({ categories, templates, post }: NewsFormProps) {
+export function NewsForm({ categories, templates, post, pinnedCount }: NewsFormProps) {
   const { showToast } = useToast()
 
   const categoryLabels = useMemo(
@@ -193,7 +195,9 @@ export function NewsForm({ categories, templates, post }: NewsFormProps) {
                 post !== null && post.status === 'scheduled' ? isoToKstLocal(post.publishedAt) : ''
               }
               defaultPinned={post?.isPinned ?? false}
+              pinnedCount={pinnedCount}
               scheduleError={errors.scheduledAt}
+              pinError={errors.isPinned}
             />
 
             <div className="border-line flex items-center gap-2 border-t pt-3">

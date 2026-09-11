@@ -28,10 +28,15 @@ const STATUS_OPTIONS: readonly SelectOption[] = NEWS_STATUSES.map((status) => ({
   label: NEWS_STATUS_LABEL[status],
 }))
 
+/** 상태와 다른 축이라 별도 select 다(`lib/validation/news.ts` 의 `parseNewsPinnedFilter`). */
+const PINNED_OPTIONS: readonly SelectOption[] = [{ value: '1', label: '고정만' }]
+
 type NewsFiltersProps = {
   categories: readonly NewsCategoryOption[]
   category: string
   status: string
+  /** true 면 `?pinned=1` 을 select 에 미리 선택해 둔다. */
+  pinned: boolean
   q: string
   sort: string
   isFiltered: boolean
@@ -41,6 +46,7 @@ export function NewsFilters({
   categories,
   category,
   status,
+  pinned,
   q,
   sort,
   isFiltered,
@@ -77,6 +83,16 @@ export function NewsFilters({
         options={STATUS_OPTIONS}
         onChange={submit}
         wrapperClassName="w-44"
+      />
+
+      <Select
+        label="고정"
+        name="pinned"
+        defaultValue={pinned ? '1' : ''}
+        placeholder="전체"
+        options={PINNED_OPTIONS}
+        onChange={submit}
+        wrapperClassName="w-32"
       />
 
       <Input
