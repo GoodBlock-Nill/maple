@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1:1 문의 변경 사항 정리</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --ink:#1d2230;--ink-2:#4a5268;--ink-3:#7d859a;
+  --paper:#f3f5f9;--surface:#ffffff;--surface-2:#e9edf4;--line:#d7dce7;--line-soft:#e6eaf1;
+  --admin:#ff4fa8;--admin-soft:#ffe3f1;--admin-ink:#b3226f;
+  --client:#178f8a;--client-soft:#dcf3f1;--client-ink:#0f6b67;
+  --db:#4f5bd5;--db-soft:#e6e8fb;--db-ink:#3640a6;
+  --mail:#d97a1a;--mail-soft:#fbe9d6;--mail-ink:#8f4d07;
+  --warn:#c9861a;--warn-soft:#fbefd9;--warn-ink:#8a5a0b;
+  --ok:#1f9d55;--ok-soft:#dff5e7;--ok-ink:#15703c;
+  --danger:#c93a3a;--danger-soft:#fbe3e3;
+  --code-bg:#eef1f7;
+  --sans:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
+    --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
+    --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
+    --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
+    --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
+    --mail:#f0a050;--mail-soft:#3d2a15;--mail-ink:#ffd2a1;
+    --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
+    --ok:#3fbf78;--ok-soft:#173526;--ok-ink:#9be3b8;
+    --danger:#ff7676;--danger-soft:#3d1f1f;
+    --code-bg:#252c3d;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e6e9f1;--ink-2:#b4bbcc;--ink-3:#8790a6;
+  --paper:#141823;--surface:#1e2433;--surface-2:#262d3f;--line:#333b52;--line-soft:#2a3145;
+  --admin:#ff6fb8;--admin-soft:#3a1f31;--admin-ink:#ffb3d9;
+  --client:#3dbdb6;--client-soft:#163634;--client-ink:#9be6e1;
+  --db:#8a93ff;--db-soft:#262a4d;--db-ink:#c3c8ff;
+  --mail:#f0a050;--mail-soft:#3d2a15;--mail-ink:#ffd2a1;
+  --warn:#e0a03a;--warn-soft:#3a2e15;--warn-ink:#f3cf87;
+  --ok:#3fbf78;--ok-soft:#173526;--ok-ink:#9be3b8;
+  --danger:#ff7676;--danger-soft:#3d1f1f;
+  --code-bg:#252c3d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+code,pre{font-family:var(--mono)}
+code{background:var(--code-bg);padding:.1em .4em;border-radius:5px;font-size:.88em;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border:1px solid var(--line-soft);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.6;margin:14px 0}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.25;margin:0}
+h2{font-size:26px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:700;margin-top:36px}
+p{margin:10px 0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1240px;margin:0 auto;padding:40px 28px 96px}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:24px;padding:20px 16px 72px}}
+.index{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto}
+@media (max-width:900px){.index{position:static;max-height:none}}
+.index .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.index .brand b{color:var(--admin);letter-spacing:.1em}
+.index ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--line)}
+.index li{margin:0}
+.index a{display:block;padding:6px 12px;text-decoration:none;color:var(--ink-2);font-size:13.5px;border-left:2px solid transparent;margin-left:-2px}
+.index a:hover{color:var(--ink);border-left-color:var(--ink-3)}
+.index a:focus-visible{outline:2px solid var(--admin);outline-offset:2px;border-radius:4px}
+.index .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:8px}
+.index .meta{margin-top:18px;font-size:12px;color:var(--ink-3);line-height:1.6}
+@media (max-width:900px){.index ol{display:flex;flex-wrap:wrap;gap:4px 10px;border:0}.index a{padding:4px 0;border:0}.index .n{display:none}}
+main{max-width:860px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.title h1{font-size:clamp(30px,4vw,42px);font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
+.title .lede{font-size:16.5px;color:var(--ink-2);max-width:68ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.chip.admin{background:var(--admin-soft);border-color:transparent;color:var(--admin-ink)}.chip.admin .dot{background:var(--admin)}
+.chip.client{background:var(--client-soft);border-color:transparent;color:var(--client-ink)}.chip.client .dot{background:var(--client)}
+.chip.db{background:var(--db-soft);border-color:transparent;color:var(--db-ink)}.chip.db .dot{background:var(--db)}
+.chip.mail{background:var(--mail-soft);border-color:transparent;color:var(--mail-ink)}.chip.mail .dot{background:var(--mail)}
+
+/* status board */
+.board{margin:26px 0 6px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.board>div{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.board .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.board .v{font-size:15px;font-weight:700}
+.board .s{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;width:fit-content;padding:2px 9px;border-radius:999px}
+.s.done{background:var(--ok-soft);color:var(--ok-ink)}.s.done::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.s.todo{background:var(--warn-soft);color:var(--warn-ink)}.s.todo::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.board .d{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+
+section{margin-top:56px;scroll-margin-top:24px}
+.sec-head{display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.sec-head .num{font-family:var(--mono);font-size:13px;color:var(--admin);font-weight:500}
+.src{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin:-8px 0 12px;overflow-wrap:anywhere}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-soft)}
+th{font-weight:700;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.callout{border-radius:var(--radius);padding:12px 16px;margin:16px 0;border:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.callout .icon{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;padding:2px 7px;border-radius:5px;margin-top:3px;white-space:nowrap}
+.callout p{margin:0;font-size:14px;min-width:0;overflow-wrap:anywhere}
+.callout.warn{background:var(--warn-soft);border-color:transparent}.callout.warn .icon{background:var(--warn);color:#fff}
+.callout.rule{background:var(--surface-2);border-color:transparent}.callout.rule .icon{background:var(--ink);color:var(--paper)}
+.callout.mail{background:var(--mail-soft);border-color:transparent}.callout.mail .icon{background:var(--mail);color:#fff}
+.callout.ok{background:var(--ok-soft);border-color:transparent}.callout.ok .icon{background:var(--ok);color:#fff}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:16px 0;overflow-x:auto}
+.diagram .cap{font-size:12.5px;color:var(--ink-3);margin:0 0 8px;font-family:var(--mono)}
+pre.mermaid{background:none;border:0;padding:0;margin:0;overflow:visible;font-size:13px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:14px 0}
+.kv>div{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.kv .k{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.kv .v{font-size:14px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+.steps li{counter-increment:s;position:relative;padding:10px 0 10px 34px;border-bottom:1px solid var(--line-soft)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:13px;width:22px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--admin);font-weight:500}
+.steps li:last-child{border-bottom:0}
+
+/* conveyor */
+.conveyor{display:grid;gap:8px;margin:16px 0}.conveyor>div{min-width:0}
+.stage{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
+.stage .no{font-family:var(--mono);font-size:12px;color:var(--db-ink);background:var(--db-soft);border-radius:6px;text-align:center;padding:2px 0;margin-top:2px}
+.stage .what{font-size:14px;min-width:0;overflow-wrap:anywhere}
+.stage .what b{display:block;font-size:14.5px}
+.stage .out{font-family:var(--mono);font-size:11px;white-space:nowrap;padding:3px 8px;border-radius:6px;margin-top:2px}
+.out.pass{background:var(--ok-soft);color:var(--ok-ink)}
+.out.drop{background:var(--surface-2);color:var(--ink-2)}
+.out.reject{background:var(--danger-soft);color:var(--danger)}
+@media (max-width:600px){.stage{grid-template-columns:36px minmax(0,1fr)}.stage .out{grid-column:2;justify-self:start}}
+.tag{display:inline-block;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:999px}
+.tag.in{background:var(--client-soft);color:var(--client-ink)}
+.tag.outb{background:var(--admin-soft);color:var(--admin-ink)}
+.tag.dbt{background:var(--db-soft);color:var(--db-ink)}
+.tag.mailt{background:var(--mail-soft);color:var(--mail-ink)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="shell">
+<nav class="index" aria-label="목차">
+  <div class="brand">글자월드 <b>CHANGELOG</b></div>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span>한눈에 보기</a></li>
+    <li><a href="#s2"><span class="n">02</span>사용자 화면 변경</a></li>
+    <li><a href="#s3"><span class="n">03</span>관리자 화면 변경</a></li>
+    <li><a href="#s4"><span class="n">04</span>데이터 · 인프라</a></li>
+    <li><a href="#s5"><span class="n">05</span>운영 절차 변화</a></li>
+    <li><a href="#s6"><span class="n">06</span>테스트 결과</a></li>
+    <li><a href="#s7"><span class="n">07</span>미검증 · 후속 과제</a></li>
+    <li><a href="#s8"><span class="n">08</span>파일 인덱스</a></li>
+  </ol>
+  <p class="meta">대상 기간 2026-09-10 ~ 09-11<br>기준 커밋 <code>fb448aa</code><br>현재 상태 <code>docs/admin/INQUIRY-GUIDE.md</code></p>
+</nav>
+
+<main>
+<header class="title">
+  <div class="eyebrow">Change Summary · 고객지원</div>
+  <h1>1:1 문의 변경 사항 정리</h1>
+  <p class="lede">이틀 동안 1:1 문의는 <strong>폼 하나에서 운영 도구로</strong> 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 <strong>여러 운영자가 겹치지 않게 처리</strong>하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었습니다.</p>
+  <div class="chips">
+    <span class="chip db"><span class="dot"></span>DB · 마이그레이션 8개 · RPC 7개 신규</span>
+    <span class="chip client"><span class="dot"></span>사용자 · 필수 6항목 · 첨부 두 경로 · 접수번호</span>
+    <span class="chip admin"><span class="dot"></span>관리자 · 배정 · 잠금 · 충돌 · 메모 · 템플릿</span>
+    <span class="chip mail"><span class="dot"></span>메일 · 제목 <code>[글자월드 문의 #1024]</code></span>
+  </div>
+  <div class="board" aria-label="구성 요소 상태">
+    <div><span class="k">DB</span><span class="v">마이그레이션 8개 추가</span><span class="s done">적용됨</span><span class="d"><code>20260910000400</code> ~ <code>20260911000400</code></span></div>
+    <div><span class="k">Client</span><span class="v">접수 폼</span><span class="s done">배포됨</span><span class="d">필수 6항목 · 카테고리 프리필 · 이미지/영상 첨부 · 접수번호 안내</span></div>
+    <div><span class="k">Admin</span><span class="v">고객지원 모듈</span><span class="s done">배포됨</span><span class="d">목록 · 상세 · 카테고리 관리 · 답변 템플릿 · 담당자 · 내부 메모</span></div>
+    <div><span class="k">Batch</span><span class="v">purge-withdrawn</span><span class="s done">2026-09-10 재배포</span><span class="d">pending 첨부 청소 포함(version 4) · <strong>첫 야간 실행은 미확인</strong></span></div>
+    <div><span class="k">Email</span><span class="v">email-inbound · email-outbound</span><span class="s done">2026-09-11 재배포</span><span class="d">제목 규칙 반영. <strong>제공자 계정·DNS·secret 은 미연동</strong></span></div>
+    <div><span class="k">Flag</span><span class="v">월드 계정 입력칸</span><span class="s todo">OFF</span><span class="d"><code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> — 꺼져 있으면 계정 ID 프리필이 비어 있습니다(§07)</span></div>
+  </div>
+</header>
+
+<section id="s1">
+  <div class="sec-head"><span class="num">01</span><h2>한눈에 보기</h2></div>
+  <p>이 문서는 <strong>무엇이 어떻게 바뀌었는지</strong>만 다룹니다. "지금 어떻게 동작하는가"는 <code>docs/admin/INQUIRY-GUIDE.md</code>, 템플릿 세 갈래 비교는 <code>docs/admin/TEMPLATES-GUIDE.md</code>, 이메일 유입은 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>EMAIL-INQUIRY-ACTIVATION.md</code> 에 있습니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>날짜 · 시각</th><th>커밋</th><th>영역</th><th>변경 요약</th><th>마이그레이션</th></tr></thead>
+    <tbody>
+      <tr><td>09-10 10:28</td><td><code>900abc5</code></td><td><span class="tag in">클라</span></td><td><strong>이미지 첨부 실패 수정</strong> — 서버 액션 본문 상한 <code>14mb</code>, 첨부 한도 재정의(각 5MB · 합계 12MB · 3개 · webp)</td><td>—</td></tr>
+      <tr><td>09-10 18:34</td><td><code>b78dfd7</code></td><td><span class="tag in">클라</span> <span class="tag outb">관리자</span> <span class="tag dbt">DB</span></td><td><strong>카테고리 8종 · 프리필 양식</strong>, 관리자 카테고리 관리(개명 시 과거 문의 재라벨링)</td><td><code>20260910000400</code> · <code>20260910000500</code></td></tr>
+      <tr><td>09-10 19:30</td><td><code>2e3f6ae</code></td><td><span class="tag in">클라</span> <span class="tag outb">관리자</span> <span class="tag dbt">DB</span></td><td><strong>영상 첨부</strong> — 브라우저 → 스토리지 직접 업로드(각 100MB · 2개) · pending 청소</td><td><code>20260910000600</code></td></tr>
+      <tr><td>09-11 08:22</td><td><code>af1a886</code></td><td><span class="tag in">클라</span> <span class="tag outb">관리자</span> <span class="tag dbt">DB</span></td><td><strong>카테고리 연동 세부 문의 유형</strong> · 계정 ID 필수 · 필수 6항목 규칙</td><td><code>20260910000700</code> · <code>000800</code> · <code>000900</code></td></tr>
+      <tr><td>09-11 08:48</td><td><code>ddd2cc1</code></td><td><span class="tag dbt">문서</span></td><td>1:1 문의 개발 가이드 <code>INQUIRY-GUIDE.md</code> · <code>.html</code> 신규</td><td>—</td></tr>
+      <tr><td>09-11 08:49</td><td><code>0bf646d</code></td><td><span class="tag outb">관리자</span></td><td>감사 로그 라벨 — 문의 카테고리 4종 · 이메일 답변/재발송 한글 표기</td><td>—</td></tr>
+      <tr><td>09-11 09:28</td><td><code>643834c</code></td><td><span class="tag in">클라</span></td><td><strong>체크박스 체크 표시 복구</strong> — 동의 · 첨부 삭제(<code>SupportCheckbox</code>)</td><td>—</td></tr>
+      <tr><td>09-11 09:46</td><td><code>e4937d4</code></td><td><span class="tag outb">관리자</span> <span class="tag dbt">DB</span></td><td><strong>답변 템플릿</strong> — 공통/카테고리별 · 자리표시자 4종 · 답변란 불러오기</td><td><code>20260911000200</code></td></tr>
+      <tr><td>09-11 10:14</td><td><code>700b22a</code></td><td><span class="tag dbt">문서</span></td><td><code>TEMPLATES-GUIDE.md</code> · <code>.html</code> 신규, 문의 가이드 답변 템플릿 절 갱신</td><td>—</td></tr>
+      <tr><td>09-11 10:28</td><td><code>16b435a</code></td><td><span class="tag outb">관리자</span></td><td><strong>회원 상세 1:1 문의 탭</strong>, 문의 목록 회원 필터(<code>?user=</code>)</td><td>—</td></tr>
+      <tr><td>09-11 11:40</td><td><code>fb448aa</code></td><td><span class="tag in">클라</span> <span class="tag outb">관리자</span> <span class="tag dbt">DB</span> <span class="tag mailt">메일</span></td><td><strong>협업</strong>(담당자 · 작성 중 잠금 · 저장 충돌 · 내부 메모) · <strong>접수번호</strong> · 출처 칸 제거 · 메일 제목 교체</td><td><code>20260911000300</code> · <code>20260911000400</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="num">02</span><h2>사용자 화면 변경 (이전 → 이후)</h2></div>
+  <p class="src">components/support/** · components/account/InquiryTable.tsx · lib/validation/inquiry.ts · lib/utils/inquiry-no.ts</p>
+
+  <h3>2.1 접수 폼 — 필드와 필수 규칙</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>필드</th><th>09-09까지</th><th>지금(<code>af1a886</code> 이후)</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>글자월드 계정 ID</td><td>칸 자체가 없음</td><td><strong>필수</strong> · <code>/^[A-Za-z0-9_-]{2,40}$/</code> · <code>profiles.msw_uid</code> 가 있으면 프리필</td><td><code>af1a886</code> · <code>20260910000900</code></td></tr>
+      <tr><td>카테고리</td><td>코드 상수 4종</td><td><strong>DB 8종</strong>(<code>inquiry_categories</code>) · 설명 한 줄 · 선택 시 <strong>프리필 교체</strong></td><td><code>b78dfd7</code> · <code>20260910000400</code></td></tr>
+      <tr><td>세부 문의 유형</td><td>고정 3종(문의 · 신고 · 제안)</td><td><strong>고른 카테고리의 <code>subtypes</code> 만</strong> · 없으면 셀렉트 잠금 + hidden <code>기타</code></td><td><code>af1a886</code> · <code>20260910000700</code></td></tr>
+      <tr><td>제목 · 내용</td><td>필수</td><td>그대로(2~100자 · 5~4000자). 내용 칸은 프리필이 채웁니다</td><td>—</td></tr>
+      <tr><td>첨부</td><td>사실상 필수처럼 안내</td><td><strong>선택</strong>. 이미지·PDF 와 영상이 서로 다른 경로(2.3)</td><td><code>af1a886</code></td></tr>
+      <tr><td>개인정보 수집 동의</td><td>필수(접수만)</td><td>그대로. 다만 <strong>체크 표시가 보이도록</strong> 고쳤습니다(2.5)</td><td><code>643834c</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">잠금</span><p>필수는 <strong>카테고리 · 세부 유형 · 계정 ID · 제목 · 내용 · 동의</strong> 여섯입니다. 하나라도 비면 제출 버튼이 잠기고 그 아래에 <code>필수 항목을 모두 입력해 주세요.</code> 가 섭니다(<code>isInquiryFormFilled()</code>). 잠금 판정은 <strong>값의 모양을 보지 않습니다</strong> — "아직 아무것도 고르지 않은 폼"만 막습니다. 자릿수·상한은 스키마가 보고 필드 옆 문구로 돌려줍니다. 서버 검증도 함께 좁혔습니다: 유형은 <strong>고른 카테고리 소속</strong>이어야 하고(수정 화면은 접수 당시 값 허용), 허용 목록은 상수가 아니라 <code>getInquiryCategories()</code> 로 매번 새로 읽습니다.</p></div>
+
+  <h3>2.2 프리필 — 갈아 끼우기와 확인 모달</h3>
+  <ol class="steps">
+    <li>카테고리를 고르면 그 카테고리의 <code>prefill</code> 이 내용 칸을 <strong>덮어쓰고</strong> 세부 유형 선택이 비워집니다.</li>
+    <li>지울 것이 있을 때만 확인 모달(<code>작성 중인 내용이 지워집니다</code> / <code>카테고리를 바꿀까요?</code> / <code>카테고리 변경</code>)을 세웁니다. 내용이 비었거나 <strong>어느 카테고리의 양식 원문 그대로</strong>면 묻지 않습니다(<code>isDiscardableContent()</code> — 수정 화면 때문입니다).</li>
+    <li><code>20260910000800</code> 이 프리필 본문에서 "세부 문의 유형" 블록만 정규식으로 도려냈습니다. 셀렉트가 이미 같은 것을 묻는데 본문에도 있으면 어긋난 문의가 들어옵니다.</li>
+  </ol>
+
+  <h3>2.3 첨부 — 이미지·PDF vs 영상</h3>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>이미지 · PDF</th><th>영상</th></tr></thead>
+    <tbody>
+      <tr><th>09-09까지</th><td>각 <strong>200MB</strong> 로 안내(실제로는 서버 액션 본문 기본값 1MB 에 막혀 <strong>500</strong>)</td><td>받지 않음</td></tr>
+      <tr><th>형식</th><td>jpg · png · gif · <strong>webp</strong> · pdf</td><td>mp4 · mov · webm · m4v</td></tr>
+      <tr><th>크기</th><td>각 <strong>5MB</strong> · <strong>합계 12MB</strong></td><td>각 <strong>100MB</strong></td></tr>
+      <tr><th>개수</th><td>영상과 합쳐 <strong>3개</strong></td><td>그중 <strong>2개</strong>까지</td></tr>
+      <tr><th>전송</th><td>폼 → 서버 액션 본문 → 스토리지</td><td>브라우저 → <strong>스토리지 직접</strong>(서명 URL · 진행률 · 취소), 폼에는 경로만</td></tr>
+      <tr><th>전처리</th><td><code>downscaleImage()</code> 최대 변 2000px(GIF 제외)</td><td>없음. 확장자는 MIME 에서</td></tr>
+      <tr><th>커밋</th><td><code>900abc5</code></td><td><code>2e3f6ae</code> · <code>20260910000600</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><span class="icon">14mb</span><p>합계 12MB 는 버킷이 아니라 <strong>서버 액션 본문 상한</strong>(<code>SERVER_ACTION_BODY_SIZE_LIMIT = '14mb'</code>) 때문입니다. <code>next.config.ts</code> 와 검증 상수가 <strong>같은 값 하나</strong>를 봅니다. 본문 상한을 넘으면 액션이 실행되기도 전에 요청이 끊겨 아무 문구도 못 돌려줍니다 — 그래서 합계 검사는 <strong>보내기 전 화면</strong>에서 합니다. 영상은 상세에서 <strong>그 자리에서 재생</strong>합니다(<code>&lt;video controls preload="metadata"&gt;</code>) — 새 탭으로 열면 5분짜리 서명 URL 이 주소창에 남습니다.</p></div>
+
+  <h3>2.4 접수번호 — 어디에 보이나</h3>
+  <p><code>inquiries.inquiry_no</code>(1001부터)를 <code>#1024</code> 한 가지 모양으로 씁니다(<code>lib/utils/inquiry-no.ts</code>).</p>
+  <div class="tbl"><table>
+    <thead><tr><th>자리</th><th>이전</th><th>이후</th><th>파일</th></tr></thead>
+    <tbody>
+      <tr><td>접수 완료 모달</td><td>안내 문구만</td><td><code>접수번호 #1024 — 문의 내역에서 확인할 수 있습니다.</code></td><td><code>InquirySubmittedDialog.tsx</code></td></tr>
+      <tr><td>내 문의 내역 행</td><td>카테고리 · 유형이 첫 줄</td><td><strong>접수번호가 맨 앞</strong>, 그다음 카테고리 · 유형</td><td><code>InquiryRow.tsx</code></td></tr>
+      <tr><td>마이페이지 문의내역 표</td><td>'번호' 칸 = <strong>화면에서 센 순번</strong>(<code>index + 1</code>)</td><td>'접수번호' 칸 = <code>#1024</code></td><td><code>components/account/InquiryTable.tsx</code></td></tr>
+      <tr><td>문의 상세</td><td>제목만</td><td><strong>제목 위</strong>에 접수번호 한 줄</td><td><code>InquiryDetailCard.tsx</code></td></tr>
+      <tr><td>답신 메일 제목</td><td><code>Re: … [문의 #a1b2c3d4]</code>(uuid 앞 8자)</td><td><code>Re: … [글자월드 문의 #1024]</code></td><td><code>supabase/functions/_shared/email/subject.ts</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">왜</span><p>마이페이지가 순번을 쓰던 때는 '더보기'로 목록이 늘어날 때마다 <strong>같은 문의가 다른 번호</strong>로 보였습니다. uuid 앞 8자는 <strong>사용자 화면 어디에도 없는 값</strong>이라 "그 번호는 어디서 보나요"라는 되물음을 낳았습니다.</p></div>
+
+  <h3>2.5 체크박스 — 켜짐이 보이지 않던 문제(<code>643834c</code>)</h3>
+  <ul>
+    <li><strong>증상</strong> — <code>appearance-none</code> 체크박스에 체크 마크를 그리지 않아 <strong>켠 상태가 검은 사각형</strong>으로만 보였습니다(동의 · 첨부 삭제 두 곳).</li>
+    <li><strong>수정</strong> — <code>components/support/SupportCheckbox.tsx</code>: 네이티브 <code>&lt;input type="checkbox"&gt;</code> 위에 상태 기반 <strong>흰 체크 SVG</strong>를 얹습니다(시안 실측 30×30 · border 1.5 · radius 5). 동의 줄은 <code>InquiryConsentField.tsx</code> 로 떼어 내고 오류 문구를 <code>aria-describedby</code> 로 연결했습니다.</li>
+    <li><strong>회귀 방지</strong> — 단위 테스트가 "켜면 체크 그림이 나타나는가"를 직접 봅니다(<code>CHECK_MARK_TEST_ID</code>). 스냅샷이 아니라 <strong>보이는 표시</strong>를 고정합니다.</li>
+  </ul>
+
+  <h3>2.6 최종 접수 흐름</h3>
+  <div class="diagram"><p class="cap">카테고리 → 프리필 → 세부 유형 → 계정 ID → 본문 → 첨부(두 경로) → 동의 → 접수번호</p>
+<pre class="mermaid">
+flowchart TD
+    F["문의 폼 /support"] --> C["① 카테고리 선택"]
+    C --> P{"작성 중인 내용이 있나"}
+    P -->|"비었거나 양식 원문 그대로"| PF["프리필 즉시 교체<br/>세부 유형 비움"]
+    P -->|"사용자가 쓴 내용"| CD["확인 모달<br/>작성 중인 내용이 지워집니다"]
+    CD -->|"카테고리 변경"| PF
+    CD -->|"취소"| C
+    PF --> T["② 세부 문의 유형<br/>subtypes 없으면 잠금 + hidden 기타"]
+    T --> ID["③ 글자월드 계정 ID"]
+    ID --> TI["④ 제목"] --> CT["⑤ 문의 내용"]
+    CT --> AT["⑥ 첨부 · 선택"]
+    AT --> VID["영상은 서명 URL 로<br/>uid/pending/ 에 직접 업로드"]
+    AT --> AG["⑦ 개인정보 수집 동의<br/>흰 체크 표시"]
+    VID --> AG
+    AG --> SB{"필수 6항목이 모두 찼나"}
+    SB -->|"아니오"| LK["제출 잠김"]
+    SB -->|"예"| SV["createInquiry 서버 액션"]
+    SV --> V{"스키마 · 카테고리/유형 대조<br/>첨부 재검증 · 30초 쿨다운"}
+    V -->|"거절"| ERR["필드 오류 · 안내 문구"]
+    V -->|"통과"| MV["이미지 업로드 · pending 영상 확정 이동"]
+    MV --> INS["inquiries INSERT<br/>status = pending · inquiry_no 자동 발급"]
+    INS --> OK["상세 ?submitted=1<br/>접수번호 #1024 안내 모달"]
+    OK --> LIST["내 문의 내역 · 마이페이지<br/>접수번호 칸"]
+</pre></div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="num">03</span><h2>관리자 화면 변경 (이전 → 이후)</h2></div>
+  <p class="src">admin/app/(admin)/inquiries/** · admin/components/inquiries/** · admin/components/inquiry-categories/** · admin/components/inquiry-reply-templates/** · admin/lib/{actions,data,validation}/inquir*.ts</p>
+
+  <h3>3.1 목록 <code>/inquiries</code></h3>
+  <div class="tbl"><table>
+    <thead><tr><th>자리</th><th>이전</th><th>이후</th><th>커밋</th></tr></thead>
+    <tbody>
+      <tr><td>첫 칸</td><td>제목</td><td><strong>접수번호</strong>(<code>#1024</code>) → 제목</td><td><code>fb448aa</code></td></tr>
+      <tr><td>출처 칸</td><td><code>웹</code> · <code>이메일</code> 뱃지</td><td><strong>삭제</strong>(사이드바가 이미 갈라 둡니다. <code>?source=</code> 조건은 그대로)</td><td><code>fb448aa</code></td></tr>
+      <tr><td>출처 선택 상자</td><td>필터에 있음</td><td><strong>삭제</strong> · 값은 폼의 숨은 필드로 나릅니다</td><td><code>fb448aa</code></td></tr>
+      <tr><td>담당자 칸</td><td>없음</td><td>닉네임 또는 <code>미배정</code> · 작성 중이면 <code>✎ 작성 중 · 닉네임</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td>담당자 필터</td><td>없음</td><td><code>?assignee=me</code> 내 담당 · <code>none</code> 미배정 · <code>&lt;uuid&gt;</code> 특정 운영자</td><td><code>fb448aa</code></td></tr>
+      <tr><td>검색 <code>q</code></td><td>제목 · 내용 · 계정 ID · 발신자 주소 <code>ilike</code></td><td><strong>+ 접수번호 정확 일치</strong>(<code>1024</code> · <code>#1024</code> → <code>inquiry_no.eq.1024</code>)</td><td><code>fb448aa</code></td></tr>
+      <tr><td>카테고리 · 유형 필터</td><td>코드 상수 목록</td><td><strong>DB 기준</strong>(등록된 라벨 + 데이터에만 남은 옛 라벨) · 유형은 카테고리 연동</td><td><code>b78dfd7</code> · <code>af1a886</code></td></tr>
+      <tr><td>회원 필터</td><td>없음</td><td><code>?user=&lt;id&gt;</code> 로 들어오면 <strong>회원 필터 배너 + 해제 링크</strong></td><td><code>16b435a</code></td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>칸마다 <strong>최소 폭</strong>을 줍니다. 담당자 칸이 붙으면서 표가 좁아질 때 브라우저가 '카테고리 · 유형'을 한 글자씩 세로로 쌓았습니다 — 넘치면 표가 가로로 스크롤합니다.</li>
+    <li>출처 칸을 걷어낸 것은 <strong>2026-09-11 오너 결정</strong>입니다. 메뉴가 갈라 놓은 값을 행마다 반복하면 같은 뱃지가 스무 줄 늘어설 뿐이고, 새로 붙은 접수번호·담당자 칸이 들어설 자리만 잃습니다.</li>
+  </ul>
+
+  <h3>3.2 상세 <code>/inquiries/[id]</code></h3>
+  <p>카드 순서가 <strong>담당자 → 문의 정보 → 문의 내용 → 스레드 → 내부 메모 → 답변 작성</strong> 으로 바뀌었습니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>요소</th><th>무엇이 생겼나</th><th>파일</th></tr></thead>
+    <tbody>
+      <tr><td>접수번호</td><td>제목 아래 첫 항목 · 문의 정보의 첫 줄</td><td><code>InquiryMeta.tsx</code> · <code>admin/lib/utils/inquiry-no.ts</code></td></tr>
+      <tr><td><strong>배정 카드</strong></td><td><code>미배정</code> 뱃지 또는 담당자 닉네임 + 배정 시각 · <code>나에게 배정</code> · <code>담당자 변경</code> · <code>배정 해제</code></td><td><code>InquiryAssignmentCard.tsx</code> · <code>InquiryAssignmentControls.tsx</code></td></tr>
+      <tr><td><strong>작성 중 배너</strong></td><td><code>A 관리자가 답변을 작성하고 있습니다 (n분 전 활동)</code> + 답변 칸·등록 버튼 잠금 · <code>그래도 이어서 작성</code>(가로채기)</td><td><code>InquiryEditLockBanner.tsx</code> · <code>use-inquiry-edit-lock.ts</code></td></tr>
+      <tr><td><strong>충돌 안내</strong></td><td>저장 거절 시 <code>다른 운영자가 먼저 처리했습니다. 최신 내용을 확인해 주세요.</code> + <strong>초안 유지</strong> · 폴링이 먼저 알면 <code>최신 내용 보기</code></td><td><code>InquiryReplyForm.tsx</code> · <code>admin/lib/actions/inquiry-shared.ts</code></td></tr>
+      <tr><td><strong>내부 메모</strong></td><td>운영자 전용 카드(최신순) · 머리와 입력칸 양쪽에 <code>운영자 전용 · 고객에게 보이지 않습니다</code> · 삭제는 작성자만</td><td><code>InquiryNotes.tsx</code> · <code>InquiryNoteDeleteButton.tsx</code></td></tr>
+      <tr><td><strong>템플릿 불러오기</strong></td><td>답변 폼 위 선택 상자(공통 + 그 문의의 카테고리) · 쓰던 글이 있으면 <code>바꾸기</code> / <code>끝에 추가</code> / <code>취소</code></td><td><code>InquiryReplyTemplatePicker.tsx</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="kv">
+    <div><div class="k">배정 규칙</div><div class="v"><strong>미배정 + <code>접수 대기</code> 문의를 맡으면 상태도 <code>처리 중</code></strong> 으로 갑니다(상태 select 와 <strong>같은 전이표</strong>). 상태 전이가 실패해도 배정은 되돌리지 않습니다. 확인 창은 <strong>남의 배정을 건드릴 때만</strong></div></div>
+    <div><div class="k">잠금 숫자</div><div class="v">TTL <strong>5분</strong>(<code>INQUIRY_LOCK_TTL_MS</code>) · 하트비트 <strong>60초</strong> · 협업 상태 폴링 <strong>20초</strong>(<code>INQUIRY_COLLAB_POLL_MS</code>). 하트비트는 <code>updated_at</code> 을 밀지 않습니다</div></div>
+    <div><div class="k">충돌 판정</div><div class="v"><strong>화면에 그려진</strong> 스레드 상태(<code>expectedReplyCount</code> · <code>expectedStatus</code>)를 hidden 으로 보내고 <code>add_inquiry_reply()</code> RPC 안에서 비교합니다. 폴링으로 알아낸 값으로 덮어쓰지 않습니다</div></div>
+  </div>
+
+  <h3>3.3 카테고리 관리 <code>/inquiries/categories</code></h3>
+  <p class="src">b78dfd7 · af1a886</p>
+  <div class="tbl"><table>
+    <thead><tr><th>동작</th><th>규칙</th></tr></thead>
+    <tbody>
+      <tr><td><strong>추가</strong></td><td><code>key</code> 는 라벨에서 자동 생성(라틴 문자가 없으면 <code>c-&lt;무작위 8자&gt;</code>) · <code>sort_order</code> 는 맨 뒤 · 중복 라벨은 <code>이미 같은 이름의 카테고리가 있습니다.</code></td></tr>
+      <tr><td><strong>수정 · 개명</strong></td><td><code>update_inquiry_category()</code> RPC 한 번 = 한 트랜잭션. 라벨이 바뀌면 <strong>그 라벨로 접수된 과거 문의를 함께 옮기고</strong> 건수를 토스트·감사 로그에 남깁니다</td></tr>
+      <tr><td><strong>삭제 가드</strong></td><td><strong>0건일 때만.</strong> 있으면 <code>이 카테고리로 접수된 문의가 N건 있습니다. 삭제 대신 비활성화해 주세요.</code> — 화면과 액션이 같은 규칙</td></tr>
+      <tr><td><strong>세부 유형 편집</strong></td><td>대화상자 안에서 추가·삭제·순서(≤ 20개 · 각 30자). <code>formData.getAll('subtypes')</code> 로 <strong>화면 순서 그대로</strong>, 중복만 거절</td></tr>
+      <tr><td><strong>프리필</strong></td><td>≤ 2000자 평문. 저장하면 캐시 태그 <code>inquiry-categories</code> 무효화 → 사용자 폼에 반영</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>3.4 답변 템플릿 <code>/inquiries/reply-templates</code> (<code>e4937d4</code>)</h3>
+  <ul>
+    <li><code>public.inquiry_reply_templates</code>(<code>20260911000200</code>) — <code>category_id</code> 가 <strong>NULL 이면 공통</strong>, 값이 있으면 그 카테고리 전용. 이름 ≤ 40자(묶음 안 중복 불가) · 본문 ≤ <strong>2000자 = 답변 상한</strong>.</li>
+    <li>자리표시자 4종은 <strong>불러오는 순간 치환</strong>됩니다 — <code>{{닉네임}}</code> · <code>{{문의번호}}</code> · <code>{{카테고리}}</code> · <code>{{제목}}</code>. 모르는 표시(<code>{{점검일}}</code>)는 그대로 둡니다.</li>
+    <li><code>{{문의번호}}</code> 는 처음에 <strong>문의 ID 앞 8자리</strong>였고, <code>fb448aa</code> 에서 <strong>접수번호(<code>#1024</code>)</strong> 로 바뀌었습니다.</li>
+    <li>사용자 사이트는 이 테이블을 읽지 않습니다(정책이 <code>is_admin()</code> 하나). 시드 6종은 <code>where not exists</code> 라 고치거나 지운 뒤 다시 돌려도 되살아나지 않습니다.</li>
+  </ul>
+
+  <h3>3.5 회원 상세 1:1 문의 탭 (<code>16b435a</code>)</h3>
+  <ul>
+    <li>회원 상세 활동 영역에 <code>1:1 문의 N</code> 탭 — 접수번호 · 카테고리/유형 · 상태 · 답변 수 · 접수일, 제목을 누르면 문의 상세로 갑니다. 지표 카드와 <strong>같은 집계</strong>를 씁니다.</li>
+    <li><code>inquiries:read</code> 권한이 없으면 <code>문의 조회 권한이 없습니다.</code> 한 줄만 보여 줍니다(<code>members:read</code> 만으로는 부족합니다).</li>
+    <li>최근 <strong>20건</strong>(<code>ACTIVITY_LIMIT</code>)까지 표에 담고, 더 있으면 <code>전체 보기</code> → <code>/inquiries?user=&lt;id&gt;</code> 로 넘겨 목록 쪽 회원 필터 배너를 띄웁니다. 이 탭에서도 출처 칸은 <code>fb448aa</code> 에서 함께 뺐습니다.</li>
+  </ul>
+
+  <h3>3.6 두 운영자가 같은 문의에 답할 때</h3>
+  <div class="diagram"><p class="cap">배정 → 작성 중 잠금 → 가로채기 → 저장 시 충돌 감지(초안 유지)</p>
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor A as 운영자 A
+    actor B as 운영자 B
+    participant DB as Supabase<br/>inquiries · RPC
+
+    A->>DB: 나에게 배정 (assignInquiry)
+    DB-->>A: assigned_to = A · 접수 대기면 처리 중으로
+    A->>DB: 답변 폼 mount → claim_inquiry_edit()
+    DB-->>A: ok · editing_by = A
+    loop 60초마다
+        A->>DB: 하트비트 claim (updated_at 은 그대로)
+    end
+    B->>DB: 같은 문의 열기 → claim_inquiry_edit()
+    DB-->>B: ok=false · editing_by=A · editing_at
+    Note over B: 배너 "A 관리자가 답변을 작성하고 있습니다"<br/>답변 칸 · 등록 버튼 비활성
+    B->>DB: "그래도 이어서 작성" → claim(force)
+    DB-->>B: ok=true · taken_over → 감사 로그 inquiry.edit_lock
+    A->>DB: add_inquiry_reply(expectedReplyCount, expectedStatus)
+    DB-->>A: ok · 답변 저장 · 상태 답변 완료
+    B->>DB: add_inquiry_reply(옛 스냅샷)
+    DB-->>B: ok=false · code=conflict
+    Note over B: "다른 운영자가 먼저 처리했습니다."<br/>초안은 그대로 · 스레드만 router.refresh()
+</pre></div>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="num">04</span><h2>데이터 · 인프라 변경</h2></div>
+  <p class="src">supabase/migrations/20260910000400 … 20260911000400 · supabase/functions/**</p>
+
+  <h3>4.1 마이그레이션 8개</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>번호</th><th>커밋</th><th>더한 것</th></tr></thead>
+    <tbody>
+      <tr><td><code>20260910000400</code></td><td><code>b78dfd7</code></td><td><code>inquiry_categories</code>(key · label · description · prefill · sort_order · is_active) · 공개 읽기 RLS · <strong>시드 8종</strong></td></tr>
+      <tr><td><code>20260910000500</code></td><td><code>b78dfd7</code></td><td>RPC <code>inquiry_category_usage()</code> · <code>update_inquiry_category()</code>(7 인자 · 개명 시 과거 문의 재라벨링)</td></tr>
+      <tr><td><code>20260910000600</code></td><td><code>2e3f6ae</code></td><td>버킷 허용 MIME 에 <code>video/mp4 · quicktime · webm · x-m4v</code> · 첨부 3개 CHECK · RPC <code>stale_inquiry_pending_attachments()</code>(<code>SECURITY DEFINER</code> · 실행 <code>service_role</code> 만)</td></tr>
+      <tr><td><code>20260910000700</code></td><td><code>af1a886</code></td><td><code>inquiry_categories.subtypes text[]</code> · CHECK <code>inquiry_subtypes_valid()</code>(≤ 20 · 각 1~30자) · 7종 시드 · <code>update_inquiry_category()</code>(8 인자) · <code>inquiry_type_usage()</code></td></tr>
+      <tr><td><code>20260910000800</code></td><td><code>af1a886</code></td><td>운영자가 손댄 프리필에서 "세부 문의 유형" 블록만 정규식으로 제거</td></tr>
+      <tr><td><code>20260910000900</code></td><td><code>af1a886</code></td><td>CHECK <code>inquiries_account_id_length</code>(null 이거나 1~40자) · 주석 갱신</td></tr>
+      <tr><td><code>20260911000200</code></td><td><code>e4937d4</code></td><td><code>inquiry_reply_templates</code>(category_id nullable · name · body ≤ 2000 · sort_order · is_active) · 관리자 전용 RLS · 시드 6종</td></tr>
+      <tr><td><code>20260911000300</code></td><td><code>fb448aa</code></td><td><code>inquiries.assigned_to · assigned_at · editing_by · editing_at</code> · 부분 인덱스 2개(<code>assigned_to</code> 있음/없음) · <code>inquiry_notes</code> + RLS 3종 · RPC <code>claim_inquiry_edit()</code> · <code>release_inquiry_edit()</code> · <code>add_inquiry_reply()</code> · <strong>잠금 열만 바뀐 UPDATE 는 <code>updated_at</code> 을 밀지 않는 트리거</strong>(<code>set_inquiry_updated_at()</code>)</td></tr>
+      <tr><td><code>20260911000400</code></td><td><code>fb448aa</code></td><td><code>inquiries.inquiry_no</code>(백필 → <code>generated always as identity</code> · 유니크 <code>inquiries_inquiry_no_key</code>) · 소유자 가드에 열 고정</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">분리</span><p><strong><code>inquiry_notes</code> 를 <code>inquiries</code> 의 열로 두지 않은 이유</strong>: 그 테이블은 소유자에게 행이 열려 있어(<code>inquiries_select_own</code>) 열을 더하는 순간 사용자 쪽 select 한 줄이면 새어 나갑니다. 별도 테이블 + 관리자 전용 정책이면 <strong>읽을 수 있는 경로 자체가 없습니다</strong>(<code>anon</code> 은 권한도 회수). 소유자 UPDATE 가드는 <code>answered_at</code> · <code>contact_email</code> · <code>privacy_consent</code> 에 더해 <strong><code>assigned_to</code> · <code>assigned_at</code> · <code>editing_by</code> · <code>editing_at</code> · <code>inquiry_no</code></strong> 를 조용히 되돌립니다.</p></div>
+
+  <h3>4.2 접수번호를 <code>generated always</code> 로 둔 이유</h3>
+  <ol class="steps">
+    <li><code>by default</code> 였다면 접수 폼이 값을 실어 보낼 수 있습니다 — 사용자 INSERT 는 <code>inquiries_insert_own</code> 으로 열려 있습니다. 누가 큰 번호를 선점하면 <strong>시퀀스가 그 자리에 닿는 순간 접수가 통째로 실패</strong>합니다. <code>always</code> 면 Postgres 가 직접 거절하므로 트리거로 막을 것이 없습니다.</li>
+    <li><strong>1001부터</strong> 시작합니다. 1 부터면 "몇 번째 문의인지"가 드러나 서비스 규모가 노출되고, 세 자리는 접수번호처럼 보이지도 않습니다.</li>
+    <li>백필은 <strong>접수 순서대로</strong>(<code>created_at</code>, 동시각은 <code>id</code>) 매기고 <code>max+1</code> 에서 identity 를 시작합니다. 재실행해도 안전합니다(<code>attidentity = ''</code> 를 확인한 뒤에만 붙입니다).</li>
+    <li>취소·삭제로 생긴 빈 번호는 <strong>다시 쓰지 않습니다.</strong> 유니크 인덱스가 "번호로 문의를 찾는다"는 규약을 못 박습니다.</li>
+  </ol>
+
+  <h3>4.3 스토리지</h3>
+  <div class="kv">
+    <div><div class="k">버킷</div><div class="v"><code>inquiry-attachments</code>(비공개 · <code>file_size_limit</code> 200MiB)는 그대로 두고 <strong>허용 MIME 만</strong> 넓혔습니다(영상 4종 · <code>20260910000600</code>)</div></div>
+    <div><div class="k">정책</div><div class="v">영상 때문에 <strong>새 정책은 만들지 않았습니다.</strong> 기존 셋이 전부 <strong>첫 세그먼트(uid)만</strong> 보므로 <code>&lt;uid&gt;/pending/…</code> 도 통과합니다</div></div>
+    <div><div class="k">경로</div><div class="v">접수 전 <code>&lt;uid&gt;/pending/&lt;uuid&gt;.&lt;ext&gt;</code> → 확정 시 <code>&lt;uid&gt;/&lt;uuid&gt;-&lt;파일명&gt;</code> 으로 <strong>서비스 롤이 <code>move</code></strong>(경로 · 존재 · 크기 · MIME 재검증 후)</div></div>
+  </div>
+
+  <h3>4.4 Edge Function 과 배포 상태</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>함수</th><th>무엇이 바뀌었나</th><th>배포</th></tr></thead>
+    <tbody>
+      <tr><td><code>purge-withdrawn</code></td><td>개인정보 파기 배치에 <strong>버려진 pending 첨부 청소</strong> 추가(<code>stale_inquiry_pending_attachments</code> → Storage API 삭제 → 응답 <code>pendingAttachmentsRemoved</code>). 실패는 삼킵니다 — 스토리지가 흔들렸다고 그날 파기가 밀리면 안 됩니다</td><td><strong>2026-09-10 재배포</strong>(version 4)</td></tr>
+      <tr><td><code>email-outbound</code></td><td>답신 제목이 <code>replySubject(title, inquiry_no)</code> — <code>Re: &lt;제목&gt; [글자월드 문의 #1024]</code>. 조회 컬럼에 <code>inquiry_no</code> 추가</td><td><strong>2026-09-11 재배포</strong></td></tr>
+      <tr><td><code>email-inbound</code></td><td>접수 확인 메일(<code>ack.ts</code>)과 수신 저장(<code>received.ts</code>)이 같은 접수번호를 씁니다. 제목 태그 정규식이 <strong>옛 uuid 태그와 새 번호 태그를 모두</strong> 걷어냅니다</td><td><strong>2026-09-11 재배포</strong></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout mail"><span class="icon">MAIL</span><p>제목 태그를 "걷어내기만" 하는 이유: <strong>이미 나간 메일에 답장이 오면</strong> 제목에 옛 태그(<code>[문의 #a1b2c3d4]</code>)가 그대로 남아 있습니다. 함수는 재배포됐지만 <strong>제공자 계정·DNS·secret 은 여전히 없습니다</strong> — 답신이 <code>503 not_configured</code> 를 받는 것이 지금의 정상 동작입니다.</p></div>
+
+  <h3>4.5 캐시 태그</h3>
+  <ul>
+    <li>태그는 여전히 <strong><code>inquiry-categories</code> 하나</strong>입니다(<code>lib/data/cache.ts</code> ↔ <code>admin/lib/revalidate.ts</code>). 관리자에서 카테고리를 저장하면 <code>revalidateClient()</code> 가 사용자 사이트의 <code>POST /api/revalidate</code> 를 두드립니다.</li>
+    <li>답변 템플릿 · 담당자 · 내부 메모 · 접수번호에는 <strong>새 태그를 만들지 않았습니다.</strong> 관리자 화면은 <code>dynamic = 'force-dynamic'</code> 이고 사용자 쪽 문의 본문은 세션마다 직접 읽습니다.</li>
+  </ul>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><span class="num">05</span><h2>운영 절차 변화</h2></div>
+
+  <h3>5.1 권장 처리 흐름</h3>
+  <ol class="steps">
+    <li>목록에서 <strong><code>미배정</code></strong> 필터(또는 <code>내 담당</code>)로 큐를 봅니다.</li>
+    <li><strong><code>나에게 배정</code></strong> 을 먼저 누릅니다 — 미배정 + 접수 대기면 상태가 <code>처리 중</code> 으로 함께 올라갑니다.</li>
+    <li>답변 폼을 열면 그 순간부터 <strong>작성 중 잠금</strong>이 잡힙니다(5분 · 60초 하트비트).</li>
+    <li>필요하면 <strong>템플릿 불러오기</strong> → 문안을 고치고 <code>답변 등록</code>(이메일 문의는 <code>이메일로 답신 보내기</code>).</li>
+    <li>상태는 답변 등록이 <code>답변 완료</code> 로 올려 줍니다. 추가 확인이 필요하면 <code>처리 중</code> 으로 두고 <strong>내부 메모</strong>를 남깁니다.</li>
+    <li>다 끝나면 <code>종료</code>. 배정은 그대로 남습니다 — 누가 처리했는지의 기록입니다.</li>
+  </ol>
+
+  <h3>5.2 충돌 안내를 만났다면</h3>
+  <ul>
+    <li><code>다른 운영자가 먼저 처리했습니다. 최신 내용을 확인해 주세요.</code> 는 <strong>저장이 되지 않은 것</strong>입니다. 초안은 그대로 남아 있으니 다시 쓰지 마세요.</li>
+    <li>스레드는 이미 새로 받아 왔습니다. 위로 올라가 <strong>앞선 답변을 읽고</strong> — 같은 말이면 초안을 버리고, 보탤 것이 있으면 고쳐서 다시 등록합니다.</li>
+    <li>배너가 <code>최신 내용 보기</code> 로 먼저 알려 준 경우는 아직 저장 전입니다. 눌러서 스레드를 갱신한 뒤 이어 쓰세요.</li>
+    <li><strong>작성 중 배너를 보고도 가로챌 수 있습니다</strong>(<code>그래도 이어서 작성</code>). 그때는 감사 로그에 <code>inquiry.edit_lock</code> 이 남으므로, 상대가 자리를 비운 것이 확실할 때만 쓰세요.</li>
+  </ul>
+
+  <h3>5.3 내부 메모</h3>
+  <div class="callout warn"><span class="icon">주의</span><p>내부 메모는 <strong>고객에게 보이지 않습니다</strong>. 다만 답변 폼과 생김새가 비슷하므로 머리와 입력칸 양쪽의 <code>운영자 전용</code> 문구를 확인하고 쓰세요. <strong>고칠 수 없습니다</strong> — 지우는 것은 남긴 사람만 가능하고(확인 창 한 단계), 감사 로그에는 길이만 남고 <strong>본문은 남지 않습니다</strong>. "왜 이렇게 판단했는지"를 다음 사람에게 남기는 자리입니다.</p></div>
+
+  <h3>5.4 카테고리 · 세부 유형 · 템플릿 손보기</h3>
+  <ul>
+    <li>카테고리를 정리할 때는 삭제가 아니라 <strong>비활성화가 기본값</strong>입니다. 옛 라벨을 없애면 그 라벨로 접수된 과거 문의를 <strong>필터로 찾을 길이 사라집니다</strong>.</li>
+    <li>개명은 과거 문의를 함께 옮깁니다 — 그 문의들의 <code>updated_at</code> 이 밀리는 것은 정상입니다(내용 · 상태 · 이력은 그대로).</li>
+    <li>프리필에 "세부 문의 유형" 목록을 다시 넣지 마세요. 셀렉트가 이미 같은 것을 묻습니다.</li>
+    <li>사용자 폼 반영은 캐시 태그를 타므로 <strong>최대 300초</strong> 늦을 수 있습니다.</li>
+    <li>답변 템플릿은 지우기보다 <strong>비활성</strong>으로 두면 문안이 남습니다. 본문 상한(2000자)은 답변 상한과 같아서, 넘기면 "불러왔는데 등록할 수 없는" 템플릿이 됩니다.</li>
+  </ul>
+
+  <h3>5.5 접수번호를 대화에 쓰는 법</h3>
+  <ul>
+    <li>사용자에게는 <code>#1024</code> <strong>한 가지 모양</strong>으로만 말합니다(사용자 화면 · 메일 제목이 모두 이 모양입니다).</li>
+    <li>관리자 검색창에는 <code>1024</code> 든 <code>#1024</code> 든 넣으면 됩니다 — <strong>정확 일치</strong>로 찾고, 제목에 그 숫자가 든 문의도 함께 나옵니다.</li>
+    <li>템플릿 문안에는 <code>{{문의번호}}</code> 를 쓰면 불러오는 순간 접수번호로 치환됩니다.</li>
+  </ul>
+
+  <h3>5.6 출처 메뉴 사용법</h3>
+  <ul>
+    <li>목록에 출처 칸도 선택 상자도 없습니다. <strong>사이드바의 <code>1:1 문의</code> / <code>이메일 문의</code></strong> 가 그 값을 정합니다(같은 라우트의 필터 프리셋).</li>
+    <li>조건을 바꿔도 출처는 폼의 숨은 값으로 유지됩니다. 지금 어느 묶음을 보는지는 <strong>화면 제목</strong>이 말해 줍니다.</li>
+  </ul>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><span class="num">06</span><h2>테스트 결과</h2></div>
+
+  <h3>6.1 지금 다시 돌린 결과 (2026-09-11)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>명령</th><th>결과</th></tr></thead>
+    <tbody>
+      <tr><td><code>pnpm --filter @maple/admin test</code></td><td><strong>62파일 · 839건 전체 통과</strong></td></tr>
+      <tr><td><code>pnpm exec vitest run tests/unit/support tests/unit/validation tests/unit/actions tests/unit/data</code></td><td><strong>44파일 · 507건 전체 통과</strong>(문의와 맞닿은 범위)</td></tr>
+    </tbody>
+  </table></div>
+  <p>사용자 사이트 <strong>전체</strong> 단위 테스트는 커밋 <code>fb448aa</code> 시점 기준 <strong>1219건</strong>입니다. 위 명령은 네 디렉터리만 돌린 것이라 숫자가 다릅니다.</p>
+
+  <h3>6.2 커밋이 보고한 수치</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>커밋</th><th>단위(클라)</th><th>단위(관리자)</th><th>E2E</th></tr></thead>
+    <tbody>
+      <tr><td><code>900abc5</code></td><td>+13건</td><td>—</td><td>첨부 시나리오 추가</td></tr>
+      <tr><td><code>b78dfd7</code></td><td>1108</td><td>652</td><td>14건 통과</td></tr>
+      <tr><td><code>2e3f6ae</code></td><td>1149</td><td>652</td><td>17건 통과</td></tr>
+      <tr><td><code>af1a886</code></td><td>1205</td><td>663</td><td>21건 통과</td></tr>
+      <tr><td><code>643834c</code></td><td>+시각 가시성 테스트</td><td>—</td><td>동의 체크 시나리오 추가</td></tr>
+      <tr><td><code>e4937d4</code></td><td>—</td><td>+39건(4파일)</td><td>템플릿 3건</td></tr>
+      <tr><td><code>16b435a</code></td><td>—</td><td>+12건(3파일)</td><td>—</td></tr>
+      <tr><td><code>fb448aa</code></td><td>1219</td><td>839</td><td>통과(협업 3건 포함)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>6.3 알려진 실패 · flaky</h3>
+  <div class="callout warn"><span class="icon">선행 실패</span><p><code>admin/tests/e2e/reports-members.spec.ts:162</code> — 닉네임 강제 변경 토스트를 <code>닉네임을 &lt;닉&gt; 로 변경했습니다</code> 로 기대하지만, 액션은 조사 처리를 거쳐 <code>…&lt;닉&gt;으로 변경했습니다.</code> 를 냅니다(<code>admin/lib/actions/members-actions.ts:204</code> 의 <code>josa(nickname, '로')</code>). <strong>문의 기능과 무관한 선행 실패</strong>이고 이번 작업에서 고치지 않았습니다.</p></div>
+  <ul>
+    <li><strong>카테고리 e2e 는 느립니다.</strong> 사용자 폼 카테고리가 <code>unstable_cache</code>(300초)에 담기고 관리자는 다른 프로세스라 <code>revalidateTag()</code> 가 닿지 않습니다 — <code>CLIENT_CACHE_BUDGET_MS</code>(6분) 예산으로 폴링합니다.</li>
+    <li><strong>사용자 e2e 는 매 실행이 새 계정을 만듭니다.</strong> 계정을 공유하면 접수 쿨다운(30초)에 걸려 간헐 실패합니다. 관리자 e2e 가 <code>workers: 1</code> 인 이유도 같습니다 — 상태 전이 시나리오가 서로를 밟습니다.</li>
+    <li><strong>협업 e2e 는 운영자 계정이 둘 필요합니다</strong> — <code>inquiry-assignment.spec.ts</code> 는 부트스트랩 계정과 두 번째 관리자 계정으로 각각 브라우저 컨텍스트를 엽니다.</li>
+  </ul>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><span class="num">07</span><h2>미검증 · 후속 과제</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>항목</th><th>지금 상태</th></tr></thead>
+    <tbody>
+      <tr><td>계정 ID 프리필</td><td><code>profiles.msw_uid</code> 를 채우는 화면이 <code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> <strong>OFF</strong> 라 사실상 비어 있습니다. 대부분 직접 입력합니다</td></tr>
+      <tr><td>이메일 제공자</td><td>코드 · DB · 함수는 배포됐지만 <strong>계정 · DNS · secret 미연동</strong>. 답신이 <code>503 not_configured</code> 를 받는 것이 정상 동작입니다</td></tr>
+      <tr><td>pending 첨부 청소</td><td>함수는 재배포(2026-09-10)했지만 <strong>첫 야간 실행 결과(<code>pendingAttachmentsRemoved</code>)는 아직 확인하지 않았습니다</strong></td></tr>
+      <tr><td>HEIC · 실기기 촬영본</td><td>아이폰 기본 촬영 형식은 허용 MIME 에 없습니다. 실기기에서 선택 → 거절 문구까지는 <strong>미검증</strong></td></tr>
+      <tr><td>협업 상태 갱신</td><td>realtime 이 아니라 <strong>20초 폴링</strong>입니다. 두 운영자가 초 단위로 겹치면 배너보다 저장 충돌이 먼저 알립니다</td></tr>
+      <tr><td>잠금 해제</td><td>언마운트 · <code>pagehide</code> 에서 <code>release_inquiry_edit()</code> 를 부르지만 <strong>탭을 닫는 경우는 보장되지 않습니다</strong> — 안전망은 5분 만료입니다</td></tr>
+      <tr><td>관리자 목록 첨부</td><td>목록에 <strong>첨부 개수 칸이 없습니다.</strong> 첨부가 있는 문의를 골라 볼 방법은 아직 상세뿐입니다</td></tr>
+      <tr><td>접수번호 백필</td><td>운영 DB 적용 후 검증 질의 두 개(<code>inquiry_no is null</code> 0건 · 중복 0건)는 마이그레이션 주석에 있고 <strong>실행 기록은 남기지 않았습니다</strong></td></tr>
+      <tr><td>담당자 통계</td><td>담당자별 처리 건수 · 응답 시간 집계는 없습니다(감사 로그로만 추적)</td></tr>
+      <tr><td>내부 메모 수정</td><td>의도적으로 <strong>수정 불가</strong>입니다. 고쳐야 한다는 요구가 나오면 UPDATE 정책부터 새로 설계해야 합니다</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="num">08</span><h2>파일 인덱스</h2></div>
+  <p>이틀 동안 새로 생겼거나 크게 바뀐 것만 모았습니다. 전체 목록은 <code>docs/admin/INQUIRY-GUIDE.md</code> §9.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>경로</th><th>커밋</th></tr></thead>
+    <tbody>
+      <tr><td colspan="2"><span class="tag dbt">DB · 함수</span></td></tr>
+      <tr><td><code>supabase/migrations/20260910000400_inquiry_categories.sql</code> · <code>20260910000500_inquiry_category_admin.sql</code></td><td><code>b78dfd7</code></td></tr>
+      <tr><td><code>supabase/migrations/20260910000600_inquiry_video_attachments.sql</code></td><td><code>2e3f6ae</code></td></tr>
+      <tr><td><code>supabase/migrations/20260910000700_inquiry_category_subtypes.sql</code> · <code>000800_inquiry_prefill_subtype_block.sql</code> · <code>000900_inquiry_account_id_required.sql</code></td><td><code>af1a886</code></td></tr>
+      <tr><td><code>supabase/migrations/20260911000200_inquiry_reply_templates.sql</code></td><td><code>e4937d4</code></td></tr>
+      <tr><td><code>supabase/migrations/20260911000300_inquiry_assignment.sql</code> · <code>20260911000400_inquiry_no.sql</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>supabase/functions/_shared/email/subject.ts</code> · <code>email-inbound/ack.ts</code> · <code>received.ts</code> · <code>email-outbound/index.ts</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>supabase/functions/purge-withdrawn/index.ts</code></td><td><code>2e3f6ae</code></td></tr>
+      <tr><td colspan="2"><span class="tag in">사용자 사이트</span></td></tr>
+      <tr><td><code>next.config.ts</code>(<code>bodySizeLimit</code>) · <code>lib/supabase/storage.ts</code> · <code>lib/utils/downscale-image.ts</code></td><td><code>900abc5</code></td></tr>
+      <tr><td><code>lib/supabase/upload-inquiry-video.ts</code> · <code>lib/actions/inquiry-videos.ts</code> · <code>lib/validation/inquiry-video.ts</code></td><td><code>2e3f6ae</code></td></tr>
+      <tr><td><code>lib/validation/inquiry.ts</code></td><td><code>900abc5</code> · <code>b78dfd7</code> · <code>2e3f6ae</code> · <code>af1a886</code></td></tr>
+      <tr><td><code>lib/data/inquiry-categories.ts</code> · <code>lib/utils/inquiry-prefill.ts</code></td><td><code>b78dfd7</code></td></tr>
+      <tr><td><code>lib/utils/inquiry-subtypes.ts</code></td><td><code>af1a886</code></td></tr>
+      <tr><td><code>lib/utils/inquiry-no.ts</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>components/support/InquiryAttachmentField.tsx</code> · <code>InquiryAttachmentLists.tsx</code></td><td><code>900abc5</code></td></tr>
+      <tr><td><code>components/support/use-inquiry-videos.ts</code> · <code>InquiryVideoList.tsx</code></td><td><code>2e3f6ae</code></td></tr>
+      <tr><td><code>components/support/use-inquiry-prefill.ts</code> · <code>InquiryFields.tsx</code> · <code>InquiryFormRow.tsx</code></td><td><code>b78dfd7</code> · <code>af1a886</code></td></tr>
+      <tr><td><code>components/support/SupportCheckbox.tsx</code> · <code>InquiryConsentField.tsx</code> · <code>support-styles.ts</code></td><td><code>643834c</code></td></tr>
+      <tr><td><code>components/support/InquiryRow.tsx</code> · <code>InquiryDetailCard.tsx</code> · <code>InquirySubmittedDialog.tsx</code> · <code>components/account/InquiryTable.tsx</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td colspan="2"><span class="tag outb">관리자 콘솔</span></td></tr>
+      <tr><td><code>admin/app/(admin)/inquiries/categories/page.tsx</code> · <code>admin/components/inquiry-categories/**</code> · <code>admin/lib/actions/inquiry-category-actions.ts</code></td><td><code>b78dfd7</code> · <code>af1a886</code></td></tr>
+      <tr><td><code>admin/app/(admin)/inquiries/reply-templates/page.tsx</code> · <code>admin/components/inquiry-reply-templates/**</code> · <code>admin/components/inquiries/InquiryReplyTemplatePicker.tsx</code></td><td><code>e4937d4</code></td></tr>
+      <tr><td><code>admin/lib/utils/inquiry-reply-template.ts</code>(자리표시자 치환)</td><td><code>e4937d4</code> · <code>fb448aa</code></td></tr>
+      <tr><td><code>admin/components/members/MemberInquiriesTab.tsx</code> · <code>admin/lib/data/member-inquiries.ts</code></td><td><code>16b435a</code> · <code>fb448aa</code></td></tr>
+      <tr><td><code>admin/components/inquiries/InquiryAssignmentCard.tsx</code> · <code>InquiryAssignmentControls.tsx</code> · <code>InquiryAssigneeCell.tsx</code> · <code>InquiryAssigneeFilter.tsx</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>admin/components/inquiries/use-inquiry-edit-lock.ts</code> · <code>InquiryEditLockBanner.tsx</code> · <code>InquiryNotes.tsx</code> · <code>InquiryNoteDeleteButton.tsx</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>admin/lib/actions/inquiry-assignment-actions.ts</code> · <code>inquiry-lock-actions.ts</code> · <code>inquiry-note-actions.ts</code> · <code>inquiry-shared.ts</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>admin/lib/data/inquiry-detail.ts</code> · <code>inquiry-filters.ts</code> · <code>inquiry-refs.ts</code> · <code>inquiry-assignment.ts</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>admin/lib/validation/inquiry-assignment.ts</code> · <code>inquiry-no-search.ts</code> · <code>admin/lib/utils/inquiry-no.ts</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>admin/components/audit/audit-labels.ts</code></td><td><code>0bf646d</code> · <code>e4937d4</code> · <code>fb448aa</code></td></tr>
+      <tr><td colspan="2"><span class="tag mailt">테스트 · 문서</span></td></tr>
+      <tr><td><code>tests/e2e/support-inquiries.spec.ts</code> · <code>tests/e2e/video-fixture.ts</code></td><td><code>900abc5</code> · <code>2e3f6ae</code> · <code>af1a886</code> · <code>643834c</code></td></tr>
+      <tr><td><code>admin/tests/e2e/inquiry-categories.spec.ts</code> · <code>inquiry-reply-templates.spec.ts</code> · <code>inquiry-assignment.spec.ts</code></td><td><code>b78dfd7</code> · <code>e4937d4</code> · <code>fb448aa</code></td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-assignment-*.test.ts</code> · <code>inquiry-conflict.test.ts</code> · <code>inquiry-note-actions.test.ts</code> · <code>inquiry-no.test.ts</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>docs/admin/INQUIRY-GUIDE.md</code> · <code>.html</code></td><td><code>ddd2cc1</code> · <code>700b22a</code> · <code>fb448aa</code></td></tr>
+      <tr><td><code>docs/admin/TEMPLATES-GUIDE.md</code> · <code>.html</code></td><td><code>700b22a</code></td></tr>
+      <tr><td><code>docs/1on1.md</code></td><td><code>b78dfd7</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>글자월드 1:1 문의 변경 사항 정리 · 대상 기간 2026-09-10 ~ 2026-09-11 · 기준 커밋 <code>fb448aa</code> · 현재 상태 문서 <code>docs/admin/INQUIRY-GUIDE.md</code> · <code>TEMPLATES-GUIDE.md</code></footer>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "neutral", fontFamily: "IBM Plex Sans KR, sans-serif" })</script>
+</body>
+</html>

@@ -1,10 +1,12 @@
 # 1:1 문의 — 개발 가이드
 
-최종 갱신 2026-09-11 · 기준 커밋 `af1a886` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md`
+최종 갱신 2026-09-11 · 기준 커밋 `fb448aa` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-GUIDE.html` (다이어그램 포함)
 >
 > 템플릿 세 갈래(문의 카테고리 프리필 · 뉴스 카테고리 템플릿 · 답변 템플릿)를 한자리에서 비교한 문서: `docs/admin/TEMPLATES-GUIDE.md` · `TEMPLATES-GUIDE.html`
+>
+> 2026-09-10 ~ 09-11 에 무엇이 바뀌었는지만 훑으려면: `docs/admin/INQUIRY-CHANGELOG.md` · `INQUIRY-CHANGELOG.html`
 
 1:1 문의는 **한 테이블(`inquiries`)에 두 경로**가 들어옵니다 — 사용자 사이트의 웹 폼(`source='web'`)과 메일 수신 함수(`source='email'`). 문의의 **분류·세부 유형·프리필 양식은 코드가 아니라 DB(`inquiry_categories`)가 소유**하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 크기 때문에 **이미지·PDF 와 영상이 서로 다른 길**로 스토리지에 도착합니다.
 

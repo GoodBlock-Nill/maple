@@ -160,7 +160,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
     <li><a href="#s8"><span class="n">08</span>운영 체크리스트</a></li>
     <li><a href="#s9"><span class="n">09</span>파일 인덱스</a></li>
   </ol>
-  <p class="meta">최종 갱신 2026-09-11<br>기준 커밋 <code>af1a886</code><br>개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4</p>
+  <p class="meta">최종 갱신 2026-09-11<br>기준 커밋 <code>fb448aa</code><br>개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4<br>변경 이력 <code>docs/admin/INQUIRY-CHANGELOG.md</code></p>
 </nav>
 
 <main>
@@ -169,18 +169,20 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
   <h1>1:1 문의</h1>
   <p class="lede">1:1 문의는 <strong>한 테이블(<code>inquiries</code>)에 두 경로</strong>가 들어옵니다 — 사용자 사이트의 웹 폼(<code>source='web'</code>)과 메일 수신 함수(<code>source='email'</code>). 문의의 <strong>분류·세부 유형·프리필 양식은 코드가 아니라 DB(<code>inquiry_categories</code>)가 소유</strong>하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 크기 때문에 <strong>이미지·PDF 와 영상이 서로 다른 길</strong>로 스토리지에 도착합니다.</p>
   <div class="chips">
-    <span class="chip db"><span class="dot"></span>DB · 마이그레이션 9개 · RPC 4개</span>
+    <span class="chip db"><span class="dot"></span>DB · 마이그레이션 11개 · RPC 7개</span>
     <span class="chip client"><span class="dot"></span>사용자 사이트 · 접수 · 수정 · 취소 · 열람</span>
-    <span class="chip admin"><span class="dot"></span>관리자 콘솔 · 처리 · 답변 · 카테고리 관리</span>
+    <span class="chip admin"><span class="dot"></span>관리자 콘솔 · 처리 · 답변 · 카테고리 · 협업</span>
     <span class="chip mail"><span class="dot"></span>이메일 · 수신 · 발신 Edge Function</span>
   </div>
   <div class="board" aria-label="구성 요소 상태">
-    <div><span class="k">DB</span><span class="v">마이그레이션 9개</span><span class="s done">적용됨</span><span class="d"><code>20260908000400</code> ~ <code>20260910000900</code></span></div>
+    <div><span class="k">DB</span><span class="v">마이그레이션 11개</span><span class="s done">적용됨</span><span class="d"><code>20260908000400</code> ~ <code>20260911000400</code></span></div>
     <div><span class="k">Client</span><span class="v">접수 · 수정 · 취소</span><span class="s done">배포됨</span><span class="d"><code>/support</code> · <code>/support/inquiries</code> · 마이페이지 문의내역</span></div>
     <div><span class="k">Client</span><span class="v">카테고리 · 프리필</span><span class="s done">2026-09-10</span><span class="d">커밋 <code>b78dfd7</code> · 시드 8종(<code>docs/1on1.md</code>)</span></div>
     <div><span class="k">Client</span><span class="v">영상 첨부 직접 업로드</span><span class="s done">2026-09-10</span><span class="d">커밋 <code>2e3f6ae</code> · 각 100MB · 2개</span></div>
     <div><span class="k">Client</span><span class="v">세부 유형 · 계정 ID 필수</span><span class="s done">2026-09-11</span><span class="d">커밋 <code>af1a886</code> · 첨부만 선택</span></div>
     <div><span class="k">Admin</span><span class="v">고객지원 모듈</span><span class="s done">배포됨</span><span class="d"><code>/inquiries</code> · <code>/inquiries/categories</code> · 권한 <code>inquiries</code></span></div>
+    <div><span class="k">Admin</span><span class="v">운영자 협업</span><span class="s done">2026-09-11</span><span class="d">배정 · 작성 중 잠금 · 충돌 · 내부 메모 — <code>20260911000300</code> · §05-9</span></div>
+    <div><span class="k">Client+Admin</span><span class="v">접수번호 <code>#1024</code></span><span class="s done">2026-09-11</span><span class="d"><code>20260911000400</code> · 사용자·관리자·메일이 같은 번호를 씁니다</span></div>
     <div><span class="k">Email</span><span class="v">email-inbound · email-outbound</span><span class="s todo">제공자 미연동</span><span class="d">코드·DB·함수는 배포됨. 계정·DNS·secret 만 남음 — <code>EMAIL-INQUIRY-ACTIVATION.md</code></span></div>
     <div><span class="k">Flag</span><span class="v">월드 계정 입력칸</span><span class="s todo">OFF</span><span class="d"><code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> — 꺼져 있으면 계정 ID 프리필이 비어 있습니다(§08-4)</span></div>
   </div>
@@ -188,7 +190,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 
 <section id="s1">
   <div class="sec-head"><span class="num">01</span><h2>개요 · 용어</h2></div>
-  <p>이 문서는 <strong>기준 커밋 <code>af1a886</code>(2026-09-11)</strong> 의 코드를 그대로 기술합니다. 설계 배경은 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.3~§5.4 와 <code>docs/1on1.md</code>(카테고리 원안), 이메일 쪽은 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>EMAIL-INQUIRY-ACTIVATION.md</code> 에 있습니다.</p>
+  <p>이 문서는 <strong>기준 커밋 <code>fb448aa</code>(2026-09-11)</strong> 의 코드를 그대로 기술합니다. 이틀 동안 무엇이 바뀌었는지만 훑으려면 <code>docs/admin/INQUIRY-CHANGELOG.md</code> 를 보세요. 설계 배경은 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.3~§5.4 와 <code>docs/1on1.md</code>(카테고리 원안), 이메일 쪽은 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>EMAIL-INQUIRY-ACTIVATION.md</code> 에 있습니다.</p>
 
   <h3>1.1 무엇이 언제 들어갔나</h3>
   <div class="tbl"><table>
@@ -201,6 +203,9 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
       <tr><td>2026-09-10</td><td>영상 첨부(브라우저 직접 업로드 · <code>pending</code> 접두사 · 청소 함수)</td><td><code>20260910000600</code> · 커밋 <code>2e3f6ae</code></td></tr>
       <tr><td>2026-09-11</td><td>카테고리별 <strong>세부 문의 유형</strong>, 프리필에서 유형 블록 제거</td><td><code>20260910000700</code> · <code>20260910000800</code> · 커밋 <code>af1a886</code></td></tr>
       <tr><td>2026-09-11</td><td><strong>글자월드 계정 ID 필수</strong> + 길이 CHECK(≤ 40)</td><td><code>20260910000900</code> · 커밋 <code>af1a886</code></td></tr>
+      <tr><td>2026-09-11</td><td>답변 템플릿(공통 · 카테고리별 · 자리표시자)</td><td><code>20260911000200</code> · 커밋 <code>e4937d4</code></td></tr>
+      <tr><td>2026-09-11</td><td><strong>운영자 협업</strong> — 담당자 · 작성 중 잠금 · 저장 충돌 · 내부 메모</td><td><code>20260911000300_inquiry_assignment.sql</code> · 커밋 <code>fb448aa</code> · §05-9</td></tr>
+      <tr><td>2026-09-11</td><td><strong>접수번호</strong>(<code>inquiry_no</code>, 1001부터 · <code>#1024</code> 표기)</td><td><code>20260911000400_inquiry_no.sql</code> · 커밋 <code>fb448aa</code></td></tr>
     </tbody>
   </table></div>
 
@@ -218,6 +223,10 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
       <tr><td><strong>상태</strong></td><td><code>inquiry_status</code> enum</td><td><code>pending</code> 접수 대기 · <code>in_progress</code> 처리 중 · <code>answered</code> 답변 완료 · <code>closed</code> 종료</td></tr>
       <tr><td><strong>접수 취소</strong></td><td><code>status='closed'</code> + <code>cancelled_at</code></td><td>enum 값이 아닙니다. <strong>라벨은 취소가 상태를 이깁니다</strong> — 두 화면이 같은 규칙을 씁니다</td></tr>
       <tr><td><strong>출처</strong></td><td><code>inquiries.source</code> = <code>web</code> | <code>email</code></td><td>관리자 사이드바의 '1:1 문의'·'이메일 문의'는 새 라우트가 아니라 이 값의 <strong>필터 프리셋</strong>입니다</td></tr>
+      <tr><td><strong>접수번호</strong></td><td><code>inquiries.inquiry_no</code>(bigint · 1001부터)</td><td>사람이 부르는 번호. 표기는 <code>#1024</code> 하나뿐이고 사용자 화면·관리자 목록·답신 메일 제목이 <strong>같은 값</strong>을 씁니다</td></tr>
+      <tr><td><strong>담당자</strong></td><td><code>inquiries.assigned_to</code> → <code>profiles(id)</code></td><td>이 문의를 맡은 운영자. null 이면 '미배정'. 배정은 상태와 별개지만, 미배정 + 접수 대기를 맡으면 처리 중으로 갑니다</td></tr>
+      <tr><td><strong>작성 중</strong></td><td><code>inquiries.editing_by</code> · <code>editing_at</code></td><td>답변 폼이 잡는 <strong>소프트 락</strong>(5분 만료 · 60초 하트비트). 강제력이 없어 마지막 방어선은 저장 시 충돌 감지입니다</td></tr>
+      <tr><td><strong>내부 메모</strong></td><td><code>public.inquiry_notes</code></td><td>운영자끼리만 보는 기록. 사용자 사이트는 이 테이블을 <strong>읽지 않습니다</strong>(RLS 도 관리자 전용)</td></tr>
     </tbody>
   </table></div>
 
@@ -320,6 +329,7 @@ flowchart TD
     <div><div class="k">소유권</div><div class="v">RLS 위에 <code>.eq('user_id', …)</code> 를 <strong>한 번 더</strong> 겁니다 — 관리자 세션에는 전체 행이 열려 있어 조건을 빼면 "내 문의 내역"이 남의 문의를 그립니다</div></div>
     <div><div class="k">없는 문의</div><div class="v"><code>notFound()</code>. "권한 없음"을 구분해 알리면 남의 문의 id 존재 여부가 새어 나갑니다</div></div>
     <div><div class="k">답변 수</div><div class="v">목록은 임베드 집계 <code>inquiry_replies(count)</code> 로 같은 왕복에서 받습니다</div></div>
+    <div><div class="k">접수번호</div><div class="v"><code>#1024</code> 가 네 자리에 모두 보입니다 — 접수 완료 모달 · 고객지원 목록 행 · 마이페이지 표의 '접수번호' 칸(예전의 화면 순번을 대체) · 상세 제목 위. 순번을 쓰던 때는 '더보기'로 목록이 늘어날 때마다 같은 문의가 다른 번호로 보였습니다</div></div>
     <div><div class="k">1회성 안내</div><div class="v"><code>?submitted=1</code> 접수 완료 모달 · <code>?updated=1</code> · <code>?cancelled=1</code> · <code>?locked=1</code>. <strong>문구는 서버가 정합니다</strong> — 주소에 문구를 실으면 링크 하나로 임의 텍스트를 이 화면에 띄울 수 있습니다</div></div>
     <div><div class="k">메타 · 색인</div><div class="v">목록·상세·수정 모두 <code>robots: { index:false, follow:false }</code>. 제목에 개인정보가 섞일 수 있어 메타에도 싣지 않습니다</div></div>
   </div>
@@ -442,13 +452,14 @@ sequenceDiagram
 
 <section id="s4">
   <div class="sec-head"><span class="num">04</span><h2>데이터 모델</h2></div>
-  <p class="src">supabase/migrations/20260908000400 · 20260908001900 · 20260909000300 · 20260910000400 · 000500 · 000600 · 000700 · 000800 · 000900</p>
+  <p class="src">supabase/migrations/20260908000400 · 20260908001900 · 20260909000300 · 20260910000400 · 000500 · 000600 · 000700 · 000800 · 000900 · 20260911000200 · 000300 · 000400</p>
 
   <h3>4.1 inquiries</h3>
   <div class="tbl"><table>
     <thead><tr><th>열</th><th>타입</th><th>메모</th></tr></thead>
     <tbody>
       <tr><td><code>id</code></td><td><code>uuid</code> PK</td><td><code>gen_random_uuid()</code></td></tr>
+      <tr><td><code>inquiry_no</code></td><td><code>bigint</code> NOT NULL</td><td><strong>접수번호</strong>(1001부터 · 유니크 <code>inquiries_inquiry_no_key</code>). <code>generated always as identity</code> — 접수 폼이 값을 고를 수 없습니다. <code>by default</code> 였다면 사용자가 큰 번호를 선점해 시퀀스가 그 자리에 닿는 순간 접수가 통째로 실패합니다</td></tr>
       <tr><td><code>user_id</code></td><td><code>uuid</code> → <code>profiles(id)</code></td><td><code>on delete set null</code>. <strong>이메일 문의는 항상 null</strong> — 발신자 주소는 위조 가능해서 회원 식별에 쓰지 않습니다</td></tr>
       <tr><td><code>account_id</code></td><td><code>text</code></td><td>글자월드 계정 ID. CHECK <code>inquiries_account_id_length</code> = null 이거나 1~40자. <strong>NOT NULL 은 걸지 않습니다</strong> — 이메일 문의와 옛 문의에는 값이 없고, 필수는 웹 폼의 규칙이라 서버 액션 스키마에서 강제합니다</td></tr>
       <tr><td><code>category</code></td><td><code>text</code> NOT NULL</td><td>카테고리 <strong>라벨 문자열</strong>. 외래키를 걸지 않는 이유 → 4.4</td></tr>
@@ -464,10 +475,25 @@ sequenceDiagram
       <tr><td><code>email_message_id</code></td><td><code>text</code></td><td>원본 Message-ID. <strong>부분 유니크</strong> — 제공자 재시도가 같은 메일을 두 번 접수하지 않게</td></tr>
       <tr><td><code>email_auth</code></td><td><code>jsonb</code></td><td>제공자의 <code>{ spf, dkim, dmarc }</code> 판정 그대로. <strong>차단 근거가 아니라</strong> 콘솔 뱃지용</td></tr>
       <tr><td><code>email_thread_key</code></td><td><code>text</code></td><td><code>reply+&lt;key&gt;@</code> 회신 주소의 토큰(24자 url-safe). 부분 유니크 · <strong>화면에 노출하지 않습니다</strong></td></tr>
-      <tr><td><code>created_at</code> · <code>updated_at</code></td><td><code>timestamptz</code></td><td><code>set_updated_at</code> 트리거가 모든 UPDATE 에서 <code>updated_at</code> 을 밀어 올립니다</td></tr>
+      <tr><td><code>assigned_to</code> · <code>assigned_at</code></td><td><code>uuid</code> → <code>profiles(id)</code> · <code>timestamptz</code></td><td>담당 운영자와 배정 시각. <code>on delete set null</code> — 퇴사해도 문의 이력은 남습니다</td></tr>
+      <tr><td><code>editing_by</code> · <code>editing_at</code></td><td><code>uuid</code> → <code>profiles(id)</code> · <code>timestamptz</code></td><td>작성 중 소프트 락과 하트비트 시각. 5분보다 오래되면 만료로 봅니다(§05-9)</td></tr>
+      <tr><td><code>created_at</code> · <code>updated_at</code></td><td><code>timestamptz</code></td><td><code>set_inquiry_updated_at</code> 트리거가 UPDATE 마다 <code>updated_at</code> 을 밀어 올립니다. <strong>예외는 잠금 하트비트</strong> — <code>editing_by</code>·<code>editing_at</code> 만 달라진 UPDATE 는 수정 시각을 건드리지 않습니다(그러지 않으면 "누가 보고 있다"는 이유만으로 목록 정렬이 흔들립니다)</td></tr>
     </tbody>
   </table></div>
-  <p><strong>인덱스</strong> — <code>inquiries_user_created_idx(user_id, created_at desc)</code> · <code>inquiries_status_created_idx</code> · <code>inquiries_source_status_created_idx</code>(사이드바 프리셋) · <code>inquiries_email_from_created_idx</code>(발신자별 레이트 리밋·확인 메일 1일 1회 판정) · <code>inquiries_email_message_id_key</code> · <code>inquiries_email_thread_key_key</code>(둘 다 부분 유니크).</p>
+  <p><strong>인덱스</strong> — <code>inquiries_user_created_idx(user_id, created_at desc)</code> · <code>inquiries_status_created_idx</code> · <code>inquiries_source_status_created_idx</code>(사이드바 프리셋) · <code>inquiries_email_from_created_idx</code>(발신자별 레이트 리밋·확인 메일 1일 1회 판정) · <code>inquiries_email_message_id_key</code> · <code>inquiries_email_thread_key_key</code>(둘 다 부분 유니크) · <code>inquiries_inquiry_no_key</code>(유니크) · <code>inquiries_assigned_to_idx</code>(담당자 있음) · <code>inquiries_unassigned_idx</code>(담당자 없음 — 반대쪽은 부분 인덱스가 덮지 못합니다).</p>
+
+  <h3>4.1.1 inquiry_notes — 운영자 전용 내부 메모</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>열</th><th>메모</th></tr></thead>
+    <tbody>
+      <tr><td><code>inquiry_id</code></td><td>→ <code>inquiries(id)</code> <code>on delete cascade</code></td></tr>
+      <tr><td><code>author_id</code></td><td>→ <code>profiles(id)</code> <code>on delete set null</code>. null 이 되면 <strong>아무도 그 메모를 지울 수 없습니다</strong>(본인만 삭제)</td></tr>
+      <tr><td><code>author_nickname_snapshot</code></td><td>작성 시점의 닉네임. 계정이 사라져도 "누구의 판단인지"는 남아야 합니다</td></tr>
+      <tr><td><code>body</code></td><td>평문 CHECK <code>1~2000자</code>(답변 상한과 같은 숫자)</td></tr>
+      <tr><td><code>created_at</code></td><td>최신순 정렬 · <code>inquiry_notes_inquiry_created_idx(inquiry_id, created_at desc)</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">분리</span><p><strong>메모를 <code>inquiries</code> 의 열로 두지 않은 이유</strong>: 그 테이블은 소유자에게 행이 열려 있어(<code>inquiries_select_own</code>) 열을 더하는 순간 사용자 쪽 select 한 줄이면 새어 나갑니다. 별도 테이블 + 관리자 전용 정책이면 <strong>읽을 수 있는 경로 자체가 없습니다</strong>(<code>anon</code> 은 권한도 회수).</p></div>
 
   <h3>4.2 inquiry_replies</h3>
   <div class="tbl"><table>
@@ -496,7 +522,7 @@ sequenceDiagram
   </table></div>
   <p>시드는 <code>docs/1on1.md</code> 의 <strong>8종</strong>(<code>connection · character · save-data · currency · content-balance · account-environment · feature-ui · etc</code>)이고 <code>on conflict (key) do nothing</code> 입니다 — 마이그레이션을 다시 돌려도 운영자가 고친 문구가 되돌아가지 않습니다. <code>etc</code>('기타·건의')만 <code>subtypes</code> 가 비어 있어 폼이 셀렉트를 잠그고 <code>기타</code> 로 접수합니다.</p>
 
-  <h3>4.4 RPC 넷</h3>
+  <h3>4.4 RPC 일곱</h3>
   <div class="tbl"><table>
     <thead><tr><th>함수</th><th>보안</th><th>하는 일</th></tr></thead>
     <tbody>
@@ -504,6 +530,9 @@ sequenceDiagram
       <tr><td><code>inquiry_category_usage()</code></td><td><code>SECURITY INVOKER</code> · stable</td><td>라벨별 문의 수. 삭제 가능 여부(0건일 때만)와 <strong>목록 필터의 옛 라벨</strong>이 여기서 나옵니다</td></tr>
       <tr><td><code>inquiry_type_usage()</code></td><td>동일</td><td>유형별 문의 수. 옛 값('문의'·'신고'·'제안'·<code>general</code>)을 필터에서 잃지 않기 위해</td></tr>
       <tr><td><code>stale_inquiry_pending_attachments(p_cutoff_hours, p_limit)</code></td><td><code>SECURITY DEFINER</code> · 실행 <code>service_role</code> 만</td><td>24시간 지난 <code>&lt;uid&gt;/pending/…</code> 경로 목록(§03-3)</td></tr>
+      <tr><td><code>claim_inquiry_edit(p_inquiry_id, p_force)</code></td><td><code>SECURITY DEFINER</code> + 첫 줄 <code>is_admin()</code></td><td>작성 중 잠금을 잡거나 갱신(하트비트). 5분 넘게 끊긴 잠금은 만료, <code>p_force</code> 면 살아 있는 잠금도 가로챕니다(§05-9)</td></tr>
+      <tr><td><code>release_inquiry_edit(p_inquiry_id)</code></td><td>동일</td><td><strong>내가 쥔</strong> 잠금만 풉니다 — 남의 것을 풀 수 있으면 가로채기가 감사 로그 없이 우회됩니다</td></tr>
+      <tr><td><code>add_inquiry_reply(p_inquiry_id, p_content, p_author_name, p_expected_reply_count, p_expected_status, p_delivery_status)</code></td><td><code>SECURITY INVOKER</code> + 첫 줄 <code>is_admin()</code></td><td>답변 INSERT <strong>+ 충돌 감지</strong>를 한 트랜잭션으로. 기대값이 지금 DB 와 다르면 <code>{"ok":false,"code":"conflict"}</code>(§05-9)</td></tr>
     </tbody>
   </table></div>
   <div class="callout warn"><span class="icon">권한</span><p><code>update_inquiry_category()</code> 는 RLS 만 믿지 않고 <strong>함수가 스스로 <code>is_admin()</code> 을 다시 봅니다.</strong> RLS 에만 기대면 비관리자가 불렀을 때 "0건 갱신"이 조용히 성공으로 돌아오고, 최악의 경우 자기 문의의 분류만 바꾸는 길이 열립니다. 사용 통계 둘은 반대로 <code>INVOKER</code> 라서 일반 사용자가 부르면 <strong>자기 문의만</strong> 세어집니다 — 정보가 새지 않습니다.</p></div>
@@ -519,6 +548,9 @@ sequenceDiagram
       <tr><td><code>inquiries_admin_all</code></td><td>authenticated</td><td><code>is_admin()</code></td></tr>
       <tr><td rowspan="2"><code>inquiry_replies</code></td><td><code>inquiry_replies_select_owner</code></td><td>authenticated</td><td>그 문의의 <code>user_id</code> 가 나</td></tr>
       <tr><td><code>inquiry_replies_admin_all</code></td><td>authenticated</td><td><code>is_admin()</code></td></tr>
+      <tr><td rowspan="3"><code>inquiry_notes</code></td><td><code>inquiry_notes_select_admin</code></td><td>authenticated</td><td><code>is_admin()</code> — 사용자에게는 <strong>행이 하나도 보이지 않습니다</strong></td></tr>
+      <tr><td><code>inquiry_notes_insert_admin</code></td><td>authenticated</td><td><code>is_admin()</code> <strong>and</strong> <code>author_id = auth.uid()</code> — 남의 이름으로 메모를 남길 수 없습니다</td></tr>
+      <tr><td><code>inquiry_notes_delete_own</code></td><td>authenticated</td><td><code>is_admin()</code> <strong>and</strong> <code>author_id = auth.uid()</code>. UPDATE 정책은 <strong>없습니다</strong>(메모는 고치지 않습니다)</td></tr>
       <tr><td rowspan="2"><code>inquiry_categories</code></td><td><code>inquiry_categories_select_active</code></td><td><strong>anon</strong> + authenticated</td><td><code>is_active</code> — 비로그인 방문자도 폼에서 카테고리를 봐야 합니다(제출만 로그인)</td></tr>
       <tr><td><code>inquiry_categories_admin_all</code></td><td>authenticated</td><td><code>is_admin()</code> — 비활성 행까지 보이는 근거</td></tr>
       <tr><td><code>email_inbound_events</code></td><td>—</td><td>service_role</td><td>anon · authenticated 권한을 <strong>회수</strong>했습니다(웹훅 전달 중복 제거 전용)</td></tr>
@@ -535,7 +567,7 @@ sequenceDiagram
     <li>상태 변경은 <strong>취소 전이 하나만</strong> — <code>old.status in ('pending','in_progress')</code> · <code>new.status='closed'</code> · <code>old.cancelled_at is null</code> · <code>new.cancelled_at is not null</code>. 그 밖의 상태 변경은 예외.</li>
     <li><code>cancelled_at</code> 을 그 전이 밖에서 건드리면(취소 해제, 상태 없이 따로 찍기) 예외 — 취소 여부와 상태가 어긋난 행을 만들지 않습니다.</li>
     <li>본문(제목·카테고리·유형·계정 ID·내용·첨부) 변경은 <code>old.status='pending'</code> <strong>이고</strong> 미취소일 때만. 아니면 예외.</li>
-    <li><code>answered_at</code> · <code>contact_email</code> · <code>privacy_consent</code> 는 <strong>조용히 되돌립니다</strong> — 사용자가 보낼 이유가 없는 값이라 정상 흐름을 예외로 끊을 이유가 없습니다.</li>
+    <li><code>answered_at</code> · <code>contact_email</code> · <code>privacy_consent</code> · <strong><code>assigned_to</code> · <code>assigned_at</code> · <code>editing_by</code> · <code>editing_at</code> · <code>inquiry_no</code></strong> 는 <strong>조용히 되돌립니다</strong> — 사용자가 보낼 이유가 없는 값이라 정상 흐름을 예외로 끊을 이유가 없습니다. 협업 열은 <code>20260911000300</code>, 접수번호는 <code>20260911000400</code> 이 더했습니다(접수번호는 <code>generated always</code> 라 Postgres 가 먼저 거절하고, 가드의 한 줄은 "사용자가 건드릴 수 없는 열"을 한곳에서 읽히게 하는 몫입니다).</li>
   </ol>
   <div class="callout rule"><span class="icon">왜 예외인가</span><p>거절을 "조용한 되돌리기"로 하면 사용자에게는 <strong>저장됨</strong>으로 보이고 값만 옛것으로 남아, 답변이 끝난 문의를 고쳤다고 믿는 사람이 생깁니다. 그래서 사용자 입력 계열은 <code>42501</code> 예외로 끊습니다.</p></div>
 
@@ -598,16 +630,20 @@ stateDiagram-v2
     <thead><tr><th>필터</th><th>쿼리 키</th><th>규칙</th></tr></thead>
     <tbody>
       <tr><td>상태 탭</td><td><code>status</code></td><td><code>open</code>(기본 · 미처리) · <code>pending</code> · <code>in_progress</code> · <code>answered</code> · <code>closed</code> · <code>cancelled</code> · <code>all</code>. 탭 옆 건수는 <code>head:true</code> 카운트 왕복으로 <strong>상태 외 조건을 그대로 적용해</strong> 셉니다</td></tr>
-      <tr><td>출처</td><td><code>source</code></td><td><code>web</code> · <code>email</code>. 모르는 값은 필터를 걸지 않습니다(= 전체)</td></tr>
+      <tr><td>출처</td><td><code>source</code></td><td><code>web</code> · <code>email</code>. <strong>선택 상자는 없습니다</strong> — 사이드바의 두 메뉴가 이 값을 정하고, 조건을 바꿔도 잃지 않도록 폼이 숨은 값으로 나릅니다(2026-09-11 오너 결정)</td></tr>
       <tr><td>카테고리</td><td><code>category</code></td><td>옵션 = 등록된 라벨(비활성 포함) + <strong>데이터에만 남은 옛 라벨</strong>. 검증은 "라벨일 수 없는 값"만 — 빈 값·20자 초과면 전체</td></tr>
       <tr><td>유형</td><td><code>type</code></td><td>카테고리를 고르면 <strong>그 카테고리의 세부 유형만</strong> 남습니다(GET 폼이라 왕복이 곧 갱신). 옛 값은 언제나 뒤에 붙습니다. 상한 30자</td></tr>
       <tr><td>등록일</td><td><code>from</code> · <code>to</code></td><td><code>YYYY-MM-DD</code>(KST). 데이터 계층이 KST 자정을 UTC 경계로 환산하고 <strong>종료일은 그날 24시까지</strong> 포함합니다</td></tr>
-      <tr><td>검색</td><td><code>q</code></td><td>제목 · 내용 · 계정 ID · 발신자 주소 <code>ilike</code>. 최대 60자. PostgREST <code>or()</code> 문법 문자와 LIKE 와일드카드(<code>, ( ) % _ * \ " '</code>)를 <strong>지우고</strong> 넘깁니다</td></tr>
+      <tr><td>검색</td><td><code>q</code></td><td>제목 · 내용 · 계정 ID · 발신자 주소 <code>ilike</code> <strong>+ 접수번호 정확 일치</strong>. 최대 60자. PostgREST <code>or()</code> 문법 문자와 LIKE 와일드카드(<code>, ( ) % _ * \ " '</code>)를 <strong>지우고</strong> 넘깁니다</td></tr>
+      <tr><td>담당자</td><td><code>assignee</code></td><td><code>me</code>(내 담당) · <code>none</code>(미배정) · <code>&lt;관리자 uuid&gt;</code>. 모르는 값은 필터를 걸지 않습니다(= 전체)</td></tr>
     </tbody>
   </table></div>
   <ul>
     <li>이메일 프리셋에서는 <strong>'접수 취소' 탭과 카테고리·유형 필터가 사라집니다</strong> — 이메일 문의에는 취소할 사용자가 없고 분류는 수신 함수가 <code>email</code>/<code>general</code> 로 고정합니다.</li>
-    <li>목록 열: 제목 · 출처 · 계정(마스킹, 이메일이면 발신자 주소) · 카테고리·유형 · 상태 · 답변 수 · 등록일 · 업데이트. 정렬 키는 <code>created_at · updated_at · status · title</code> 이고 <strong>2차 키 <code>id</code></strong> 로 안정 정렬합니다. 한 페이지 20건.</li>
+    <li><strong>출처 칸도 출처 선택 상자도 없습니다</strong>(2026-09-11 오너 결정 — "1:1 문의와 이메일 문의는 메뉴가 이미 분리돼 있어 출처는 필요 없다"). 메뉴가 갈라 놓은 값을 행마다 반복하면 같은 뱃지가 스무 줄 늘어설 뿐이고, 지금 어느 묶음을 보는지는 화면 제목이 말해 줍니다. <code>source</code> 파라미터와 조회 조건은 그대로 남습니다 — 두 메뉴가 그것으로 동작합니다. 회원 상세의 '1:1 문의' 탭에서도 같은 이유로 뺐습니다.</li>
+    <li>목록 열: <strong>접수번호</strong> · 제목 · 계정(마스킹, 이메일이면 발신자 주소) · 카테고리·유형 · <strong>담당자</strong> · 상태 · 답변 수 · 등록일 · 업데이트. 정렬 키는 <code>created_at · updated_at · status · title</code> 이고 <strong>2차 키 <code>id</code></strong> 로 안정 정렬합니다. 한 페이지 20건.</li>
+    <li><strong>접수번호로 찾기</strong> — 검색어가 <code>1024</code> 또는 <code>#1024</code> 면 기존 ilike 조건에 <code>inquiry_no.eq.1024</code> 를 <code>or</code> 로 더합니다(제목에 그 숫자가 든 문의도 함께 나옵니다). 파싱은 <code>admin/lib/validation/inquiry-no-search.ts</code>.</li>
+    <li>칸마다 <strong>최소 폭</strong>을 줍니다. <code>w-*</code> 만으로는 표가 좁아질 때 브라우저가 '카테고리 · 유형'을 한 글자씩 세로로 쌓습니다 — 넘치면 표가 가로로 스크롤합니다.</li>
     <li>본문(<code>content</code>)은 목록에서 <strong>읽지 않습니다</strong> — 20건의 긴 본문은 화면에 쓰이지도 않으면서 응답만 키웁니다(검색은 서버 쪽 <code>ilike</code>).</li>
     <li>조회가 깨지면 <code>hasError</code> 로 배너를 세웁니다 — 빈 표를 "데이터 없음"으로 오독하지 않게.</li>
     <li>탈퇴로 <code>user_id</code> 가 끊긴 문의도 목록에서 사라지지 않습니다(<code>(탈퇴한 회원)</code>).</li>
@@ -615,7 +651,9 @@ stateDiagram-v2
 
   <h3>5.3 상세</h3>
   <div class="kv">
-    <div><div class="k">문의 정보</div><div class="v">작성자(회원 상세 링크) · <strong>계정 ID 마스킹</strong> · 연락 이메일 · 카테고리·유형 · 접수일 · 최근 업데이트 · 첫 답변 · 접수 취소</div></div>
+    <div><div class="k">접수번호</div><div class="v">헤더의 제목 아래 첫 항목(<code>#1024</code>) — 사용자가 전화·메일로 부르는 값입니다. 이메일 문의면 그 뒤에 발신자 주소가 붙습니다(<strong>'이메일' 이라는 출처 라벨은 붙이지 않습니다</strong> — 이미 이메일 문의 메뉴에서 열었습니다)</div></div>
+    <div><div class="k">카드 순서</div><div class="v"><strong>담당자 → 문의 정보 → 문의 내용 → 스레드 → 내부 메모 → 답변 작성</strong>. 담당자를 맨 위에 두는 이유는 §05-9</div></div>
+    <div><div class="k">문의 정보</div><div class="v">접수번호 · 작성자(회원 상세 링크) · <strong>계정 ID 마스킹</strong> · 연락 이메일 · 카테고리·유형 · 접수일 · 최근 업데이트 · 첫 답변 · 접수 취소</div></div>
     <div><div class="k">이메일이면</div><div class="v">항목 자체가 다릅니다 — From · 원본 Message-ID · 카테고리·유형 · 수신 시각 · <strong>SPF·DKIM·DMARC 뱃지</strong> · 최근 업데이트. <strong>작성자 링크와 계정 ID 는 일부러 없습니다</strong></div></div>
     <div><div class="k">문의 내용</div><div class="v">평문 <code>whitespace-pre-line</code>. 마크업을 해석하지 않습니다</div></div>
     <div><div class="k">첨부</div><div class="v">이미지 = 썸네일 → 다이얼로그 미리보기 · 영상 = 인라인 재생 · 그 밖 = <code>download</code> 링크</div></div>
@@ -664,13 +702,15 @@ stateDiagram-v2
     </tbody>
   </table></div>
 
+  <p>2026-09-11 이전에는 <code>{{문의번호}}</code> 가 <strong>문의 ID 앞 8자리</strong>(<code>ABCD1234</code>)였습니다. 그 값은 사용자 화면 어디에도 없어서 "그 번호는 어디서 보나요"라는 되물음을 낳았고, <code>inquiries.inquiry_no</code> 가 생기면서 같은 번호로 통일했습니다.</p>
+
   <div class="callout rule"><span class="icon">규칙</span><p><strong>자리표시자는 불러오는 그 순간 치환됩니다</strong>(<code>admin/lib/utils/inquiry-reply-template.ts</code>). 저장되는 답변에는 <code>{{…}}</code> 가 남지 않습니다 — 남으면 사용자 화면에 그대로 노출됩니다. 등록 화면의 미리보기와 실제 삽입이 <strong>같은 함수</strong>를 씁니다.</p></div>
 
   <div class="tbl"><table>
     <thead><tr><th>자리표시자</th><th>값</th></tr></thead>
     <tbody>
       <tr><td><code>{{닉네임}}</code></td><td>문의한 회원의 닉네임(이메일 문의는 발신자 이름). 비면 <code>고객</code></td></tr>
-      <tr><td><code>{{문의번호}}</code></td><td>문의 ID 앞 8자리(대문자). 사용자가 대조하는 접수번호</td></tr>
+      <tr><td><code>{{문의번호}}</code></td><td><strong>접수번호</strong>(예: <code>#1024</code>). 사용자 화면·답신 메일 제목과 같은 값</td></tr>
       <tr><td><code>{{카테고리}}</code></td><td><code>inquiries.category</code>(라벨 문자열)</td></tr>
       <tr><td><code>{{제목}}</code></td><td>문의 제목</td></tr>
     </tbody>
@@ -693,7 +733,7 @@ stateDiagram-v2
     <thead><tr><th>등급</th><th>되는 것</th></tr></thead>
     <tbody>
       <tr><td><code>read</code></td><td>목록 · 상세 · 첨부 서명 URL · 카테고리 목록 · 답변 템플릿 목록 보기</td></tr>
-      <tr><td><code>write</code></td><td>+ 상태 변경 · 종료 · 답변 등록 · 답신 다시 보내기 · 카테고리 CRUD · <strong>답변 템플릿 CRUD</strong> · 순서 · 활성 토글</td></tr>
+      <tr><td><code>write</code></td><td>+ 상태 변경 · 종료 · 답변 등록 · 답신 다시 보내기 · 카테고리 CRUD · <strong>답변 템플릿 CRUD</strong> · 순서 · 활성 토글 · <strong>담당자 배정/해제 · 작성 잠금 · 내부 메모 작성/삭제</strong></td></tr>
     </tbody>
   </table></div>
   <div class="tbl"><table>
@@ -703,6 +743,9 @@ stateDiagram-v2
       <tr><td><code>inquiry.reply</code></td><td><code>inquiry_replies</code></td><td><code>after {inquiry_id, author_name, length}</code></td><td>1:1 문의 답변</td></tr>
       <tr><td><code>inquiry.email.reply</code></td><td><code>inquiry_replies</code></td><td>동일(이메일 문의의 답신)</td><td>1:1 문의 이메일 답변</td></tr>
       <tr><td><code>inquiry.email.resend</code></td><td><code>inquiry_replies</code></td><td><code>after {result}</code> = <code>sent|queued|not_configured|unauthorized|failed</code></td><td>1:1 문의 이메일 재발송</td></tr>
+      <tr><td><code>inquiry.assign</code> · <code>inquiry.unassign</code></td><td><code>inquiries</code></td><td><code>before {assigned_to}</code> · <code>after {assigned_to, assignee_nickname}</code></td><td>1:1 문의 담당자 배정 · 담당자 배정 해제</td></tr>
+      <tr><td><code>inquiry.edit_lock</code></td><td><code>inquiries</code></td><td><code>after {editing_by, forced:true}</code> — <strong>가로챌 때만</strong> 남깁니다</td><td>1:1 문의 작성 잠금 가로채기</td></tr>
+      <tr><td><code>inquiry_note.create</code> · <code>inquiry_note.delete</code></td><td><code>inquiry_notes</code></td><td><code>after {inquiry_id, length}</code> — <strong>본문은 남기지 않습니다</strong></td><td>문의 내부 메모 등록 · 삭제</td></tr>
       <tr><td><code>inquiry_category.create</code> · <code>.update</code> · <code>.delete</code> · <code>.reorder</code></td><td><code>inquiry_categories</code></td><td>수정은 <code>before</code>/<code>after</code> 전체 + <code>relabelled_inquiries</code></td><td>문의 카테고리 등록 · 수정 · 삭제 · 순서 변경</td></tr>
       <tr><td><code>inquiry_reply_template.create</code> · <code>.update</code> · <code>.delete</code> · <code>.reorder</code></td><td><code>inquiry_reply_templates</code></td><td>수정·삭제는 <code>before</code>/<code>after</code> 전체(문안 포함) · 순서는 <code>after {ids}</code></td><td>답변 템플릿 등록 · 수정 · 삭제 · 순서 변경</td></tr>
     </tbody>
@@ -716,6 +759,78 @@ stateDiagram-v2
     <li>설정 전(제공자 미연동)은 <strong>실패가 아니라 정상 상태</strong>입니다 — 개발자 로그를 남기지 않고 <code>이메일 발송 설정이 아직 없습니다. 답신은 저장되었고, 설정 후 '다시 보내기'로 발송할 수 있습니다.</code> 한 문장을 답변 등록과 다시 보내기가 <strong>함께</strong> 씁니다.</li>
     <li>성공은 토스트, 필드 오류는 입력 아래, 그 밖의 실패는 폼 상단 배너입니다. 답변 등록에 성공하면 폼을 <strong>직접 비웁니다</strong> — <code>revalidatePath</code> 로 스레드는 갱신되지만 입력값은 클라이언트 상태라 그대로 남아 같은 답변을 두 번 등록하기 쉽습니다.</li>
   </ul>
+
+  <h3>5.9 협업 — 담당자 · 작성 중 잠금 · 저장 충돌 · 내부 메모</h3>
+  <p class="src">20260911000300_inquiry_assignment.sql · admin/lib/actions/inquiry-{assignment,lock,note}-actions.ts · admin/components/inquiries/Inquiry{AssignmentCard,AssignmentControls,AssigneeCell,AssigneeFilter,EditLockBanner,Notes,NoteDeleteButton}.tsx · use-inquiry-edit-lock.ts</p>
+  <p>운영자가 여러 명이면 같은 문의에 두 사람이 동시에 답을 씁니다. 사용자 화면에는 비슷한 답변이 두 번 붙고, 나중 것이 앞의 판단을 뒤집기도 합니다. 2026-09-11 의 네 장치는 그 혼선을 <strong>단계별로</strong> 막습니다 — 앞의 것이 뚫려도 뒤의 것이 남습니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>단계</th><th>무엇을 하나</th><th>뚫리는 경우</th></tr></thead>
+    <tbody>
+      <tr><td>① 담당자 배정</td><td>"이 문의는 내가 맡는다"를 목록·상세에 보입니다</td><td>배정을 안 하고 그냥 답할 수 있습니다</td></tr>
+      <tr><td>② 작성 중 소프트 락</td><td>답변 폼을 열면 잠그고, 남에게는 배너 + 폼 잠금</td><td>"그래도 이어서 작성"으로 가로챌 수 있습니다</td></tr>
+      <tr><td>③ 저장 시 충돌 감지</td><td>화면을 연 시점과 지금 DB 가 다르면 <strong>저장을 거절</strong></td><td>(마지막 방어선입니다)</td></tr>
+      <tr><td>④ 내부 메모</td><td>"왜 이렇게 판단했는지"를 다음 사람에게 남깁니다</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout rule"><span class="icon">같은 날</span><p>목록에서 <strong>출처 칸과 출처 선택 상자를 걷어냈습니다</strong>(오너 결정). 사이드바가 '1:1 문의'와 '이메일 문의'를 이미 갈라 두었는데 행마다 같은 뱃지를 반복하면, 새로 붙은 <strong>담당자·접수번호 칸이 들어설 자리만 잃습니다</strong>. <code>source</code> 조회 조건은 그대로입니다(§05-2).</p></div>
+
+  <p><strong>담당자 배정</strong></p>
+  <ul>
+    <li>상세 맨 위 <strong>담당자 카드</strong> — <code>미배정</code> 뱃지 또는 담당자 닉네임 + 배정 시각. 버튼은 <code>나에게 배정</code> · <code>담당자 변경</code>(관리자 select) · <code>배정 해제</code>.</li>
+    <li><strong>확인 창은 남의 배정을 건드릴 때만</strong> 세웁니다 — 모든 조작을 다이얼로그로 감싸면 확인이 의미를 잃습니다. 내가 맡거나 내 배정을 푸는 것은 곧바로 실행합니다.</li>
+    <li><strong>미배정 + <code>접수 대기</code> 문의를 맡으면 상태도 <code>처리 중</code> 으로 갑니다.</strong> 담당자가 생겼는데 '접수 대기'로 남으면 사용자 화면에는 아무도 보지 않는 것처럼 보이고, 운영자 큐에서도 계속 미처리로 눈에 띕니다. 전이는 상태 select 와 <strong>같은 표</strong>(<code>INQUIRY_STATUS_TRANSITIONS</code>)를 탑니다 — 새 상태를 만들지 않았습니다.</li>
+    <li>상태 전이가 실패해도 <strong>배정은 되돌리지 않습니다.</strong> 담당자는 이미 정해졌고 그것이 이 조작의 목적입니다.</li>
+    <li>대상이 관리자가 아니면 거절합니다(<code>관리자만 담당자로 지정할 수 있습니다.</code>) — select 에는 관리자만 있지만 직접 POST 가 있습니다.</li>
+    <li>목록에는 <strong>담당자 칸</strong>과 <code>내 담당</code> · <code>미배정</code> · 특정 운영자 필터(<code>?assignee=</code>)가 붙습니다.</li>
+  </ul>
+
+  <p><strong>작성 중 소프트 락</strong></p>
+  <div class="diagram"><p class="cap">claim → 60초 하트비트 → 다른 운영자에게 배너 · 폼 잠금 → 가로채기(감사 로그)</p>
+<pre class="mermaid">
+sequenceDiagram
+    actor A as 운영자 A
+    actor B as 운영자 B
+    participant DB as claim_inquiry_edit()
+
+    A->>DB: 답변 폼 mount → claim
+    DB-->>A: ok (editing_by = A)
+    loop 60초마다
+        A->>DB: 하트비트 claim
+    end
+    B->>DB: 같은 문의 열기 → claim
+    DB-->>B: ok=false · editing_by=A · editing_at
+    Note over B: 배너 "A 관리자가 답변을 작성하고 있습니다 (n분 전 활동)"<br/>답변 칸·등록 버튼 비활성
+    B->>DB: "그래도 이어서 작성" → claim(force)
+    DB-->>B: ok=true · taken_over=true → 감사 로그 inquiry.edit_lock
+</pre></div>
+  <ul>
+    <li><strong>행을 진짜로 잠그지 않습니다.</strong> 브라우저를 닫고 간 운영자 때문에 문의가 영영 열리지 않는 편이 더 나쁩니다. 하트비트가 <strong>5분</strong> 끊기면 만료로 봅니다(<code>INQUIRY_LOCK_TTL_MS</code> = DB 의 <code>interval '5 minutes'</code> 와 같은 숫자).</li>
+    <li>갱신 주기는 <strong>60초</strong>(TTL 의 1/5 — 한 번 빠뜨려도 풀리지 않습니다), 상태 폴링은 <strong>20초</strong>.</li>
+    <li>폼을 떠나면 <code>release_inquiry_edit()</code> 로 풉니다(언마운트 · <code>pagehide</code>). 탭을 닫는 경우는 <strong>보장되지 않으므로</strong> 진짜 안전망은 만료입니다.</li>
+    <li><strong>하트비트는 <code>updated_at</code> 을 밀지 않습니다.</strong> <code>set_inquiry_updated_at()</code> 이 "잠금 열만 달라진 UPDATE"를 걸러 냅니다 — 그러지 않으면 누가 보고 있다는 이유만으로 목록의 '업데이트' 칸과 정렬이 흔들립니다.</li>
+    <li>감사 로그는 <strong>가로채기(<code>taken_over</code>)만</strong> 남깁니다. 하트비트까지 적으면 1분에 한 줄씩 쌓여 로그가 못 쓰게 됩니다.</li>
+    <li>목록에도 같은 잠금이 <code>✎ 작성 중 · 닉네임</code> 으로 보입니다. <strong>만료 판정은 조회 계층(<code>admin/lib/data/inquiry-refs.ts</code>)이 한 번만</strong> 합니다 — 화면마다 다시 재면 목록과 상세가 다른 말을 합니다.</li>
+  </ul>
+
+  <p><strong>저장 시 충돌 감지</strong></p>
+  <ul>
+    <li>답변 폼은 <strong>화면에 그려진</strong> 스레드 상태를 hidden 으로 함께 보냅니다(<code>expectedReplyCount</code> · <code>expectedStatus</code>). 폴링으로 알아낸 값으로 덮어쓰지 <strong>않습니다</strong> — 운영자가 읽지 않은 새 답변을 "봤다"고 서버에 말하는 셈이라 감지가 무력해집니다.</li>
+    <li>저장은 <code>add_inquiry_reply()</code> RPC 한 번입니다. 앱에서 "확인 → INSERT" 로 두 번 왕복하면 그 사이에 상대의 INSERT 가 끼어들어 <strong>둘 다 통과</strong>합니다. 함수는 문의 행을 <code>for update</code> 로 잡고 비교한 뒤 넣습니다.</li>
+    <li>다르면 <code>{"ok":false,"code":"conflict"}</code> → 화면 문구는 <code>다른 운영자가 먼저 처리했습니다. 최신 내용을 확인해 주세요.</code> 이고 <code>FormState.code = 'conflict'</code> 가 함께 옵니다.</li>
+    <li><strong>초안은 지우지 않습니다.</strong> 스레드만 <code>router.refresh()</code> 로 새로 받습니다(서버 컴포넌트만 다시 그리므로 클라이언트 상태인 답변 초안은 그대로). 다시 쓰게 만들면 운영자는 두 번 다시 이 배너를 믿지 않습니다.</li>
+    <li>폴링이 먼저 알아채면 저장 전에 알려 줍니다 — <code>다른 운영자가 이 문의를 처리했습니다…</code> + <code>최신 내용 보기</code>. 판정은 "다르다"가 아니라 <strong>"앞서 있다"</strong>(답변 수가 더 많거나 <code>updated_at</code> 이 더 늦다)입니다. 단순 비교로 두면 내가 방금 한 조작보다 폴링 응답이 늦게 도착했을 때 내 조작 때문에 경고가 뜹니다.</li>
+    <li>상태 변경·종료 버튼도 같은 스냅샷을 실어 보내고, 액션이 DB 를 다시 읽어 비교합니다. 기대값이 없으면(옛 탭·직접 POST) <strong>검사를 건너뜁니다</strong> — 충돌 감지는 보안 경계가 아니라 협업 장치라, 모르는 호출자를 막는 것보다 저장을 잇는 편이 낫습니다.</li>
+  </ul>
+
+  <p><strong>내부 메모</strong></p>
+  <ul>
+    <li>상세의 <code>내부 메모</code> 카드. 머리와 입력칸 <strong>양쪽에</strong> <code>운영자 전용 · 고객에게 보이지 않습니다</code> 를 적습니다 — 답변 폼과 생김새가 비슷해서 한 곳에만 적으면 사용자에게 보낼 말을 여기에 씁니다(그 반대도 마찬가지입니다).</li>
+    <li>최신이 위입니다. 작성자 닉네임은 <strong>작성 시점 스냅샷</strong>이라 계정이 사라져도 남습니다.</li>
+    <li><strong>지우는 것은 남긴 사람만</strong>(확인 창 한 단계). RLS 와 액션이 같은 규칙을 겹니다 — 정책만 믿으면 "0건 삭제"가 조용한 성공으로 보여 운영자가 이유를 알 수 없습니다.</li>
+    <li>감사 로그에는 <strong>본문을 남기지 않습니다</strong>(<code>length</code> 만). 지운 메모의 사본이 로그에 남으면 지운 뜻이 사라집니다.</li>
+  </ul>
+
+  <div class="callout warn"><span class="icon">누수</span><p><strong>사용자에게 새는 곳이 없는가</strong> — <code>inquiry_notes</code> 는 관리자 전용 정책 + <code>anon</code> 권한 회수라 사용자 세션으로 읽으면 <strong>빈 목록</strong>입니다. <code>assigned_to</code> · <code>editing_by</code> 는 <code>inquiries</code> 의 열이라 소유자 행에는 함께 붙어 있지만, 사용자 사이트의 질의는 <strong>열을 하나하나 적어</strong> 읽으므로(<code>lib/data/inquiries.ts</code> 의 <code>INQUIRY_LIST_COLUMNS</code> · <code>INQUIRY_DETAIL_COLUMNS</code>) 화면에도 응답에도 나가지 않습니다. 열 단위 GRANT 로 막지 않은 이유는 관리자도 같은 <code>authenticated</code> 롤이라 한쪽만 닫을 수 없기 때문입니다 — <strong>새 열을 추가할 때 사용자 쪽 select 목록을 함께 보세요.</strong> 사용자가 그 열을 직접 쓰려 해도 <code>guard_inquiry_owner_update()</code> 가 조용히 되돌립니다(§04-6).</p></div>
 </section>
 
 <section id="s6">
@@ -740,6 +855,7 @@ stateDiagram-v2
       <tr><td>사이드바</td><td>고객지원 › 1:1 문의(<code>?source=web</code>)</td><td>고객지원 › 이메일 문의(<code>?source=email</code>) — <strong>같은 라우트</strong></td></tr>
       <tr><td>메타</td><td>작성자 링크 · 계정 ID · 연락 이메일</td><td>From · 원본 Message-ID · <strong>인증 뱃지 3종</strong>. 작성자 링크·계정 ID <strong>없음</strong></td></tr>
       <tr><td>목록 계정 칸</td><td>마스킹된 계정 ID</td><td>발신자 주소 + 필요하면 '인증 실패' 뱃지</td></tr>
+      <tr><td>목록 출처 칸</td><td><strong>없음</strong>(2026-09-11)</td><td><strong>없음</strong> — 메뉴가 이미 갈라 두었습니다(<code>source</code> 파라미터는 그대로 씁니다)</td></tr>
       <tr><td>필터</td><td>카테고리 · 유형 · 접수 취소 탭</td><td>셋 다 <strong>숨김</strong>(고를 것이 없습니다)</td></tr>
       <tr><td>스레드</td><td>"답변 N건" — 사용자 화면과 같은 순서·같은 필드</td><td>"스레드 N건" — 받은 메일/보낸 답신을 갈라 그립니다. <strong>사용자 화면이 없어 여기가 유일한 기록</strong></td></tr>
       <tr><td>답변</td><td><code>답변 등록</code></td><td><code>이메일로 답신 보내기</code> + 실패 시 <strong>다시 보내기</strong> 버튼</td></tr>
@@ -755,7 +871,7 @@ stateDiagram-v2
   <div class="sec-head"><span class="num">07</span><h2>테스트 · 검증</h2></div>
 
   <h3>7.1 단위 테스트</h3>
-  <p>2026-09-11 실행 결과: <strong>사용자 사이트 179개(17파일) · 관리자 119개(9파일) 통과</strong>.</p>
+  <p>2026-09-11(협업·접수번호 추가 뒤) 실행 결과: <strong>사용자 사이트 1219개(119파일) · 관리자 839개(62파일) 전체 통과</strong>. 아래는 문의와 직접 관련된 파일만 추린 것입니다.</p>
   <div class="tbl"><table>
     <thead><tr><th>파일</th><th>건수</th><th>무엇을 고정하나</th></tr></thead>
     <tbody>
@@ -780,6 +896,12 @@ stateDiagram-v2
       <tr><td><code>admin/tests/unit/inquiry-email-auth.test.ts</code></td><td>6</td><td><code>parseEmailAuth</code> · <code>hasEmailAuthFailure</code>(<code>none</code>·null 은 실패가 아니다)</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-reply-template-actions.test.ts</code></td><td>13</td><td>권한 가드 5종 · 공통=NULL 저장 · 23505/23503 문구 · 카테고리 이동 시 순서 재배치 · 감사 로그 · 부분 반영</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-reply-templates-validation.test.ts</code></td><td>10</td><td>이름/본문 상한(= 답변 상한) · 경계값 · CRLF · 공통(빈 값) vs uuid · 정렬 입력</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-assignment-validation.test.ts</code></td><td>17</td><td><code>?assignee=</code> 파싱(me·none·uuid·쓰레기 값) · 왕복 · 잠금 만료(5분) · "n분 전 활동"</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-assignment-actions.test.ts</code></td><td>12</td><td>권한 가드 · 비관리자 배정 거절 · 미배정+대기 → 처리 중 · 해제는 상태 불변 · 잠금 감사 로그는 가로채기만</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-conflict.test.ts</code></td><td>9</td><td>스냅샷을 RPC 로 그대로 전달 · 모르는 상태는 null · <code>conflict</code> 문구와 <code>code</code> · 상태 변경의 충돌</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-note-actions.test.ts</code></td><td>8</td><td>권한 · 닉네임 스냅샷 · 감사 로그에 본문 없음 · 빈 값/2000자 · 남의 메모 삭제 거절</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-reply-conflict-draft.test.tsx</code></td><td>6</td><td><strong>충돌에도 초안 유지</strong> · 스냅샷 전송 · 잠금 배너/폼 잠금 · 가로채기 후 해제 · 늦게 온 폴링에 속지 않기</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-no.test.ts</code> · <code>tests/unit/utils/inquiry-no.test.ts</code></td><td>7 · 3</td><td><code>#1024</code> 표기(두 앱이 같은 결과) · 검색어에서 접수번호 읽기(<code>1024</code> · <code>#1024</code> · 0·과대 자릿수 거절)</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-reply-template-placeholders.test.ts</code></td><td>9</td><td>자리표시자 4종 치환 · 반복·공백 허용 · 모르는 표시 보존 · 빈 값 폴백 · 접수번호</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-reply-template-picker.test.tsx</code></td><td>7</td><td>빈 칸이면 바로 삽입 · 쓰던 글이 있으면 확인 창 · 끝에 추가 · 취소 · 선택 전 버튼 잠금</td></tr>
     </tbody>
@@ -798,6 +920,7 @@ cd admin &amp;&amp; pnpm test -- tests/unit/inquir</code></pre>
       <tr><td><code>admin/tests/e2e/inquiries.spec.ts</code></td><td>3</td><td>새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + <strong>사용자 화면에 노출</strong> / 취소된 접수는 읽기 전용</td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-categories.spec.ts</code></td><td>2</td><td>등록·개명·프리필 수정·삭제가 <strong>사용자 폼에 반영</strong> / 접수된 문의가 있으면 삭제 대신 비활성화 안내</td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-reply-templates.spec.ts</code></td><td>3</td><td>카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · <strong>저장된 답변에 치환된 닉네임</strong> / 삭제 후 선택지에서 사라짐</td></tr>
+      <tr><td><code>admin/tests/e2e/inquiry-assignment.spec.ts</code></td><td>3</td><td>미배정 필터 + 접수번호 검색 → 나에게 배정(상태도 처리 중) / <strong>브라우저 컨텍스트 두 개</strong> — 두 번째 운영자에게 "작성 중" 배너·폼 잠금, 가로채기 뒤 첫 운영자가 먼저 답하면 <strong>저장 거절 + 초안 유지</strong>(답변은 1건) / 내부 메모 작성·삭제</td></tr>
     </tbody>
   </table></div>
   <ol class="steps">
@@ -806,13 +929,14 @@ cd admin &amp;&amp; pnpm test -- tests/unit/inquir</code></pre>
     <li><strong>두 앱을 함께 띄웁니다.</strong> 사용자 3000 · 관리자 3100. 관리자 e2e 는 <code>CLIENT_E2E_URL</code>(기본 <code>http://localhost:3000</code>)을 봅니다 — <code>.env.local</code> 의 <code>NEXT_PUBLIC_CLIENT_SITE_URL</code> 은 배포본을 가리켜서 그대로 쓰면 방금 만든 데이터가 프로덕션 캐시에 막혀 보이지 않습니다.</li>
     <li><strong>필수 항목을 먼저 채웁니다.</strong> 첨부·영상 시나리오도 <code>fillRequiredFields()</code> 를 먼저 부른 뒤에야 "첨부 때문에 잠겼는가"를 물어볼 수 있습니다 — 2026-09-11 이후 하나라도 비면 버튼이 잠기기 때문입니다.</li>
     <li><strong>영상 픽스처는 저장소에 넣지 않습니다.</strong> <code>tests/e2e/video-fixture.ts</code> 가 스크래치패드에 만들어 씁니다.</li>
+    <li><strong>협업 시나리오에는 운영자가 둘 필요합니다.</strong> <code>inquiry-assignment.spec.ts</code> 는 부트스트랩 계정(<code>signInAsAdmin</code>)과 두 번째 관리자 계정(<code>signInAs(page, email, password)</code>)으로 각각 컨텍스트를 엽니다 — 한 세션으로는 "두 사람이 같은 문의를 본다"는 상황 자체가 만들어지지 않습니다.</li>
   </ol>
   <div class="callout warn"><span class="icon">flaky</span><p><strong>카테고리 e2e 는 캐시 TTL 만큼 기다립니다.</strong> 사용자 폼의 카테고리는 <code>unstable_cache</code>(태그 <code>inquiry-categories</code> · <strong>300초</strong>)에 담기고 관리자는 다른 프로세스라 <code>revalidateTag()</code> 가 닿지 않습니다. 저장 뒤 <code>revalidateClient()</code> 가 사용자 사이트의 <code>POST /api/revalidate</code> 를 두드리지만, 그 호출이 끊겼을 때를 대비해 <strong>6분(<code>CLIENT_CACHE_BUDGET_MS</code>)</strong> 예산으로 폴링합니다 — 이 테스트가 느린 것은 정상입니다. 사용자 e2e 는 <code>fullyParallel</code> 이고 매 실행이 <strong>새 계정</strong>을 만들므로, 같은 계정을 공유하면 접수 쿨다운(30초)에 걸려 간헐 실패합니다. 관리자 e2e 가 <code>workers: 1</code> · <code>fullyParallel: false</code> 인 이유도 같습니다 — 상태 전이 시나리오가 서로를 밟습니다.</p></div>
 <pre><code># 사용자 사이트(3000 자동 기동)
 pnpm test:e2e -- tests/e2e/support-inquiries.spec.ts
 
 # 관리자(3100 자동 기동 · 사용자 3000 이 먼저 떠 있어야 한다)
-cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categories.spec.ts tests/e2e/inquiry-reply-templates.spec.ts</code></pre>
+cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categories.spec.ts tests/e2e/inquiry-reply-templates.spec.ts tests/e2e/inquiry-assignment.spec.ts</code></pre>
   <p>관리자 <code>playwright.config.ts</code> 는 이 머신에 프로젝트-로컬 브라우저가 없어 <strong>헤드리스 셸 경로를 직접 지정</strong>합니다. 다른 환경에서는 <code>PLAYWRIGHT_CHROMIUM_PATH</code> 로 덮어쓰거나 CI 기본 경로를 쓰세요.</p>
 
   <h3>7.3 손으로 확인하는 스크립트</h3>
@@ -832,7 +956,9 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
     <li><strong>새 감사 영역을 만들면 라벨 두 줄을 함께 넣으세요.</strong> <code>DOMAIN_LABELS</code> 와 <code>TABLE_LABELS</code>(§05-7). 빠뜨리면 감사 목록에 <strong>영문 원문</strong>이 남습니다 — 기능에는 영향이 없지만 목록을 읽는 사람에게는 흠입니다.</li>
     <li><strong>순서 저장은 부분 반영될 수 있습니다.</strong> 행마다 UPDATE 를 던지므로 중간에 실패하면 앞쪽 몇 건은 이미 저장돼 있습니다. 실패 문구가 그 사실과 "새로고침해 순서를 확인"을 함께 적습니다.</li>
     <li><strong>프리필을 고칠 때 "세부 문의 유형" 목록을 본문에 다시 넣지 마세요.</strong> 셀렉트가 이미 같은 것을 묻습니다 — 두 곳에 두면 사용자가 두 번 고르고, 어긋난 문의(셀렉트는 '강제 종료', 본문은 '로그인/접속 불가')가 들어옵니다. <code>20260910000800</code> 이 그 블록만 정규식으로 도려낸 이유입니다.</li>
-    <li><strong>새 환경을 만들 때</strong> — 마이그레이션 9개 적용 → 시드 8종 확인(<code>on conflict do nothing</code>) → 버킷 MIME·크기 확인 → <code>SUPABASE_SERVICE_ROLE_KEY</code>(영상 확정용) → 사용자 사이트 <code>REVALIDATE_SECRET</code>/<code>CLIENT_SITE_URL</code>(카테고리 무효화) → <code>supabase functions deploy purge-withdrawn</code>.</li>
+    <li><strong>접수번호는 되돌리지 않습니다.</strong> <code>generated always as identity</code> 라 값을 지정할 수 없고, 삭제·취소로 생긴 빈 번호는 다시 쓰지 않습니다. 새 환경의 시작 번호는 백필 뒤 <code>max+1</code>(빈 DB 면 <strong>1001</strong>)입니다.</li>
+    <li><strong>답변 스레드 열을 하나라도 더할 때는 사용자 사이트의 select 목록을 함께 보세요.</strong> 담당자·작성 중 잠금은 <code>inquiries</code> 의 열이라 소유자 행에 붙어 있고, 새어 나가지 않는 근거는 "클라이언트가 열을 하나하나 적어 읽는다"는 것뿐입니다(§05-9).</li>
+    <li><strong>새 환경을 만들 때</strong> — 마이그레이션 11개 적용 → 시드 8종 확인(<code>on conflict do nothing</code>) → 버킷 MIME·크기 확인 → <code>SUPABASE_SERVICE_ROLE_KEY</code>(영상 확정용) → 사용자 사이트 <code>REVALIDATE_SECRET</code>/<code>CLIENT_SITE_URL</code>(카테고리 무효화) → <code>supabase functions deploy purge-withdrawn</code>.</li>
   </ol>
 </section>
 
@@ -854,6 +980,9 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
       <tr><td><code>supabase/migrations/20260910000700_inquiry_category_subtypes.sql</code></td><td><code>subtypes</code> · <code>inquiry_subtypes_valid()</code> · 시드 · <code>update_inquiry_category()</code>(8 인자) · <code>inquiry_type_usage()</code></td></tr>
       <tr><td><code>supabase/migrations/20260910000800_inquiry_prefill_subtype_block.sql</code></td><td>운영자가 손댄 프리필에서 "세부 문의 유형" 블록만 제거</td></tr>
       <tr><td><code>supabase/migrations/20260910000900_inquiry_account_id_required.sql</code></td><td><code>inquiries_account_id_length</code>(≤ 40) · 주석 갱신</td></tr>
+      <tr><td><code>supabase/migrations/20260911000200_inquiry_reply_templates.sql</code></td><td>답변 템플릿 테이블 · RLS · 시드 6종</td></tr>
+      <tr><td><code>supabase/migrations/20260911000300_inquiry_assignment.sql</code></td><td>담당자 · 작성 중 잠금 · <code>inquiry_notes</code> · <code>claim/release_inquiry_edit()</code> · <code>add_inquiry_reply()</code> · 잠금은 <code>updated_at</code> 을 밀지 않는 트리거</td></tr>
+      <tr><td><code>supabase/migrations/20260911000400_inquiry_no.sql</code></td><td><strong>접수번호</strong> <code>inquiry_no</code>(백필 → <code>generated always as identity</code> · 유니크) · 소유자 가드에 열 고정</td></tr>
       <tr><td colspan="2"><span class="tag in">사용자 사이트</span></td></tr>
       <tr><td><code>proxy.ts</code></td><td><code>/support</code> 쓰기 게이트 · 온보딩 · 탈퇴 게이트</td></tr>
       <tr><td><code>next.config.ts</code></td><td><code>experimental.serverActions.bodySizeLimit = '14mb'</code></td></tr>
@@ -882,6 +1011,7 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
       <tr><td><code>lib/supabase/upload-inquiry-video.ts</code></td><td>서명 업로드 URL + XHR PUT · 진행률 · 취소 · 조각 삭제</td></tr>
       <tr><td><code>lib/utils/inquiry-prefill.ts</code> · <code>inquiry-subtypes.ts</code> · <code>inquiry-permissions.ts</code></td><td>프리필 판정 · 세부 유형 판정 · 소유자 동작 판정(순수 함수)</td></tr>
       <tr><td><code>lib/utils/downscale-image.ts</code> · <code>mask.ts</code></td><td>업로드 전 축소 · 계정 ID 마스킹</td></tr>
+      <tr><td><code>lib/utils/inquiry-no.ts</code></td><td>접수번호 표기 <code>#1024</code>(관리자 콘솔에 같은 내용의 사본)</td></tr>
       <tr><td><code>lib/constants/support.ts</code></td><td>메뉴 · 상태 라벨 · 안내 문구 · 폴백 카테고리 · 파라미터 이름</td></tr>
       <tr><td><code>lib/actions/rate-limit.ts</code></td><td>접수 30초 · 재수정 10초 쿨다운</td></tr>
       <tr><td colspan="2"><span class="tag outb">관리자 콘솔</span></td></tr>
@@ -892,14 +1022,23 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
       <tr><td><code>admin/components/inquiries/InquiryMeta.tsx</code> · <code>InquiryEmailMeta.tsx</code></td><td>웹 · 이메일 메타(인증 뱃지)</td></tr>
       <tr><td><code>admin/components/inquiries/InquiryAttachments.tsx</code></td><td>썸네일 · 다이얼로그 · 영상 재생 · 내려받기</td></tr>
       <tr><td><code>admin/components/inquiries/InquiryReplyForm.tsx</code> · <code>InquiryReplyThread.tsx</code> · <code>InquiryEmailThreadItem.tsx</code> · <code>InquiryResendButton.tsx</code></td><td>답변 작성 · 스레드 · 다시 보내기</td></tr>
-      <tr><td><code>admin/components/inquiries/InquiryStatusForm.tsx</code> · <code>InquiryCloseButton.tsx</code> · <code>InquiryStatusBadge.tsx</code></td><td>상태 변경 · 종료 · 뱃지</td></tr>
+      <tr><td><code>admin/components/inquiries/InquiryStatusForm.tsx</code> · <code>InquiryCloseButton.tsx</code> · <code>InquiryStatusBadge.tsx</code></td><td>상태 변경 · 종료 · 뱃지(상태 폼은 충돌 스냅샷도 실어 보냅니다)</td></tr>
+      <tr><td><code>admin/components/inquiries/InquiryAssignmentCard.tsx</code> · <code>InquiryAssignmentControls.tsx</code> · <code>InquiryAssigneeCell.tsx</code> · <code>InquiryAssigneeFilter.tsx</code></td><td>담당자 카드 · 버튼/확인 의도 · 목록 담당자 칸 · 목록 필터</td></tr>
+      <tr><td><code>admin/components/inquiries/use-inquiry-edit-lock.ts</code> · <code>InquiryEditLockBanner.tsx</code></td><td>잠금 claim/하트비트/폴링/해제 · "작성 중" · "앞선 스레드" 배너</td></tr>
+      <tr><td><code>admin/components/inquiries/InquiryNotes.tsx</code> · <code>InquiryNoteDeleteButton.tsx</code></td><td>내부 메모 목록·작성 · 삭제 확인</td></tr>
       <tr><td><code>admin/components/inquiry-categories/**</code></td><td>목록 · 등록/수정 다이얼로그 · 삭제 · 세부 유형 편집기</td></tr>
       <tr><td><code>admin/lib/actions/inquiries-actions.ts</code></td><td>상태 전이 · 답변 등록 · 메일 발송 위임</td></tr>
       <tr><td><code>admin/lib/actions/inquiry-category-actions.ts</code></td><td>카테고리 CRUD · 토글 · 순서 · 무효화</td></tr>
       <tr><td><code>admin/lib/actions/inquiry-email-actions.ts</code></td><td>답신 다시 보내기</td></tr>
+      <tr><td><code>admin/lib/actions/inquiry-shared.ts</code></td><td>상태 전이 · 취소 가드 · 충돌 비교 — 답변과 배정이 <strong>같은 표</strong>를 보게</td></tr>
+      <tr><td><code>admin/lib/actions/inquiry-assignment-actions.ts</code> · <code>inquiry-lock-actions.ts</code> · <code>inquiry-note-actions.ts</code></td><td>배정/해제 · 잠금 claim·release·폴링 · 내부 메모 CRUD</td></tr>
       <tr><td><code>admin/lib/data/inquiries.ts</code> · <code>inquiry-replies.ts</code> · <code>inquiry-attachments.ts</code> · <code>inquiry-email.ts</code></td><td>목록·탭 카운트·상세 · 스레드 · 서명 URL · 인증 판정 해석</td></tr>
+      <tr><td><code>admin/lib/data/inquiry-detail.ts</code> · <code>inquiry-filters.ts</code> · <code>inquiry-refs.ts</code></td><td>상세 조회 · 목록 필터 조립(담당자 포함) · 담당자/잠금 표시값 변환</td></tr>
+      <tr><td><code>admin/lib/data/inquiry-assignment.ts</code></td><td>내부 메모 조회 · 20초 폴링용 협업 상태</td></tr>
       <tr><td><code>admin/lib/data/inquiry-categories.ts</code></td><td>카테고리 목록 · 사용 건수 · 필터 옵션(옛 값 포함)</td></tr>
       <tr><td><code>admin/lib/validation/inquiries.ts</code></td><td>상태 전이표 · 탭 · 필터 파싱 · 검색어 정제 · 마스킹 · 답변 스키마</td></tr>
+      <tr><td><code>admin/lib/validation/inquiry-assignment.ts</code></td><td>담당자 필터 · 잠금 TTL/주기 · 충돌 문구 · 메모 스키마</td></tr>
+      <tr><td><code>admin/lib/validation/inquiry-no-search.ts</code> · <code>admin/lib/utils/inquiry-no.ts</code></td><td>검색어에서 접수번호 읽기 · <code>#1024</code> 표기(사용자 사이트와 같은 내용)</td></tr>
       <tr><td><code>admin/lib/validation/inquiry-source.ts</code></td><td>출처 값·라벨 · <code>email</code>/<code>general</code> 표시 치환</td></tr>
       <tr><td><code>admin/lib/validation/inquiry-categories.ts</code></td><td>카테고리 입력 계약 · <code>toCategoryKey()</code> · 세부 유형 규칙</td></tr>
       <tr><td><code>admin/lib/email/send-inquiry-reply.ts</code></td><td><code>email-outbound</code> 호출 계약(응답 코드 → 문구)</td></tr>
@@ -918,7 +1057,7 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
   </table></div>
 </section>
 
-<footer>글자월드 1:1 문의 개발 가이드 · 최종 갱신 2026-09-11 · 기준 커밋 <code>af1a886</code> · 개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4 · 카테고리 원안 <code>docs/1on1.md</code></footer>
+<footer>글자월드 1:1 문의 개발 가이드 · 최종 갱신 2026-09-11 · 기준 커밋 <code>fb448aa</code> · 개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4 · 카테고리 원안 <code>docs/1on1.md</code></footer>
 </main>
 </div>
 
