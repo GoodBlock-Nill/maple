@@ -27,6 +27,15 @@ export const WITHDRAWN_NOTICE_PARAM = 'notice'
 export const WITHDRAWN_NOTICE_VALUE = 'withdrawn'
 export const WITHDRAWN_NOTICE_MESSAGE = `탈퇴가 접수되었습니다. ${WITHDRAWAL_RETENTION_DAYS}일 안에 다시 로그인하면 계정이 복구됩니다.`
 
+/**
+ * 탈퇴 완료 모달의 제목(시안 v2 §3.3).
+ *
+ * 안내를 홈의 배너가 아니라 모달로 띄운다 — 탈퇴는 되돌리기 어려운 동작이라
+ * "끝났다"는 사실을 한 번 막아서 알리는 편이 낫고, 시안도 모달이다. 문구는
+ * 위 `WITHDRAWN_NOTICE_MESSAGE`(복구 기간 안내)를 본문으로 함께 보여 준다.
+ */
+export const WITHDRAWN_DIALOG_TITLE = '회원 탈퇴가 완료되었습니다.'
+
 /** 탈퇴 확인 모달의 3요소 중 제목·설명(DEVELOPER-GUIDE §7.4). 문안은 오너 승인본 그대로다. */
 export const WITHDRAW_DIALOG_TITLE = '회원 탈퇴'
 export const WITHDRAW_DIALOG_DESCRIPTION =

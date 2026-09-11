@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { isNavItemHidden } from '@/components/layout/navigation'
+import { isNavItemComingSoon, isNavItemHidden } from '@/components/layout/navigation'
 
 import type { NavItem } from '@/lib/constants/site'
 
@@ -18,7 +18,12 @@ type FooterColumnProps = {
  * (`tests/unit/layout/FooterColumn.test.tsx`).
  */
 export function FooterColumn({ title, links, className }: FooterColumnProps) {
-  const visibleLinks = links.filter((link) => !isNavItemHidden(link.href))
+  /* 숨김(소개)과 준비 중(가이드·랭킹)은 푸터에서 통째로 뺀다 — 시안 v2 §5.
+     헤더와 달리 푸터에는 "준비 중" 이라고 알려 줄 자리가 없어서, 회색 자리표시를
+     남기면 눌러 봐야 안내 카드만 나오는 링크가 된다. */
+  const visibleLinks = links.filter(
+    (link) => !isNavItemHidden(link.href) && !isNavItemComingSoon(link.href),
+  )
 
   return (
     <nav aria-label={title} className={className}>

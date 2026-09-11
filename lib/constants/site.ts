@@ -89,6 +89,15 @@ export const POLICY_LINKS: readonly NavItem[] = [
   { label: '마케팅 정보 수신 동의', href: '/policy/marketing' },
 ]
 
+/**
+ * 푸터 Legal 열. 시안 v2 §5 는 세 문서만 세운다 — "마케팅 정보 수신 동의"는
+ * 가입·마이페이지의 동의 흐름 안에서 읽는 문서라 푸터에서는 뺀다(문서 자체는
+ * `/policy/marketing` 에 그대로 열려 있다).
+ */
+export const FOOTER_POLICY_LINKS: readonly NavItem[] = POLICY_LINKS.filter(
+  (link) => link.href !== '/policy/marketing',
+)
+
 export type SnsLink = NavItem & {
   icon: string
   /** 아이콘 SVG 자체 크기(px). 32×32 플레이트 안에 중앙 정렬한다. */

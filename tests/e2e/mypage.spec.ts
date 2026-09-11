@@ -1,41 +1,62 @@
-import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
-import { createServiceClient } from './service-role'
+import { expect, test } from '@playwright/test'
 
 import type { Page } from '@playwright/test'
 
 /**
- * 마이페이지(계정 관리 · 쿠폰 · 문의내역).
+ * 마이페이지 v2 (계정 관리 · 계정 연동).
  *
- * 시안(Figma 2041:2958 · 2041:3128 · 2041:3237)은 1440 한 폭만 있으므로 좌표 검증은
- * 1440 에서만 한다. 폰(390)에서는 "잘리지 않는가"만 본다.
+ * 시안(Figma 2UmKcpmy55IqMZ7Sg6vTeW · 166:13113 · 166:13195)은 1440 과 375 두 폭이
+ * 있다. 좌표 검증은 1440 에서만 하고, 폰(390)에서는 "시안 골격이 서는가 · 잘리지
+ * 않는가"를 본다.
  *
- * 기준값 근거는 `docs/reference/figma/mypage-spec.md` 와 시안 PNG 실측이다.
+ * 기준값 근거는 `docs/reference/figma/mypage-v2-spec.md` 와 시안 PNG 실측이다.
  */
 
 const DESKTOP = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }
 
-/** 한 번 만든 로그인 쿠키를 담아 두는 자리(`/test-results` 는 gitignore 대상). */
-const STORAGE_STATE = 'test-results/mypage-auth.json'
+/**
+ * 한 번 만든 로그인 쿠키를 담아 두는 자리(`/test-results` 는 gitignore 대상).
+ *
+ * **프로젝트(브라우저)마다 다른 파일**이다. 스텁 로그인은 호출할 때마다 계정을 새로
+ * 만들고 `signOut()` 은 리프레시 토큰을 전역 무효화하므로, 한 파일을 두 프로젝트가
+ * 나눠 쓰면 한쪽의 로그아웃이 다른 쪽 세션을 끊는다.
+ */
+function storageStatePath(projectName: string): string {
+  return `test-results/mypage-auth-${projectName.replace(/\W+/gu, '-')}.json`
+}
 
-/** 1440 기준 골격 — 제목 블록 y, 사이드바 x/폭, 첫 카드 x/y/폭. */
+/** 1440 기준 골격 — 시안 PNG 실측(±2). */
 const LAYOUT = {
   titleY: 334,
   sidebarX: 120,
   sidebarW: 268,
   cardX: 420,
-  cardY: 462,
+  cardY: 461,
   cardW: 900,
+  cardH: 269,
+  inputX: 444,
+  inputW: 413,
+  inputH: 54,
+  buttonX: 868,
+  buttonW: 99,
+  marketingBoxY: 811.5,
+  marketingBoxH: 56,
+  withdrawY: 931.6,
+  footerPanelX: 120,
+  footerPanelY: 1546,
+  footerPanelW: 1200,
+  footerPanelH: 353,
+  foxX: 1080,
+  foxW: 207,
 }
 
 /** 시안과 ±2px 안에서 같으면 통과로 본다(서브픽셀 반올림 여유). */
 const TOLERANCE = 2
 
-const TABS = ['계정 관리', '쿠폰', '문의내역'] as const
-
-/** 마이그레이션 시드에 들어 있는 샘플 쿠폰(평소에는 꺼져 있다). */
-const SAMPLE_COUPON_CODE = 'GLZA-TEST-0001'
+const TABS = ['계정 관리', '계정 연동'] as const
 
 function randomDigits(length: number): string {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('')
@@ -90,13 +111,33 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(0)
 }
 
+function expectNear(actual: number, expected: number, label: string) {
+  expect(Math.abs(actual - expected), `${label}: ${actual} ≠ ${expected}`).toBeLessThanOrEqual(
+    TOLERANCE,
+  )
+}
+
 test.describe('마이페이지 (비로그인)', () => {
   test('should send anonymous visitors to login', async ({ page }) => {
     // Arrange & Act
     await page.goto('/account')
 
     // Assert
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL(/\/login/u)
+  })
+
+  test('should keep the v1 tabs alive as redirects', async ({ page }) => {
+    // Arrange & Act — 쿠폰·문의내역 경로는 사라졌다(프록시가 /account 로 302).
+    await page.goto('/account/coupon')
+
+    // Assert — 미로그인이라 그 다음 관문(로그인)까지 이어진다.
+    await expect(page).toHaveURL(/\/login\?next=%2Faccount/u)
+
+    // Act
+    await page.goto('/account/inquiries')
+
+    // Assert
+    await expect(page).toHaveURL(/\/login\?next=%2Faccount/u)
   })
 })
 
@@ -106,305 +147,311 @@ test.describe('마이페이지 (비로그인)', () => {
  * 스텁 간편로그인은 호출할 때마다 계정을 새로 만들어서(`stub-social.ts`), 테스트마다
  * 로그인하면 Supabase 의 가입 빈도 제한에 걸려 무작위로 실패한다. 한 번 로그인해
  * 쿠키를 저장하고 나머지 테스트가 그 상태로 시작한다.
+ *
+ * 로그아웃 테스트가 **맨 마지막**인 이유도 같다 — `signOut()` 은 리프레시 토큰을
+ * 전역으로 무효화해서, 저장해 둔 쿠키가 그 뒤로는 쓸 수 없다.
  */
 test.describe('마이페이지', () => {
   test.describe.configure({ mode: 'serial' })
-  test.use({ storageState: STORAGE_STATE })
 
-  test.beforeAll(async ({ browser }) => {
-    /* `browser.newContext()` 는 이 describe 의 `use` 옵션을 물려받는다. 아직 없는
-       파일을 읽으려 하지 않도록 여기서만 storageState 를 끈다. */
-    const context = await browser.newContext({ storageState: undefined })
+  test.beforeAll(async ({ browser }, testInfo) => {
+    const context = await browser.newContext()
     const page = await context.newPage()
 
     await stubLogin(page, '/account')
-    await context.storageState({ path: STORAGE_STATE })
+    await context.storageState({ path: storageStatePath(testInfo.project.name) })
     await context.close()
   })
 
-  test('should place the title, sidebar and first card on the Figma grid at 1440', async ({
-    page,
-  }) => {
+  /* 쿠키는 테스트마다 직접 심는다 — `test.use({ storageState })` 는 고정 문자열만
+     받아서 프로젝트별 파일을 가리킬 수 없다. */
+  test.beforeEach(async ({ context }, testInfo) => {
+    const saved = readFileSync(storageStatePath(testInfo.project.name), 'utf8')
+    await context.addCookies(JSON.parse(saved).cookies)
+  })
+
+  test('should place the 계정 관리 blocks on the Figma grid at 1440', async ({ page }) => {
     // Arrange
     await page.setViewportSize(DESKTOP)
     await page.goto('/account')
 
     // Act
     const title = await boxOf(page, 'main h1')
-    const sidebar = await boxOf(page, 'main nav[aria-label="마이페이지 메뉴"]')
-    const card = await boxOf(page, 'main section')
+    const sidebar = await boxOf(page, 'nav[aria-label="마이페이지 메뉴"]')
+    const card = await boxOf(page, 'section[aria-label="계정 관리"]')
+    const input = await boxOf(page, '#account-nickname')
+    const button = await boxOf(page, 'section[aria-label="계정 관리"] button[type="submit"]')
+    const marketing = await boxOf(page, 'section[aria-labelledby="marketing-heading"] label')
+    const withdraw = await boxOf(page, 'section[aria-label="회원 탈퇴"]')
 
     // Assert
     await expect(page.getByRole('heading', { name: '마이페이지', level: 1 })).toBeVisible()
-    expect(Math.abs(title.y - LAYOUT.titleY)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(sidebar.x - LAYOUT.sidebarX)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(sidebar.width - LAYOUT.sidebarW)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(card.x - LAYOUT.cardX)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(card.y - LAYOUT.cardY)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(card.width - LAYOUT.cardW)).toBeLessThanOrEqual(TOLERANCE)
+    expectNear(title.y, LAYOUT.titleY, '제목 y')
+    expectNear(sidebar.x, LAYOUT.sidebarX, '사이드바 x')
+    expectNear(sidebar.width, LAYOUT.sidebarW, '사이드바 폭')
+    expectNear(card.x, LAYOUT.cardX, '카드 x')
+    expectNear(card.y, LAYOUT.cardY, '카드 y')
+    expectNear(card.width, LAYOUT.cardW, '카드 폭')
+    expectNear(card.height, LAYOUT.cardH, '카드 높이')
+    expectNear(input.x, LAYOUT.inputX, '닉네임 입력 x')
+    expectNear(input.width, LAYOUT.inputW, '닉네임 입력 폭')
+    expectNear(input.height, LAYOUT.inputH, '닉네임 입력 높이')
+    expectNear(button.x, LAYOUT.buttonX, '변경하기 x')
+    expectNear(button.width, LAYOUT.buttonW, '변경하기 폭')
+    expectNear(marketing.y, LAYOUT.marketingBoxY, '마케팅 박스 y')
+    expectNear(marketing.height, LAYOUT.marketingBoxH, '마케팅 박스 높이')
+    expectNear(withdraw.y, LAYOUT.withdrawY, '회원 탈퇴 행 y')
 
     await expectNoHorizontalOverflow(page)
   })
 
-  test('should show the three tabs and move between them', async ({ page }) => {
+  test('should show the two v2 tabs and move between them', async ({ page }) => {
     // Arrange
     await page.setViewportSize(DESKTOP)
     await page.goto('/account')
     const nav = page.locator('nav[aria-label="마이페이지 메뉴"]')
 
-    // Assert — 세 탭이 시안 순서로 있고 지금은 "계정 관리"가 켜져 있다.
-    await expect(nav.getByRole('link')).toHaveText([...TABS])
+    // Assert — 두 탭이 시안 순서로 있고 "계정 연동"에는 준비중 배지가 붙어 있다.
+    await expect(nav.getByRole('link')).toHaveCount(2)
+    await expect(nav.getByRole('link').nth(0)).toHaveText(TABS[0])
+    await expect(nav.getByRole('link').nth(1)).toContainText(TABS[1])
+    await expect(nav.getByText('준비중')).toBeVisible()
     await expect(nav.getByRole('link', { name: '계정 관리' })).toHaveAttribute(
       'aria-current',
       'page',
     )
 
-    // Act — 쿠폰 탭
-    await nav.getByRole('link', { name: '쿠폰' }).click()
-    await page.waitForURL('**/account/coupon')
+    // Act
+    await nav.getByRole('link').nth(1).click()
+    await page.waitForURL('**/account/link')
 
-    // Assert — 아래 "쿠폰 등록 내역" 카드와 이름이 겹치므로 정확히 일치시킨다.
-    await expect(page.getByRole('heading', { name: '쿠폰 등록', exact: true })).toBeVisible()
-    await expect(nav.getByRole('link', { name: '쿠폰' })).toHaveAttribute('aria-current', 'page')
+    // Assert
+    await expect(page.getByLabel('글자월드 계정 UID')).toBeVisible()
+    await expect(nav.getByRole('link').nth(1)).toHaveAttribute('aria-current', 'page')
     await expect(nav.getByRole('link', { name: '계정 관리' })).not.toHaveAttribute(
       'aria-current',
       'page',
     )
-
-    // Act — 문의내역 탭
-    await nav.getByRole('link', { name: '문의내역' }).click()
-    await page.waitForURL('**/account/inquiries')
-
-    // Assert
-    await expect(page.getByRole('heading', { name: '문의 내역' })).toBeVisible()
-    await expect(nav.getByRole('link', { name: '문의내역' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
   })
 
-  test('should keep the account cards and the withdraw block on the 계정 관리 tab', async ({
-    page,
-  }) => {
+  test('should not keep the v1 cards on the 계정 관리 tab', async ({ page }) => {
     // Arrange & Act
     await page.setViewportSize(DESKTOP)
     await page.goto('/account')
 
-    // Assert
-    await expect(page.getByRole('heading', { name: '프로필' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: '마케팅 수신 설정' })).toBeVisible()
-    await expect(page.getByRole('button', { name: '홈페이지 회원 탈퇴' })).toBeVisible()
-    /* 스텁 로그인은 간편로그인 계정이라 비밀번호 카드 자체가 없다 — 바꿀 비밀번호가
-       없는 계정에 빈 카드를 남기지 않는다(2026-09-10 로그인 개편). */
+    // Assert — 아바타·이름·비밀번호·쿠폰·문의내역은 v2 에서 전부 빠졌다.
+    await expect(page.getByLabel('닉네임')).toBeVisible()
+    await expect(page.getByLabel('이메일')).toHaveAttribute('readonly', '')
+    await expect(page.getByRole('heading', { name: '프로필' })).toHaveCount(0)
     await expect(page.getByRole('heading', { name: '비밀번호 변경' })).toHaveCount(0)
+    await expect(page.getByLabel('이름')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: '쿠폰' })).toHaveCount(0)
   })
 
-  test('should explain a bad coupon code and a bad world uid in Korean', async ({ page }) => {
+  test('should change the nickname inline', async ({ page }) => {
     // Arrange
     await page.setViewportSize(DESKTOP)
-    await page.goto('/account/coupon')
+    await page.goto('/account')
+    const nickname = `e2e${Math.random().toString(36).slice(2, 8)}`
 
-    const code = page.locator('input[name="code"]')
-    const uid = page.locator('input[name="mswUid"]')
-    const profileCode = page.locator('input[name="mswProfileCode"]')
-    const submit = page.getByRole('button', { name: '쿠폰 등록' })
+    // Act
+    await page.getByLabel('닉네임').fill(nickname)
+    await page.getByRole('button', { name: '변경하기' }).click()
 
-    /* 월드 UID·프로필 코드는 계정마다 유일해야 한다(RPC 가 쿠폰보다 먼저 본다).
-       실행마다 다른 값을 써야 "이미 다른 계정에 연결된 …" 으로 새지 않는다. */
-    const freshUid = () => `2012${randomDigits(13)}`
-    const freshProfileCode = `#e2e${Math.random().toString(36).slice(2, 7)}`
-
-    // Act — 형식이 어긋난 코드
-    await code.fill('AB')
-    await uid.fill(freshUid())
-    await profileCode.fill(freshProfileCode)
-    await submit.click()
-
-    // Assert
-    await expect(
-      page.getByText('쿠폰 코드를 다시 확인해 주세요. (예: GLZA-TEST-0001)'),
-    ).toBeVisible()
-
-    // Act — UID 형식 오류
-    await code.fill('GLZA-TEST-0001')
-    await uid.fill('123')
-    await submit.click()
-
-    // Assert
-    await expect(
-      page.getByText('UID는 숫자 10~20자로 입력해 주세요. (예: 20123000000000000)'),
-    ).toBeVisible()
-
-    // Act — 형식은 맞지만 존재하지 않는 코드(실제 RPC 까지 간다)
-    await uid.fill(freshUid())
-    await code.fill(`GLZA-E2E-${randomDigits(4)}`)
-    await submit.click()
-
-    // Assert
-    await expect(page.getByText('존재하지 않거나 사용할 수 없는 쿠폰 코드입니다.')).toBeVisible()
+    // Assert — 안내는 입력 아래 한 줄이고, 헤더 메뉴의 이름도 함께 바뀐다.
+    await expect(page.getByText('닉네임을 변경했습니다.')).toBeVisible()
+    await expect(page.locator('#site-desktop-auth')).toContainText(nickname)
   })
 
-  test('should explain what the coupon history is before anything is registered', async ({
-    page,
-  }) => {
-    // Arrange & Act
-    await page.setViewportSize(DESKTOP)
-    await page.goto('/account/coupon')
-
-    const card = page.locator('section[aria-labelledby="coupon-history-heading"]')
-
-    // Assert — 빈 표 대신 "코드는 어디서 나오는가"를 알려 준다.
-    await expect(page.getByRole('heading', { name: '쿠폰 등록 내역' })).toBeVisible()
-    await expect(card.getByText('아직 등록한 쿠폰이 없습니다.')).toBeVisible()
-    await expect(card.getByRole('button', { name: '쿠폰 코드 입력하기' })).toBeVisible()
-    await expect(card.getByText(/운영팀 확인 후 게임 안에서 지급됩니다/u)).toBeVisible()
-    /* 시안(§3)의 카드 골격을 그대로 쓴다 — 등록 카드와 같은 폭·같은 자리. */
-    const box = await boxOf(page, 'section[aria-labelledby="coupon-history-heading"]')
-    expect(Math.abs(box.x - LAYOUT.cardX)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(box.width - LAYOUT.cardW)).toBeLessThanOrEqual(TOLERANCE)
-  })
-
-  /**
-   * 등록 → 내역 한 바퀴.
-   *
-   * 샘플 쿠폰을 잠깐 켜서 실제로 한 건 등록하고, 관리자만 적을 수 있는 상태
-   * (지급 완료 · 거절)는 서비스 롤로 만들어 붙인다. 끝나면 만든 행을 지우고 쿠폰을
-   * 원래의 비활성 상태로 되돌린다.
-   *
-   * chromium 에서만 돈다. 두 프로젝트가 동시에 같은 쿠폰을 켜고 끄면 한쪽이
-   * `invalid_code` 를 만나 무작위로 실패한다 — 흐름 자체는 폭과 무관하다.
-   */
-  test('should list a registered coupon and open its details', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium', '쿠폰 상태를 공유하므로 한 프로젝트에서만 돈다')
-
-    const service = createServiceClient()
-    test.skip(service === null, '.env.local 의 SUPABASE_SERVICE_ROLE_KEY 가 필요하다')
-
-    // Arrange — 샘플 쿠폰을 잠깐 켠다.
-    const { data: coupon } = await service!
-      .from('coupons')
-      .select('id, is_active')
-      .eq('code', SAMPLE_COUPON_CODE)
-      .maybeSingle()
-
-    expect(coupon, `샘플 쿠폰 ${SAMPLE_COUPON_CODE} 가 없다`).not.toBeNull()
-    await service!.from('coupons').update({ is_active: true }).eq('id', coupon!.id)
-
-    const uid = `2012${randomDigits(13)}`
-
-    try {
-      await page.setViewportSize(DESKTOP)
-      await page.goto('/account/coupon')
-
-      // Act — 화면으로 실제 등록한다.
-      await page.locator('input[name="code"]').fill(SAMPLE_COUPON_CODE)
-      await page.locator('input[name="mswUid"]').fill(uid)
-      await page
-        .locator('input[name="mswProfileCode"]')
-        .fill(`#e2e${Math.random().toString(36).slice(2, 7)}`)
-      await page.getByRole('button', { name: '쿠폰 등록' }).click()
-
-      // Assert — 성공 안내가 아래 카드로 시선을 넘기고, 새 줄이 강조된 채 열린다.
-      await expect(page.getByText(/아래 “쿠폰 등록 내역”에서 처리 상태를 확인/u)).toBeVisible()
-
-      const card = page.locator('section[aria-labelledby="coupon-history-heading"]')
-      const table = card.locator('table')
-
-      await expect(table.getByText('클라이언트 연동 테스트 쿠폰')).toBeVisible()
-      await expect(table.getByText('****-****-0001')).toBeVisible()
-      await expect(table.getByText('대기 중')).toBeVisible()
-      await expect(card.locator('.coupon-row-new')).toHaveCount(2)
-      /* 방금 등록한 줄은 펼친 채로 연다 — '대기 중'만으로는 언제 받는지 알 수 없다. */
-      await expect(table.getByText('테스트 보상 (실제 지급 없음)')).toBeVisible()
-
-      // Arrange — 관리자가 적는 두 상태를 붙인다.
-      const { data: mine } = await service!
-        .from('coupon_redemptions')
-        .select('id, user_id')
-        .eq('msw_uid', uid)
-        .maybeSingle()
-
-      expect(mine, '등록 이력이 만들어지지 않았다').not.toBeNull()
-
-      await service!.from('coupon_redemptions').insert([
-        {
-          coupon_id: coupon!.id,
-          user_id: mine!.user_id,
-          msw_uid: uid,
-          msw_profile_code: '#e2edeliv',
-          status: 'delivered',
-          processed_at: new Date().toISOString(),
-        },
-        {
-          coupon_id: coupon!.id,
-          user_id: mine!.user_id,
-          msw_uid: uid,
-          msw_profile_code: '#e2ereject',
-          status: 'rejected',
-          admin_note: '입력한 UID 계정을 찾을 수 없습니다.',
-          processed_at: new Date().toISOString(),
-        },
-      ])
-
-      // Act
-      await page.reload()
-
-      // Assert — 세 상태가 한 표에 선다.
-      await expect(table.getByText('대기 중')).toBeVisible()
-      await expect(table.getByText('지급 완료')).toBeVisible()
-      await expect(table.getByText('거절')).toBeVisible()
-
-      // Act — 거절 건을 펼친다.
-      await table.getByRole('row').filter({ hasText: '거절' }).getByRole('button').click()
-
-      // Assert — 사유와 물어볼 곳이 함께 있다.
-      await expect(table.getByText('입력한 UID 계정을 찾을 수 없습니다.')).toBeVisible()
-      await expect(table.getByRole('link', { name: '고객지원에 문의' })).toHaveAttribute(
-        'href',
-        '/support',
-      )
-
-      // Assert — 폰에서는 표 대신 카드로 눕고 가로 스크롤이 없다.
-      await page.setViewportSize(PHONE)
-      await expect(table).toBeHidden()
-      await expect(
-        card.getByRole('button', { name: /클라이언트 연동 테스트 쿠폰/u }).first(),
-      ).toBeVisible()
-      await expectNoHorizontalOverflow(page)
-    } finally {
-      await service!.from('coupon_redemptions').delete().eq('msw_uid', uid)
-      await service!
-        .from('coupons')
-        .update({ is_active: coupon?.is_active ?? false })
-        .eq('id', coupon!.id)
-    }
-  })
-
-  test('should keep the animated fox in the footer as a gif image', async ({ page }) => {
+  test('should explain a nickname that breaks the rule', async ({ page }) => {
     // Arrange
     await page.setViewportSize(DESKTOP)
     await page.goto('/account')
 
-    // Act — next/image 최적화를 거치면 첫 프레임만 남는다(`unoptimized` 필수).
-    const mascot = page.locator('footer img[src$=".gif"]')
+    // Act — 공백은 허용 문자가 아니다(온보딩과 같은 규칙).
+    await page.getByLabel('닉네임').fill('모 험가')
+    await page.getByRole('button', { name: '변경하기' }).click()
 
-    // Assert
-    await expect(mascot).toHaveAttribute('src', '/images/mypage/mascot-footer.gif')
-    const box = await boxOf(page, 'footer img[src$=".gif"]')
-    expect(Math.abs(box.width - 207)).toBeLessThanOrEqual(TOLERANCE)
+    // Assert — 오류는 입력 바로 아래 자리에 붙는다(#{필드}-error).
+    await expect(page.locator('#account-nickname-error')).toContainText('닉네임은')
   })
 
-  test('should not overflow horizontally on a phone', async ({ page }) => {
+  test('should confirm the marketing consent with a modal', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+    await page.goto('/account')
+    const checkbox = page.getByRole('checkbox', { name: '마케팅 정보 수신 동의' })
+    /* 진짜 체크박스는 sr-only 라 화면에서는 라벨(박스 전체)을 누른다 — 사용자와
+       같은 경로다. */
+    const box = page.locator('section[aria-labelledby="marketing-heading"] label')
+
+    if (await checkbox.isChecked()) {
+      await box.click()
+      await expect(checkbox).not.toBeChecked()
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+    }
+
+    // Act
+    await box.click()
+
+    // Assert
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toContainText('마케팅 정보 수신에 동의되었습니다.')
+
+    // Act — 확인을 누르면 닫히고 체크는 남는다.
+    await dialog.getByRole('button', { name: '확인' }).click()
+
+    // Assert
+    await expect(dialog).toHaveCount(0)
+    await expect(checkbox).toBeChecked()
+    await page.reload()
+    await expect(page.getByRole('checkbox', { name: '마케팅 정보 수신 동의' })).toBeChecked()
+  })
+
+  test('should lock the 계정 연동 form while the world-account flag is off', async ({ page }) => {
+    // Arrange & Act
+    await page.setViewportSize(DESKTOP)
+    await page.goto('/account/link')
+
+    // Assert
+    await expect(page.getByText('월드 계정 연동은 준비 중입니다.')).toBeVisible()
+    await expect(page.getByLabel('글자월드 계정 UID')).toBeDisabled()
+    await expect(page.getByLabel('글자월드 프로필 코드')).toBeDisabled()
+    await expect(page.getByRole('button', { name: '계정 연동하기' })).toBeDisabled()
+
+    /* 카드·구분선·탈퇴 블록의 x·폭은 계정 관리 탭과 같은 격자다. */
+    const card = await boxOf(page, 'section[aria-label="계정 연동"]')
+    expectNear(card.x, LAYOUT.cardX, '카드 x')
+    expectNear(card.y, LAYOUT.cardY, '카드 y')
+    expectNear(card.width, LAYOUT.cardW, '카드 폭')
+
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test('should send the v1 tab paths back to /account', async ({ page }) => {
+    // Arrange & Act
+    await page.setViewportSize(DESKTOP)
+    await page.goto('/account/coupon')
+
+    // Assert
+    await expect(page).toHaveURL(/\/account$/u)
+
+    // Act
+    await page.goto('/account/inquiries')
+
+    // Assert
+    await expect(page).toHaveURL(/\/account$/u)
+  })
+
+  test('should draw the mypage footer panel, links and the animated fox', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+    await page.goto('/account')
+
+    // Act
+    const panel = await boxOf(page, 'footer div.rounded-panel')
+    const fox = await boxOf(page, 'footer img[src$=".gif"]')
+
+    // Assert — 패널 1200 @ x120(시안 §5), 여우 207 @ (1080, 570) + 푸터 상단.
+    expectNear(panel.x, LAYOUT.footerPanelX, '푸터 패널 x')
+    expectNear(panel.y, LAYOUT.footerPanelY, '푸터 패널 y')
+    expectNear(panel.width, LAYOUT.footerPanelW, '푸터 패널 폭')
+    expectNear(panel.height, LAYOUT.footerPanelH, '푸터 패널 높이')
+    expectNear(fox.x, LAYOUT.foxX, '여우 x')
+    expectNear(fox.width, LAYOUT.foxW, '여우 폭')
+    /* next/image 최적화를 거치면 첫 프레임만 남는다(`unoptimized` 필수). */
+    await expect(page.locator('footer img[src$=".gif"]')).toHaveAttribute(
+      'src',
+      '/images/mypage/mascot-footer.gif',
+    )
+
+    // Assert — 연락처는 알약이 아니라 텍스트 블록이고, Legal 에 마케팅 문서는 없다.
+    const footer = page.locator('footer')
+    await expect(footer.getByText('문의하기')).toBeVisible()
+    await expect(footer.getByText('care@gjstory.com')).toBeVisible()
+    await expect(footer.getByRole('navigation', { name: 'Legal' }).getByRole('link')).toHaveText([
+      '개인정보처리방침',
+      '디스코드 운영정책',
+      '글자월드 운영정책',
+    ])
+  })
+
+  test('should stack the phone layout without clipping', async ({ page }) => {
     // Arrange
     await page.setViewportSize(PHONE)
     await page.goto('/account')
 
-    // Act & Assert
+    // Assert — 사이드바 대신 카드 상단 세그먼트 탭(시안 §6).
+    await expect(page.locator('nav[aria-label="마이페이지 메뉴"]')).toBeHidden()
+    const tabs = page.locator('nav[aria-label="마이페이지 탭"]')
+    await expect(tabs).toBeVisible()
+    await expect(tabs.getByRole('link')).toHaveCount(2)
+
+    const card = await boxOf(page, 'section[aria-label="계정 관리"]')
+    expectNear(card.x, 16, '카드 x')
+    expectNear(card.y, 278, '카드 y')
+
     await expectNoHorizontalOverflow(page)
 
-    for (const path of ['/account/coupon', '/account/inquiries']) {
-      await page.goto(path)
-      await expectNoHorizontalOverflow(page)
-    }
+    // Act & Assert
+    await page.goto('/account/link')
+    await expect(page.locator('nav[aria-label="마이페이지 탭"]')).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+  })
+
+  /** signOut 은 리프레시 토큰을 전역 무효화한다 — 이 describe 의 **마지막** 테스트여야 한다. */
+  test('should log out from the header dropdown', async ({ page }) => {
+    // Arrange
+    await page.setViewportSize(DESKTOP)
+    await page.goto('/account')
+    const trigger = page.locator('#site-desktop-auth button').first()
+
+    // Act
+    await trigger.click()
+
+    // Assert — 현재 페이지가 마이페이지라 그 항목이 강조된다.
+    const menu = page.getByRole('menu')
+    await expect(menu.getByRole('menuitem', { name: '마이페이지' })).toHaveAttribute(
+      'href',
+      '/account',
+    )
+
+    // Act
+    await menu.getByRole('menuitem', { name: '로그아웃' }).click()
+
+    // Assert — 홈으로 나가고 헤더는 다시 "로그인" 하나가 된다.
+    await page.waitForURL('**/')
+    await expect(
+      page.locator('#site-desktop-auth').getByRole('link', { name: '로그인' }),
+    ).toBeVisible()
+  })
+})
+
+/**
+ * 회원 탈퇴 — 자기 계정을 지우는 흐름이라 **전용 계정**으로 돈다(위 describe 의
+ * 세션을 쓰면 나머지 테스트가 탈퇴 대기 상태로 바뀐다).
+ */
+test.describe('회원 탈퇴', () => {
+  test('should confirm the withdrawal with a modal on the way home', async ({ page }) => {
+    // Arrange
+    await stubLogin(page, '/account')
+    await page.setViewportSize(DESKTOP)
+
+    // Act — 행의 빨간 트리거 → 기존 확인 모달 → 탈퇴.
+    await page.locator('section[aria-label="회원 탈퇴"]').getByRole('button').click()
+    await expect(page.getByRole('dialog')).toContainText('탈퇴 후 90일')
+    await page.getByRole('button', { name: '탈퇴', exact: true }).click()
+
+    // Assert — 홈으로 나가면서 완료 모달이 뜬다(배너가 아니다).
+    await page.waitForURL(/notice=withdrawn/u)
+    const done = page.getByRole('dialog')
+    await expect(done).toContainText('회원 탈퇴가 완료되었습니다.')
+
+    // Act — 확인을 누르면 주소에서 파라미터가 사라진다.
+    await done.getByRole('button', { name: '확인' }).click()
+
+    // Assert
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(page).not.toHaveURL(/notice=withdrawn/u)
   })
 })

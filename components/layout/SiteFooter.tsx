@@ -2,9 +2,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { FooterColumn } from '@/components/layout/FooterColumn'
-import { FOOTER_CONFIG } from '@/components/layout/footer-variants'
+import { FOOTER_CONFIG, FOOTER_PANEL_DEFAULTS } from '@/components/layout/footer-variants'
 import { Logo } from '@/components/layout/Logo'
-import { FOOTER_MENU_LINKS, POLICY_LINKS, SITE_TAGLINE, SNS_LINKS } from '@/lib/constants/site'
+import {
+  FOOTER_MENU_LINKS,
+  FOOTER_POLICY_LINKS,
+  SITE_TAGLINE,
+  SNS_LINKS,
+} from '@/lib/constants/site'
 import { resolveContactEmail, resolveCopyright } from '@/lib/data/site-view'
 import { getSiteSettings } from '@/lib/data/site'
 import { hasPublicAsset } from '@/lib/utils/asset'
@@ -36,6 +41,7 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
   const copyright = resolveCopyright(settings)
   const config = FOOTER_CONFIG[variant]
   const { mascot } = config
+  const contactStyle = config.contactStyle ?? FOOTER_PANEL_DEFAULTS.contactStyle
   const background = hasPublicAsset(config.background)
     ? config.background
     : (config.backgroundFallback ?? null)
@@ -44,6 +50,10 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
   const style = {
     '--footer-height': `${config.height}px`,
     '--footer-panel-top': `${config.panelTop}px`,
+    '--footer-panel-max': `${config.panelMaxWidth ?? FOOTER_PANEL_DEFAULTS.panelMaxWidth}px`,
+    '--footer-panel-px': `${config.panelPaddingX ?? FOOTER_PANEL_DEFAULTS.panelPaddingX}px`,
+    '--footer-panel-pt': `${config.panelPaddingTop ?? FOOTER_PANEL_DEFAULTS.panelPaddingTop}px`,
+    '--footer-brand-width': `${config.brandWidth ?? FOOTER_PANEL_DEFAULTS.brandWidth}px`,
     '--mascot-right': `${FOOTER_WIDTH - mascot.left - mascot.width}px`,
     '--mascot-top': `${mascot.top}px`,
     '--mascot-width': `${mascot.width}px`,
@@ -99,27 +109,50 @@ export async function SiteFooter({ variant = 'home' }: SiteFooterProps) {
         <div
           className={cn(
             config.panelClass,
-            'footer-ink rounded-panel mx-auto w-full max-w-[1300px] px-6 py-8 sm:px-10',
-            'xl:h-[353px] xl:px-[150px] xl:pt-[38px] xl:pb-10',
+            'footer-ink rounded-panel mx-auto w-full max-w-[var(--footer-panel-max)] px-6 py-8 sm:px-10',
+            'xl:h-[353px] xl:px-[var(--footer-panel-px)] xl:pt-[var(--footer-panel-pt)] xl:pb-10',
           )}
         >
           <div className="flex flex-col gap-10 lg:flex-row lg:gap-[100px]">
-            <div className="flex w-full max-w-[309px] flex-col items-start">
+            <div className="flex w-full flex-col items-start lg:w-[var(--footer-brand-width)]">
               <Logo width={109} height={40} />
-              <p className="text-body-lg mt-[15px] leading-[25px] text-white">{SITE_TAGLINE}</p>
-              <a
-                href={contactEmail.href}
-                className="rounded-pill text-ink hover:bg-sheet text-body-lg mt-[34px] inline-flex bg-white px-10 py-[15px] leading-6 font-semibold transition-colors"
-              >
-                {contactEmail.display}
-              </a>
+              {/* 태그라인 줄바꿈 위치는 시안 그대로여야 해서 폭을 309 로 묶는다 —
+                  좌측 블록이 더 넓은 변형(마이페이지 v2 371)에서도 같은 자리에서 접힌다. */}
+              <p className="text-body-lg mt-[15px] max-w-[309px] leading-[25px] text-white">
+                {SITE_TAGLINE}
+              </p>
+
+              {contactStyle === 'text' ? (
+                /* 시안 v2 §5 — 알약 대신 "문의하기" 제목 + 메일 주소 텍스트. */
+                <div className="mt-8 flex flex-col gap-2">
+                  <p className="text-[18px] leading-[26px] font-medium text-white">문의하기</p>
+                  <a
+                    href={contactEmail.href}
+                    className="w-fit text-[16px] leading-[22px] text-white transition-opacity hover:opacity-80"
+                  >
+                    {contactEmail.display}
+                  </a>
+                </div>
+              ) : (
+                <a
+                  href={contactEmail.href}
+                  className="rounded-pill text-ink hover:bg-sheet text-body-lg mt-[34px] inline-flex bg-white px-10 py-[15px] leading-6 font-semibold transition-colors"
+                >
+                  {contactEmail.display}
+                </a>
+              )}
             </div>
 
-            {/* 시안의 Legal 열은 x 789 에서 시작한다. Menu 열 폭은 최장 링크
-                "커뮤니티" 의 글자 폭으로 정해지는데 Figma 쪽 한글 서체가
+            {/* 폰에서는 두 열이 나란히 선다(시안 v2 모바일 푸터). `lg:contents` 로
+                lg 이상에서는 이 래퍼가 사라져 세 블록이 한 줄의 flex 아이템이 된다.
+
+                시안의 Legal 열은 x 889(마이페이지 변형) 에서 시작한다. Menu 열 폭은
+                최장 링크 "커뮤니티" 의 글자 폭으로 정해지는데 Figma 쪽 한글 서체가
                 Pretendard 보다 2px 넓다 → 시안 실측 폭을 최소값으로 고정한다. */}
-            <FooterColumn title="Menu" links={FOOTER_MENU_LINKS} className="lg:min-w-[58px]" />
-            <FooterColumn title="Legal" links={POLICY_LINKS} />
+            <div className="flex gap-16 lg:contents">
+              <FooterColumn title="Menu" links={FOOTER_MENU_LINKS} className="lg:min-w-[58px]" />
+              <FooterColumn title="Legal" links={FOOTER_POLICY_LINKS} />
+            </div>
           </div>
 
           {/* 시안의 구분선은 패널 안쪽 폭(998) 이 아니라 992 이고, 가운데가 아니라

@@ -191,6 +191,23 @@ export type OnboardingInput = z.infer<typeof onboardingSchema>
 /** "내 정보" 화면의 경로. 로그인·온보딩 리다이렉트의 `next` 값으로도 쓴다. */
 export const ACCOUNT_PATH = '/account'
 
+/** 마이페이지 "닉네임 변경" 폼. 규칙은 온보딩과 같은 `nicknameSchema` 하나다. */
+export const updateNicknameSchema = z.object({ nickname: nicknameSchema })
+
+/**
+ * "계정 연동" 화면의 입력.
+ *
+ * `updateAccountSchema` 와 달리 **플래그와 무관하게 두 값을 모두 요구**한다 —
+ * 이 화면은 월드 계정을 연결하는 것이 목적이라 빈 값으로 저장할 이유가 없고,
+ * 플래그가 꺼져 있으면 서버 액션이 시작 전에 거절한다(입력칸도 비활성이다).
+ */
+export const linkMswAccountSchema = z.object({
+  mswUid: mswUidSchema,
+  mswProfileCode: mswProfileCodeSchema,
+})
+
+export type LinkMswAccountInput = z.infer<typeof linkMswAccountSchema>
+
 export const updateAccountSchema = z.object({
   nickname: nicknameSchema,
   mswUid: mswUidField,

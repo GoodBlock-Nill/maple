@@ -1,5 +1,10 @@
 # 마이페이지 시안 스펙 (Figma 2041-2958 / 2041-3128 / 2041-3237)
 
+> **폐기(2026-09-11).** 이 문서의 시안은 `mypage-v2-spec.md`(파일 2UmKcpmy55IqMZ7Sg6vTeW, 166:13113 ·
+> 166:13195)로 대체되었다. 프로필·아바타·비밀번호 카드와 쿠폰·문의내역 탭은 구현에서 빠졌고
+> (`/account/coupon` · `/account/inquiries` 는 프록시가 `/account` 로 돌려보낸다), 사이드바는 2탭
+> (계정 관리 · 계정 연동)이다. 결정 이력으로만 남긴다.
+
 파일 `3DWCpzRZFWOMhvlcTpbFlj`, 페이지 `Designs`. 데스크톱 1440 기준만 존재. 스크린샷 `docs/reference/figma/mypage/{profile,page-2,page-3}.png`.
 
 | 프레임              | 노드      | 크기      | 내용                                        |

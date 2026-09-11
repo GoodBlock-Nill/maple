@@ -15,3 +15,23 @@ export function matchesPath(href: string, pathname: string): boolean {
 export function isNavItemHidden(href: string): boolean {
   return href === '/about' && FEATURES.aboutDisabled
 }
+
+/**
+ * "서비스 준비 중"으로 잠겨 있는 메뉴인지 판단한다(가이드 · 랭킹).
+ *
+ * 헤더 GNB 와 모바일 드로어는 준비 중 항목도 **보여 준다** — 눌러 들어가면
+ * 페이지가 "준비 중" 안내 카드를 그린다(시안 v2 §1 도 회색 글자로 남겨 둔다).
+ * 반면 푸터는 시안 v2 §5 에서 준비 중 항목을 아예 빼므로, 이 판정은 지금
+ * `FooterColumn` 만 쓴다.
+ */
+export function isNavItemComingSoon(href: string): boolean {
+  if (href === '/guide') {
+    return !FEATURES.guideOpen
+  }
+
+  if (href === '/ranking') {
+    return !FEATURES.rankingOpen
+  }
+
+  return false
+}

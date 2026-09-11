@@ -151,8 +151,8 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
           </button>
         </div>
 
-        {/* 로그인 상태에서만 노출한다. "내 정보"·"로그아웃"은 여기 한 곳뿐이다
-            (헤더 데스크톱 드롭다운과 대응). */}
+        {/* 로그인 상태에서만 노출한다. "마이페이지"·"로그아웃"은 폰에서 여기 한
+            곳뿐이다(헤더 데스크톱 드롭다운과 같은 두 항목, 시안 v2 §1). */}
         {user === null ? null : (
           <div className="border-line flex flex-col gap-2 border-b px-4 py-4">
             <div className="flex items-center gap-2.5 px-2">
@@ -171,7 +171,7 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
               </Link>
             ) : (
               <Link href="/account" onClick={close} className={USER_ROW_CLASS}>
-                내 정보
+                마이페이지
               </Link>
             )}
             <form action={signOut}>
@@ -224,7 +224,7 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
           </Button>
           {/* 로그인 수단이 간편로그인뿐이라 가입과 로그인이 같은 동작이다 — 헤더
               (AuthMenu)와 같은 버튼 하나만 드로어 아래쪽에 둔다.
-              로그인 상태의 "내 정보"·"로그아웃"은 드로어 상단(사용자 블록)에 이미 있다. */}
+              로그인 상태의 "마이페이지"·"로그아웃"은 드로어 상단(사용자 블록)에 이미 있다. */}
           {user === null ? (
             <Button href="/login" variant="light" size="md" className="w-full font-medium">
               로그인

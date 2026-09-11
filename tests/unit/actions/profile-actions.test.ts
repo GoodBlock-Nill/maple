@@ -5,7 +5,7 @@ import { createSupabaseStub } from './supabase-stub'
 import type { SupabaseStub } from './supabase-stub'
 
 /**
- * 마이페이지 계정 관리 서버 액션.
+ * 마이페이지 v2 서버 액션 — 닉네임 · 월드 계정 연동 · 마케팅 동의 · 아바타 업로드.
  *
  * 실제 권한은 RLS(`profiles_update_self` · `avatars_insert_own`)가 강제한다.
  * 여기서 재는 것은 "무엇이 DB·스토리지까지 도달하는가" 하나다.
@@ -25,8 +25,12 @@ vi.mock('next/cache', () => ({ refresh: (...args: unknown[]) => refresh(...args)
 let stub: SupabaseStub
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => stub.client }))
 
-const { updateMarketingAction, updateProfileAction, uploadAvatarAction } =
-  await import('@/lib/actions/profile-actions')
+const {
+  updateMarketingConsentAction,
+  updateMswLinkAction,
+  updateNicknameAction,
+  uploadAvatarAction,
+} = await import('@/lib/actions/profile-actions')
 const { EMPTY_FORM_STATE } = await import('@/lib/actions/form-state')
 
 const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001'
@@ -55,8 +59,8 @@ beforeEach(() => {
   refresh.mockReset()
 })
 
-describe('updateProfileAction', () => {
-  const valid = { name: '홍길동', nickname: '모험가' }
+describe('updateNicknameAction', () => {
+  const valid = { nickname: '모험가' }
 
   beforeEach(() => {
     stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
@@ -67,7 +71,7 @@ describe('updateProfileAction', () => {
     stub.client.auth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
     // Act
-    const promise = updateProfileAction(EMPTY_FORM_STATE, form(valid))
+    const promise = updateNicknameAction(EMPTY_FORM_STATE, form(valid))
 
     // Assert
     await expect(promise).rejects.toThrow(
@@ -75,38 +79,22 @@ describe('updateProfileAction', () => {
     )
   })
 
-  it('should save the name and nickname, then refresh the current route', async () => {
+  it('should save only the nickname, then refresh the current route', async () => {
     // Arrange & Act
-    const result = await updateProfileAction(EMPTY_FORM_STATE, form(valid))
+    const result = await updateNicknameAction(EMPTY_FORM_STATE, form(valid))
 
-    // Assert
-    const [payload] = stub.updates as [Record<string, unknown>]
-    expect(payload.name).toBe('홍길동')
-    expect(payload.nickname).toBe('모험가')
-    /* 플래그가 꺼져 있으면 월드 계정은 payload 에 실리지 않는다(기존 값 보존). */
-    expect(payload.msw_uid).toBeUndefined()
+    // Assert — 이름·월드 계정은 이 폼의 관심사가 아니다(칸이 없으므로 덮어쓰면 안 된다).
+    expect(stub.updates).toEqual([{ nickname: '모험가' }])
     expect(refresh).toHaveBeenCalled()
-    expect(result.message).toBe('프로필을 저장했습니다.')
+    expect(result.message).toBe('닉네임을 변경했습니다.')
   })
 
-  it('should store an empty name as null so it can be cleared', async () => {
-    // Arrange & Act
-    await updateProfileAction(EMPTY_FORM_STATE, form({ name: '   ', nickname: '모험가' }))
+  it('should reject a nickname that breaks the shared rule before writing anything', async () => {
+    // Arrange & Act — 규칙은 온보딩과 같은 `nicknameSchema` 하나다.
+    const result = await updateNicknameAction(EMPTY_FORM_STATE, form({ nickname: '모 험가' }))
 
     // Assert
-    const [payload] = stub.updates as [Record<string, unknown>]
-    expect(payload.name).toBeNull()
-  })
-
-  it('should reject a name over 20 characters before writing anything', async () => {
-    // Arrange & Act
-    const result = await updateProfileAction(
-      EMPTY_FORM_STATE,
-      form({ name: '가'.repeat(21), nickname: '모험가' }),
-    )
-
-    // Assert
-    expect(result.fieldErrors?.name).toBeDefined()
+    expect(result.fieldErrors?.nickname).toBeDefined()
     expect(stub.updates).toHaveLength(0)
   })
 
@@ -116,11 +104,89 @@ describe('updateProfileAction', () => {
     stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
 
     // Act
-    const result = await updateProfileAction(EMPTY_FORM_STATE, form(valid))
+    const result = await updateNicknameAction(EMPTY_FORM_STATE, form(valid))
 
     // Assert
     expect(result.fieldErrors?.nickname).toBe('이미 사용 중인 닉네임입니다.')
     expect(refresh).not.toHaveBeenCalled()
+  })
+})
+
+describe('updateMswLinkAction', () => {
+  const valid = { mswUid: '20123456789000000', mswProfileCode: '#abcd0' }
+
+  beforeEach(() => {
+    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
+  })
+
+  it('should refuse while the world-account flag is off', async () => {
+    // Arrange & Act — 플래그가 꺼져 있으면 화면도 비활성이지만 직접 POST 가 남는다.
+    const result = await updateMswLinkAction(EMPTY_FORM_STATE, form(valid))
+
+    // Assert
+    expect(result.formError).toBe('월드 계정 연동은 준비 중입니다.')
+    expect(stub.updates).toHaveLength(0)
+  })
+
+  /* `FEATURES` 는 모듈 로드 시점에 env 를 한 번 읽는다 — 켠 상태를 보려면
+     env 설정 → resetModules → 재 import 순서를 지켜야 한다. */
+  it('should save both columns once the flag is on', async () => {
+    // Arrange
+    const original = process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS
+    process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS = 'true'
+    vi.resetModules()
+
+    try {
+      const enabled = await import('@/lib/actions/profile-actions')
+
+      // Act
+      const result = await enabled.updateMswLinkAction(EMPTY_FORM_STATE, form(valid))
+
+      // Assert — 프로필 코드는 스키마가 소문자 "#" 형태로 정규화해서 넘긴다.
+      expect(stub.updates).toEqual([{ msw_uid: '20123456789000000', msw_profile_code: '#abcd0' }])
+      expect(result.message).toBe('계정이 연동되었습니다')
+    } finally {
+      if (original === undefined) {
+        delete process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS
+      } else {
+        process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS = original
+      }
+      vi.resetModules()
+    }
+  })
+
+  it('should explain a uid that already belongs to another account', async () => {
+    // Arrange
+    const original = process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS
+    process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS = 'true'
+    vi.resetModules()
+    stub = createSupabaseStub([
+      {
+        data: null,
+        error: {
+          code: '23505',
+          message: 'duplicate key value violates unique constraint "profiles_msw_uid_key"',
+        },
+      },
+    ])
+    stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
+
+    try {
+      const enabled = await import('@/lib/actions/profile-actions')
+
+      // Act
+      const result = await enabled.updateMswLinkAction(EMPTY_FORM_STATE, form(valid))
+
+      // Assert
+      expect(result.fieldErrors?.mswUid).toContain('이미 다른 계정에 연결된')
+    } finally {
+      if (original === undefined) {
+        delete process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS
+      } else {
+        process.env.NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS = original
+      }
+      vi.resetModules()
+    }
   })
 })
 
@@ -195,31 +261,31 @@ describe('uploadAvatarAction', () => {
   })
 })
 
-describe('updateMarketingAction', () => {
+describe('updateMarketingConsentAction', () => {
   beforeEach(() => {
     stub.client.auth.getUser.mockResolvedValue({ data: { user: { id: USER_ID } }, error: null })
   })
 
-  it('should write only the column that belongs to the channel', async () => {
-    // Arrange & Act
-    const result = await updateMarketingAction('sms', true)
+  it('should clear both opt-out columns when the member agrees', async () => {
+    // Arrange & Act — 화면은 체크박스 하나, DB 는 여전히 두 칸이다(시안 v2 §3.2).
+    const result = await updateMarketingConsentAction(true)
 
     // Assert
     expect(result).toEqual({ ok: true })
-    expect(stub.updates).toEqual([{ marketing_sms_opt_out: true }])
+    expect(stub.updates).toEqual([{ marketing_sms_opt_out: false, marketing_email_opt_out: false }])
   })
 
-  it('should write the email column for the email channel', async () => {
+  it('should set both opt-out columns when the member withdraws consent', async () => {
     // Arrange & Act
-    await updateMarketingAction('email', false)
+    await updateMarketingConsentAction(false)
 
     // Assert
-    expect(stub.updates).toEqual([{ marketing_email_opt_out: false }])
+    expect(stub.updates).toEqual([{ marketing_sms_opt_out: true, marketing_email_opt_out: true }])
   })
 
-  it('should refuse a channel it does not know', async () => {
+  it('should refuse a value that is not a boolean', async () => {
     // Arrange & Act — 직접 POST 로도 호출될 수 있어 서버에서 다시 좁힌다.
-    const result = await updateMarketingAction('push' as 'sms', true)
+    const result = await updateMarketingConsentAction('true' as unknown as boolean)
 
     // Assert
     expect(result.ok).toBe(false)
@@ -231,7 +297,7 @@ describe('updateMarketingAction', () => {
     stub.client.auth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
     // Act
-    const result = await updateMarketingAction('sms', true)
+    const result = await updateMarketingConsentAction(true)
 
     // Assert
     expect(result.ok).toBe(false)

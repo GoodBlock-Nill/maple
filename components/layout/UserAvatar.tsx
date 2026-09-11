@@ -12,8 +12,17 @@ type UserAvatarProps = {
   avatarUrl?: string | null
   /** 간편로그인 제공자. 레거시 이메일 계정 등 모르는 값이면 null. */
   provider?: SocialProvider | null
-  /** 원 지름 프리셋 — 헤더 트리거는 28px(`sm`), 모바일 드로어 사용자 블록은 32px(`md`). */
-  size: 'sm' | 'md'
+  /**
+   * 원 지름 프리셋 — 헤더 v2 계정 메뉴는 24px(`lg`, 시안 §1), 모바일 드로어
+   * 사용자 블록은 32px(`md`), 그 밖의 자리는 28px(`sm`).
+   */
+  size: 'sm' | 'md' | 'lg'
+  /**
+   * 브랜드 플레이트(원 배경)를 생략할지. 헤더 v2 시안은 구글 G 를 배경 없이
+   * 그린다 — 카카오·네이버 마크는 단색이라 플레이트가 없으면 읽히지 않으므로
+   * 이 옵션은 구글에만 적용된다.
+   */
+  plateless?: boolean
   className?: string
 }
 
@@ -49,35 +58,41 @@ const PROVIDER_STYLE: Record<
 const CIRCLE_SIZE_CLASS: Record<UserAvatarProps['size'], string> = {
   sm: 'size-7', // 28px
   md: 'size-8', // 32px
+  lg: 'size-6', // 24px
 }
 
 const FALLBACK_TEXT_CLASS: Record<UserAvatarProps['size'], string> = {
   sm: 'text-[13px]',
   md: 'text-[14px]',
+  lg: 'text-[12px]',
 }
 
 /** 구글/카카오 마크 크기 — 28px 원 기준 16px, 32px 원 기준 18px(같은 비율). */
 const BRAND_MARK_SIZE_CLASS: Record<UserAvatarProps['size'], string> = {
   sm: 'size-4', // 16px
   md: 'size-[18px]',
+  lg: 'size-[18px]', // 24px 박스 안 18px G 로고(시안 실측)
 }
 
 /** 네이버 N 마크는 다른 마크보다 작게 그려야 시각적으로 균형이 맞는다(가이드 권장). */
 const NAVER_MARK_SIZE_CLASS: Record<UserAvatarProps['size'], string> = {
   sm: 'size-3.5', // 14px
   md: 'size-4', // 16px
+  lg: 'size-3.5', // 14px
 }
 
 /** 사진이 있을 때 우하단에 얹는 제공자 배지 지름. */
 const BADGE_SIZE_CLASS: Record<UserAvatarProps['size'], string> = {
   sm: 'size-3', // 12px
   md: 'size-3.5', // 14px
+  lg: 'size-3', // 12px
 }
 
 /** 배지 안에 들어가는 마크는 배지보다 한 단계 작게 그려야 배경 여백이 남는다. */
 const BADGE_MARK_SIZE_CLASS: Record<UserAvatarProps['size'], string> = {
   sm: 'size-2', // 8px
   md: 'size-2.5', // 10px
+  lg: 'size-2', // 8px
 }
 
 function markSizeClass(provider: SocialProvider, size: UserAvatarProps['size']): string {
@@ -107,6 +122,7 @@ export function UserAvatar({
   avatarUrl = null,
   provider = null,
   size,
+  plateless = false,
   className,
 }: UserAvatarProps) {
   const style = resolveProviderStyle(provider)
@@ -130,6 +146,21 @@ export function UserAvatar({
             <style.Mark className={cn(BADGE_MARK_SIZE_CLASS[size], style.markTint)} />
           </span>
         ) : null}
+      </span>
+    )
+  }
+
+  if (style && plateless && style.provider === 'google') {
+    return (
+      <span
+        aria-hidden
+        className={cn(
+          'flex shrink-0 items-center justify-center',
+          CIRCLE_SIZE_CLASS[size],
+          className,
+        )}
+      >
+        <style.Mark className={BRAND_MARK_SIZE_CLASS[size]} />
       </span>
     )
   }

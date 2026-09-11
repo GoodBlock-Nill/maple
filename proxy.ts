@@ -80,6 +80,11 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/signup': '/login',
   '/forgot-password': '/login',
   '/reset-password': '/login',
+  /* 마이페이지 v2(2026-09-11): 쿠폰·문의내역 탭이 사라졌다. 쿠폰은 화면 자체가
+     없어졌고 문의 내역은 고객지원(`/support/inquiries`)이 이미 같은 목록을
+     들고 있다. 두 경로는 남은 마이페이지로 돌려보낸다. */
+  '/account/coupon': ACCOUNT_PATH,
+  '/account/inquiries': ACCOUNT_PATH,
 }
 
 /**

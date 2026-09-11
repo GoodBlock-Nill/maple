@@ -1,9 +1,9 @@
 import Link from 'next/link'
 
 import {
-  MYPAGE_CARD_CLASS,
-  MYPAGE_CARD_TITLE_CLASS,
-  MYPAGE_HELP_CLASS,
+  MYPAGE_LEGACY_CARD_CLASS,
+  MYPAGE_LEGACY_CARD_TITLE_CLASS,
+  MYPAGE_LEGACY_HELP_CLASS,
 } from '@/components/account/mypage-styles'
 import { BOARD_PILL_CLASS } from '@/components/board/board-styles'
 import {
@@ -50,14 +50,14 @@ type InquiryTableProps = {
  */
 export function InquiryTable({ list }: InquiryTableProps) {
   return (
-    <section aria-labelledby="inquiries-heading" className={MYPAGE_CARD_CLASS}>
-      <h2 id="inquiries-heading" className={MYPAGE_CARD_TITLE_CLASS}>
+    <section aria-labelledby="inquiries-heading" className={MYPAGE_LEGACY_CARD_CLASS}>
+      <h2 id="inquiries-heading" className={MYPAGE_LEGACY_CARD_TITLE_CLASS}>
         문의 내역
       </h2>
 
       {list.items.length === 0 ? (
         <div className="flex flex-col items-start gap-4">
-          <p className={MYPAGE_HELP_CLASS}>아직 문의 내역이 없습니다.</p>
+          <p className={MYPAGE_LEGACY_HELP_CLASS}>아직 문의 내역이 없습니다.</p>
           <Link href="/support" className={BOARD_PILL_CLASS}>
             1:1 문의하기
           </Link>

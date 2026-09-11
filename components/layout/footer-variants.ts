@@ -21,6 +21,9 @@ export type FooterMascot = {
   pixelArt?: boolean
 }
 
+/** 연락처 블록 모양 — 흰 알약 버튼(기본) / "문의하기" 제목 + 이메일 텍스트. */
+export type FooterContactStyle = 'pill' | 'text'
+
 export type FooterConfig = {
   background: string
   /**
@@ -41,8 +44,35 @@ export type FooterConfig = {
   /** 글래스 패널 상단 오프셋. 홈 165 / 703 변형 280 / 631 변형 208. */
   panelTop: number
   panelClass: string
+  /**
+   * 패널 최대 폭. 기본 1300(1440 에서 x=70). 마이페이지 v2 만 1200(x=120).
+   * 값을 바꾸면 `mx-auto` 가 알아서 가운데로 놓으므로 x 좌표는 따라온다.
+   */
+  panelMaxWidth?: number
+  /** 패널 안쪽 좌우 패딩(1440 기준). 기본 150 / 마이페이지 v2 140. */
+  panelPaddingX?: number
+  /** 패널 안쪽 위 패딩. 기본 38 / 마이페이지 v2 40. */
+  panelPaddingTop?: number
+  /** 좌측 블록(로고·태그라인·연락처) 폭. 기본 309 / 마이페이지 v2 371(시안 실측). */
+  brandWidth?: number
+  /** 연락처 표시 방식. 기본 알약 / 마이페이지 v2 는 텍스트 블록(시안 §5). */
+  contactStyle?: FooterContactStyle
   mascot: FooterMascot
 }
+
+/** `FooterConfig` 의 선택 항목 기본값 — 홈·서브 페이지가 공유하는 1300 패널. */
+export const FOOTER_PANEL_DEFAULTS = {
+  panelMaxWidth: 1300,
+  panelPaddingX: 150,
+  panelPaddingTop: 38,
+  brandWidth: 309,
+  contactStyle: 'pill',
+} as const satisfies Required<
+  Pick<
+    FooterConfig,
+    'panelMaxWidth' | 'panelPaddingX' | 'panelPaddingTop' | 'brandWidth' | 'contactStyle'
+  >
+>
 
 /** 서브 페이지 공통값: 패널 높이 353 + 하단 여백 70 을 섹션 높이에서 뺀다. */
 function subPanelTop(height: number): number {
@@ -160,11 +190,13 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     },
   },
   /**
-   * 마이페이지 — 언덕·꽃·나무 위 여우.
+   * 마이페이지 — 언덕·꽃·나무 위 여우(시안 v2 §5, 178:20156).
    *
-   * 시안(2041:2958 등)은 이 배경(939)의 **위쪽 175px 을 본문이 덮는다** — 구분선과
-   * "홈페이지 회원 탈퇴" 블록이 배경 상단(투명 대신 #fafafa 로 구워진 영역)에
-   * 겹쳐 앉는다. 그 겹침은 `MyPageShell` 이 음수 마진으로 만든다(같은 값 175).
+   * v1 과 달리 본문이 이 배경을 덮지 않는다. 시안 v2 는 회원 탈퇴 블록 아래
+   * 32px 에서 푸터 섹션(939)이 그대로 시작한다(`MyPageShell` 참고).
+   *
+   * 패널만 다른 변형이다 — 1200 폭 @ x=120, 안쪽 패딩 40/140, 연락처는 알약 대신
+   * "문의하기" 텍스트 블록, 좌측 블록 폭 371.
    */
   mypage: {
     background: '/images/mypage/footer-bg.png',
@@ -173,14 +205,19 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     height: 939,
     panelTop: subPanelTop(939),
     panelClass: 'glass-panel-sub',
+    panelMaxWidth: 1200,
+    panelPaddingX: 140,
+    panelPaddingTop: 40,
+    brandWidth: 371,
+    contactStyle: 'text',
     mascot: {
       src: '/images/mypage/mascot-footer.gif',
       width: 207,
       /* 원본(51×41) 비율대로 207 폭에 맞춘 실제 렌더 높이 166.4 → 166.
          디자인값 167 과의 1px 차는 next/image 의 aspect-ratio 경고를 부른다. */
       height: 166,
-      left: 1136,
-      top: 564,
+      left: 1080,
+      top: 570,
       mobileWidth: 120,
     },
   },

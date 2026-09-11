@@ -1,8 +1,7 @@
-import { MarketingCard } from '@/components/account/MarketingCard'
+import { AccountManageCard } from '@/components/account/AccountManageCard'
+import { MarketingConsentBox } from '@/components/account/MarketingConsentBox'
 import { MyPageShell } from '@/components/account/MyPageShell'
 import { MYPAGE_ACCOUNT_PATH } from '@/components/account/mypage-tabs'
-import { PasswordChangeCard } from '@/components/account/PasswordChangeCard'
-import { ProfileCard } from '@/components/account/ProfileCard'
 import { requireAccountSession, toShellUser } from '@/lib/auth/account-guard'
 
 import type { Metadata } from 'next'
@@ -10,17 +9,15 @@ import type { Metadata } from 'next'
 /** 본인만 보는 화면이라 검색 노출을 막는다. */
 export const metadata: Metadata = {
   title: '마이페이지',
-  description: '프로필과 비밀번호, 마케팅 수신 설정을 관리합니다.',
+  description: '닉네임과 마케팅 수신 설정을 관리합니다.',
   robots: { index: false, follow: false },
 }
 
 /**
- * 마이페이지 — 계정 관리 탭(시안 2041:2958).
+ * 마이페이지 — 계정 관리 탭(시안 v2 166:13134).
  *
- * 비밀번호 카드는 **이메일 계정에만** 그린다. 로그인 수단이 간편로그인뿐이라
- * 나머지 계정에는 바꿀 비밀번호 자체가 없다. 판정 근거는 `profiles.provider` 다
- * (마이그레이션 20260908001200 이 'google'|'kakao'|'naver'|'email'|'anonymous'
- * 중 하나로 정규화해 둔다) — auth 쪽 identities 를 다시 읽지 않는다.
+ * 카드 안은 닉네임·이메일 둘뿐이다. v1 의 아바타·이름·비밀번호 카드는 시안에서
+ * 빠졌고(스펙 §3), 쿠폰·문의내역 탭은 경로째 사라져 `/account` 로 돌아간다.
  */
 export default async function AccountPage() {
   const session = await requireAccountSession(MYPAGE_ACCOUNT_PATH)
@@ -28,18 +25,13 @@ export default async function AccountPage() {
 
   return (
     <MyPageShell activeHref={MYPAGE_ACCOUNT_PATH} user={toShellUser(session)}>
-      <ProfileCard
-        name={profile.name ?? ''}
+      <AccountManageCard
+        activeHref={MYPAGE_ACCOUNT_PATH}
         nickname={profile.nickname}
         email={profile.email ?? session.email}
-        avatarUrl={profile.avatar_url}
-        mswUid={profile.msw_uid ?? ''}
-        mswProfileCode={profile.msw_profile_code ?? ''}
       />
 
-      {profile.provider === 'email' ? <PasswordChangeCard /> : null}
-
-      <MarketingCard
+      <MarketingConsentBox
         smsOptOut={profile.marketing_sms_opt_out}
         emailOptOut={profile.marketing_email_opt_out}
       />
