@@ -1,20 +1,13 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
-import { Logo } from '@/components/layout/Logo'
-import { isNavItemHidden, matchesPath } from '@/components/layout/navigation'
-import { UserAvatar } from '@/components/layout/UserAvatar'
+import { MobileNavPanel } from '@/components/layout/MobileNavPanel'
 import { useFocusTrap } from '@/components/layout/use-focus-trap'
-import { Button } from '@/components/ui/Button'
-import { CloseIcon, MenuIcon } from '@/components/ui/icons'
-import { signOut } from '@/lib/actions/auth-actions'
-import { DISCORD_URL, NAV_ITEMS, PLAY_URL } from '@/lib/constants/site'
+import { MenuIcon } from '@/components/ui/icons'
 import { cn } from '@/lib/utils/cn'
-import { RESTORE_PATH } from '@/lib/validation/auth'
 
 import type { SocialProvider } from '@/lib/validation/auth'
 
@@ -28,16 +21,18 @@ const ICON_BUTTON_CLASS =
   'inline-flex size-11 items-center justify-center rounded-bar text-ink transition-colors ' +
   'hover:bg-ink/8 focus-visible:outline-2 focus-visible:outline-offset-2'
 
+export type MobileNavUser = {
+  nickname: string
+  avatarUrl?: string | null
+  provider?: SocialProvider | null
+  /** 탈퇴 대기 계정. "내 정보" 대신 "계정 복구"로 안내한다. */
+  isWithdrawn?: boolean
+}
+
 type MobileNavProps = {
   className?: string
   /** 서버에서 `getCurrentUser()` 로 주입한다. 미로그인이면 null. */
-  user?: {
-    nickname: string
-    avatarUrl?: string | null
-    provider?: SocialProvider | null
-    /** 탈퇴 대기 계정. "내 정보" 대신 "계정 복구"로 안내한다. */
-    isWithdrawn?: boolean
-  } | null
+  user?: MobileNavUser | null
 }
 
 // 포털 대상은 바뀌지 않으므로 구독할 것이 없다. 서버 스냅샷은 null 로 두어 SSR 마크업과
@@ -45,10 +40,6 @@ type MobileNavProps = {
 const subscribeNever = () => () => {}
 const getBody = () => document.body
 const getServerBody = () => null
-
-const USER_ROW_CLASS =
-  'rounded-card text-ink-muted block px-2 py-2.5 text-left text-[15px] transition-colors ' +
-  'hover:bg-sheet hover:text-ink'
 
 export function MobileNav({ className, user = null }: MobileNavProps) {
   const pathname = usePathname()
@@ -133,104 +124,14 @@ export function MobileNav({ className, user = null }: MobileNavProps) {
         aria-label="모바일 메뉴"
         inert={!isOpen}
         className={cn(
-          'fixed inset-y-0 right-0 z-70 flex w-[86%] max-w-sm flex-col bg-white',
+          // 시안 v2 §드로어 골격: 375 기준 폭 290. 아주 좁은 폰에서도 잘리지 않게 vw 상한을 둔다.
+          'fixed inset-y-0 right-0 z-70 flex w-[290px] max-w-[86vw] flex-col bg-white',
           'shadow-sheet transition-[transform,visibility] duration-300 ease-out',
           // 닫힌 상태에서는 화면 밖으로 완전히 나가 있으므로 탭을 가로채지 않는다.
           isOpen ? 'translate-x-0' : 'invisible translate-x-full',
         )}
       >
-        <div className="border-line flex items-center justify-between border-b px-5 py-4">
-          <Logo width={89} height={32} />
-          <button
-            type="button"
-            aria-label="메뉴 닫기"
-            onClick={close}
-            className={cn(ICON_BUTTON_CLASS, '-mr-2')}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        {/* 로그인 상태에서만 노출한다. "마이페이지"·"로그아웃"은 폰에서 여기 한
-            곳뿐이다(헤더 데스크톱 드롭다운과 같은 두 항목, 시안 v2 §1). */}
-        {user === null ? null : (
-          <div className="border-line flex flex-col gap-2 border-b px-4 py-4">
-            <div className="flex items-center gap-2.5 px-2">
-              <UserAvatar
-                nickname={user.nickname}
-                avatarUrl={user.avatarUrl}
-                provider={user.provider}
-                size="md"
-              />
-              <span className="text-ink truncate text-[17px] font-semibold">{user.nickname}</span>
-            </div>
-
-            {user.isWithdrawn === true ? (
-              <Link href={RESTORE_PATH} onClick={close} className={USER_ROW_CLASS}>
-                계정 복구
-              </Link>
-            ) : (
-              <Link href="/account" onClick={close} className={USER_ROW_CLASS}>
-                마이페이지
-              </Link>
-            )}
-            <form action={signOut}>
-              <button type="submit" className={cn(USER_ROW_CLASS, 'w-full')}>
-                로그아웃
-              </button>
-            </form>
-          </div>
-        )}
-
-        <nav aria-label="모바일 메뉴" className="flex-1 overflow-y-auto px-4 py-5">
-          <ul className="flex flex-col gap-1">
-            {NAV_ITEMS.filter((item) => !isNavItemHidden(item.href)).map((item) => {
-              const isActive = matchesPath(item.href, pathname)
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive ? 'page' : undefined}
-                    /* 현재 페이지 링크는 경로가 바뀌지 않아 자동으로 닫히지 않으므로 직접 닫는다. */
-                    onClick={close}
-                    className={cn(
-                      'rounded-card block px-3 py-3 text-[17px] font-semibold transition-colors',
-                      isActive
-                        ? 'bg-sheet text-ink'
-                        : 'text-ink-muted hover:bg-sheet hover:text-ink',
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
-
-        <div className="border-line flex flex-col gap-2 border-t p-4">
-          <Button href={PLAY_URL} prefetch={false} variant="dark" size="md" className="w-full">
-            메이플월드 바로가기
-          </Button>
-          <Button
-            href={DISCORD_URL}
-            prefetch={false}
-            variant="discord"
-            size="md"
-            className="w-full"
-          >
-            디스코드 바로가기
-          </Button>
-          {/* 로그인 수단이 간편로그인뿐이라 가입과 로그인이 같은 동작이다 — 헤더
-              (AuthMenu)와 같은 버튼 하나만 드로어 아래쪽에 둔다.
-              로그인 상태의 "마이페이지"·"로그아웃"은 드로어 상단(사용자 블록)에 이미 있다. */}
-          {user === null ? (
-            <Button href="/login" variant="light" size="md" className="w-full font-medium">
-              로그인
-            </Button>
-          ) : null}
-        </div>
+        <MobileNavPanel pathname={pathname} user={user} isOpen={isOpen} close={close} />
       </div>
     </>
   )

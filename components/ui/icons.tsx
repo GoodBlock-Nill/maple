@@ -53,3 +53,13 @@ export function ExternalLinkIcon({ className = 'size-4', ...props }: IconProps) 
     </svg>
   )
 }
+
+/** 모바일 드로어 하단 "바로가기" 행 우측 화살표(↗) — 시안 모바일 드로어 v2 §드로어 골격. */
+export function ArrowUpRightIcon({ className = 'size-6', ...props }: IconProps) {
+  return (
+    <svg {...BASE_PROPS} strokeWidth={1.5} className={className} {...props}>
+      <path d="M7 17L17 7" />
+      <path d="M9 7h8v8" />
+    </svg>
+  )
+}
