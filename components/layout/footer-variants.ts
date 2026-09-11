@@ -45,28 +45,32 @@ export type FooterConfig = {
   panelTop: number
   panelClass: string
   /**
-   * 패널 최대 폭. 기본 1300(1440 에서 x=70). 마이페이지 v2 만 1200(x=120).
+   * 패널 최대 폭(1440 기준). v2 푸터 패널 통일(오너 지시 2026-09-11)로 전 변형이
+   * 마이페이지/고객지원 v2 값인 1200(x=120)을 공유한다.
    * 값을 바꾸면 `mx-auto` 가 알아서 가운데로 놓으므로 x 좌표는 따라온다.
    */
   panelMaxWidth?: number
-  /** 패널 안쪽 좌우 패딩(1440 기준). 기본 150 / 마이페이지 v2 140. */
+  /** 패널 안쪽 좌우 패딩(1440 기준). v2 통일값 140. */
   panelPaddingX?: number
-  /** 패널 안쪽 위 패딩. 기본 38 / 마이페이지 v2 40. */
+  /** 패널 안쪽 위 패딩. v2 통일값 40. */
   panelPaddingTop?: number
-  /** 좌측 블록(로고·태그라인·연락처) 폭. 기본 309 / 마이페이지 v2 371(시안 실측). */
+  /** 좌측 블록(로고·태그라인·연락처) 폭. v2 통일값 371(시안 실측). */
   brandWidth?: number
-  /** 연락처 표시 방식. 기본 알약 / 마이페이지 v2 는 텍스트 블록(시안 §5). */
+  /** 연락처 표시 방식. v2 통일값은 "문의하기" 제목 + 이메일 텍스트 블록(시안 §5). */
   contactStyle?: FooterContactStyle
   mascot: FooterMascot
 }
 
-/** `FooterConfig` 의 선택 항목 기본값 — 홈·서브 페이지가 공유하는 1300 패널. */
+/**
+ * `FooterConfig` 의 선택 항목 기본값 — v2 푸터 패널 통일(오너 지시 2026-09-11)로
+ * 전 변형이 고객지원 v2(166:13652) 패널을 공유한다: 1200 폭 @ x=120.
+ */
 export const FOOTER_PANEL_DEFAULTS = {
-  panelMaxWidth: 1300,
-  panelPaddingX: 150,
-  panelPaddingTop: 38,
-  brandWidth: 309,
-  contactStyle: 'pill',
+  panelMaxWidth: 1200,
+  panelPaddingX: 140,
+  panelPaddingTop: 40,
+  brandWidth: 371,
+  contactStyle: 'text',
 } as const satisfies Required<
   Pick<
     FooterConfig,
@@ -79,6 +83,13 @@ function subPanelTop(height: number): number {
   return height - 353 - 70
 }
 
+/**
+ * v2 푸터 패널 통일(오너 지시 2026-09-11) — 모든 변형이 고객지원 v2(166:13652)와
+ * 같은 1200 폭 @ x=120 패널을 쓴다. 패널이 1300@x=70 → 1200@x=120 으로 좁아지며
+ * 우측 끝이 1370 → 1320 으로 50px 안쪽으로 들어왔다. 마스코트는 패널 우상단과의
+ * 겹침 관계를 유지하도록 각 변형에서 `left` 를 그대로 -50 만큼 옮긴다(고객지원·
+ * 마이페이지는 이미 1200 패널 기준 좌표라 이번 이동 대상에서 제외).
+ */
 export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
   home: {
     background: '/images/footer/home-bg.jpg',
@@ -91,7 +102,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
       src: '/images/footer/home-mascot.gif',
       width: 276,
       height: 149,
-      left: 1132,
+      /* v2 패널 통일로 우측 끝이 50px 안쪽으로 들어와 1132 → 1082. */
+      left: 1082,
       top: 219,
       mobileWidth: 180,
     },
@@ -102,7 +114,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: false,
     height: 703,
     panelTop: subPanelTop(703),
-    panelClass: 'glass-panel-sub',
+    /* v2 푸터 패널 통일로 밝은 배경 변형도 어두운 글래스를 쓴다(오너 지시 2026-09-11). */
+    panelClass: 'glass-panel-dark',
     mascot: {
       src: '/images/news/mascot-footer.gif',
       width: 231,
@@ -111,7 +124,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
          aspect-ratio 경고를 유발해 렌더 실측치로 맞춘다(화면 크기는 원래도
          auto 높이라 이 값의 영향을 받지 않는다). */
       height: 177,
-      left: 1172,
+      /* v2 패널 통일로 우측 끝이 50px 안쪽으로 들어와 1172 → 1122. */
+      left: 1122,
       top: 310,
       mobileWidth: 150,
     },
@@ -122,7 +136,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: false,
     height: 703,
     panelTop: subPanelTop(703),
-    panelClass: 'glass-panel-sub',
+    /* v2 푸터 패널 통일로 밝은 배경 변형도 어두운 글래스를 쓴다(오너 지시 2026-09-11). */
+    panelClass: 'glass-panel-dark',
     mascot: {
       src: '/images/community/mascot-footer.gif',
       width: 154,
@@ -131,7 +146,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
          aspect-ratio 경고를 유발해 렌더 실측치로 맞춘다(화면 크기는 원래도
          auto 높이라 이 값의 영향을 받지 않는다). */
       height: 198,
-      left: 1182,
+      /* v2 패널 통일로 우측 끝이 50px 안쪽으로 들어와 1182 → 1132. */
+      left: 1132,
       top: 319,
       mobileWidth: 110,
     },
@@ -142,12 +158,14 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: false,
     height: 631,
     panelTop: subPanelTop(631),
-    panelClass: 'glass-panel-sub',
+    /* v2 푸터 패널 통일로 밝은 배경 변형도 어두운 글래스를 쓴다(오너 지시 2026-09-11). */
+    panelClass: 'glass-panel-dark',
     mascot: {
       src: '/images/guide/mascot-footer.gif',
       width: 182,
       height: 235,
-      left: 1243,
+      /* v2 패널 통일로 우측 끝이 50px 안쪽으로 들어와 1243 → 1193. */
+      left: 1193,
       top: 240,
       mobileWidth: 120,
       /* 원본이 290×375 로 다른 변형과 달리 실제로는 다운스케일된다(실측
@@ -162,22 +180,23 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: false,
     height: 631,
     panelTop: subPanelTop(631),
-    /* 랭킹만 패널 그라데이션이 초록빛 회색이다(시안 실측). */
-    panelClass: 'glass-panel-ranking',
+    /* v2 푸터 패널 통일로 랭킹 전용 그라데이션 대신 어두운 글래스를 쓴다
+       (오너 지시 2026-09-11). `.glass-panel-ranking` 클래스 자체는 유지한다. */
+    panelClass: 'glass-panel-dark',
     mascot: {
       src: '/images/ranking/mascot-footer.gif',
       width: 248,
       height: 200,
-      left: 1180,
+      /* v2 패널 통일로 우측 끝이 50px 안쪽으로 들어와 1180 → 1130. */
+      left: 1130,
       top: 246,
       mobileWidth: 160,
     },
   },
   /**
-   * 고객지원 — v2 시안(§7, 고객지원_푸터 166:13652)은 마이페이지 v2 와 같은
-   * 패널 모양이다: 1200 폭 @ x=120, 안쪽 패딩 40/140, 연락처는 알약 대신
-   * "문의하기" 텍스트 블록, 좌측 블록 폭 371. 패널 톤도 시안 실측 평균 휘도
-   * 100~125(눈 숲 위)로 `glass-panel-sub` 보다 `glass-panel-dark` 가 맞는다.
+   * 고객지원 — v2 시안(§7, 고객지원_푸터 166:13652)이 이번 통일의 기준이다.
+   * 패널 톤도 시안 실측 평균 휘도 100~125(눈 숲 위)로 `glass-panel-sub` 보다
+   * `glass-panel-dark` 가 맞는다.
    */
   support: {
     background: '/images/support/footer-bg.png',
@@ -186,16 +205,11 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     height: 631,
     panelTop: subPanelTop(631),
     panelClass: 'glass-panel-dark',
-    panelMaxWidth: 1200,
-    panelPaddingX: 140,
-    panelPaddingTop: 40,
-    brandWidth: 371,
-    contactStyle: 'text',
     mascot: {
       src: '/images/support/mascot-footer.gif',
       width: 216,
       height: 198,
-      /* 시안 v2 실측 좌표 — 현행(1154)에서 40px 왼쪽으로. */
+      /* 시안 v2 실측 좌표 — 구 패널(1154)에서 40px 왼쪽으로. */
       left: 1094,
       top: 236,
       mobileWidth: 140,
@@ -206,9 +220,6 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
    *
    * v1 과 달리 본문이 이 배경을 덮지 않는다. 시안 v2 는 회원 탈퇴 블록 아래
    * 32px 에서 푸터 섹션(939)이 그대로 시작한다(`MyPageShell` 참고).
-   *
-   * 패널만 다른 변형이다 — 1200 폭 @ x=120, 안쪽 패딩 40/140, 연락처는 알약 대신
-   * "문의하기" 텍스트 블록, 좌측 블록 폭 371.
    */
   mypage: {
     background: '/images/mypage/footer-bg.png',
@@ -217,11 +228,6 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     height: 939,
     panelTop: subPanelTop(939),
     panelClass: 'glass-panel-dark',
-    panelMaxWidth: 1200,
-    panelPaddingX: 140,
-    panelPaddingTop: 40,
-    brandWidth: 371,
-    contactStyle: 'text',
     mascot: {
       src: '/images/mypage/mascot-footer.gif',
       width: 207,
@@ -250,7 +256,8 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
       src: '/images/about/mascot-footer.gif',
       width: 214,
       height: 169,
-      left: 1202,
+      /* v2 패널 통일로 우측 끝이 50px 안쪽으로 들어와 1202 → 1152. */
+      left: 1152,
       top: 338,
       mobileWidth: 140,
       isFlipped: true,
