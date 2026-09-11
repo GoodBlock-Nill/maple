@@ -16,41 +16,50 @@
 
 | 구성 요소                                       | 상태              | 메모                                                                           |
 | ----------------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
-| DB 마이그레이션 9개                             | 적용됨            | `20260908000400` ~ `20260910000900`                                            |
+| DB 마이그레이션 11개                            | 적용됨            | `20260908000400` ~ `20260911000400`                                            |
 | 사용자 사이트 접수·수정·취소                    | 배포됨            | `/support` · `/support/inquiries` · 마이페이지 문의내역                        |
 | 카테고리 · 프리필                               | 2026-09-10        | 커밋 `b78dfd7` · 시드 8종(`docs/1on1.md`)                                      |
 | 영상 첨부 직접 업로드                           | 2026-09-10        | 커밋 `2e3f6ae` · 각 100MB · 2개                                                |
 | 세부 유형 · 계정 ID 필수                        | 2026-09-11        | 커밋 `af1a886` · 첨부만 선택                                                   |
 | 관리자 고객지원 모듈                            | 배포됨            | `/inquiries` · `/inquiries/categories` · 권한 `inquiries`                      |
+| 운영자 협업(배정 · 잠금 · 충돌 · 메모)          | 2026-09-11        | `20260911000300` · §5.9                                                        |
+| 접수번호 `#1024`                                | 2026-09-11        | `20260911000400` · 사용자·관리자·메일이 같은 번호를 씁니다                     |
 | `email-inbound` · `email-outbound`              | **제공자 미연동** | 코드·DB·함수는 배포됨. 계정·DNS·secret 만 남음 — `EMAIL-INQUIRY-ACTIVATION.md` |
 | 플래그 `NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS` | **OFF**           | 꺼져 있으면 계정 ID 프리필이 사실상 비어 있습니다(§8-4)                        |
 
 ### 1.2 무엇이 언제 들어갔나
 
-| 시점       | 들어간 것                                                      | 근거                                                                                                    |
-| ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 2026-09-08 | 문의 · 답변 · FAQ 테이블, RLS, 비공개 첨부 버킷                | `20260908000400_support.sql` · `20260908000700_rls_policies.sql` · `20260908000800_storage_buckets.sql` |
-| 2026-09-08 | 소유자의 **수정 · 접수 취소**(`cancelled_at` + DB 가드)        | `20260908001900_inquiries_owner_edit_cancel.sql`                                                        |
-| 2026-09-09 | 이메일 유입(`source` · `email_*` · `direction`)                | `20260909000300_email_inquiries.sql`                                                                    |
-| 2026-09-10 | 카테고리 8종 · 프리필 양식 · 관리자 카테고리 관리              | `20260910000400` · `20260910000500` · 커밋 `b78dfd7`                                                    |
-| 2026-09-10 | 영상 첨부(브라우저 직접 업로드 · `pending` 접두사 · 청소 함수) | `20260910000600` · 커밋 `2e3f6ae`                                                                       |
-| 2026-09-11 | 카테고리별 **세부 문의 유형**, 프리필에서 유형 블록 제거       | `20260910000700` · `20260910000800` · 커밋 `af1a886`                                                    |
-| 2026-09-11 | **글자월드 계정 ID 필수** + 길이 CHECK(≤ 40)                   | `20260910000900` · 커밋 `af1a886`                                                                       |
+| 시점       | 들어간 것                                                       | 근거                                                                                                    |
+| ---------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 2026-09-08 | 문의 · 답변 · FAQ 테이블, RLS, 비공개 첨부 버킷                 | `20260908000400_support.sql` · `20260908000700_rls_policies.sql` · `20260908000800_storage_buckets.sql` |
+| 2026-09-08 | 소유자의 **수정 · 접수 취소**(`cancelled_at` + DB 가드)         | `20260908001900_inquiries_owner_edit_cancel.sql`                                                        |
+| 2026-09-09 | 이메일 유입(`source` · `email_*` · `direction`)                 | `20260909000300_email_inquiries.sql`                                                                    |
+| 2026-09-10 | 카테고리 8종 · 프리필 양식 · 관리자 카테고리 관리               | `20260910000400` · `20260910000500` · 커밋 `b78dfd7`                                                    |
+| 2026-09-10 | 영상 첨부(브라우저 직접 업로드 · `pending` 접두사 · 청소 함수)  | `20260910000600` · 커밋 `2e3f6ae`                                                                       |
+| 2026-09-11 | 카테고리별 **세부 문의 유형**, 프리필에서 유형 블록 제거        | `20260910000700` · `20260910000800` · 커밋 `af1a886`                                                    |
+| 2026-09-11 | **글자월드 계정 ID 필수** + 길이 CHECK(≤ 40)                    | `20260910000900` · 커밋 `af1a886`                                                                       |
+| 2026-09-11 | 답변 템플릿(공통 · 카테고리별 · 자리표시자)                     | `20260911000200`                                                                                        |
+| 2026-09-11 | **운영자 협업** — 담당자 · 작성 중 잠금 · 저장 충돌 · 내부 메모 | `20260911000300_inquiry_assignment.sql` · §5.9                                                          |
+| 2026-09-11 | **접수번호**(`inquiry_no`, 1001부터 · `#1024` 표기)             | `20260911000400_inquiry_no.sql`                                                                         |
 
 ### 1.3 용어
 
-| 말            | 실제 값                                                 | 뜻                                                                                                            |
-| ------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **문의**      | `public.inquiries` 한 행                                | 웹 폼 접수와 이메일 수신이 **같은 테이블**에 쌓입니다. 구분은 `source` 하나뿐                                 |
-| **카테고리**  | `inquiry_categories.label` → `inquiries.category`(text) | 외래키가 아니라 **라벨 문자열을 복사**합니다. 그래서 이름을 바꾸면 과거 문의를 함께 옮겨야 합니다(§5.5)       |
-| **세부 유형** | `inquiry_categories.subtypes[]` → `inquiries.type`      | 고른 카테고리에 매달린 목록. 옛 고정 3종('문의 · 신고 · 제안')은 데이터에만 남아 있습니다                     |
-| **프리필**    | `inquiry_categories.prefill`(≤ 2000자)                  | 카테고리를 고르면 "문의 내용" 칸에 채워지는 평문 양식. 카테고리를 바꾸면 **갈아 끼웁니다**                    |
-| **계정 ID**   | `inquiries.account_id`(nullable, ≤ 40자)                | 글자월드 계정 ID. 웹 폼에서는 필수, 이메일 문의·옛 문의에는 없습니다. 화면에는 늘 마스킹(`1234****000`)       |
-| **첨부**      | `inquiries.attachments` jsonb 배열(≤ 3)                 | `{ name, path, size, mimeType }`. 실체는 비공개 버킷 `inquiry-attachments`, 화면은 5분짜리 서명 URL 로 봅니다 |
-| **답변**      | `public.inquiry_replies`                                | `direction='outbound'` 운영자 답변 · `'inbound'` 사용자가 메일로 보낸 회신(이메일 문의만)                     |
-| **상태**      | `inquiry_status` enum                                   | `pending` 접수 대기 · `in_progress` 처리 중 · `answered` 답변 완료 · `closed` 종료                            |
-| **접수 취소** | `status='closed'` + `cancelled_at`                      | enum 값이 아닙니다. **라벨은 취소가 상태를 이깁니다** — 두 화면이 같은 규칙                                   |
-| **출처**      | `inquiries.source` = `web` \| `email`                   | 관리자 사이드바의 '1:1 문의'·'이메일 문의'는 새 라우트가 아니라 이 값의 **필터 프리셋**                       |
+| 말            | 실제 값                                                 | 뜻                                                                                                                |
+| ------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **문의**      | `public.inquiries` 한 행                                | 웹 폼 접수와 이메일 수신이 **같은 테이블**에 쌓입니다. 구분은 `source` 하나뿐                                     |
+| **카테고리**  | `inquiry_categories.label` → `inquiries.category`(text) | 외래키가 아니라 **라벨 문자열을 복사**합니다. 그래서 이름을 바꾸면 과거 문의를 함께 옮겨야 합니다(§5.5)           |
+| **세부 유형** | `inquiry_categories.subtypes[]` → `inquiries.type`      | 고른 카테고리에 매달린 목록. 옛 고정 3종('문의 · 신고 · 제안')은 데이터에만 남아 있습니다                         |
+| **프리필**    | `inquiry_categories.prefill`(≤ 2000자)                  | 카테고리를 고르면 "문의 내용" 칸에 채워지는 평문 양식. 카테고리를 바꾸면 **갈아 끼웁니다**                        |
+| **계정 ID**   | `inquiries.account_id`(nullable, ≤ 40자)                | 글자월드 계정 ID. 웹 폼에서는 필수, 이메일 문의·옛 문의에는 없습니다. 화면에는 늘 마스킹(`1234****000`)           |
+| **첨부**      | `inquiries.attachments` jsonb 배열(≤ 3)                 | `{ name, path, size, mimeType }`. 실체는 비공개 버킷 `inquiry-attachments`, 화면은 5분짜리 서명 URL 로 봅니다     |
+| **답변**      | `public.inquiry_replies`                                | `direction='outbound'` 운영자 답변 · `'inbound'` 사용자가 메일로 보낸 회신(이메일 문의만)                         |
+| **상태**      | `inquiry_status` enum                                   | `pending` 접수 대기 · `in_progress` 처리 중 · `answered` 답변 완료 · `closed` 종료                                |
+| **접수 취소** | `status='closed'` + `cancelled_at`                      | enum 값이 아닙니다. **라벨은 취소가 상태를 이깁니다** — 두 화면이 같은 규칙                                       |
+| **출처**      | `inquiries.source` = `web` \| `email`                   | 관리자 사이드바의 '1:1 문의'·'이메일 문의'는 새 라우트가 아니라 이 값의 **필터 프리셋**                           |
+| **접수번호**  | `inquiries.inquiry_no`(bigint · 1001부터)               | 사람이 부르는 번호. 표기는 `#1024` 하나뿐이고 사용자 화면·관리자 목록·답신 메일 제목이 **같은 값**을 씁니다       |
+| **담당자**    | `inquiries.assigned_to` → `profiles(id)`                | 이 문의를 맡은 운영자. null 이면 '미배정'. 배정은 상태와 별개지만, 미배정 + 접수 대기를 맡으면 처리 중으로 갑니다 |
+| **작성 중**   | `inquiries.editing_by` · `editing_at`                   | 답변 폼이 잡는 **소프트 락**(5분 만료 · 60초 하트비트). 강제력이 없어 마지막 방어선은 저장 시 충돌 감지입니다     |
+| **내부 메모** | `public.inquiry_notes`                                  | 운영자끼리만 보는 기록. 사용자 사이트는 이 테이블을 **읽지 않습니다**(RLS 도 관리자 전용)                         |
 
 > **원칙** — 화면 · 서버 액션 · DB 세 겹으로 같은 규칙을 겁니다. 폼의 잠금은 편의, 서버 액션의 재검증은 신뢰 경계, RLS·CHECK·가드 트리거가 최종 방어선입니다. 서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출되기 때문입니다.
 
@@ -152,6 +161,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 - **소유권** — RLS 위에 `.eq('user_id', …)` 를 **한 번 더** 겁니다. 관리자 세션에는 전체 행이 열려 있어 조건을 빼면 "내 문의 내역"이 남의 문의를 그립니다.
 - **없는 문의는 `notFound()`** — "권한 없음"을 구분해 알리면 남의 문의 id 존재 여부가 새어 나갑니다.
 - **답변 수**는 임베드 집계 `inquiry_replies(count)` 로 같은 왕복에서 받습니다.
+- **접수번호(`#1024`)** 는 네 자리에 모두 보입니다 — 접수 완료 모달 · 고객지원 목록 행 · 마이페이지 표의 '접수번호' 칸(예전의 화면 순번을 대체) · 상세 제목 위 · 수정 화면 제목. 마이페이지가 순번을 쓰던 때는 '더보기'로 목록이 늘어날 때마다 같은 문의가 다른 번호로 보였습니다.
 - **1회성 안내** — `?submitted=1` · `?updated=1` · `?cancelled=1` · `?locked=1`. **문구는 서버가 정합니다** — 주소에 문구를 실으면 링크 하나로 임의 텍스트를 이 화면에 띄울 수 있습니다.
 - 목록·상세·수정 모두 `robots: { index:false, follow:false }`. 제목에 개인정보가 섞일 수 있어 메타에도 싣지 않습니다.
 - 답변이 없을 때 문구는 상태별로 다릅니다 — 취소 `접수가 취소된 문의입니다.` / 종료 `운영자 검토 후 종료된 문의입니다. 추가 문의는 새 1:1 문의로 남겨 주세요.` / 처리 중 `운영자가 처리 중입니다…` / 그 밖 `운영자가 확인 중입니다…`.
@@ -272,27 +282,42 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 
 ### 4.1 `inquiries`
 
-| 열                               | 타입                      | 메모                                                                                                                                              |
-| -------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                             | `uuid` PK                 | `gen_random_uuid()`                                                                                                                               |
-| `user_id`                        | `uuid` → `profiles(id)`   | `on delete set null`. **이메일 문의는 항상 null** — 발신자 주소는 위조 가능해서 회원 식별에 쓰지 않습니다                                         |
-| `account_id`                     | `text`                    | CHECK `inquiries_account_id_length` = null 이거나 1~40자. **NOT NULL 은 걸지 않습니다** — 필수는 웹 폼의 규칙이라 서버 액션 스키마에서 강제합니다 |
-| `category`                       | `text` NOT NULL           | 카테고리 **라벨 문자열**                                                                                                                          |
-| `type`                           | `text` NOT NULL           | 세부 유형 라벨. 옛 값 `문의`·`신고`·`제안`, 이메일 문의는 `general`                                                                               |
-| `title` · `content`              | `text` NOT NULL           | 평문. 화면은 줄바꿈만 살립니다                                                                                                                    |
-| `attachments`                    | `jsonb` NOT NULL `'[]'`   | CHECK 둘 — `jsonb_typeof='array'`, `jsonb_array_length <= 3`                                                                                      |
-| `privacy_consent`                | `boolean` NOT NULL        | CHECK `privacy_consent or source = 'email'`(`20260909000300` 에서 완화)                                                                           |
-| `status`                         | `inquiry_status` NOT NULL | `pending · in_progress · answered · closed`                                                                                                       |
-| `cancelled_at`                   | `timestamptz`             | 사용자의 접수 취소 시각. enum 에 값을 더하지 않은 이유는 상태를 읽는 코드가 이미 네 값을 전제로 갈라져 있기 때문                                  |
-| `contact_email` · `answered_at`  | `text` · `timestamptz`    | 운영자만 채웁니다. `answered_at` 은 **처음** 답변 완료로 넘어간 시각만 — 갱신하면 첫 응답 시간을 계산할 수 없습니다                               |
-| `source`                         | `text` NOT NULL `'web'`   | CHECK `in ('web','email')`                                                                                                                        |
-| `email_from` · `email_from_name` | `text`                    | 발신자 주소 · 표시 이름                                                                                                                           |
-| `email_message_id`               | `text`                    | 원본 Message-ID. **부분 유니크**                                                                                                                  |
-| `email_auth`                     | `jsonb`                   | 제공자의 `{ spf, dkim, dmarc }` 판정 그대로. **차단 근거가 아니라** 콘솔 뱃지용                                                                   |
-| `email_thread_key`               | `text`                    | `reply+<key>@` 토큰(24자 url-safe). 부분 유니크 · 화면에 노출하지 않습니다                                                                        |
-| `created_at` · `updated_at`      | `timestamptz`             | `set_updated_at` 트리거가 모든 UPDATE 에서 `updated_at` 을 밀어 올립니다                                                                          |
+| 열                               | 타입                                    | 메모                                                                                                                                                                                                                                                    |
+| -------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                             | `uuid` PK                               | `gen_random_uuid()`                                                                                                                                                                                                                                     |
+| `inquiry_no`                     | `bigint` NOT NULL                       | **접수번호**(1001부터 · 유니크 `inquiries_inquiry_no_key`). `generated always as identity` — 접수 폼이 값을 고를 수 없습니다(`by default` 였다면 사용자가 큰 번호를 선점해 시퀀스가 그 자리에 닿는 순간 접수가 실패합니다)                              |
+| `user_id`                        | `uuid` → `profiles(id)`                 | `on delete set null`. **이메일 문의는 항상 null** — 발신자 주소는 위조 가능해서 회원 식별에 쓰지 않습니다                                                                                                                                               |
+| `account_id`                     | `text`                                  | CHECK `inquiries_account_id_length` = null 이거나 1~40자. **NOT NULL 은 걸지 않습니다** — 필수는 웹 폼의 규칙이라 서버 액션 스키마에서 강제합니다                                                                                                       |
+| `category`                       | `text` NOT NULL                         | 카테고리 **라벨 문자열**                                                                                                                                                                                                                                |
+| `type`                           | `text` NOT NULL                         | 세부 유형 라벨. 옛 값 `문의`·`신고`·`제안`, 이메일 문의는 `general`                                                                                                                                                                                     |
+| `title` · `content`              | `text` NOT NULL                         | 평문. 화면은 줄바꿈만 살립니다                                                                                                                                                                                                                          |
+| `attachments`                    | `jsonb` NOT NULL `'[]'`                 | CHECK 둘 — `jsonb_typeof='array'`, `jsonb_array_length <= 3`                                                                                                                                                                                            |
+| `privacy_consent`                | `boolean` NOT NULL                      | CHECK `privacy_consent or source = 'email'`(`20260909000300` 에서 완화)                                                                                                                                                                                 |
+| `status`                         | `inquiry_status` NOT NULL               | `pending · in_progress · answered · closed`                                                                                                                                                                                                             |
+| `cancelled_at`                   | `timestamptz`                           | 사용자의 접수 취소 시각. enum 에 값을 더하지 않은 이유는 상태를 읽는 코드가 이미 네 값을 전제로 갈라져 있기 때문                                                                                                                                        |
+| `contact_email` · `answered_at`  | `text` · `timestamptz`                  | 운영자만 채웁니다. `answered_at` 은 **처음** 답변 완료로 넘어간 시각만 — 갱신하면 첫 응답 시간을 계산할 수 없습니다                                                                                                                                     |
+| `source`                         | `text` NOT NULL `'web'`                 | CHECK `in ('web','email')`                                                                                                                                                                                                                              |
+| `email_from` · `email_from_name` | `text`                                  | 발신자 주소 · 표시 이름                                                                                                                                                                                                                                 |
+| `email_message_id`               | `text`                                  | 원본 Message-ID. **부분 유니크**                                                                                                                                                                                                                        |
+| `email_auth`                     | `jsonb`                                 | 제공자의 `{ spf, dkim, dmarc }` 판정 그대로. **차단 근거가 아니라** 콘솔 뱃지용                                                                                                                                                                         |
+| `email_thread_key`               | `text`                                  | `reply+<key>@` 토큰(24자 url-safe). 부분 유니크 · 화면에 노출하지 않습니다                                                                                                                                                                              |
+| `assigned_to` · `assigned_at`    | `uuid` → `profiles(id)` · `timestamptz` | 담당 운영자. `on delete set null` — 퇴사해도 문의 이력은 남습니다                                                                                                                                                                                       |
+| `editing_by` · `editing_at`      | `uuid` → `profiles(id)` · `timestamptz` | 작성 중 소프트 락과 하트비트 시각. 5분보다 오래되면 만료로 봅니다(§5.9)                                                                                                                                                                                 |
+| `created_at` · `updated_at`      | `timestamptz`                           | `set_inquiry_updated_at` 트리거가 UPDATE 마다 `updated_at` 을 밀어 올립니다. **예외는 잠금 하트비트** — `editing_by`·`editing_at` 만 달라진 UPDATE 는 수정 시각을 건드리지 않습니다(그러지 않으면 "누가 보고 있다"는 이유만으로 목록 정렬이 흔들립니다) |
 
-인덱스: `inquiries_user_created_idx(user_id, created_at desc)` · `inquiries_status_created_idx` · `inquiries_source_status_created_idx` · `inquiries_email_from_created_idx` · `inquiries_email_message_id_key` · `inquiries_email_thread_key_key`(둘 다 부분 유니크).
+인덱스: `inquiries_user_created_idx(user_id, created_at desc)` · `inquiries_status_created_idx` · `inquiries_source_status_created_idx` · `inquiries_email_from_created_idx` · `inquiries_email_message_id_key` · `inquiries_email_thread_key_key`(둘 다 부분 유니크) · `inquiries_inquiry_no_key`(유니크) · `inquiries_assigned_to_idx`(담당자 있음) · `inquiries_unassigned_idx`(담당자 없음 — 반대쪽은 부분 인덱스가 덮지 못합니다).
+
+### 4.1.1 `inquiry_notes` — 운영자 전용 내부 메모
+
+| 열                         | 메모                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `inquiry_id`               | → `inquiries(id)` `on delete cascade`                                                                  |
+| `author_id`                | → `profiles(id)` `on delete set null`. null 이 되면 **아무도 그 메모를 지울 수 없습니다**(본인만 삭제) |
+| `author_nickname_snapshot` | 작성 시점의 닉네임. 계정이 사라져도 "누구의 판단인지"는 남아야 합니다                                  |
+| `body`                     | 평문 CHECK `1~2000자`(답변 상한과 같은 숫자)                                                           |
+| `created_at`               | 최신순 정렬 · `inquiry_notes_inquiry_created_idx(inquiry_id, created_at desc)`                         |
+
+**메모를 `inquiries` 의 열로 두지 않은 이유**: 그 테이블은 소유자에게 행이 열려 있어(`inquiries_select_own`) 열을 더하는 순간 사용자 쪽 select 한 줄이면 새어 나갑니다. 별도 테이블 + 관리자 전용 정책이면 **읽을 수 있는 경로 자체가 없습니다**(anon 은 권한도 회수).
 
 ### 4.2 `inquiry_replies`
 
@@ -318,31 +343,37 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 
 시드는 `docs/1on1.md` 의 **8종**(`connection · character · save-data · currency · content-balance · account-environment · feature-ui · etc`)이고 `on conflict (key) do nothing` 입니다. `etc`('기타·건의')만 `subtypes` 가 비어 있어 폼이 셀렉트를 잠그고 `기타` 로 접수합니다.
 
-### 4.4 RPC 넷
+### 4.4 RPC 일곱
 
-| 함수                                                                                                             | 보안                                                 | 하는 일                                                                                                                           |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `update_inquiry_category(p_id, p_key, p_label, p_description, p_prefill, p_sort_order, p_is_active, p_subtypes)` | `SECURITY INVOKER` + 함수 안에서 `is_admin()` 재확인 | 카테고리 수정 **+ 라벨 변경 시 과거 문의 재라벨링**을 **한 트랜잭션**으로. 반환은 옮긴 문의 수. `p_subtypes` 가 null 이면 빈 배열 |
-| `inquiry_category_usage()`                                                                                       | `SECURITY INVOKER` · stable                          | 라벨별 문의 수. 삭제 가능 여부(0건일 때만)와 **목록 필터의 옛 라벨**                                                              |
-| `inquiry_type_usage()`                                                                                           | 동일                                                 | 유형별 문의 수. 옛 값('문의'·'신고'·'제안'·`general`)을 필터에서 잃지 않기 위해                                                   |
-| `stale_inquiry_pending_attachments(p_cutoff_hours, p_limit)`                                                     | `SECURITY DEFINER` · 실행 `service_role` 만          | 24시간 지난 `<uid>/pending/…` 경로 목록(§3.3)                                                                                     |
+| 함수                                                                                                                      | 보안                                                 | 하는 일                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `update_inquiry_category(p_id, p_key, p_label, p_description, p_prefill, p_sort_order, p_is_active, p_subtypes)`          | `SECURITY INVOKER` + 함수 안에서 `is_admin()` 재확인 | 카테고리 수정 **+ 라벨 변경 시 과거 문의 재라벨링**을 **한 트랜잭션**으로. 반환은 옮긴 문의 수. `p_subtypes` 가 null 이면 빈 배열 |
+| `inquiry_category_usage()`                                                                                                | `SECURITY INVOKER` · stable                          | 라벨별 문의 수. 삭제 가능 여부(0건일 때만)와 **목록 필터의 옛 라벨**                                                              |
+| `inquiry_type_usage()`                                                                                                    | 동일                                                 | 유형별 문의 수. 옛 값('문의'·'신고'·'제안'·`general`)을 필터에서 잃지 않기 위해                                                   |
+| `stale_inquiry_pending_attachments(p_cutoff_hours, p_limit)`                                                              | `SECURITY DEFINER` · 실행 `service_role` 만          | 24시간 지난 `<uid>/pending/…` 경로 목록(§3.3)                                                                                     |
+| `claim_inquiry_edit(p_inquiry_id, p_force)`                                                                               | `SECURITY DEFINER` + 첫 줄 `is_admin()`              | 작성 중 잠금을 잡거나 갱신(하트비트). 5분 넘게 끊긴 잠금은 만료, `p_force` 면 살아 있는 잠금도 가로챕니다(§5.9)                   |
+| `release_inquiry_edit(p_inquiry_id)`                                                                                      | 동일                                                 | **내가 쥔** 잠금만 풉니다 — 남의 것을 풀 수 있으면 가로채기가 감사 로그 없이 우회됩니다                                           |
+| `add_inquiry_reply(p_inquiry_id, p_content, p_author_name, p_expected_reply_count, p_expected_status, p_delivery_status)` | `SECURITY INVOKER` + 첫 줄 `is_admin()`              | 답변 INSERT **+ 충돌 감지**를 한 트랜잭션으로. 기대값이 지금 DB 와 다르면 `{"ok":false,"code":"conflict"}`(§5.9)                  |
 
 `update_inquiry_category()` 는 RLS 만 믿지 않고 **함수가 스스로 `is_admin()` 을 다시 봅니다.** RLS 에만 기대면 비관리자가 불렀을 때 "0건 갱신"이 조용히 성공으로 돌아옵니다. 사용 통계 둘은 반대로 `INVOKER` 라서 일반 사용자가 부르면 **자기 문의만** 세어집니다.
 
 ### 4.5 RLS 요약
 
-| 테이블                 | 정책                               | 대상                     | 조건                                                                                          |
-| ---------------------- | ---------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------- |
-| `inquiries`            | `inquiries_select_own`             | authenticated            | `user_id = auth.uid()`                                                                        |
-| `inquiries`            | `inquiries_select_admin`           | authenticated            | `is_admin()`                                                                                  |
-| `inquiries`            | `inquiries_insert_own`             | authenticated            | `user_id = auth.uid()` **and** `status='pending'` **and** `not is_withdrawn()`                |
-| `inquiries`            | `inquiries_update_own`             | authenticated            | `using` 본인 **and** `not is_withdrawn()` · `with check` 본인. 어떤 열을 언제는 가드 트리거가 |
-| `inquiries`            | `inquiries_admin_all`              | authenticated            | `is_admin()`                                                                                  |
-| `inquiry_replies`      | `inquiry_replies_select_owner`     | authenticated            | 그 문의의 `user_id` 가 나                                                                     |
-| `inquiry_replies`      | `inquiry_replies_admin_all`        | authenticated            | `is_admin()`                                                                                  |
-| `inquiry_categories`   | `inquiry_categories_select_active` | **anon** + authenticated | `is_active` — 비로그인 방문자도 폼에서 카테고리를 봐야 합니다(제출만 로그인)                  |
-| `inquiry_categories`   | `inquiry_categories_admin_all`     | authenticated            | `is_admin()` — 비활성 행까지 보이는 근거                                                      |
-| `email_inbound_events` | —                                  | service_role             | anon · authenticated 권한을 **회수**했습니다                                                  |
+| 테이블                 | 정책                               | 대상                     | 조건                                                                                              |
+| ---------------------- | ---------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| `inquiries`            | `inquiries_select_own`             | authenticated            | `user_id = auth.uid()`                                                                            |
+| `inquiries`            | `inquiries_select_admin`           | authenticated            | `is_admin()`                                                                                      |
+| `inquiries`            | `inquiries_insert_own`             | authenticated            | `user_id = auth.uid()` **and** `status='pending'` **and** `not is_withdrawn()`                    |
+| `inquiries`            | `inquiries_update_own`             | authenticated            | `using` 본인 **and** `not is_withdrawn()` · `with check` 본인. 어떤 열을 언제는 가드 트리거가     |
+| `inquiries`            | `inquiries_admin_all`              | authenticated            | `is_admin()`                                                                                      |
+| `inquiry_replies`      | `inquiry_replies_select_owner`     | authenticated            | 그 문의의 `user_id` 가 나                                                                         |
+| `inquiry_replies`      | `inquiry_replies_admin_all`        | authenticated            | `is_admin()`                                                                                      |
+| `inquiry_notes`        | `inquiry_notes_select_admin`       | authenticated            | `is_admin()` — 사용자에게는 **행이 하나도 보이지 않습니다**                                       |
+| `inquiry_notes`        | `inquiry_notes_insert_admin`       | authenticated            | `is_admin()` **and** `author_id = auth.uid()` — 남의 이름으로 메모를 남길 수 없습니다             |
+| `inquiry_notes`        | `inquiry_notes_delete_own`         | authenticated            | `is_admin()` **and** `author_id = auth.uid()`. UPDATE 정책은 **없습니다**(메모는 고치지 않습니다) |
+| `inquiry_categories`   | `inquiry_categories_select_active` | **anon** + authenticated | `is_active` — 비로그인 방문자도 폼에서 카테고리를 봐야 합니다(제출만 로그인)                      |
+| `inquiry_categories`   | `inquiry_categories_admin_all`     | authenticated            | `is_admin()` — 비활성 행까지 보이는 근거                                                          |
+| `email_inbound_events` | —                                  | service_role             | anon · authenticated 권한을 **회수**했습니다                                                      |
 
 `anon` 에게는 `inquiries` 의 어떤 행도 열지 않습니다. 테이블 권한(`grant`)도 정책과 **함께** 명시합니다 — 기본 권한이 조여지는 순간 "정책은 있는데 42501" 이 됩니다.
 
@@ -355,7 +386,7 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 3. 상태 변경은 **취소 전이 하나만** — `old.status in ('pending','in_progress')` · `new.status='closed'` · `old.cancelled_at is null` · `new.cancelled_at is not null`.
 4. `cancelled_at` 을 그 전이 밖에서 건드리면(취소 해제, 상태 없이 따로 찍기) 예외.
 5. 본문(제목·카테고리·유형·계정 ID·내용·첨부) 변경은 `old.status='pending'` 이고 미취소일 때만.
-6. `answered_at` · `contact_email` · `privacy_consent` 는 **조용히 되돌립니다** — 사용자가 보낼 이유가 없는 값이라 정상 흐름을 예외로 끊을 이유가 없습니다.
+6. `answered_at` · `contact_email` · `privacy_consent` · **`assigned_to` · `assigned_at` · `editing_by` · `editing_at` · `inquiry_no`** 는 **조용히 되돌립니다** — 사용자가 보낼 이유가 없는 값이라 정상 흐름을 예외로 끊을 이유가 없습니다. 협업 열은 `20260911000300`, 접수번호는 `20260911000400` 이 더했습니다(접수번호는 `generated always` 라 Postgres 가 먼저 거절하고, 가드의 한 줄은 "사용자가 건드릴 수 없는 열"을 한곳에서 읽히게 하는 몫입니다).
 
 거절을 "조용한 되돌리기"로 하면 사용자에게는 **저장됨**으로 보이고 값만 옛것으로 남습니다. 그래서 사용자 입력 계열은 `42501` 예외로 끊습니다.
 
@@ -416,23 +447,29 @@ stateDiagram-v2
 
 `/inquiries` 는 `dynamic = 'force-dynamic'` 입니다. 사이드바의 **1:1 문의**(`?source=web`) · **이메일 문의**(`?source=email`)는 같은 화면의 **필터 프리셋**이고 제목·설명이 프리셋마다 다릅니다.
 
-| 필터     | 쿼리 키       | 규칙                                                                                                                                  |
-| -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 상태 탭  | `status`      | `open`(기본) · `pending` · `in_progress` · `answered` · `closed` · `cancelled` · `all`. 탭 건수는 상태 외 조건을 그대로 적용해 셉니다 |
-| 출처     | `source`      | `web` · `email`. 모르는 값은 필터를 걸지 않습니다                                                                                     |
-| 카테고리 | `category`    | 등록된 라벨(비활성 포함) + **데이터에만 남은 옛 라벨**. 빈 값·20자 초과면 전체                                                        |
-| 유형     | `type`        | 카테고리를 고르면 **그 카테고리의 세부 유형만**(GET 폼이라 왕복이 곧 갱신). 옛 값은 언제나 뒤에. 상한 30자                            |
-| 등록일   | `from` · `to` | `YYYY-MM-DD`(KST) → UTC 경계로 환산, **종료일은 그날 24시까지** 포함                                                                  |
-| 검색     | `q`           | 제목 · 내용 · 계정 ID · 발신자 주소 `ilike`. 60자. PostgREST `or()` 문법 문자와 LIKE 와일드카드(`, ( ) % _ * \ " '`)를 지웁니다       |
+| 필터     | 쿼리 키       | 규칙                                                                                                                                                       |
+| -------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 상태 탭  | `status`      | `open`(기본) · `pending` · `in_progress` · `answered` · `closed` · `cancelled` · `all`. 탭 건수는 상태 외 조건을 그대로 적용해 셉니다                      |
+| 출처     | `source`      | `web` · `email`. **선택 상자는 없습니다** — 사이드바의 두 메뉴가 이 값을 정하고, 조건을 바꿔도 잃지 않도록 폼이 숨은 값으로 나릅니다(2026-09-11 오너 결정) |
+| 카테고리 | `category`    | 등록된 라벨(비활성 포함) + **데이터에만 남은 옛 라벨**. 빈 값·20자 초과면 전체                                                                             |
+| 유형     | `type`        | 카테고리를 고르면 **그 카테고리의 세부 유형만**(GET 폼이라 왕복이 곧 갱신). 옛 값은 언제나 뒤에. 상한 30자                                                 |
+| 등록일   | `from` · `to` | `YYYY-MM-DD`(KST) → UTC 경계로 환산, **종료일은 그날 24시까지** 포함                                                                                       |
+| 검색     | `q`           | 제목 · 내용 · 계정 ID · 발신자 주소 `ilike` **+ 접수번호 정확 일치**. 60자. PostgREST `or()` 문법 문자와 LIKE 와일드카드(`, ( ) % _ * \ " '`)를 지웁니다   |
+| 담당자   | `assignee`    | `me`(내 담당) · `none`(미배정) · `<관리자 uuid>`. 모르는 값은 필터를 걸지 않습니다(= 전체)                                                                 |
 
 - 이메일 프리셋에서는 **'접수 취소' 탭과 카테고리·유형 필터가 사라집니다**.
-- 목록 열: 제목 · 출처 · 계정(마스킹, 이메일이면 발신자 주소) · 카테고리·유형 · 상태 · 답변 수 · 등록일 · 업데이트. 정렬 키 `created_at · updated_at · status · title`, **2차 키 `id`** 로 안정 정렬, 한 페이지 20건.
+- **출처 칸도 출처 선택 상자도 없습니다**(2026-09-11 오너 결정 — "1:1 문의와 이메일 문의는 메뉴가 이미 분리돼 있어 출처는 필요 없다"). 메뉴가 갈라 놓은 값을 행마다 반복하면 같은 뱃지가 스무 줄 늘어설 뿐이고, 지금 어느 묶음을 보는지는 화면 제목이 말해 줍니다. `source` 파라미터와 조회 조건은 그대로 남습니다 — 두 메뉴가 그것으로 동작합니다. 회원 상세의 '1:1 문의' 탭에서도 같은 이유로 뺐습니다.
+- 목록 열: **접수번호** · 제목 · 계정(마스킹, 이메일이면 발신자 주소) · 카테고리·유형 · **담당자** · 상태 · 답변 수 · 등록일 · 업데이트. 정렬 키 `created_at · updated_at · status · title`, **2차 키 `id`** 로 안정 정렬, 한 페이지 20건.
+- **접수번호로 찾기** — 검색어가 `1024` 또는 `#1024` 면 기존 ilike 조건에 `inquiry_no.eq.1024` 를 `or` 로 더합니다(제목에 그 숫자가 든 문의도 함께 나옵니다). 파싱은 `lib/validation/inquiry-no-search.ts`.
+- 칸마다 **최소 폭**을 줍니다. `w-*` 만으로는 표가 좁아질 때 브라우저가 '카테고리 · 유형'을 한 글자씩 세로로 쌓습니다 — 넘치면 표가 가로로 스크롤합니다.
 - 본문(`content`)은 목록에서 읽지 않습니다. 조회가 깨지면 `hasError` 로 배너를 세웁니다.
 - 탈퇴로 `user_id` 가 끊긴 문의도 사라지지 않습니다(`(탈퇴한 회원)`).
 
 ### 5.3 상세
 
-- **문의 정보** — 작성자(회원 상세 링크) · **계정 ID 마스킹** · 연락 이메일 · 카테고리·유형 · 접수일 · 최근 업데이트 · 첫 답변 · 접수 취소.
+- 헤더에 **접수번호**(`#1024`)를 제목 아래 첫 항목으로 적습니다 — 사용자가 전화·메일로 부르는 값입니다. 이메일 문의면 그 뒤에 발신자 주소가 붙습니다(**'이메일' 이라는 출처 라벨은 붙이지 않습니다** — 이미 이메일 문의 메뉴에서 열었습니다).
+- **문의 정보** — 접수번호 · 작성자(회원 상세 링크) · **계정 ID 마스킹** · 연락 이메일 · 카테고리·유형 · 접수일 · 최근 업데이트 · 첫 답변 · 접수 취소.
+- 카드 순서는 **담당자 → 문의 정보 → 문의 내용 → 스레드 → 내부 메모 → 답변 작성**입니다. 담당자를 맨 위에 두는 이유는 §5.9.
 - **이메일이면** 항목 자체가 다릅니다 — From · 원본 Message-ID · 카테고리·유형 · 수신 시각 · **SPF·DKIM·DMARC 뱃지** · 최근 업데이트. **작성자 링크와 계정 ID 는 일부러 없습니다**(발신자를 회원으로 확정해 버리는 것을 막습니다).
 - 문의 내용은 평문 `whitespace-pre-line`. 첨부는 이미지 = 썸네일 → 다이얼로그, 영상 = 인라인 재생, 그 밖 = `download` 링크.
 - 스레드는 웹 "답변 N건" / 이메일 "스레드 N건".
@@ -480,14 +517,16 @@ stateDiagram-v2
 | `sort_order`  | 묶음 안에서의 순서. ▲▼ + '순서 저장'(묶음마다 따로 있습니다 — 한 화면에 저장 버튼이 하나면 어느 묶음을 저장하는지 알 수 없습니다)  |
 | `is_active`   | 끄면 답변 화면의 선택 상자에서 사라집니다. 행과 문안은 그대로 남습니다                                                             |
 
+2026-09-11 이전에는 `{{문의번호}}` 가 **문의 ID 앞 8자리**(`ABCD1234`)였습니다. 그 값은 사용자 화면 어디에도 없어서 "그 번호는 어디서 보나요"라는 되물음을 낳았고, `inquiries.inquiry_no` 가 생기면서 같은 번호로 통일했습니다.
+
 **자리표시자는 불러오는 그 순간 치환됩니다**(`admin/lib/utils/inquiry-reply-template.ts`). 저장되는 답변에는 `{{…}}` 가 남지 않습니다 — 남으면 사용자 화면에 그대로 노출됩니다.
 
-| 자리표시자     | 값                                                           |
-| -------------- | ------------------------------------------------------------ |
-| `{{닉네임}}`   | 문의한 회원의 닉네임(이메일 문의는 발신자 이름). 비면 `고객` |
-| `{{문의번호}}` | 문의 ID 앞 8자리(대문자). 사용자가 대조하는 접수번호         |
-| `{{카테고리}}` | `inquiries.category`(라벨 문자열)                            |
-| `{{제목}}`     | 문의 제목                                                    |
+| 자리표시자     | 값                                                              |
+| -------------- | --------------------------------------------------------------- |
+| `{{닉네임}}`   | 문의한 회원의 닉네임(이메일 문의는 발신자 이름). 비면 `고객`    |
+| `{{문의번호}}` | **접수번호**(예: `#1024`). 사용자 화면·답신 메일 제목과 같은 값 |
+| `{{카테고리}}` | `inquiries.category`(라벨 문자열)                               |
+| `{{제목}}`     | 문의 제목                                                       |
 
 아는 이름만 바꿉니다 — `{{점검일}}` 처럼 모르는 표시는 **그대로 둡니다**(운영자가 손으로 채우려고 적어 둔 것일 수 있고, 조용히 지우면 빈칸인 채로 발송됩니다). 등록 화면은 예시 문의로 **치환된 뒤의 문장**을 미리 보여 줍니다.
 
@@ -500,10 +539,10 @@ stateDiagram-v2
 
 모듈 키는 `inquiries`(라벨 '1:1 문의') 하나입니다. 문의 목록·상세·답변과 **카테고리 관리 · 답변 템플릿이 같은 모듈**입니다. FAQ 만 하위 메뉴에 있으면서 별도 모듈(`faqs`)입니다.
 
-| 등급    | 되는 것                                                                                                |
-| ------- | ------------------------------------------------------------------------------------------------------ |
-| `read`  | 목록 · 상세 · 첨부 서명 URL · 카테고리 목록 · 답변 템플릿 목록 보기                                    |
-| `write` | + 상태 변경 · 종료 · 답변 등록 · 답신 다시 보내기 · 카테고리 CRUD · **답변 템플릿 CRUD** · 순서 · 토글 |
+| 등급    | 되는 것                                                                                                                                                         |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read`  | 목록 · 상세 · 첨부 서명 URL · 카테고리 목록 · 답변 템플릿 목록 보기                                                                                             |
+| `write` | + 상태 변경 · 종료 · 답변 등록 · 답신 다시 보내기 · 카테고리 CRUD · **답변 템플릿 CRUD** · 순서 · 토글 · **담당자 배정/해제 · 작성 잠금 · 내부 메모 작성/삭제** |
 
 | `action`                                                             | 대상                      | 남는 내용                                                               | 목록 표기                                    |
 | -------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------- | -------------------------------------------- |
@@ -511,6 +550,9 @@ stateDiagram-v2
 | `inquiry.reply`                                                      | `inquiry_replies`         | `after {inquiry_id, author_name, length}`                               | 1:1 문의 답변                                |
 | `inquiry.email.reply`                                                | `inquiry_replies`         | 동일(이메일 문의의 답신)                                                | 1:1 문의 이메일 답변                         |
 | `inquiry.email.resend`                                               | `inquiry_replies`         | `after {result}` = `sent\|queued\|not_configured\|unauthorized\|failed` | 1:1 문의 이메일 재발송                       |
+| `inquiry.assign` · `inquiry.unassign`                                | `inquiries`               | `before {assigned_to}` · `after {assigned_to, assignee_nickname}`       | 1:1 문의 담당자 배정 · 담당자 배정 해제      |
+| `inquiry.edit_lock`                                                  | `inquiries`               | `after {editing_by, forced:true}` — **가로챌 때만** 남깁니다            | 1:1 문의 작성 잠금 가로채기                  |
+| `inquiry_note.create` · `inquiry_note.delete`                        | `inquiry_notes`           | `after {inquiry_id, length}` — **본문은 남기지 않습니다**               | 문의 내부 메모 등록 · 삭제                   |
 | `inquiry_category.create` · `.update` · `.delete` · `.reorder`       | `inquiry_categories`      | 수정은 `before`/`after` 전체 + `relabelled_inquiries`                   | 문의 카테고리 등록 · 수정 · 삭제 · 순서 변경 |
 | `inquiry_reply_template.create` · `.update` · `.delete` · `.reorder` | `inquiry_reply_templates` | 수정·삭제는 `before`/`after` 전체(문안 포함) · 순서는 `after {ids}`     | 답변 템플릿 등록 · 수정 · 삭제 · 순서 변경   |
 
@@ -522,6 +564,79 @@ stateDiagram-v2
 - 실패 문구는 **지금 상태와 다음 행동**을 함께 적습니다 — `답신은 저장했지만 메일을 보내지 못했습니다. 스레드에서 다시 보내기를 눌러 주세요.`
 - 설정 전(제공자 미연동)은 **실패가 아니라 정상 상태**입니다 — 개발자 로그를 남기지 않고 `이메일 발송 설정이 아직 없습니다. 답신은 저장되었고, 설정 후 '다시 보내기'로 발송할 수 있습니다.` 한 문장을 답변 등록과 다시 보내기가 **함께** 씁니다.
 - 성공은 토스트, 필드 오류는 입력 아래, 그 밖은 폼 상단 배너. 답변 등록에 성공하면 폼을 **직접 비웁니다** — `revalidatePath` 로 스레드는 갱신되지만 입력값은 클라이언트 상태라 그대로 남습니다.
+
+### 5.9 협업 — 담당자 · 작성 중 잠금 · 저장 충돌 · 내부 메모
+
+> 운영자가 여러 명이면 같은 문의에 두 사람이 동시에 답을 씁니다. 사용자 화면에는 비슷한 답변이 두 번 붙고, 나중 것이 앞의 판단을 뒤집기도 합니다. 2026-09-11 의 네 장치는 그 혼선을 **단계별로** 막습니다 — 앞의 것이 뚫려도 뒤의 것이 남습니다.
+
+| 단계                | 무엇을 하나                                        | 뚫리는 경우                                 |
+| ------------------- | -------------------------------------------------- | ------------------------------------------- |
+| ① 담당자 배정       | "이 문의는 내가 맡는다"를 목록·상세에 보입니다     | 배정을 안 하고 그냥 답할 수 있습니다        |
+| ② 작성 중 소프트 락 | 답변 폼을 열면 잠그고, 남에게는 배너 + 폼 잠금     | "그래도 이어서 작성"으로 가로챌 수 있습니다 |
+| ③ 저장 시 충돌 감지 | 화면을 연 시점과 지금 DB 가 다르면 **저장을 거절** | (마지막 방어선입니다)                       |
+| ④ 내부 메모         | "왜 이렇게 판단했는지"를 다음 사람에게 남깁니다    | —                                           |
+
+같은 날 목록에서 **출처 칸과 출처 선택 상자를 걷어냈습니다**(오너 결정). 사이드바가 '1:1 문의'와 '이메일 문의'를 이미 갈라 두었는데 행마다 같은 뱃지를 반복하면, 새로 붙은 **담당자·접수번호 칸이 들어설 자리만 잃습니다**. `source` 조회 조건은 그대로입니다(§5.2).
+
+마이그레이션 `20260911000300_inquiry_assignment.sql` · 액션 `admin/lib/actions/inquiry-{assignment,lock,note}-actions.ts` · 화면 `admin/components/inquiries/Inquiry{AssignmentCard,AssignmentControls,AssigneeCell,AssigneeFilter,EditLockBanner,Notes,NoteDeleteButton}.tsx` · 훅 `use-inquiry-edit-lock.ts`
+
+#### 담당자 배정
+
+- 상세 맨 위 **담당자 카드** — `미배정` 뱃지 또는 담당자 닉네임 + 배정 시각. 버튼은 `나에게 배정` · `담당자 변경`(관리자 select) · `배정 해제`.
+- **확인 창은 남의 배정을 건드릴 때만** 세웁니다(§7.4: 모든 조작을 다이얼로그로 감싸면 확인이 의미를 잃습니다). 내가 맡거나 내 배정을 푸는 것은 곧바로 실행합니다.
+- **미배정 + `접수 대기` 문의를 맡으면 상태도 `처리 중`으로 갑니다.** 담당자가 생겼는데 '접수 대기'로 남으면 사용자 화면에는 아무도 보지 않는 것처럼 보이고, 운영자 큐에서도 계속 미처리로 눈에 띕니다. 전이는 상태 select 와 **같은 표**(`INQUIRY_STATUS_TRANSITIONS`)를 탑니다 — 새 상태를 만들지 않았습니다.
+- 상태 전이가 실패해도 **배정은 되돌리지 않습니다.** 담당자는 이미 정해졌고 그것이 이 조작의 목적입니다.
+- 대상이 관리자가 아니면 거절합니다(`관리자만 담당자로 지정할 수 있습니다.`) — select 에는 관리자만 있지만 직접 POST 가 있습니다.
+- 목록에는 **담당자 칸**과 `내 담당` · `미배정` · 특정 운영자 필터(`?assignee=`)가 붙습니다.
+
+#### 작성 중 소프트 락
+
+```mermaid
+sequenceDiagram
+    actor A as 운영자 A
+    actor B as 운영자 B
+    participant DB as claim_inquiry_edit()
+
+    A->>DB: 답변 폼 mount → claim
+    DB-->>A: ok (editing_by = A)
+    loop 60초마다
+        A->>DB: 하트비트 claim
+    end
+    B->>DB: 같은 문의 열기 → claim
+    DB-->>B: ok=false · editing_by=A · editing_at
+    Note over B: 배너 "A 관리자가 답변을 작성하고 있습니다 (n분 전 활동)"<br/>답변 칸·등록 버튼 비활성
+    B->>DB: "그래도 이어서 작성" → claim(force)
+    DB-->>B: ok=true · taken_over=true → 감사 로그 inquiry.edit_lock
+```
+
+- **행을 진짜로 잠그지 않습니다.** 브라우저를 닫고 간 운영자 때문에 문의가 영영 열리지 않는 편이 더 나쁩니다. 하트비트가 **5분** 끊기면 만료로 봅니다(`INQUIRY_LOCK_TTL_MS` = DB 의 `interval '5 minutes'` 와 같은 숫자).
+- 갱신 주기는 **60초**(TTL 의 1/5 — 한 번 빠뜨려도 풀리지 않습니다), 상태 폴링은 **20초**.
+- 폼을 떠나면 `release_inquiry_edit()` 로 풉니다(언마운트 · `pagehide`). 탭을 닫는 경우는 **보장되지 않으므로** 진짜 안전망은 만료입니다.
+- **하트비트는 `updated_at` 을 밀지 않습니다.** `set_inquiry_updated_at()` 이 "잠금 열만 달라진 UPDATE"를 걸러 냅니다 — 그러지 않으면 누가 보고 있다는 이유만으로 목록의 '업데이트' 칸과 정렬이 흔들립니다.
+- 감사 로그는 **가로채기(`taken_over`)만** 남깁니다. 하트비트까지 적으면 1분에 한 줄씩 쌓여 로그가 못 쓰게 됩니다.
+- 목록에도 같은 잠금이 `✎ 작성 중 · 닉네임` 으로 보입니다. **만료 판정은 조회 계층(`lib/data/inquiry-refs.ts`)이 한 번만** 합니다 — 화면마다 다시 재면 목록과 상세가 다른 말을 합니다.
+
+#### 저장 시 충돌 감지
+
+- 답변 폼은 **화면에 그려진** 스레드 상태를 hidden 으로 함께 보냅니다(`expectedReplyCount` · `expectedStatus`). 폴링으로 알아낸 값으로 덮어쓰지 **않습니다** — 운영자가 읽지 않은 새 답변을 "봤다"고 서버에 말하는 셈이라 감지가 무력해집니다.
+- 저장은 `add_inquiry_reply()` RPC 한 번입니다. 앱에서 "확인 → INSERT" 로 두 번 왕복하면 그 사이에 상대의 INSERT 가 끼어들어 **둘 다 통과**합니다. 함수는 문의 행을 `for update` 로 잡고 비교한 뒤 넣습니다.
+- 다르면 `{"ok":false,"code":"conflict"}` → 화면 문구는 `다른 운영자가 먼저 처리했습니다. 최신 내용을 확인해 주세요.` 이고 `FormState.code = 'conflict'` 가 함께 옵니다.
+- **초안은 지우지 않습니다.** 스레드만 `router.refresh()` 로 새로 받습니다(서버 컴포넌트만 다시 그리므로 클라이언트 상태인 답변 초안은 그대로). 다시 쓰게 만들면 운영자는 두 번 다시 이 배너를 믿지 않습니다.
+- 폴링이 먼저 알아채면 저장 전에 알려 줍니다 — `다른 운영자가 이 문의를 처리했습니다…` + `최신 내용 보기`. 판정은 "다르다"가 아니라 **"앞서 있다"**(답변 수가 더 많거나 `updated_at` 이 더 늦다)입니다. 단순 비교로 두면 내가 방금 한 조작보다 폴링 응답이 늦게 도착했을 때 내 조작 때문에 경고가 뜹니다.
+- 상태 변경·종료 버튼도 같은 스냅샷을 실어 보내고, 액션이 DB 를 다시 읽어 비교합니다. 기대값이 없으면(옛 탭·직접 POST) **검사를 건너뜁니다** — 충돌 감지는 보안 경계가 아니라 협업 장치라, 모르는 호출자를 막는 것보다 저장을 잇는 편이 낫습니다.
+
+#### 내부 메모
+
+- 상세의 `내부 메모` 카드. 머리와 입력칸 **양쪽에** `운영자 전용 · 고객에게 보이지 않습니다` 를 적습니다 — 답변 폼과 생김새가 비슷해서 한 곳에만 적으면 사용자에게 보낼 말을 여기에 씁니다(그 반대도 마찬가지입니다).
+- 최신이 위입니다. 작성자 닉네임은 **작성 시점 스냅샷**이라 계정이 사라져도 남습니다.
+- **지우는 것은 남긴 사람만**(확인 창 한 단계). RLS 와 액션이 같은 규칙을 겹니다 — 정책만 믿으면 "0건 삭제"가 조용한 성공으로 보여 운영자가 이유를 알 수 없습니다.
+- 감사 로그에는 **본문을 남기지 않습니다**(`length` 만). 지운 메모의 사본이 로그에 남으면 지운 뜻이 사라집니다.
+
+#### 사용자에게 새는 곳이 없는가
+
+- `inquiry_notes` 는 관리자 전용 정책 + `anon` 권한 회수. 사용자 세션으로 읽으면 **빈 목록**입니다.
+- `assigned_to` · `editing_by` 는 `inquiries` 의 열이라 소유자 행에는 함께 붙어 있습니다. 사용자 사이트의 질의는 **열을 하나하나 적어** 읽으므로(`lib/data/inquiries.ts` 의 `INQUIRY_LIST_COLUMNS` · `INQUIRY_DETAIL_COLUMNS`) 화면에도 응답에도 나가지 않습니다. 열 단위 GRANT 로 막지 않은 이유는 관리자도 같은 `authenticated` 롤이라 한쪽만 닫을 수 없기 때문입니다 — **새 열을 추가할 때 사용자 쪽 select 목록을 함께 보세요.**
+- 사용자가 그 열을 직접 쓰려 해도 `guard_inquiry_owner_update()` 가 조용히 되돌립니다(§4.6).
 
 ---
 
@@ -546,6 +661,7 @@ stateDiagram-v2
 | 사이드바     | 고객지원 › 1:1 문의(`?source=web`)   | 고객지원 › 이메일 문의(`?source=email`) — **같은 라우트**                          |
 | 메타         | 작성자 링크 · 계정 ID · 연락 이메일  | From · 원본 Message-ID · **인증 뱃지 3종**. 작성자 링크·계정 ID **없음**           |
 | 목록 계정 칸 | 마스킹된 계정 ID                     | 발신자 주소 + 필요하면 '인증 실패' 뱃지                                            |
+| 목록 출처 칸 | **없음**(2026-09-11)                 | **없음** — 메뉴가 이미 갈라 두었습니다(`source` 파라미터는 그대로 씁니다)          |
 | 필터         | 카테고리 · 유형 · 접수 취소 탭       | 셋 다 **숨김**                                                                     |
 | 스레드       | "답변 N건" — 사용자 화면과 같은 순서 | "스레드 N건" — 받은 메일/보낸 답신 분리. **사용자 화면이 없어 여기가 유일한 기록** |
 | 답변         | `답변 등록`                          | `이메일로 답신 보내기` + 실패 시 **다시 보내기**                                   |
@@ -561,7 +677,7 @@ stateDiagram-v2
 
 ### 7.1 단위 테스트
 
-2026-09-11 실행 결과: **사용자 사이트 179개(17파일) · 관리자 119개(9파일) 통과**.
+2026-09-11(협업·접수번호 추가 뒤) 실행 결과: **사용자 사이트 1219개(119파일) · 관리자 817개(60파일) 전체 통과**. 아래는 문의와 직접 관련된 파일만 추린 것입니다.
 
 | 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                          |
 | ---------------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
@@ -586,6 +702,12 @@ stateDiagram-v2
 | `admin/tests/unit/inquiry-email-auth.test.ts`                                            | 6     | `parseEmailAuth` · `hasEmailAuthFailure`(`none`·null 은 실패가 아니다)                                   |
 | `admin/tests/unit/inquiry-reply-template-actions.test.ts`                                | 13    | 권한 가드 5종 · 공통=NULL 저장 · 23505/23503 문구 · 카테고리 이동 시 순서 재배치 · 감사 로그 · 부분 반영 |
 | `admin/tests/unit/inquiry-reply-templates-validation.test.ts`                            | 10    | 이름/본문 상한(= 답변 상한) · 경계값 · CRLF · 공통(빈 값) vs uuid · 정렬 입력                            |
+| `admin/tests/unit/inquiry-assignment-validation.test.ts`                                 | 17    | `?assignee=` 파싱(me·none·uuid·쓰레기 값) · 왕복 · 잠금 만료(5분) · "n분 전 활동"                        |
+| `admin/tests/unit/inquiry-assignment-actions.test.ts`                                    | 12    | 권한 가드 · 비관리자 배정 거절 · 미배정+대기 → 처리 중 · 해제는 상태 불변 · 잠금 감사 로그는 가로채기만  |
+| `admin/tests/unit/inquiry-conflict.test.ts`                                              | 9     | 스냅샷을 RPC 로 그대로 전달 · 모르는 상태는 null · `conflict` 문구와 `code` · 상태 변경의 충돌           |
+| `admin/tests/unit/inquiry-note-actions.test.ts`                                          | 8     | 권한 · 닉네임 스냅샷 · 감사 로그에 본문 없음 · 빈 값/2000자 · 남의 메모 삭제 거절                        |
+| `admin/tests/unit/inquiry-reply-conflict-draft.test.tsx`                                 | 6     | **충돌에도 초안 유지** · 스냅샷 전송 · 잠금 배너/폼 잠금 · 가로채기 후 해제 · 늦게 온 폴링에 속지 않기   |
+| `admin/tests/unit/inquiry-no.test.ts` · `tests/unit/utils/inquiry-no.test.ts`            | 7 · 3 | `#1024` 표기(두 앱이 같은 결과) · 검색어에서 접수번호 읽기(`1024` · `#1024` · 0·과대 자릿수 거절)        |
 | `admin/tests/unit/inquiry-reply-template-placeholders.test.ts`                           | 9     | 자리표시자 4종 치환 · 반복·공백 허용 · 모르는 표시 보존 · 빈 값 폴백 · 접수번호                          |
 | `admin/tests/unit/inquiry-reply-template-picker.test.tsx`                                | 7     | 빈 칸이면 바로 삽입 · 쓰던 글이 있으면 확인 창 · 끝에 추가 · 취소 · 선택 전 버튼 잠금                    |
 
@@ -599,25 +721,27 @@ cd admin && pnpm test -- tests/unit/inquir
 
 ### 7.2 E2E
 
-| 파일                                              | 건수 | 시나리오                                                                                                                                                                                                                   |
-| ------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/e2e/support-inquiries.spec.ts`             | 9    | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** |
-| `admin/tests/e2e/inquiries.spec.ts`               | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                        |
-| `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                           |
-| `admin/tests/e2e/inquiry-reply-templates.spec.ts` | 3    | 카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · **저장된 답변에 치환된 닉네임** / 삭제 후 선택지에서 사라짐                                                                       |
+| 파일                                              | 건수 | 시나리오                                                                                                                                                                                                                             |
+| ------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tests/e2e/support-inquiries.spec.ts`             | 9    | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생**           |
+| `admin/tests/e2e/inquiries.spec.ts`               | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                                  |
+| `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                                     |
+| `admin/tests/e2e/inquiry-reply-templates.spec.ts` | 3    | 카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · **저장된 답변에 치환된 닉네임** / 삭제 후 선택지에서 사라짐                                                                                 |
+| `admin/tests/e2e/inquiry-assignment.spec.ts`      | 3    | 미배정 필터 + 접수번호 검색 → 나에게 배정(상태도 처리 중) / **브라우저 컨텍스트 두 개** — 두 번째 운영자에게 "작성 중" 배너·폼 잠금, 가로채기 뒤 첫 운영자가 먼저 답하면 **저장 거절 + 초안 유지**(답변은 1건) / 내부 메모 작성·삭제 |
 
 1. **스텁 로그인** — 사용자 e2e 는 `/login?next=…` → `button[name="provider"][value="google"]` 클릭. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩(닉네임 · 월드 UID · 약관 3종)을 거치고, 데모 계정 폴백이면 곧장 목적지에 도착합니다.
 2. **관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.** `ADMIN_E2E_SECRETS`(기본값은 스크래치패드의 `admin-bootstrap.env`)를 실행 중에만 읽고, 서비스 롤은 `.env.local` 에서 읽어 픽스처·검증에만 씁니다.
 3. **두 앱을 함께 띄웁니다.** 사용자 3000 · 관리자 3100. 관리자 e2e 는 `CLIENT_E2E_URL`(기본 `http://localhost:3000`)을 봅니다 — `.env.local` 의 `NEXT_PUBLIC_CLIENT_SITE_URL` 은 배포본을 가리켜서 그대로 쓰면 방금 만든 데이터가 프로덕션 캐시에 막혀 보이지 않습니다.
 4. **필수 항목을 먼저 채웁니다.** 첨부·영상 시나리오도 `fillRequiredFields()` 를 먼저 부른 뒤에야 "첨부 때문에 잠겼는가"를 물어볼 수 있습니다.
 5. **영상 픽스처는 저장소에 넣지 않습니다.** `tests/e2e/video-fixture.ts` 가 스크래치패드에 만들어 씁니다.
+6. **협업 시나리오에는 운영자가 둘 필요합니다.** `inquiry-assignment.spec.ts` 는 부트스트랩 계정(`signInAsAdmin`)과 두 번째 관리자 계정(`signInAs(page, email, password)`)으로 각각 컨텍스트를 엽니다 — 한 세션으로는 "두 사람이 같은 문의를 본다"는 상황 자체가 만들어지지 않습니다.
 
 ```bash
 # 사용자 사이트(3000 자동 기동)
 pnpm test:e2e -- tests/e2e/support-inquiries.spec.ts
 
 # 관리자(3100 자동 기동 · 사용자 3000 이 먼저 떠 있어야 한다)
-cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categories.spec.ts tests/e2e/inquiry-reply-templates.spec.ts
+cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categories.spec.ts tests/e2e/inquiry-reply-templates.spec.ts tests/e2e/inquiry-assignment.spec.ts
 ```
 
 > **flaky 주의** — 카테고리 e2e 는 캐시 TTL 만큼 기다립니다. 사용자 폼의 카테고리는 `unstable_cache`(태그 `inquiry-categories` · **300초**)에 담기고 관리자는 다른 프로세스라 `revalidateTag()` 가 닿지 않습니다. 저장 뒤 `revalidateClient()` 가 `POST /api/revalidate` 를 두드리지만 그 호출이 끊겼을 때를 대비해 **6분(`CLIENT_CACHE_BUDGET_MS`)** 예산으로 폴링합니다 — 느린 것은 정상입니다. 사용자 e2e 는 `fullyParallel` 이고 매 실행이 새 계정을 만듭니다. 같은 계정을 공유하면 접수 쿨다운(30초)에 걸려 간헐 실패합니다. 관리자 e2e 가 `workers: 1` · `fullyParallel: false` 인 이유도 같습니다 — 상태 전이 시나리오가 서로를 밟습니다.
@@ -642,7 +766,9 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 8. **새 감사 영역을 만들면 라벨 두 줄을 함께 넣으세요** — `DOMAIN_LABELS` · `TABLE_LABELS`(§5.7). 빠뜨리면 감사 목록에 영문 원문이 남습니다.
 9. **순서 저장은 부분 반영될 수 있습니다.** 행마다 UPDATE 라 중간에 실패하면 앞쪽 몇 건은 이미 저장돼 있습니다.
 10. **프리필을 고칠 때 "세부 문의 유형" 목록을 본문에 다시 넣지 마세요.** 셀렉트가 이미 같은 것을 묻습니다 — 두 곳에 두면 어긋난 문의가 들어옵니다(`20260910000800` 이 그 블록만 도려낸 이유).
-11. **새 환경을 만들 때** — 마이그레이션 9개 적용 → 시드 8종 확인 → 버킷 MIME·크기 확인 → `SUPABASE_SERVICE_ROLE_KEY`(영상 확정용) → 사용자 사이트 `REVALIDATE_SECRET`/`CLIENT_SITE_URL`(카테고리 무효화) → `supabase functions deploy purge-withdrawn`.
+11. **접수번호는 되돌리지 않습니다.** `generated always as identity` 라 값을 지정할 수 없고, 삭제·취소로 생긴 빈 번호는 다시 쓰지 않습니다. 새 환경의 시작 번호는 백필 뒤 `max+1`(빈 DB 면 **1001**)입니다.
+12. **답변 스레드 열을 하나라도 더할 때는 사용자 사이트의 select 목록을 함께 보세요.** 담당자·작성 중 잠금은 `inquiries` 의 열이라 소유자 행에 붙어 있고, 새어 나가지 않는 근거는 "클라이언트가 열을 하나하나 적어 읽는다"는 것뿐입니다(§5.9).
+13. **새 환경을 만들 때** — 마이그레이션 11개 적용 → 시드 8종 확인 → 버킷 MIME·크기 확인 → `SUPABASE_SERVICE_ROLE_KEY`(영상 확정용) → 사용자 사이트 `REVALIDATE_SECRET`/`CLIENT_SITE_URL`(카테고리 무효화) → `supabase functions deploy purge-withdrawn`.
 
 ---
 
@@ -650,20 +776,23 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 
 ### DB
 
-| 경로                                                                   | 역할                                                                                                          |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `supabase/migrations/20260908000400_support.sql`                       | `inquiries` · `inquiry_replies` · `faqs` 생성                                                                 |
-| `supabase/migrations/20260908000700_rls_policies.sql`                  | 문의·답변 RLS 5+2 정책                                                                                        |
-| `supabase/migrations/20260908000800_storage_buckets.sql`               | `inquiry-attachments` 버킷과 스토리지 정책                                                                    |
-| `supabase/migrations/20260908001900_inquiries_owner_edit_cancel.sql`   | `cancelled_at` · `inquiries_update_own` · `guard_inquiry_owner_update()` · 첨부 삭제 정책                     |
-| `supabase/migrations/20260909000300_email_inquiries.sql`               | `source`/`email_*`/`direction`/`delivery_status` · `email_inbound_events` · 버킷 MIME 확장                    |
-| `supabase/migrations/20260909000400_account_withdrawal.sql`            | 문의 INSERT·UPDATE 정책에 `not is_withdrawn()` 추가                                                           |
-| `supabase/migrations/20260910000400_inquiry_categories.sql`            | `inquiry_categories` · RLS · 시드 8종                                                                         |
-| `supabase/migrations/20260910000500_inquiry_category_admin.sql`        | `inquiry_category_usage()` · `update_inquiry_category()`(7 인자)                                              |
-| `supabase/migrations/20260910000600_inquiry_video_attachments.sql`     | 영상 MIME · `stale_inquiry_pending_attachments()`                                                             |
-| `supabase/migrations/20260910000700_inquiry_category_subtypes.sql`     | `subtypes` · `inquiry_subtypes_valid()` · 시드 · `update_inquiry_category()`(8 인자) · `inquiry_type_usage()` |
-| `supabase/migrations/20260910000800_inquiry_prefill_subtype_block.sql` | 운영자가 손댄 프리필에서 "세부 문의 유형" 블록만 제거                                                         |
-| `supabase/migrations/20260910000900_inquiry_account_id_required.sql`   | `inquiries_account_id_length`(≤ 40) · 주석 갱신                                                               |
+| 경로                                                                   | 역할                                                                                                                                       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `supabase/migrations/20260908000400_support.sql`                       | `inquiries` · `inquiry_replies` · `faqs` 생성                                                                                              |
+| `supabase/migrations/20260908000700_rls_policies.sql`                  | 문의·답변 RLS 5+2 정책                                                                                                                     |
+| `supabase/migrations/20260908000800_storage_buckets.sql`               | `inquiry-attachments` 버킷과 스토리지 정책                                                                                                 |
+| `supabase/migrations/20260908001900_inquiries_owner_edit_cancel.sql`   | `cancelled_at` · `inquiries_update_own` · `guard_inquiry_owner_update()` · 첨부 삭제 정책                                                  |
+| `supabase/migrations/20260909000300_email_inquiries.sql`               | `source`/`email_*`/`direction`/`delivery_status` · `email_inbound_events` · 버킷 MIME 확장                                                 |
+| `supabase/migrations/20260909000400_account_withdrawal.sql`            | 문의 INSERT·UPDATE 정책에 `not is_withdrawn()` 추가                                                                                        |
+| `supabase/migrations/20260910000400_inquiry_categories.sql`            | `inquiry_categories` · RLS · 시드 8종                                                                                                      |
+| `supabase/migrations/20260910000500_inquiry_category_admin.sql`        | `inquiry_category_usage()` · `update_inquiry_category()`(7 인자)                                                                           |
+| `supabase/migrations/20260910000600_inquiry_video_attachments.sql`     | 영상 MIME · `stale_inquiry_pending_attachments()`                                                                                          |
+| `supabase/migrations/20260910000700_inquiry_category_subtypes.sql`     | `subtypes` · `inquiry_subtypes_valid()` · 시드 · `update_inquiry_category()`(8 인자) · `inquiry_type_usage()`                              |
+| `supabase/migrations/20260910000800_inquiry_prefill_subtype_block.sql` | 운영자가 손댄 프리필에서 "세부 문의 유형" 블록만 제거                                                                                      |
+| `supabase/migrations/20260910000900_inquiry_account_id_required.sql`   | `inquiries_account_id_length`(≤ 40) · 주석 갱신                                                                                            |
+| `supabase/migrations/20260911000200_inquiry_reply_templates.sql`       | 답변 템플릿 테이블 · RLS · 시드 6종                                                                                                        |
+| `supabase/migrations/20260911000300_inquiry_assignment.sql`            | 담당자 · 작성 중 잠금 · `inquiry_notes` · `claim/release_inquiry_edit()` · `add_inquiry_reply()` · 잠금은 `updated_at` 을 밀지 않는 트리거 |
+| `supabase/migrations/20260911000400_inquiry_no.sql`                    | **접수번호** `inquiry_no`(백필 → `generated always as identity` · 유니크) · 소유자 가드에 열 고정                                          |
 
 ### 사용자 사이트
 
@@ -696,34 +825,44 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `lib/supabase/upload-inquiry-video.ts`                                                              | 서명 업로드 URL + XHR PUT · 진행률 · 취소 · 조각 삭제        |
 | `lib/utils/inquiry-prefill.ts` · `inquiry-subtypes.ts` · `inquiry-permissions.ts`                   | 프리필 · 세부 유형 · 소유자 동작 판정(순수 함수)             |
 | `lib/utils/downscale-image.ts` · `mask.ts`                                                          | 업로드 전 축소 · 계정 ID 마스킹                              |
+| `lib/utils/inquiry-no.ts`                                                                           | 접수번호 표기 `#1024`(관리자 콘솔에 같은 내용의 사본)        |
 | `lib/constants/support.ts`                                                                          | 메뉴 · 상태 라벨 · 안내 문구 · 폴백 카테고리 · 파라미터 이름 |
 | `lib/actions/rate-limit.ts`                                                                         | 접수 30초 · 재수정 10초 쿨다운                               |
 
 ### 관리자 콘솔
 
-| 경로                                                                                                                                    | 역할                                                              |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `admin/app/(admin)/inquiries/page.tsx`                                                                                                  | 목록 · 출처 프리셋 · 필터 조립                                    |
-| `admin/app/(admin)/inquiries/[id]/page.tsx`                                                                                             | 상세 · 상태 · 답변 · 취소 잠금                                    |
-| `admin/app/(admin)/inquiries/categories/page.tsx`                                                                                       | 카테고리 관리 화면                                                |
-| `admin/components/inquiries/InquiryFilters.tsx` · `InquiryTable.tsx`                                                                    | 상태 탭 + GET 폼 · 목록 표                                        |
-| `admin/components/inquiries/InquiryMeta.tsx` · `InquiryEmailMeta.tsx`                                                                   | 웹 · 이메일 메타(인증 뱃지)                                       |
-| `admin/components/inquiries/InquiryAttachments.tsx`                                                                                     | 썸네일 · 다이얼로그 · 영상 재생 · 내려받기                        |
-| `admin/components/inquiries/InquiryReplyForm.tsx` · `InquiryReplyThread.tsx` · `InquiryEmailThreadItem.tsx` · `InquiryResendButton.tsx` | 답변 작성 · 스레드 · 다시 보내기                                  |
-| `admin/components/inquiries/InquiryStatusForm.tsx` · `InquiryCloseButton.tsx` · `InquiryStatusBadge.tsx`                                | 상태 변경 · 종료 · 뱃지                                           |
-| `admin/components/inquiry-categories/**`                                                                                                | 목록 · 등록/수정 다이얼로그 · 삭제 · 세부 유형 편집기             |
-| `admin/lib/actions/inquiries-actions.ts`                                                                                                | 상태 전이 · 답변 등록 · 메일 발송 위임                            |
-| `admin/lib/actions/inquiry-category-actions.ts`                                                                                         | 카테고리 CRUD · 토글 · 순서 · 무효화                              |
-| `admin/lib/actions/inquiry-email-actions.ts`                                                                                            | 답신 다시 보내기                                                  |
-| `admin/lib/data/inquiries.ts` · `inquiry-replies.ts` · `inquiry-attachments.ts` · `inquiry-email.ts`                                    | 목록·탭 카운트·상세 · 스레드 · 서명 URL · 인증 판정 해석          |
-| `admin/lib/data/inquiry-categories.ts`                                                                                                  | 카테고리 목록 · 사용 건수 · 필터 옵션(옛 값 포함)                 |
-| `admin/lib/validation/inquiries.ts`                                                                                                     | 상태 전이표 · 탭 · 필터 파싱 · 검색어 정제 · 마스킹 · 답변 스키마 |
-| `admin/lib/validation/inquiry-source.ts`                                                                                                | 출처 값·라벨 · `email`/`general` 표시 치환                        |
-| `admin/lib/validation/inquiry-categories.ts`                                                                                            | 카테고리 입력 계약 · `toCategoryKey()` · 세부 유형 규칙           |
-| `admin/lib/email/send-inquiry-reply.ts`                                                                                                 | `email-outbound` 호출 계약(응답 코드 → 문구)                      |
-| `admin/lib/revalidate.ts`                                                                                                               | `CLIENT_CACHE_TAGS.inquiryCategories` · `revalidateClient()`      |
-| `admin/lib/nav.ts` · `admin/lib/auth/permissions.ts`                                                                                    | 고객지원 메뉴(출처 프리셋) · `inquiries` 모듈                     |
-| `admin/components/audit/audit-labels.ts`                                                                                                | 감사 로그 영역·동작 라벨(§5.7)                                    |
+| 경로                                                                                                                                               | 역할                                                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `admin/app/(admin)/inquiries/page.tsx`                                                                                                             | 목록 · 출처 프리셋 · 필터 조립                                     |
+| `admin/app/(admin)/inquiries/[id]/page.tsx`                                                                                                        | 상세 · 상태 · 답변 · 취소 잠금                                     |
+| `admin/app/(admin)/inquiries/categories/page.tsx`                                                                                                  | 카테고리 관리 화면                                                 |
+| `admin/components/inquiries/InquiryFilters.tsx` · `InquiryTable.tsx`                                                                               | 상태 탭 + GET 폼 · 목록 표                                         |
+| `admin/components/inquiries/InquiryMeta.tsx` · `InquiryEmailMeta.tsx`                                                                              | 웹 · 이메일 메타(인증 뱃지)                                        |
+| `admin/components/inquiries/InquiryAttachments.tsx`                                                                                                | 썸네일 · 다이얼로그 · 영상 재생 · 내려받기                         |
+| `admin/components/inquiries/InquiryReplyForm.tsx` · `InquiryReplyThread.tsx` · `InquiryEmailThreadItem.tsx` · `InquiryResendButton.tsx`            | 답변 작성 · 스레드 · 다시 보내기                                   |
+| `admin/components/inquiries/InquiryStatusForm.tsx` · `InquiryCloseButton.tsx` · `InquiryStatusBadge.tsx`                                           | 상태 변경 · 종료 · 뱃지(상태 폼은 충돌 스냅샷도 실어 보냅니다)     |
+| `admin/components/inquiries/InquiryAssignmentCard.tsx` · `InquiryAssignmentControls.tsx` · `InquiryAssigneeCell.tsx` · `InquiryAssigneeFilter.tsx` | 담당자 카드 · 버튼/확인 의도 · 목록 담당자 칸 · 목록 필터          |
+| `admin/components/inquiries/use-inquiry-edit-lock.ts` · `InquiryEditLockBanner.tsx`                                                                | 잠금 claim/하트비트/폴링/해제 · "작성 중" · "앞선 스레드" 배너     |
+| `admin/components/inquiries/InquiryNotes.tsx` · `InquiryNoteDeleteButton.tsx`                                                                      | 내부 메모 목록·작성 · 삭제 확인                                    |
+| `admin/components/inquiry-categories/**`                                                                                                           | 목록 · 등록/수정 다이얼로그 · 삭제 · 세부 유형 편집기              |
+| `admin/lib/actions/inquiries-actions.ts`                                                                                                           | 상태 전이 · 답변 등록 · 메일 발송 위임                             |
+| `admin/lib/actions/inquiry-category-actions.ts`                                                                                                    | 카테고리 CRUD · 토글 · 순서 · 무효화                               |
+| `admin/lib/actions/inquiry-email-actions.ts`                                                                                                       | 답신 다시 보내기                                                   |
+| `admin/lib/actions/inquiry-shared.ts`                                                                                                              | 상태 전이·취소 가드·충돌 비교 — 답변과 배정이 **같은 표**를 보게   |
+| `admin/lib/actions/inquiry-assignment-actions.ts` · `inquiry-lock-actions.ts` · `inquiry-note-actions.ts`                                          | 배정/해제 · 잠금 claim·release·폴링 · 내부 메모 CRUD               |
+| `admin/lib/data/inquiries.ts` · `inquiry-replies.ts` · `inquiry-attachments.ts` · `inquiry-email.ts`                                               | 목록·탭 카운트·상세 · 스레드 · 서명 URL · 인증 판정 해석           |
+| `admin/lib/data/inquiry-detail.ts` · `inquiry-filters.ts` · `inquiry-refs.ts`                                                                      | 상세 조회 · 목록 필터 조립(담당자 포함) · 담당자/잠금 표시값 변환  |
+| `admin/lib/data/inquiry-assignment.ts`                                                                                                             | 내부 메모 조회 · 20초 폴링용 협업 상태                             |
+| `admin/lib/data/inquiry-categories.ts`                                                                                                             | 카테고리 목록 · 사용 건수 · 필터 옵션(옛 값 포함)                  |
+| `admin/lib/validation/inquiries.ts`                                                                                                                | 상태 전이표 · 탭 · 필터 파싱 · 검색어 정제 · 마스킹 · 답변 스키마  |
+| `admin/lib/validation/inquiry-assignment.ts`                                                                                                       | 담당자 필터 · 잠금 TTL/주기 · 충돌 문구 · 메모 스키마              |
+| `admin/lib/validation/inquiry-no-search.ts` · `admin/lib/utils/inquiry-no.ts`                                                                      | 검색어에서 접수번호 읽기 · `#1024` 표기(사용자 사이트와 같은 내용) |
+| `admin/lib/validation/inquiry-source.ts`                                                                                                           | 출처 값·라벨 · `email`/`general` 표시 치환                         |
+| `admin/lib/validation/inquiry-categories.ts`                                                                                                       | 카테고리 입력 계약 · `toCategoryKey()` · 세부 유형 규칙            |
+| `admin/lib/email/send-inquiry-reply.ts`                                                                                                            | `email-outbound` 호출 계약(응답 코드 → 문구)                       |
+| `admin/lib/revalidate.ts`                                                                                                                          | `CLIENT_CACHE_TAGS.inquiryCategories` · `revalidateClient()`       |
+| `admin/lib/nav.ts` · `admin/lib/auth/permissions.ts`                                                                                               | 고객지원 메뉴(출처 프리셋) · `inquiries` 모듈                      |
+| `admin/components/audit/audit-labels.ts`                                                                                                           | 감사 로그 영역·동작 라벨(§5.7)                                     |
 
 ### 이메일 · 배치 · 문서
 

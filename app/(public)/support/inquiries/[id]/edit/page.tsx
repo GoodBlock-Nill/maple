@@ -14,6 +14,7 @@ import {
 import { getMyInquiry } from '@/lib/data/inquiries'
 import { getInquiryCategories } from '@/lib/data/inquiry-categories'
 import { canEditInquiry } from '@/lib/utils/inquiry-permissions'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import { withLegacyCategory } from '@/lib/utils/inquiry-prefill'
 
 import type { Metadata } from 'next'
@@ -62,7 +63,9 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
     <PageShell variant="support" title={SUPPORT_TITLE}>
       <SupportCard
         activeHref={MY_INQUIRIES_PATH}
-        heading={INQUIRY_EDIT_HEADING}
+        /* 어떤 문의를 고치는 중인지 제목에서 바로 읽히게 한다 — 여러 건을 접수한
+           사용자가 목록·상세를 오가다 잘못된 글을 고치는 일을 막는다. */
+        heading={`${INQUIRY_EDIT_HEADING} ${formatInquiryNo(inquiry.inquiryNo)}`}
         description={INQUIRY_EDIT_DESCRIPTION}
       >
         <InquiryForm

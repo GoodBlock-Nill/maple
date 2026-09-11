@@ -13,12 +13,15 @@ import {
 } from '@/lib/constants/support'
 import { cn } from '@/lib/utils/cn'
 import { formatDateIso } from '@/lib/utils/format-date'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 
 import type { InquirySummary, ListResult } from '@/types/domain'
 
 /** 시안 실측 컬럼 폭(합계 850). */
 const COLUMNS = [
-  { key: 'no', label: '번호', width: 88 },
+  /* '번호'는 화면에서 센 순번이 아니라 **접수번호**다(2026-09-11). 순번을 적으면
+     '더보기'로 페이지가 늘어날 때마다 같은 문의가 다른 번호로 보인다. */
+  { key: 'no', label: '접수번호', width: 88 },
   { key: 'category', label: '문의 유형', width: 121 },
   { key: 'title', label: '문의 제목', width: 323 },
   { key: 'date', label: '문의 날짜', width: 197 },
@@ -88,7 +91,7 @@ export function InquiryTable({ list }: InquiryTableProps) {
                 </thead>
 
                 <tbody>
-                  {list.items.map((inquiry, index) => {
+                  {list.items.map((inquiry) => {
                     const status = resolveInquiryStatus(inquiry.status, inquiry.cancelledAt)
                     /* 시안의 배지는 "답변완료"(어두운 알약) 하나뿐이다. 나머지
                        상태는 고객지원 목록과 같은 색 규칙을 그대로 쓴다 — 한
@@ -105,7 +108,9 @@ export function InquiryTable({ list }: InquiryTableProps) {
                         key={inquiry.id}
                         className="border-field-line relative h-[53px] border-b transition-colors last:border-b-0 hover:bg-black/[0.02]"
                       >
-                        <td className={CELL_CLASS}>{index + 1}</td>
+                        <td className={cn(CELL_CLASS, 'tabular-nums')}>
+                          {formatInquiryNo(inquiry.inquiryNo)}
+                        </td>
                         <td className={cn(CELL_CLASS, 'truncate')}>{inquiry.category}</td>
                         <td className={CELL_CLASS}>
                           <Link

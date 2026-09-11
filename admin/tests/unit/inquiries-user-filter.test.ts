@@ -52,7 +52,12 @@ describe('getInquiries — 회원 필터', () => {
   it('user 파라미터가 있으면 user_id 로 좁힌다', async () => {
     const filters = parseInquiryFilters({ user: MEMBER_ID })
 
-    await getInquiries(filters, { page: 1, sortKey: 'created_at', ascending: false })
+    await getInquiries(filters, {
+      page: 1,
+      sortKey: 'created_at',
+      ascending: false,
+      viewerId: null,
+    })
 
     expect(state.filters).toContainEqual({ column: 'user_id', value: MEMBER_ID })
   })
@@ -60,7 +65,12 @@ describe('getInquiries — 회원 필터', () => {
   it('user 파라미터가 없으면 user_id 필터를 걸지 않는다', async () => {
     const filters = parseInquiryFilters({})
 
-    await getInquiries(filters, { page: 1, sortKey: 'created_at', ascending: false })
+    await getInquiries(filters, {
+      page: 1,
+      sortKey: 'created_at',
+      ascending: false,
+      viewerId: null,
+    })
 
     expect(state.filters.some((entry) => entry.column === 'user_id')).toBe(false)
   })

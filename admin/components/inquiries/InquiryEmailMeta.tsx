@@ -1,6 +1,7 @@
 import { MetaList, MetaRow } from '@/components/inquiries/InquiryMetaRow'
 import { Badge, type BadgeTone } from '@/components/ui'
 import { formatDateTime } from '@/lib/utils/format-date'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import { inquiryCategoryLabel, inquiryTypeLabel } from '@/lib/validation/inquiries'
 
 import type { InquiryEmailAuth, InquiryDetail } from '@/lib/data/inquiries'
@@ -18,6 +19,7 @@ import type { InquiryEmailAuth, InquiryDetail } from '@/lib/data/inquiries'
 export function InquiryEmailMeta({ inquiry }: { inquiry: InquiryDetail }) {
   return (
     <MetaList>
+      <MetaRow label="접수번호">{formatInquiryNo(inquiry.inquiryNo)}</MetaRow>
       <MetaRow label="From">{formatSender(inquiry)}</MetaRow>
       <MetaRow label="원본 Message-ID">
         {inquiry.emailMessageId === null ? (

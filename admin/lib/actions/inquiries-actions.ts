@@ -1,9 +1,17 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-
-import { actionFailure, logFailure } from '@/lib/actions/action-failure'
+import { actionFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
+import {
+  INQUIRY_NOT_FOUND_MESSAGE,
+  applyStatusChange,
+  cancelledGuard,
+  countInquiryReplies,
+  readInquiryState,
+  revalidateInquiry,
+  snapshotConflict,
+} from '@/lib/actions/inquiry-shared'
+import { nullableArg } from '@/lib/actions/rpc-args'
 import { writeAuditLog } from '@/lib/audit'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { EMAIL_NOT_CONFIGURED_MESSAGE, sendInquiryReplyEmail } from '@/lib/email/send-inquiry-reply'
@@ -11,14 +19,11 @@ import { createClient } from '@/lib/supabase/server'
 import { josa } from '@/lib/utils/josa'
 import {
   INQUIRY_STATUS_LABELS,
-  canTransitionInquiryStatus,
   inquiryReplySchema,
   inquiryStatusSchema,
-  isCancelledInquiry,
-  toInquirySource,
-  type InquirySource,
-  type InquiryStatus,
+  isInquiryStatus,
 } from '@/lib/validation/inquiries'
+import { INQUIRY_CONFLICT_MESSAGE, parseInquirySnapshot } from '@/lib/validation/inquiry-assignment'
 
 /**
  * 문의 상태 변경 · 답변 등록.
@@ -28,98 +33,19 @@ import {
  *
  * 상태 전이는 화면과 같은 표(`INQUIRY_STATUS_TRANSITIONS`)로 판정한다. select 에
  * 없는 값을 직접 보내도 여기서 걸린다.
+ *
+ * 조회·가드·상태 전이는 `inquiry-shared.ts` 가 갖는다 — 배정 액션(협업)이 같은
+ * 규칙으로 상태를 옮겨야 하기 때문이다(2026-09-11).
  */
-
-const LIST_PATH = '/inquiries'
 
 const OPERATOR_NAME = '운영자'
 
-function detailPath(inquiryId: string): string {
-  return `${LIST_PATH}/${inquiryId}`
-}
-
-type InquiryState = {
-  status: InquiryStatus
-  /** 사용자가 접수를 취소한 시각. 있으면 운영자 조작을 모두 막는다. */
-  cancelledAt: string | null
-  /** 답변을 메일로도 보내야 하는지 가른다(`email`). 화면 값이 아니라 DB 를 다시 읽는다. */
-  source: InquirySource
-}
-
-async function readInquiryState(inquiryId: string): Promise<InquiryState | null> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('inquiries')
-    .select('status, cancelled_at, source')
-    .eq('id', inquiryId)
-    .maybeSingle()
-
-  if (data === null) {
-    return null
-  }
-
-  return {
-    status: data.status,
-    cancelledAt: data.cancelled_at,
-    source: toInquirySource(data.source),
-  }
-}
-
-/**
- * 사용자가 취소한 문의는 읽기 전용이다.
- *
- * 취소된 접수에 답변이 붙거나 상태가 되살아나면, 사용자 화면에는 "취소했는데 처리
- * 중"인 문의가 남는다. 화면에서도 잠그지만 액션이 마지막 방어선이다.
- */
-function cancelledGuard(state: InquiryState): string | null {
-  return isCancelledInquiry(state.cancelledAt)
-    ? '사용자가 접수를 취소한 문의입니다. 상태 변경과 답변 등록을 할 수 없습니다.'
-    : null
-}
-
-/**
- * 상태 전이 1건. 성공하면 null, 실패하면 사용자에게 보여 줄 문구를 돌려준다.
- *
- * `answered_at` 은 처음 답변 완료로 넘어간 시각만 남긴다. 다시 답변 완료가 될 때마다
- * 갱신하면 "첫 응답까지 걸린 시간"을 나중에 계산할 수 없다.
- */
-async function applyStatusChange(
-  actorId: string,
-  inquiryId: string,
-  from: InquiryStatus,
-  to: InquiryStatus,
-): Promise<string | null> {
-  if (!canTransitionInquiryStatus(from, to)) {
-    return `${INQUIRY_STATUS_LABELS[from]} 상태에서는 ${INQUIRY_STATUS_LABELS[to]}${josa(INQUIRY_STATUS_LABELS[to], '로')} 바꿀 수 없습니다.`
-  }
-
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('inquiries')
-    .update({
-      status: to,
-      ...(to === 'answered' ? { answered_at: new Date().toISOString() } : {}),
-    })
-    .eq('id', inquiryId)
-    .eq('status', from)
-
-  if (error !== null) {
-    return logFailure(
-      'inquiries',
-      '상태를 바꾸지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.',
-      error,
-    )
-  }
-
-  await writeAuditLog(actorId, {
-    action: 'inquiry.status',
-    targetTable: 'inquiries',
-    targetId: inquiryId,
-    before: { status: from },
-    after: { status: to },
-  })
-
-  return null
+/** 폼이 hidden 으로 실어 보낸 "화면을 연 시점"의 스레드 상태. */
+function readSnapshot(formData: FormData) {
+  return parseInquirySnapshot(
+    readField(formData, 'expectedReplyCount'),
+    readField(formData, 'expectedStatus'),
+  )
 }
 
 /** 상세 헤더의 상태 select · "종료" 버튼이 함께 쓰는 액션. */
@@ -141,13 +67,26 @@ export async function updateInquiryStatusAction(
   const state = await readInquiryState(inquiryId)
 
   if (state === null) {
-    return { formError: '문의를 찾을 수 없습니다.' }
+    return { formError: INQUIRY_NOT_FOUND_MESSAGE }
   }
 
   const blocked = cancelledGuard(state)
 
   if (blocked !== null) {
     return { formError: blocked }
+  }
+
+  /* 화면을 연 뒤 다른 운영자가 먼저 움직였는지 본다. 상태 전이 자체는 아래에서
+     `.eq('status', from)` 로 한 번 더 막지만, 그것만으로는 "왜 안 됐는지"를
+     운영자에게 말해 줄 수 없다. */
+  const snapshot = readSnapshot(formData)
+  const conflict = snapshotConflict(snapshot, {
+    status: state.status,
+    replyCount: snapshot.replyCount === null ? 0 : await countInquiryReplies(inquiryId),
+  })
+
+  if (conflict !== null) {
+    return { formError: conflict, code: 'conflict' }
   }
 
   if (state.status === status) {
@@ -160,16 +99,36 @@ export async function updateInquiryStatusAction(
     return { formError: failure }
   }
 
-  revalidatePath(detailPath(inquiryId))
-  revalidatePath(LIST_PATH)
+  revalidateInquiry(inquiryId)
 
   const label = INQUIRY_STATUS_LABELS[status]
 
   return { message: `상태를 '${label}'${josa(label, '로')} 바꿨습니다.` }
 }
 
+/** `add_inquiry_reply()` 의 jsonb 응답. 모르는 모양은 실패로 떨어뜨린다. */
+type ReplyResult = { ok: boolean; code: string | null; replyId: string | null }
+
+function readReplyResult(value: unknown): ReplyResult {
+  if (typeof value !== 'object' || value === null) {
+    return { ok: false, code: null, replyId: null }
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    ok: record.ok === true,
+    code: typeof record.code === 'string' ? record.code : null,
+    replyId: typeof record.reply_id === 'string' ? record.reply_id : null,
+  }
+}
+
 /**
  * 답변 등록.
+ *
+ * INSERT 는 `add_inquiry_reply()` RPC 가 한다. 앱에서 "확인 → INSERT" 두 번 왕복하면
+ * 그 사이에 다른 운영자의 답변이 끼어들어 **두 답변이 모두 통과한다.** 함수 안에서
+ * 문의 행을 잠그고 비교하므로, 화면을 연 시점과 달라졌으면 `conflict` 로 돌아온다.
  *
  * 답변을 넣은 뒤 상태를 옮긴다. 순서를 뒤집으면 상태만 '답변 완료'로 바뀌고 답변이
  * 실패하는 경우가 생겨, 사용자 화면에 "답변 완료인데 답변이 없는" 문의가 남는다.
@@ -197,7 +156,7 @@ export async function replyToInquiryAction(
   const state = await readInquiryState(inquiryId)
 
   if (state === null) {
-    return { formError: '문의를 찾을 수 없습니다.' }
+    return { formError: INQUIRY_NOT_FOUND_MESSAGE }
   }
 
   const blocked = cancelledGuard(state)
@@ -213,21 +172,19 @@ export async function replyToInquiryAction(
   const supabase = await createClient()
   const authorName = useOperatorName ? OPERATOR_NAME : actor.nickname
   const isEmail = state.source === 'email'
-  const { data: reply, error } = await supabase
-    .from('inquiry_replies')
-    .insert({
-      inquiry_id: inquiryId,
-      author_id: actor.id,
-      author_name: authorName,
-      content,
-      // 콘솔에서 쓴 글은 언제나 '보낸' 쪽이다. 받은 메일은 수신 함수만 넣는다.
-      direction: 'outbound',
-      /* 발송은 저장 뒤에 따로 일어난다. 먼저 'queued' 로 적어 두면 발송이 실패해도
-         스레드에 "대기"로 남아 다시 보내기를 누를 수 있다. */
-      ...(isEmail ? { delivery_status: 'queued' } : {}),
-    })
-    .select('id')
-    .single()
+  const snapshot = readSnapshot(formData)
+  const { data, error } = await supabase.rpc('add_inquiry_reply', {
+    p_inquiry_id: inquiryId,
+    p_content: content,
+    p_author_name: authorName,
+    /* 기대값이 null 이면 함수가 비교를 건너뛴다(옛 탭 · 직접 POST). */
+    p_expected_reply_count: nullableArg(snapshot.replyCount),
+    // enum 캐스팅이 실패하면 22P02 다. 모르는 값은 "비교하지 않음"으로 내린다.
+    p_expected_status: nullableArg(isInquiryStatus(snapshot.status) ? snapshot.status : null),
+    /* 발송은 저장 뒤에 따로 일어난다. 먼저 'queued' 로 적어 두면 발송이 실패해도
+       스레드에 "대기"로 남아 다시 보내기를 누를 수 있다. */
+    p_delivery_status: nullableArg(isEmail ? 'queued' : null),
+  })
 
   if (error !== null) {
     return actionFailure(
@@ -237,10 +194,16 @@ export async function replyToInquiryAction(
     )
   }
 
+  const result = readReplyResult(data)
+
+  if (!result.ok || result.replyId === null) {
+    return replyRejection(result)
+  }
+
   await writeAuditLog(actor.id, {
     action: isEmail ? 'inquiry.email.reply' : 'inquiry.reply',
     targetTable: 'inquiry_replies',
-    targetId: reply.id,
+    targetId: result.replyId,
     after: { inquiry_id: inquiryId, author_name: authorName, length: content.length },
   })
 
@@ -250,8 +213,7 @@ export async function replyToInquiryAction(
       ? null
       : await applyStatusChange(actor.id, inquiryId, state.status, nextStatus)
 
-  revalidatePath(detailPath(inquiryId))
-  revalidatePath(LIST_PATH)
+  revalidateInquiry(inquiryId)
 
   if (statusFailure !== null) {
     // 답변은 이미 남았다. 되돌리지 않고 상태만 실패했음을 정확히 알린다.
@@ -266,7 +228,36 @@ export async function replyToInquiryAction(
     return { message: `답변을 등록하고 상태를 '${nextLabel}'${josa(nextLabel, '로')} 바꿨습니다.` }
   }
 
-  return sendReplyMail(reply.id, nextLabel)
+  return sendReplyMail(result.replyId, nextLabel)
+}
+
+/**
+ * RPC 가 거절한 이유를 운영자 문구로 옮긴다.
+ *
+ * `conflict` 에는 **코드까지 함께** 돌려준다 — 화면이 스레드만 조용히 새로 고치고
+ * 작성 중인 초안은 그대로 두어야 하는데, 문구 비교로 그 분기를 만들면 문구를
+ * 다듬는 순간 동작이 깨진다.
+ */
+function replyRejection(result: ReplyResult): FormState {
+  if (result.code === 'conflict') {
+    return { formError: INQUIRY_CONFLICT_MESSAGE, code: 'conflict' }
+  }
+
+  if (result.code === 'cancelled') {
+    return {
+      formError: '사용자가 접수를 취소한 문의입니다. 상태 변경과 답변 등록을 할 수 없습니다.',
+    }
+  }
+
+  if (result.code === 'not_found') {
+    return { formError: INQUIRY_NOT_FOUND_MESSAGE }
+  }
+
+  return actionFailure(
+    'inquiries',
+    '답변을 등록하지 못했습니다. 작성한 내용은 그대로 있으니 잠시 후 다시 저장해 주세요.',
+    `add_inquiry_reply 가 알 수 없는 응답을 돌려주었습니다(code=${result.code ?? '없음'})`,
+  )
 }
 
 /**

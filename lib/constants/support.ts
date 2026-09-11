@@ -254,6 +254,16 @@ export const INQUIRY_SUBMITTED_TITLE = '문의가 접수되었습니다'
 export const INQUIRY_SUBMITTED_DESCRIPTION =
   '운영자가 확인 후 답변을 등록하면 이 페이지와 내 문의 내역에서 확인할 수 있습니다.'
 
+/**
+ * 접수 완료 모달의 접수번호 줄.
+ *
+ * 번호를 **접수 직후에 한 번 더** 보여 준다 — 사용자가 화면을 닫기 전에 적어 둘 수
+ * 있어야 고객센터 문의가 한 번에 이어진다(`#1024` 표기는 `lib/utils/inquiry-no.ts`).
+ */
+export function inquirySubmittedReceiptNotice(formattedNo: string): string {
+  return `접수번호 ${formattedNo} — 문의 내역에서 확인할 수 있습니다.`
+}
+
 export const INQUIRY_SUBMITTED_CONFIRM_LABEL = '확인'
 
 export const MY_INQUIRIES_LINK_LABEL = '내 문의 내역 보기'

@@ -17,10 +17,11 @@ import type { InquiryStatus, InquirySource } from '@/lib/validation/inquiries'
  */
 
 /* prettier-ignore */
-const MEMBER_INQUIRY_COLUMNS = 'id, title, category, type, status, cancelled_at, source, created_at, inquiry_replies(count)'
+const MEMBER_INQUIRY_COLUMNS = 'id, inquiry_no, title, category, type, status, cancelled_at, source, created_at, inquiry_replies(count)'
 
 export type MemberInquirySummary = {
   id: string
+  inquiryNo: number
   title: string
   category: string
   type: string
@@ -60,6 +61,7 @@ export async function getMemberInquiries(memberId: string): Promise<MemberInquir
   return {
     rows: (data ?? []).map((row) => ({
       id: row.id,
+      inquiryNo: row.inquiry_no,
       title: row.title,
       category: row.category,
       type: row.type,

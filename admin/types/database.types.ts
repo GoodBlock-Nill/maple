@@ -516,18 +516,23 @@ export type Database = {
         Row: {
           account_id: string | null
           answered_at: string | null
+          assigned_at: string | null
+          assigned_to: string | null
           attachments: Json
           cancelled_at: string | null
           category: string
           contact_email: string | null
           content: string
           created_at: string
+          editing_at: string | null
+          editing_by: string | null
           email_auth: Json | null
           email_from: string | null
           email_from_name: string | null
           email_message_id: string | null
           email_thread_key: string | null
           id: string
+          inquiry_no: number
           privacy_consent: boolean
           source: string
           status: Database["public"]["Enums"]["inquiry_status"]
@@ -539,18 +544,23 @@ export type Database = {
         Insert: {
           account_id?: string | null
           answered_at?: string | null
+          assigned_at?: string | null
+          assigned_to?: string | null
           attachments?: Json
           cancelled_at?: string | null
           category: string
           contact_email?: string | null
           content: string
           created_at?: string
+          editing_at?: string | null
+          editing_by?: string | null
           email_auth?: Json | null
           email_from?: string | null
           email_from_name?: string | null
           email_message_id?: string | null
           email_thread_key?: string | null
           id?: string
+          inquiry_no?: never
           privacy_consent?: boolean
           source?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
@@ -562,18 +572,23 @@ export type Database = {
         Update: {
           account_id?: string | null
           answered_at?: string | null
+          assigned_at?: string | null
+          assigned_to?: string | null
           attachments?: Json
           cancelled_at?: string | null
           category?: string
           contact_email?: string | null
           content?: string
           created_at?: string
+          editing_at?: string | null
+          editing_by?: string | null
           email_auth?: Json | null
           email_from?: string | null
           email_from_name?: string | null
           email_message_id?: string | null
           email_thread_key?: string | null
           id?: string
+          inquiry_no?: never
           privacy_consent?: boolean
           source?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
@@ -583,6 +598,20 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inquiries_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_editing_by_fkey"
+            columns: ["editing_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inquiries_user_id_fkey"
             columns: ["user_id"]
@@ -630,6 +659,48 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      inquiry_notes: {
+        Row: {
+          author_id: string | null
+          author_nickname_snapshot: string
+          body: string
+          created_at: string
+          id: string
+          inquiry_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_nickname_snapshot: string
+          body: string
+          created_at?: string
+          id?: string
+          inquiry_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_nickname_snapshot?: string
+          body?: string
+          created_at?: string
+          id?: string
+          inquiry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiry_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiry_notes_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inquiry_replies: {
         Row: {
@@ -1239,9 +1310,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_inquiry_reply: {
+        Args: {
+          p_author_name: string
+          p_content: string
+          p_delivery_status?: string
+          p_expected_reply_count: number
+          p_expected_status: Database["public"]["Enums"]["inquiry_status"]
+          p_inquiry_id: string
+        }
+        Returns: Json
+      }
       can_report_target: {
         Args: { p_target_id: string; p_target_type: string }
         Returns: boolean
+      }
+      claim_inquiry_edit: {
+        Args: { p_force?: boolean; p_inquiry_id: string }
+        Returns: Json
       }
       current_legal_version: {
         Args: { p_slug: string }
@@ -1302,6 +1388,7 @@ export type Database = {
         Args: { p_code: string; p_msw_profile_code: string; p_msw_uid: string }
         Returns: Json
       }
+      release_inquiry_edit: { Args: { p_inquiry_id: string }; Returns: Json }
       replace_ranking_snapshot: {
         Args: {
           p_rank_type: Database["public"]["Enums"]["ranking_type"]

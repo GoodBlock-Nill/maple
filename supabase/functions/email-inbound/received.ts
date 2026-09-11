@@ -185,7 +185,7 @@ async function createInquiry(context: InboundContext, email: InboundEmail): Prom
       privacy_consent: false,
       attachments: [],
     })
-    .select('id, content')
+    .select('id, inquiry_no, content')
     .single()
 
   if (isUniqueViolation(error)) {
@@ -214,7 +214,12 @@ async function createInquiry(context: InboundContext, email: InboundEmail): Prom
   }
 
   if (!limited) {
-    await sendAcknowledgement(service, provider, env, email, { id: inquiry.id, title, threadKey })
+    await sendAcknowledgement(service, provider, env, email, {
+      id: inquiry.id,
+      no: inquiry.inquiry_no,
+      title,
+      threadKey,
+    })
   }
 
   return json(200, { ok: true, inquiryId: inquiry.id, rateLimited: limited })

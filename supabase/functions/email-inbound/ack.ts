@@ -8,7 +8,7 @@
  * 개인정보 처리 고지(§8): 이메일 문의는 폼 동의가 없으므로 방침 링크를 여기서 알린다.
  */
 
-import { replySubject, shortInquiryId } from '../_shared/email/subject.ts'
+import { replySubject } from '../_shared/email/subject.ts'
 import { replyAddress } from '../_shared/email/thread.ts'
 
 import type { EmailEnv } from '../_shared/deno/env.ts'
@@ -19,7 +19,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
 export function acknowledgementBody(
-  inquiryId: string,
+  inquiryNo: number,
   title: string,
   clientSiteUrl: string,
 ): string {
@@ -29,7 +29,8 @@ export function acknowledgementBody(
     '보내 주신 문의가 접수되었습니다. 확인 후 이 메일에 회신으로 답변드리겠습니다.',
     '덧붙일 내용이 있으면 이 메일에 그대로 답장해 주세요 — 같은 문의로 이어서 접수됩니다.',
     '',
-    `문의 번호: #${shortInquiryId(inquiryId)}`,
+    // 사용자 사이트·관리자 콘솔과 같은 접수번호다(uuid 앞 8자를 쓰던 표기를 대체한다).
+    `문의 번호: #${inquiryNo}`,
     `접수 제목: ${title}`,
     '',
     '이메일 문의로 수집되는 개인정보(메일 주소 · 이름 · 본문 · 첨부)의 처리 기준은 개인정보처리방침에서 확인하실 수 있습니다.',
@@ -61,7 +62,7 @@ export async function sendAcknowledgement(
   provider: EmailProvider | null,
   env: EmailEnv,
   email: InboundEmail,
-  inquiry: { id: string; title: string; threadKey: string },
+  inquiry: { id: string; no: number; title: string; threadKey: string },
 ): Promise<void> {
   if (!env.ackEnabled || provider === null || env.from === null) {
     return
@@ -74,8 +75,8 @@ export async function sendAcknowledgement(
   const result = await provider.send({
     from: env.from,
     to: email.from.address,
-    subject: replySubject(email.subject, inquiry.id),
-    text: acknowledgementBody(inquiry.id, inquiry.title, env.clientSiteUrl),
+    subject: replySubject(email.subject, inquiry.no),
+    text: acknowledgementBody(inquiry.no, inquiry.title, env.clientSiteUrl),
     replyTo: env.replyDomain === null ? null : replyAddress(inquiry.threadKey, env.replyDomain),
     headers: {
       /* RFC 3834 — 상대의 자동응답기가 이 메일에 다시 자동응답하지 않게 한다. */

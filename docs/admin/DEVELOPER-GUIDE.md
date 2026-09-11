@@ -549,6 +549,27 @@ is_published and deleted_at is null and not is_hidden and published_at <= now()
 
 관리자 화면의 상태 뱃지는 같은 조건을 `deriveNewsVisibility()`(`admin/lib/constants/news.ts`)로 계산해 `visible` / `scheduled` / `invisible` 로 보여 준다. 숨김(`is_hidden`, 운영 행위)과 소프트 삭제(`deleted_at`, 작성자 행위)는 다른 축이다. 숨긴 글은 **작성자에게도 보이지 않는다** (`posts_select_own` 에 `and not is_hidden`) — 예외를 두면 운영 조치가 무의미해진다.
 
+**뉴스 상단 고정은 최대 3개(2026-09-11 운영 요청).** 세는 대상은 "클라이언트에 실제로 뜰 수 있는" 고정 글뿐이다 —
+
+```
+is_pinned and is_published and not is_hidden and deleted_at is null
+```
+
+(예약 발행도 포함한다. 시각이 지나면 트리거 없이 그대로 노출되므로 미리 세어 두지 않으면 나중에 한도를 조용히
+넘긴다.) 임시저장·숨김 글에 고정 표시만 걸어 두는 것은 막지 않는다 — 클라이언트에 어차피 보이지 않기 때문이다.
+
+- **세 겹 방어.** ① `admin/lib/actions/news-actions.ts` 의 `checkPinLimit()` 이 저장 전에 미리 세어 필드
+  오류(현재 고정된 제목 힌트 포함)로 막는다. ② `guard_news_pin_limit()` 트리거(`20260911000500_news_pin_limit.sql`,
+  `posts` 의 모든 INSERT/UPDATE 에 건다)가 동시 요청(TOCTOU)까지 막는 최종 방어선이다 — `news_pin_limit_exceeded`
+  를 던지면 액션이 같은 한국어 문구로 옮긴다(원문 노출 금지, §7.1). 숨김 해제가 고정 글을 한도 위로 되돌리는
+  경우도 이 트리거가 잡고, `newsStateAction` 이 문구를 옮긴다. ③ 화면 — `admin/lib/data/news.ts` 의
+  `getPinnedNewsSummary(excludeId)` 가 같은 조건으로 세어 "고정 n/3" 을 목록 헤더와 글 작성/수정 폼에
+  보여 주고, 이미 3개면 새 글의 "상단 고정" 체크박스를 비활성화한다(이미 고정된 글 자신은 예외 —
+  `admin/lib/utils/news-pin.ts` 의 `pinIndicator()`).
+- **목록의 "고정" 필터**(`?pinned=1`, `admin/lib/validation/news.ts` 의 `parseNewsPinnedFilter`)는 상태
+  필터와 다른 축이다 — `is_pinned = true` 인 글만 상태와 무관하게 보여 준다(고정 표시만 걸린 임시저장도 여기
+  걸린다).
+
 **뉴스 카테고리 템플릿(2026-09-11).** 카테고리마다 "글을 어떻게 시작할 것인가"를 미리 적어 두는 양식이다
 (`public.news_category_templates`, 마이그레이션 `20260911000100`). 관리 화면은 `/news/templates`(뉴스 목록 헤더의
 **카테고리 템플릿** 버튼 · 사이드바 뉴스 하위), 권한은 뉴스와 같은 `news` 모듈이되 **`write` 전용**이다 — 편집·되돌리기
@@ -582,6 +603,57 @@ is_published and deleted_at is null and not is_hidden and published_at <= now()
   건드리지 않는다. 성공하면 목록으로 돌아간다 — 편집 폼의 비제어 입력이 옛 문안을 계속 보여 주지 않게 하려는 것이다.
 - **사용자 사이트 캐시는 태우지 않는다.** 템플릿은 글이 되기 전의 양식이고, RLS 가 관리자에게만 열려 있어 사용자
   사이트는 이 테이블을 읽지도 못한다(`revalidatePath` 로 관리자 화면 셋만 비운다 — 목록 · 편집 · 새 글 작성).
+
+**1:1 문의 협업(배정 · 작성 중 잠금 · 충돌 감지 · 내부 메모).** 2026-09-11 · 마이그레이션 `20260911000300_inquiry_assignment.sql` ·
+자세한 것은 `docs/admin/INQUIRY-GUIDE.md` §5.9.
+
+운영자가 여러 명이면 같은 문의에 두 사람이 동시에 답을 쓴다. 사용자 화면에는 비슷한 답변이 두 번 붙고, 나중 것이 앞의
+판단을 뒤집기도 한다. 네 장치를 **단계로** 겹쳐 두었다 — 앞의 것이 뚫려도 뒤의 것이 남는다.
+
+| 단계                    | 어디에 보이나                                                    | 뚫리는 경우                             |
+| ----------------------- | ---------------------------------------------------------------- | --------------------------------------- |
+| ① 담당자(`assigned_to`) | 목록 '담당자' 칸 · `?assignee=me\|none\|<uuid>` 필터 · 상세 카드 | 배정 없이 그냥 답할 수 있다             |
+| ② 작성 중 소프트 락     | 목록 `✎ 작성 중 · 닉네임` · 상세 배너 + 답변 폼 잠금             | "그래도 이어서 작성"으로 가로챌 수 있다 |
+| ③ 저장 시 충돌 감지     | `add_inquiry_reply()` 가 거절 → 한국어 배너                      | (마지막 방어선)                         |
+| ④ 내부 메모             | 상세 '내부 메모' 카드(`public.inquiry_notes`)                    | —                                       |
+
+- **상태를 새로 만들지 않았다.** 미배정 + `접수 대기` 문의를 맡으면 기존 전이표(`INQUIRY_STATUS_TRANSITIONS`)를 그대로
+  타고 `처리 중`으로 간다. enum 에 값을 더하면 사용자 사이트의 상태 라벨·탭·집계가 모두 갈라진다.
+- **잠금은 강제력이 없다.** 행을 진짜로 잠그면 브라우저를 닫고 간 운영자 때문에 문의가 영영 열리지 않는다. 하트비트가
+  **5분** 끊기면 만료다(화면 상수 `INQUIRY_LOCK_TTL_MS` = DB 의 `interval '5 minutes'`). 갱신은 60초, 상태 폴링은 20초.
+- **하트비트는 `updated_at` 을 밀지 않는다.** `set_inquiry_updated_at()` 이 "잠금 열만 달라진 UPDATE"를 걸러 낸다 —
+  그러지 않으면 누가 **보고 있다는 이유만으로** 목록의 '업데이트' 칸과 정렬이 흔들린다.
+- **충돌 비교와 INSERT 는 한 트랜잭션이다.** 앱에서 "확인 → INSERT" 로 두 번 왕복하면 그 사이에 상대의 INSERT 가
+  끼어들어 둘 다 통과한다. 거절되면 `FormState.code = 'conflict'` 로 돌아오고, 화면은 **초안을 지우지 않고**
+  `router.refresh()` 로 스레드만 새로 받는다.
+- **감사 로그**는 `inquiry.assign` · `inquiry.unassign` · `inquiry.edit_lock`(가로채기만) · `inquiry_note.create/delete`.
+  하트비트와 충돌 거절은 남기지 않는다 — 1분에 한 줄씩 쌓이거나, 아무 일도 일어나지 않은 실패를 기록하게 된다.
+- **내부 메모는 별도 테이블이다.** `inquiries` 는 소유자에게 행이 열려 있어(`inquiries_select_own`) 열을 더하는 순간
+  사용자 쪽 select 한 줄이면 새어 나간다. `inquiry_notes` 는 관리자 전용 정책 + `anon` 권한 회수라 **읽을 경로 자체가 없다**.
+- **출처 칸은 같은 날 걷어냈다**(오너 결정). 사이드바가 `?source=web` · `?source=email` 로 이미 두 메뉴를 갈라 두었으므로,
+  목록에 출처 뱃지 칸과 선택 상자를 두면 모든 행에 같은 값이 반복될 뿐이다. 파라미터와 조회 조건은 그대로 두고(두 메뉴가
+  그것으로 동작한다) **화면에서만** 뺐다 — 필터 폼은 숨은 입력으로 프리셋을 나른다.
+- **담당자·잠금 열은 `inquiries` 에 있다.** 사용자 사이트가 보지 못하는 근거는 "질의가 열을 하나하나 적는다"는 것
+  뿐이다(`lib/data/inquiries.ts` 의 `INQUIRY_LIST_COLUMNS` · `INQUIRY_DETAIL_COLUMNS`). 관리자도 같은 `authenticated`
+  롤이라 열 단위 GRANT 로는 한쪽만 닫을 수 없다 — **새 운영 열을 더할 때 사용자 쪽 select 목록을 함께 보라.**
+
+**1:1 문의 접수번호(`#1024`).** 2026-09-11 · 마이그레이션 `20260911000400_inquiry_no.sql`.
+
+`inquiries.inquiry_no`(bigint · 1001부터 · 유니크)는 **사용자와 운영자가 함께 부르는 하나뿐인 번호**다. 표기는 양쪽 앱의
+`formatInquiryNo()`(`lib/utils/inquiry-no.ts` · `admin/lib/utils/inquiry-no.ts` — 같은 내용의 사본)가 만든다.
+
+| 어디                                                                   | 무엇                                                                   |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 사용자 — 접수 완료 모달 · `/support/inquiries` 목록 · 상세 · 수정 제목 | `접수번호 #1024 — 문의 내역에서 확인할 수 있습니다.` 외                |
+| 사용자 — 마이페이지 문의내역 표                                        | '번호' 칸이 **화면 순번에서 접수번호로** 바뀌었다                      |
+| 관리자 — 목록 첫 칸 · 상세 헤더·메타 · 회원 상세의 1:1 문의 탭         | `#1024`                                                                |
+| 관리자 — 검색                                                          | `1024` · `#1024` 면 기존 ilike 에 `inquiry_no.eq` 를 `or` 로 추가      |
+| 답변 템플릿 `{{문의번호}}`                                             | 옛 표기(문의 ID 앞 8자리)를 대체                                       |
+| 메일 제목(`email-outbound` · 접수 확인)                                | `Re: <제목> [글자월드 문의 #1024]` — 옛 `[문의 #a1b2c3d4]` 는 걷어낸다 |
+
+`generated always as identity` 다. `by default` 로 두면 접수 폼이 번호를 실어 보낼 수 있고(사용자 INSERT 는 열려 있다),
+누가 큰 번호를 선점하면 시퀀스가 그 자리에 닿는 순간 **접수가 통째로 실패한다.** Edge Function(`email-inbound` ·
+`email-outbound`)은 이 열을 읽기만 하므로 배포 전까지 옛 제목 규칙으로 나간다 — `supabase functions deploy` 가 필요하다.
 
 **랭킹.** 사용자 사이트는 `rank_type` 별 **가장 최근 `snapshot_at`** 만 읽는다. 그래서 새 스냅샷을 넣는 순간 교체가 끝난 것과 같고, "지우고 넣기"를 하지 않는다(`rankings-actions.ts` 헤더).
 

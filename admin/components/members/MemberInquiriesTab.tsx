@@ -1,16 +1,12 @@
 import Link from 'next/link'
 
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
-import { Badge } from '@/components/ui/Badge'
 import { FormBanner } from '@/components/ui/FormField'
 import { Table, type Column } from '@/components/ui/Table'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { formatDateTime } from '@/lib/utils/format-date'
-import {
-  INQUIRY_SOURCE_LABELS,
-  inquiryCategoryLabel,
-  inquiryTypeLabel,
-} from '@/lib/validation/inquiries'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
+import { inquiryCategoryLabel, inquiryTypeLabel } from '@/lib/validation/inquiries'
 
 import type { MemberInquirySummary } from '@/lib/data/member-inquiries'
 
@@ -70,6 +66,17 @@ export function MemberInquiriesTab({
 
 const INQUIRY_COLUMNS: readonly Column<MemberInquirySummary>[] = [
   {
+    // 문의 목록과 같은 자리·같은 표기다(운영자가 두 화면을 오가며 번호로 대조한다).
+    key: 'inquiryNo',
+    header: '접수번호',
+    className: 'w-24',
+    cell: (row) => (
+      <span className="text-muted font-mono text-[13px] tabular-nums">
+        {formatInquiryNo(row.inquiryNo)}
+      </span>
+    ),
+  },
+  {
     key: 'title',
     header: '제목',
     cell: (row) => (
@@ -79,16 +86,6 @@ const INQUIRY_COLUMNS: readonly Column<MemberInquirySummary>[] = [
       >
         {row.title}
       </Link>
-    ),
-  },
-  {
-    key: 'source',
-    header: '출처',
-    className: 'w-16',
-    cell: (row) => (
-      <Badge tone={row.source === 'email' ? 'accent' : 'neutral'}>
-        {INQUIRY_SOURCE_LABELS[row.source]}
-      </Badge>
     ),
   },
   {

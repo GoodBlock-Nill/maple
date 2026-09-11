@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { actionFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
+import { nullableArg } from '@/lib/actions/rpc-args'
 import { writeAuditLog } from '@/lib/audit'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { getNextInquiryCategorySortOrder } from '@/lib/data/inquiry-categories'
@@ -41,17 +42,6 @@ async function revalidateCategories(): Promise<void> {
   revalidatePath(CATEGORIES_PATH)
   revalidatePath('/inquiries')
   await revalidateClient([CLIENT_CACHE_TAGS.inquiryCategories])
-}
-
-/**
- * RPC 인자로 넘기는 nullable 텍스트.
- *
- * 타입 생성기는 SQL 함수의 `text` 인자를 non-null 로 뽑는다(기본값·NULL 허용 여부를
- * 표현하지 않는다). 함수 본문은 null 을 그대로 받아 `description` 에 저장하므로,
- * 여기서만 좁혀 준다 — '' 로 대신 저장하면 "설명 없음"이 두 벌(null · '')이 된다.
- */
-function nullableArg(value: string | null): string {
-  return value as unknown as string
 }
 
 /**

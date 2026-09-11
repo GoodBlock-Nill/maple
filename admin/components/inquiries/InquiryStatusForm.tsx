@@ -24,11 +24,14 @@ export function InquiryStatusForm({
   inquiryId,
   status,
   isLocked,
+  replyCount,
 }: {
   inquiryId: string
   status: InquiryStatus
   /** 사용자가 접수를 취소한 문의는 읽기 전용이다. */
   isLocked: boolean
+  /** 화면을 연 시점의 답변 수. 저장할 때 "그 사이 누가 먼저 처리했는지"를 가른다. */
+  replyCount: number
 }) {
   const { showToast } = useToast()
 
@@ -55,6 +58,9 @@ export function InquiryStatusForm({
   return (
     <form action={formAction} className="flex flex-col items-end gap-1">
       <input type="hidden" name="inquiryId" value={inquiryId} />
+      {/* 충돌 감지용 스냅샷. 화면을 연 뒤 다른 운영자가 움직였으면 액션이 거절한다. */}
+      <input type="hidden" name="expectedStatus" value={status} />
+      <input type="hidden" name="expectedReplyCount" value={replyCount} />
 
       <div className="flex items-center gap-2">
         <label className="sr-only" htmlFor="inquiry-status">

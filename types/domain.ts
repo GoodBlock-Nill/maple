@@ -273,6 +273,12 @@ export type SignedInquiryAttachment = InquiryAttachment & {
  */
 export type InquirySummary = {
   id: string
+  /**
+   * 접수번호(`inquiries.inquiry_no`, 1001부터). 화면 표기는 `#1024` 다
+   * (`lib/utils/inquiry-no.ts`). 사용자가 고객센터에 불러 주는 값이라 관리자
+   * 콘솔·답변 메일이 **같은 번호**를 쓴다.
+   */
+  inquiryNo: number
   title: string
   /** 자유 문자열. DB 가 text 라 화면도 값을 그대로 쓴다. */
   category: string

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { InquiryStatusBadge } from '@/components/support/InquiryStatusBadge'
 import { MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { formatDateIso } from '@/lib/utils/format-date'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 
 import type { InquirySummary } from '@/types/domain'
 
@@ -33,12 +34,17 @@ export function InquiryRow({ inquiry }: InquiryRowProps) {
           cancelledAt={inquiry.cancelledAt}
           className="self-start sm:order-2"
         />
-        <h3 className="text-ink line-clamp-2 min-w-0 flex-1 text-body-lg leading-[24px] font-medium sm:order-1 sm:line-clamp-1">
+        <h3 className="text-ink text-body-lg line-clamp-2 min-w-0 flex-1 leading-[24px] font-medium sm:order-1 sm:line-clamp-1">
           {inquiry.title}
         </h3>
       </div>
 
       <p className={`${META_CLASS} mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1`}>
+        {/* 접수번호가 먼저다 — 고객센터에 문의할 때 부르는 값이 이것뿐이다. */}
+        <span className="text-ink font-semibold tabular-nums">
+          <span className="sr-only">접수번호 </span>
+          {formatInquiryNo(inquiry.inquiryNo)}
+        </span>
         <span>
           {inquiry.category} · {inquiry.type}
         </span>

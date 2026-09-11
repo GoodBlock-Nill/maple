@@ -92,7 +92,10 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
         <div className="flex flex-col gap-6">
           {/* 접수 직후에만 뜨는 완료 모달. 닫으면 주소에서 파라미터가 사라진다. */}
           {isSubmitted ? (
-            <InquirySubmittedDialog detailPath={`${MY_INQUIRIES_PATH}/${inquiry.id}`} />
+            <InquirySubmittedDialog
+              detailPath={`${MY_INQUIRIES_PATH}/${inquiry.id}`}
+              inquiryNo={inquiry.inquiryNo}
+            />
           ) : null}
 
           {notice === null ? null : <FlashNotice param={notice.param} message={notice.message} />}

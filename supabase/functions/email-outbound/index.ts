@@ -41,6 +41,8 @@ type ReplyRow = {
 
 type InquiryRow = {
   id: string
+  /** 메일 제목에 붙는 접수번호(`[글자월드 문의 #1024]`). */
+  inquiry_no: number
   source: string
   title: string
   email_from: string | null
@@ -137,7 +139,7 @@ Deno.serve(async (request) => {
 
   const { data: inquiryData } = await service
     .from('inquiries')
-    .select('id, source, title, email_from, email_message_id, email_thread_key')
+    .select('id, inquiry_no, source, title, email_from, email_message_id, email_thread_key')
     .eq('id', reply.inquiry_id)
     .maybeSingle()
   const inquiry = inquiryData as InquiryRow | null
@@ -167,7 +169,7 @@ Deno.serve(async (request) => {
   const result = await provider.send({
     from: env.from,
     to: inquiry.email_from,
-    subject: replySubject(inquiry.title, inquiry.id),
+    subject: replySubject(inquiry.title, inquiry.inquiry_no),
     text: `${reply.content}\n${SIGNATURE}`,
     replyTo: env.replyDomain === null ? null : replyAddress(threadKey, env.replyDomain),
     headers:

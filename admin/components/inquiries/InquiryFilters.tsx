@@ -1,24 +1,18 @@
 import Link from 'next/link'
 
+import { InquiryAssigneeFilter } from '@/components/inquiries/InquiryAssigneeFilter'
+import { CONTROL_CLASS } from '@/components/inquiries/inquiry-filter-controls'
 import { Button, Input } from '@/components/ui'
 import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { cn } from '@/lib/utils/cn'
 import { buildHref, firstValue, type QueryParams } from '@/lib/utils/table-query'
-import {
-  INQUIRY_SOURCES,
-  INQUIRY_SOURCE_LABELS,
-  INQUIRY_STATUS_TABS,
-} from '@/lib/validation/inquiries'
+import { INQUIRY_STATUS_TABS } from '@/lib/validation/inquiries'
 
+import type { AdminListItem } from '@/lib/data/admins'
 import type { InquiryTabCounts } from '@/lib/data/inquiries'
 import type { InquiryFilters as Filters } from '@/lib/validation/inquiries'
 
 const LIST_PATH = '/inquiries'
-
-/* select 는 공용 프리미티브(`Select`)가 아니라 여기서 직접 그린다 — 이 폼은
-   자바스크립트 없이 동작해야 하는 GET 폼이라 이름(name)이 그대로 쿼리 키가 된다. */
-const CONTROL_CLASS =
-  'rounded-panel border-line bg-surface text-ink focus:border-accent focus:outline-accent/40 h-10 border px-3 text-[14px] focus:outline-2'
 
 /**
  * 목록 필터 — 상태 탭 + 조건 폼.
@@ -34,10 +28,13 @@ export function InquiryFilters({
   counts,
   categories,
   types,
+  admins,
 }: {
   params: QueryParams
   filters: Filters
   counts: InquiryTabCounts
+  /** 담당자 필터의 선택지(= 관리자 전원). */
+  admins: readonly AdminListItem[]
   /** DB 의 카테고리(비활성 포함) + 데이터에만 남은 옛 라벨. `lib/data/inquiry-categories.ts` */
   categories: readonly string[]
   /** 고른 카테고리의 세부 유형(카테고리 미선택이면 전체) + 데이터에만 남은 옛 유형. */
@@ -92,20 +89,13 @@ export function InquiryFilters({
         className="border-line bg-surface rounded-card flex flex-wrap items-end gap-2 border px-4 py-3"
       >
         <input type="hidden" name="status" value={filters.tab} />
+        {/* 출처는 **고르는 값이 아니라 이 화면이 어느 메뉴인지**다(사이드바의 두 프리셋).
+            선택 상자는 없애되, 조건을 바꿀 때 프리셋을 잃지 않도록 숨은 값으로 나른다. */}
+        {filters.source !== null && <input type="hidden" name="source" value={filters.source} />}
         {sort !== null && <input type="hidden" name="sort" value={sort} />}
         {filters.userId !== null && <input type="hidden" name="user" value={filters.userId} />}
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-ink text-[13px] font-semibold">출처</span>
-          <select name="source" defaultValue={filters.source ?? ''} className={CONTROL_CLASS}>
-            <option value="">전체</option>
-            {INQUIRY_SOURCES.map((source) => (
-              <option key={source} value={source}>
-                {INQUIRY_SOURCE_LABELS[source]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <InquiryAssigneeFilter value={filters.assignee} admins={admins} />
 
         {/* 이메일 문의의 카테고리는 수신 함수가 'email' 로 고정한다. 고를 것이 없다. */}
         {!isEmail && (

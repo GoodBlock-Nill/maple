@@ -76,9 +76,19 @@ export function createAnonClient(): SupabaseClient {
 }
 
 export async function signInAsAdmin(page: Page): Promise<void> {
+  await signInAs(page, ADMIN_EMAIL, ADMIN_PASSWORD)
+}
+
+/**
+ * 임의의 관리자 계정으로 로그인.
+ *
+ * 두 번째 운영자가 필요한 검증(작성 중 잠금 · 저장 충돌)이 쓴다 — 한 세션으로는
+ * "두 사람이 같은 문의를 본다"는 상황 자체가 만들어지지 않는다.
+ */
+export async function signInAs(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login')
-  await page.getByLabel('이메일').fill(ADMIN_EMAIL)
-  await page.getByLabel('비밀번호').fill(ADMIN_PASSWORD)
+  await page.getByLabel('이메일').fill(email)
+  await page.getByLabel('비밀번호').fill(password)
   await page.getByRole('button', { name: '로그인' }).click()
   // 로그인 리다이렉트가 끝나기 전에 이동하면 대시보드가 그 방문을 덮어쓴다.
   await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible()

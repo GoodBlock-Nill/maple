@@ -1,8 +1,10 @@
 import Link from 'next/link'
 
+import { InquiryAssigneeCell } from '@/components/inquiries/InquiryAssigneeCell'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { Badge, Card, Pagination, Table, type Column } from '@/components/ui'
 import { formatDateTime, formatRelativeDay } from '@/lib/utils/format-date'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import {
   DEFAULT_PAGE_SIZE,
   buildHref,
@@ -11,12 +13,7 @@ import {
   type QueryParams,
   type SortState,
 } from '@/lib/utils/table-query'
-import {
-  INQUIRY_SOURCE_LABELS,
-  inquiryCategoryLabel,
-  inquiryTypeLabel,
-  maskAccountId,
-} from '@/lib/validation/inquiries'
+import { inquiryCategoryLabel, inquiryTypeLabel, maskAccountId } from '@/lib/validation/inquiries'
 
 import type { InquiryListItem } from '@/lib/data/inquiries'
 
@@ -25,8 +22,12 @@ const LIST_PATH = '/inquiries'
 /**
  * 문의 목록 표.
  *
- * 페이지에서 떼어 낸 것은 출처 칸이 붙으면서 컬럼 정의만으로 화면 파일이 200줄을
- * 넘기 때문이다. 상태를 갖지 않는 서버 컴포넌트라 정렬·페이지는 그대로 링크로 움직인다.
+ * 페이지에서 떼어 낸 것은 컬럼 정의만으로 화면 파일이 200줄을 넘기 때문이다.
+ * 상태를 갖지 않는 서버 컴포넌트라 정렬·페이지는 그대로 링크로 움직인다.
+ *
+ * **출처(웹 · 이메일) 칸은 두지 않는다**(2026-09-11 오너 결정). 사이드바가 '1:1 문의'와
+ * '이메일 문의'를 이미 갈라 두었으므로, 같은 값을 칸으로 한 번 더 적으면 모든 행에
+ * 같은 뱃지가 반복될 뿐이다. `source` 필터 자체는 그 두 메뉴가 쓰므로 그대로 둔다.
  */
 export function InquiryTable({
   rows,
@@ -41,14 +42,28 @@ export function InquiryTable({
   page: number
   count: number
 }) {
+  /* 칸마다 **최소 폭**을 준다. `w-*` 만으로는 표가 좁아질 때 브라우저가 마음대로
+     줄여 '카테고리 · 유형'이 한 글자씩 세로로 쌓인다(담당자 칸이 붙으면서 실제로
+     그렇게 됐다). 넘치면 표를 감싼 컨테이너가 가로로 스크롤한다 — 읽을 수 없는
+     칸을 만드는 것보다 낫다. 제목의 최소 폭을 260 → 200 으로 줄인 것도 같은 이유다. */
   const columns: readonly Column<InquiryListItem>[] = [
+    {
+      /* 접수번호가 맨 앞이다 — 사용자가 전화·메일로 부르는 값이고, 목록에서
+         그 번호를 훑어 찾는 것이 첫 동작이기 때문이다. */
+      key: 'inquiryNo',
+      header: '접수번호',
+      className: 'w-24 min-w-[84px]',
+      cell: (row) => (
+        <span className="text-muted font-mono text-[13px] tabular-nums">
+          {formatInquiryNo(row.inquiryNo)}
+        </span>
+      ),
+    },
     {
       key: 'title',
       header: '제목',
       sortKey: 'title',
-      /* 제목이 가장 많이 읽히는 칸이다. 다른 칸이 고정 폭을 가져가면 여기부터
-         줄어들어 한 글자만 남는다 — 최소 폭을 명시해 둔다. */
-      className: 'min-w-[260px]',
+      className: 'min-w-[200px]',
       cell: (row) => (
         <Link
           href={`${LIST_PATH}/${row.id}`}
@@ -59,26 +74,16 @@ export function InquiryTable({
       ),
     },
     {
-      key: 'source',
-      header: '출처',
-      className: 'w-20',
-      cell: (row) => (
-        <Badge tone={row.source === 'email' ? 'accent' : 'neutral'}>
-          {INQUIRY_SOURCE_LABELS[row.source]}
-        </Badge>
-      ),
-    },
-    {
       key: 'author',
       // 이메일 문의에는 회원이 없다. '작성자'라고 쓰면 발신자를 회원으로 오해한다.
       header: '계정',
-      className: 'w-44',
+      className: 'w-44 min-w-[120px]',
       cell: (row) => <AccountCell row={row} />,
     },
     {
       key: 'category',
       header: '카테고리 · 유형',
-      className: 'w-32',
+      className: 'w-32 min-w-[96px]',
       cell: (row) => (
         <span className="text-muted">
           {inquiryCategoryLabel(row.category)} · {inquiryTypeLabel(row.type)}
@@ -86,17 +91,23 @@ export function InquiryTable({
       ),
     },
     {
+      key: 'assignee',
+      header: '담당자',
+      className: 'w-36 min-w-[124px]',
+      cell: (row) => <InquiryAssigneeCell row={row} />,
+    },
+    {
       key: 'status',
       header: '상태',
       sortKey: 'status',
-      className: 'w-28',
+      className: 'w-28 min-w-[92px]',
       cell: (row) => <InquiryStatusBadge status={row.status} cancelledAt={row.cancelledAt} />,
     },
     {
       key: 'replies',
       header: '답변',
       align: 'right',
-      className: 'w-16',
+      className: 'w-16 min-w-[48px]',
       cell: (row) => (
         <span className={row.replyCount === 0 ? 'text-muted' : ''}>{row.replyCount}</span>
       ),
@@ -105,7 +116,7 @@ export function InquiryTable({
       key: 'createdAt',
       header: '등록일',
       sortKey: 'created_at',
-      className: 'w-32',
+      className: 'w-32 min-w-[96px]',
       cell: (row) => <span className="text-muted">{formatDateTime(row.createdAt)}</span>,
     },
     {
@@ -113,7 +124,7 @@ export function InquiryTable({
       // 헤더가 좁은 칸에서 두 줄로 접히지 않도록 짧게 쓴다(값은 오늘이면 시:분).
       header: '업데이트',
       sortKey: 'updated_at',
-      className: 'w-28',
+      className: 'w-28 min-w-[72px]',
       cell: (row) => <span className="text-muted">{formatRelativeDay(row.updatedAt)}</span>,
     },
   ]

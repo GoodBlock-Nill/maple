@@ -5,6 +5,7 @@ import { InquiryTable } from '@/components/inquiries/InquiryTable'
 import { Badge, Button, FormBanner, PageHeader } from '@/components/ui'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
+import { getAdmins } from '@/lib/data/admins'
 import { INQUIRY_SORT_KEYS, getInquiries, getInquiryTabCounts } from '@/lib/data/inquiries'
 import {
   getInquiryCategoryFilterOptions,
@@ -26,6 +27,10 @@ export const dynamic = 'force-dynamic'
  *
  * 사이드바의 '1:1 문의'·'이메일 문의'는 새 라우트가 아니라 이 화면의 필터 프리셋이다
  * (EMAIL-INQUIRY-PLAN §7). 주소만 다르고 제목이 같으면 운영자가 어느 화면인지 모른다.
+ *
+ * 그래서 목록에는 **출처 칸도 선택 상자도 두지 않는다**(2026-09-11 오너 결정) — 메뉴가
+ * 이미 갈라 놓은 값을 행마다 반복하면 같은 뱃지가 스무 줄 늘어설 뿐이다. 제목이 지금
+ * 어느 묶음을 보고 있는지 말해 준다.
  */
 const PRESETS: Record<InquirySource | 'all', { title: string; description: string }> = {
   web: {
@@ -38,7 +43,7 @@ const PRESETS: Record<InquirySource | 'all', { title: string; description: strin
   },
   all: {
     title: '문의 전체',
-    description: '웹 폼과 이메일로 들어온 문의를 함께 봅니다. 출처 필터로 좁힐 수 있습니다.',
+    description: '웹 폼과 이메일로 들어온 문의를 함께 봅니다. 사이드바에서 한쪽만 볼 수 있습니다.',
   },
 }
 
@@ -53,23 +58,33 @@ export async function generateMetadata(props: PageProps<'/inquiries'>): Promise<
 }
 
 export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
-  await requirePermission('inquiries', 'read')
+  /* 담당자 필터('내 담당')와 목록의 '내가 담당' 표시가 **보는 사람**을 알아야 한다.
+     레이아웃이 이미 가드를 통과했더라도 여기서 다시 받아야 그 값을 쓸 수 있다. */
+  const admin = await requirePermission('inquiries', 'read')
   const params = await props.searchParams
   const filters = parseInquiryFilters(params)
   const sort = parseSort(params.sort, INQUIRY_SORT_KEYS, { key: 'created_at', direction: 'desc' })
   const page = parsePage(params.page)
   const preset = presetFor(filters.source)
 
-  const [{ rows, count, hasError }, counts, categories, types, scopedMember] = await Promise.all([
-    getInquiries(filters, { page, sortKey: sort.key, ascending: sort.direction === 'asc' }),
-    getInquiryTabCounts(filters),
-    getInquiryCategoryFilterOptions(),
-    /* 유형 옵션은 고른 카테고리에 매달려 있다. 카테고리를 바꾸고 '검색'을 누르면
-       다음 화면에서 그 카테고리의 세부 유형만 남는다(GET 폼이라 왕복이 곧 갱신이다). */
-    getInquiryTypeFilterOptions(filters.category),
-    // 회원 상세의 "전체 보기"(`?user=<id>`)로 들어왔을 때만 닉네임을 한 번 더 읽는다.
-    filters.userId === null ? Promise.resolve(null) : getMember(filters.userId),
-  ])
+  const [{ rows, count, hasError }, counts, categories, types, scopedMember, admins] =
+    await Promise.all([
+      getInquiries(filters, {
+        page,
+        sortKey: sort.key,
+        ascending: sort.direction === 'asc',
+        viewerId: admin.id,
+      }),
+      getInquiryTabCounts(filters, admin.id),
+      getInquiryCategoryFilterOptions(),
+      /* 유형 옵션은 고른 카테고리에 매달려 있다. 카테고리를 바꾸고 '검색'을 누르면
+         다음 화면에서 그 카테고리의 세부 유형만 남는다(GET 폼이라 왕복이 곧 갱신이다). */
+      getInquiryTypeFilterOptions(filters.category),
+      // 회원 상세의 "전체 보기"(`?user=<id>`)로 들어왔을 때만 닉네임을 한 번 더 읽는다.
+      filters.userId === null ? Promise.resolve(null) : getMember(filters.userId),
+      // 담당자 필터의 선택지. 관리자 수는 많아야 수십 명이라 매번 읽어도 된다.
+      getAdmins(),
+    ])
 
   return (
     <>
@@ -104,6 +119,7 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
         counts={counts}
         categories={categories}
         types={types}
+        admins={admins}
       />
 
       {hasError && (

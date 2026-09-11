@@ -17,20 +17,17 @@ import {
 
 const INQUIRY = {
   id: 'abcd1234-5678-4000-8000-000000000000',
+  inquiryNo: 1024,
   title: '아이템이 사라졌어요',
   category: '재화·아이템',
   nickname: '글자용사',
 }
 
 describe('inquiryNumber', () => {
-  it('should take the first eight characters in upper case', () => {
-    // Arrange & Act & Assert — UUID 36자를 그대로 적으면 사용자가 옮겨 적지 못한다.
-    expect(inquiryNumber(INQUIRY.id)).toBe('ABCD1234')
-  })
-
-  it('should return the whole value when it is shorter than eight', () => {
-    // Arrange & Act & Assert
-    expect(inquiryNumber('ab12')).toBe('AB12')
+  it('should write the receipt number the user sees', () => {
+    /* Arrange & Act & Assert — 2026-09-11 이전에는 UUID 앞 8자리였다. 이제는
+       사용자 화면·메일·관리자 목록과 **같은 값**이어야 한다. */
+    expect(inquiryNumber(INQUIRY.inquiryNo)).toBe('#1024')
   })
 })
 
@@ -43,7 +40,7 @@ describe('applyReplyTemplate', () => {
     const result = applyReplyTemplate(body, INQUIRY)
 
     // Assert
-    expect(result).toBe('글자용사 / ABCD1234 / 재화·아이템 / 아이템이 사라졌어요')
+    expect(result).toBe('글자용사 / #1024 / 재화·아이템 / 아이템이 사라졌어요')
   })
 
   it('should replace every occurrence and keep the line breaks', () => {
@@ -54,7 +51,7 @@ describe('applyReplyTemplate', () => {
     const result = applyReplyTemplate(body, INQUIRY)
 
     // Assert
-    expect(result).toBe('안녕하세요, 글자용사님.\n\n글자용사님의 문의(ABCD1234)를 확인했습니다.')
+    expect(result).toBe('안녕하세요, 글자용사님.\n\n글자용사님의 문의(#1024)를 확인했습니다.')
   })
 
   it('should tolerate spaces inside the braces', () => {

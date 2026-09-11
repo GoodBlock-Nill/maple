@@ -1,9 +1,13 @@
 import { z } from 'zod'
 
 import { firstValue, type QueryParams } from '@/lib/utils/table-query'
+import { parseInquiryAssigneeParams } from '@/lib/validation/inquiry-assignment'
+import { parseInquiryNoSearch } from '@/lib/validation/inquiry-no-search'
 import { isInquirySource } from '@/lib/validation/inquiry-source'
+import { plainTextField } from '@/lib/validation/plain-text'
 
 import type { Enums } from '@/lib/supabase/types'
+import type { InquiryAssigneeFilter } from '@/lib/validation/inquiry-assignment'
 import type { InquirySource } from '@/lib/validation/inquiry-source'
 
 /**
@@ -18,6 +22,10 @@ import type { InquirySource } from '@/lib/validation/inquiry-source'
  */
 
 export * from '@/lib/validation/inquiry-source'
+/* 계정 마스킹과 평문 필드 조각도 각자의 파일이 갖는다(이 파일의 300줄 상한). 화면과
+   스키마는 계속 `@/lib/validation/inquiries` 한 곳에서 가져다 쓴다. */
+export * from '@/lib/validation/inquiry-account-mask'
+export * from '@/lib/validation/plain-text'
 
 export type InquiryStatus = Enums<'inquiry_status'>
 
@@ -213,11 +221,15 @@ export type InquiryFilters = {
   /** 출처 프리셋(사이드바의 '1:1 문의' · '이메일 문의'). null 이면 전체. */
   source: InquirySource | null
   search: string | null
+  /** 검색어가 접수번호(`1024` · `#1024`)일 때의 숫자. 번호 정확 일치를 함께 건다. */
+  searchNo: number | null
   /** `YYYY-MM-DD` (한국시간 기준 날짜). 데이터 계층이 UTC 경계로 환산한다. */
   from: string | null
   to: string | null
   /** 회원 상세에서 넘어온 `?user=<id>` 필터. null 이면 전체 회원. */
   userId: string | null
+  /** 담당자 필터(`?assignee=me|none|<uuid>`). `'me'` 의 실제 id 는 조회 계층이 채운다. */
+  assignee: InquiryAssigneeFilter
 }
 
 export function parseInquiryFilters(params: QueryParams): InquiryFilters {
@@ -238,37 +250,14 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
     // 모르는 출처는 필터를 걸지 않는다(= 전체). 임의 문자열이 질의로 흘러가지 않게 한다.
     source: isInquirySource(source) ? source : null,
     search: sanitizeInquirySearch(params.q),
+    // 접수번호로도 찾을 수 있어야 한다 — 사용자가 불러 주는 값이 그것뿐이다.
+    searchNo: parseInquiryNoSearch(params.q),
     from: parseDateParam(params.from),
     to: parseDateParam(params.to),
     userId: parseUserIdParam(params.user),
+    // 담당자 필터의 규칙은 협업 모듈이 갖는다(`validation/inquiry-assignment.ts`).
+    assignee: parseInquiryAssigneeParams(params),
   }
-}
-
-/* -------------------------------------------------------------------------
- * 계정 ID 마스킹
- * ---------------------------------------------------------------------- */
-
-/* 사용자 사이트(`lib/utils/mask.ts`)와 **완전히 같은 규칙**을 쓴다. 같은 계정 ID 가
-   두 화면에서 다르게 가려지면 운영자와 사용자가 같은 값을 두고 다른 이야기를 하게 된다.
-   마스크 길이를 원문 길이에 맞추지 않는 것도 그쪽 결정이다 — 자릿수까지 새어 나가지
-   않게 하려는 것. */
-const ACCOUNT_MASK = '****'
-const ACCOUNT_VISIBLE_PREFIX = 4
-const ACCOUNT_VISIBLE_SUFFIX = 3
-
-/** `123456789000000` → `1234****000`. 값이 없으면 화면이 비지 않도록 `-`. */
-export function maskAccountId(value: string | null | undefined): string {
-  const trimmed = (value ?? '').trim()
-
-  if (trimmed.length === 0) {
-    return '-'
-  }
-
-  if (trimmed.length <= ACCOUNT_VISIBLE_PREFIX + ACCOUNT_VISIBLE_SUFFIX) {
-    return `${trimmed.slice(0, 1)}${ACCOUNT_MASK}`
-  }
-
-  return `${trimmed.slice(0, ACCOUNT_VISIBLE_PREFIX)}${ACCOUNT_MASK}${trimmed.slice(-ACCOUNT_VISIBLE_SUFFIX)}`
 }
 
 /* -------------------------------------------------------------------------
@@ -279,20 +268,6 @@ export const INQUIRY_REPLY_MAX_LENGTH = 2000
 
 /** 답변 뒤에 놓을 수 있는 상태. 기본은 답변 완료, 추가 확인이 필요하면 처리 중. */
 export const INQUIRY_REPLY_NEXT_STATUSES = ['answered', 'in_progress'] as const
-
-/**
- * 여러 줄 평문 필드.
- *
- * 브라우저는 textarea 값을 폼 전송 시 **CRLF 로 정규화**한다(HTML 사양). 그대로
- * 저장하면 사용자 화면·검색·글자 수 계산이 보이지 않는 `\r` 에 흔들린다. 길이를
- * 재기 전에 LF 로 되돌리고 앞뒤 공백을 다듬는다.
- */
-export function plainTextField(max: number, emptyMessage: string, tooLongMessage: string) {
-  return z
-    .string()
-    .transform((value) => value.replace(/\r\n/g, '\n').trim())
-    .pipe(z.string().min(1, emptyMessage).max(max, tooLongMessage))
-}
 
 export const inquiryReplySchema = z.object({
   inquiryId: z.uuid('문의를 찾을 수 없습니다.'),

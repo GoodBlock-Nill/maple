@@ -34,6 +34,8 @@ let service: SupabaseClient
 let nickname = REQUESTED_NICKNAME
 let fixtureUserId = ''
 let inquiryId = ''
+/** `{{문의번호}}` 가 치환되는 값. 2026-09-11 부터 uuid 앞자리가 아니라 접수번호다. */
+let inquiryNo = 0
 
 test.describe.configure({ mode: 'serial' })
 
@@ -66,10 +68,11 @@ test.beforeAll(async () => {
       privacy_consent: true,
       status: 'pending',
     })
-    .select('id')
+    .select('id, inquiry_no')
     .single()
 
   inquiryId = inquiry.data?.id ?? ''
+  inquiryNo = inquiry.data?.inquiry_no ?? 0
   expect(inquiryId, '픽스처 문의를 만들지 못했습니다').toBeTruthy()
 })
 
@@ -143,7 +146,7 @@ test('문의 답변에 템플릿을 불러오면 자리표시자가 그 문의�
   // Assert — 치환된 문장만 남는다(자리표시자가 남으면 사용자 화면에 그대로 노출된다)
   const inserted = await editor.inputValue()
   expect(inserted).toContain(`안녕하세요, ${nickname}님.`)
-  expect(inserted).toContain(inquiryId.slice(0, 8).toUpperCase())
+  expect(inserted).toContain(`#${inquiryNo}`)
   expect(inserted).toContain(CATEGORY_LABEL)
   expect(inserted).toContain(INQUIRY_TITLE)
   expect(inserted).not.toContain('{{')

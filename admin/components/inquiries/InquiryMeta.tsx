@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { InquiryEmailMeta } from '@/components/inquiries/InquiryEmailMeta'
 import { MetaList, MetaRow } from '@/components/inquiries/InquiryMetaRow'
 import { formatDateTime } from '@/lib/utils/format-date'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import { inquiryCategoryLabel, inquiryTypeLabel, maskAccountId } from '@/lib/validation/inquiries'
 
 import type { InquiryDetail } from '@/lib/data/inquiries'
@@ -23,6 +24,8 @@ export function InquiryMeta({ inquiry }: { inquiry: InquiryDetail }) {
 
   return (
     <MetaList>
+      {/* 사용자가 불러 주는 값이라 맨 위에 둔다(사용자 화면의 상세와 같은 표기다). */}
+      <MetaRow label="접수번호">{formatInquiryNo(inquiry.inquiryNo)}</MetaRow>
       <MetaRow label="작성자">
         {inquiry.userId === null ? (
           <span className="text-muted">{inquiry.nickname}</span>

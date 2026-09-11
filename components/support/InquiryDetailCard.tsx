@@ -2,6 +2,7 @@ import { InquiryAttachmentList } from '@/components/support/InquiryAttachmentLis
 import { InquiryOwnerActions } from '@/components/support/InquiryOwnerActions'
 import { InquiryStatusBadge } from '@/components/support/InquiryStatusBadge'
 import { formatDateLong } from '@/lib/utils/format-date'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import { maskAccountId } from '@/lib/utils/mask'
 
 import type { InquiryDetail, SignedInquiryAttachment } from '@/types/domain'
@@ -22,9 +23,16 @@ export function InquiryDetailCard({ inquiry, attachments }: InquiryDetailCardPro
     <article className="flex flex-col gap-5">
       <header className="flex flex-col gap-3">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <h2 className="text-ink min-w-0 text-title-md leading-[1.35] font-medium">
-            {inquiry.title}
-          </h2>
+          <div className="flex min-w-0 flex-col gap-1">
+            {/* 접수번호는 제목 위에 둔다 — 고객센터 통화 중에 가장 먼저 찾는 값이다. */}
+            <span className="text-ink-muted text-[15px] font-semibold tabular-nums">
+              <span className="sr-only">접수번호 </span>
+              {formatInquiryNo(inquiry.inquiryNo)}
+            </span>
+            <h2 className="text-ink text-title-md min-w-0 leading-[1.35] font-medium">
+              {inquiry.title}
+            </h2>
+          </div>
           {/* 뱃지와 소유자 액션(수정 · 접수 취소)은 한 열로 묶는다. 좁은 화면에서
               둘이 떨어지면 어느 문의에 대한 동작인지 읽기 어려워진다. */}
           <div className="flex flex-col items-start gap-2 sm:items-end">

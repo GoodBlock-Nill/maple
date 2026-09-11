@@ -22,6 +22,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   post: '게시글',
   comment: '댓글',
   inquiry: '1:1 문의',
+  inquiry_note: '문의 내부 메모',
   inquiry_category: '문의 카테고리',
   inquiry_reply_template: '답변 템플릿',
   coupon: '쿠폰',
@@ -54,6 +55,11 @@ const VERB_LABELS: Record<string, string> = {
   suspend: '정지',
   unsuspend: '정지 해제',
   invite: '초대',
+  /* 문의 협업(2026-09-11). '배정'만 쓰면 무엇을 배정했는지 알 수 없어 담당자를 박아 둔다. */
+  assign: '담당자 배정',
+  unassign: '담당자 배정 해제',
+  /* 정상적인 잠금·하트비트는 기록하지 않는다 — 남이 쓰던 것을 가져온 경우만 남는다. */
+  edit_lock: '작성 잠금 가로채기',
   revoke: '권한 회수',
   rename: '닉네임 변경',
   activate: '활성화',
@@ -121,6 +127,7 @@ const TABLE_LABELS: Record<string, string> = {
   comments: '댓글',
   inquiries: '1:1 문의',
   inquiry_replies: '문의 답변',
+  inquiry_notes: '문의 내부 메모',
   inquiry_reply_templates: '답변 템플릿',
   coupons: '쿠폰',
   coupon_redemptions: '쿠폰 등록',

@@ -15,6 +15,7 @@ import { InquiryReplyTemplatePicker } from '@/components/inquiries/InquiryReplyT
 
 const INQUIRY = {
   id: 'abcd1234-5678-4000-8000-000000000000',
+  inquiryNo: 1024,
   title: '아이템이 사라졌어요',
   category: '재화·아이템',
   nickname: '글자용사',
@@ -30,7 +31,7 @@ const TEMPLATES = [
   { id: 'template-category', name: '아이템 지급 완료', body: '지급했습니다.', isCommon: false },
 ]
 
-const APPLIED = '안녕하세요, 글자용사님. 문의(ABCD1234)를 확인했습니다.'
+const APPLIED = '안녕하세요, 글자용사님. 문의(#1024)를 확인했습니다.'
 
 function renderPicker(hasContent: boolean) {
   const onApply = vi.fn()

@@ -11,11 +11,15 @@ import {
   INQUIRY_SUBMITTED_TITLE,
   MY_INQUIRIES_LINK_LABEL,
   MY_INQUIRIES_PATH,
+  inquirySubmittedReceiptNotice,
 } from '@/lib/constants/support'
+import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 
 type InquirySubmittedDialogProps = {
   /** 파라미터를 뗀 상세 주소. 닫을 때 이 주소로 갈아 끼운다. */
   detailPath: string
+  /** 방금 받은 접수번호. 사용자가 적어 둘 수 있도록 모달에서 한 번 더 보여 준다. */
+  inquiryNo: number
 }
 
 const PRIMARY_CLASS =
@@ -35,7 +39,7 @@ const OUTLINE_CLASS =
  * `history.replaceState` 가 아니라 `router.replace` 를 쓰는 이유는 서버가 아는
  * 주소까지 함께 갈아 끼워야 뒤로 가기에서도 되살아나지 않기 때문이다.
  */
-export function InquirySubmittedDialog({ detailPath }: InquirySubmittedDialogProps) {
+export function InquirySubmittedDialog({ detailPath, inquiryNo }: InquirySubmittedDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(true)
   const titleId = useId()
@@ -60,6 +64,13 @@ export function InquirySubmittedDialog({ detailPath }: InquirySubmittedDialogPro
         <h2 id={titleId} className="text-ink text-label-lg font-semibold">
           {INQUIRY_SUBMITTED_TITLE}
         </h2>
+
+        <p
+          className="text-ink text-[17px] font-semibold tabular-nums"
+          data-testid="inquiry-receipt"
+        >
+          {inquirySubmittedReceiptNotice(formatInquiryNo(inquiryNo))}
+        </p>
 
         <p id={descriptionId} className="text-ink-muted text-[15px] leading-[1.6]">
           {INQUIRY_SUBMITTED_DESCRIPTION}

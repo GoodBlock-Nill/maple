@@ -7,6 +7,7 @@ import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { updateInquiryStatusAction } from '@/lib/actions/inquiries-actions'
 
 import type { FormState } from '@/lib/actions/form-state'
+import type { InquiryStatus } from '@/lib/validation/inquiries'
 
 /**
  * "종료" 버튼 + 확인 다이얼로그.
@@ -14,7 +15,16 @@ import type { FormState } from '@/lib/actions/form-state'
  * 상태 select 로도 종료할 수 있지만, 종료는 사용자 화면에서 스레드가 닫히는 조작이라
  * 한 단계를 둔다. 되돌리려면 '처리 중'으로만 열 수 있다(상태 전이 표).
  */
-export function InquiryCloseButton({ inquiryId }: { inquiryId: string }) {
+export function InquiryCloseButton({
+  inquiryId,
+  status,
+  replyCount,
+}: {
+  inquiryId: string
+  /** 화면을 연 시점의 상태·답변 수. 충돌 감지가 이 값과 DB 를 비교한다. */
+  status: InquiryStatus
+  replyCount: number
+}) {
   const [isOpen, setOpen] = useState(false)
   const { showToast } = useToast()
 
@@ -49,6 +59,8 @@ export function InquiryCloseButton({ inquiryId }: { inquiryId: string }) {
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="inquiryId" value={inquiryId} />
           <input type="hidden" name="status" value="closed" />
+          <input type="hidden" name="expectedStatus" value={status} />
+          <input type="hidden" name="expectedReplyCount" value={replyCount} />
 
           <FormBanner message={state.formError} />
 

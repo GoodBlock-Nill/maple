@@ -35,6 +35,10 @@ const db = vi.hoisted(() => ({
   > | null,
   reply: null as Record<string, unknown> | null,
   inserts: [] as { table: string; payload: Record<string, unknown> }[],
+  /* 답변 INSERT 는 `add_inquiry_reply()` RPC 안에서 일어난다(충돌 감지와 한 트랜잭션).
+     테스트가 보는 것은 그 호출 인자다 — 저장 자체는 DB 함수의 몫이다. */
+  rpcCalls: [] as { name: string; args: Record<string, unknown> }[],
+  rpcResult: { ok: true, reply_id: '' } as Record<string, unknown>,
   session: { access_token: 'access-token-1' } as { access_token: string } | null,
 }))
 
@@ -77,6 +81,11 @@ vi.mock('@/lib/supabase/server', () => {
   return {
     createClient: async () => ({
       from: (table: string) => builder(table),
+      rpc: async (name: string, args: Record<string, unknown>) => {
+        db.rpcCalls.push({ name, args })
+
+        return { data: db.rpcResult, error: null }
+      },
       auth: { getSession: async () => ({ data: { session: db.session }, error: null }) },
     }),
   }
@@ -116,8 +125,9 @@ function stubFetch(status: number, body: string) {
   return fetchMock
 }
 
-function replyInsert() {
-  return db.inserts.find((entry) => entry.table === 'inquiry_replies')?.payload
+/** 답변 저장 RPC 에 실제로 넘어간 인자. */
+function replyRpcArgs() {
+  return db.rpcCalls.find((entry) => entry.name === 'add_inquiry_reply')?.args
 }
 
 let errorSpy: ReturnType<typeof vi.spyOn>
@@ -129,6 +139,8 @@ beforeEach(() => {
   db.inquiry = { status: 'pending', cancelled_at: null, source: 'email' }
   db.reply = null
   db.inserts = []
+  db.rpcCalls = []
+  db.rpcResult = { ok: true, reply_id: REPLY_ID }
   db.session = { access_token: 'access-token-1' }
 })
 
@@ -147,7 +159,7 @@ describe('replyToInquiryAction (이메일 문의)', () => {
     const state = await replyToInquiryAction(EMPTY_FORM_STATE, replyForm())
 
     // Assert
-    expect(replyInsert()).toMatchObject({ direction: 'outbound', delivery_status: 'queued' })
+    expect(replyRpcArgs()).toMatchObject({ p_inquiry_id: INQUIRY_ID, p_delivery_status: 'queued' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
@@ -202,8 +214,8 @@ describe('replyToInquiryAction (이메일 문의)', () => {
 
     // Assert
     expect(fetchMock).not.toHaveBeenCalled()
-    expect(replyInsert()).toMatchObject({ direction: 'outbound' })
-    expect(replyInsert()).not.toHaveProperty('delivery_status')
+    // 웹 문의의 답변은 발송 대상이 아니다 — 배달 상태를 아예 적지 않는다.
+    expect(replyRpcArgs()).toMatchObject({ p_delivery_status: null })
     expect(state.message).toBe("답변을 등록하고 상태를 '답변 완료'로 바꿨습니다.")
   })
 })
