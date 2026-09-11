@@ -11,6 +11,7 @@ import { Button, Card, CardBody, CardHeader, PageHeader } from '@/components/ui'
 import { hasPermission } from '@/lib/auth/permissions'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { getInquiryDetail, getInquiryReplies } from '@/lib/data/inquiries'
+import { getInquiryReplyTemplateOptions } from '@/lib/data/inquiry-reply-templates'
 import {
   inquiryCategoryLabel,
   inquiryTypeLabel,
@@ -39,7 +40,13 @@ export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id
     notFound()
   }
 
-  const replies = await getInquiryReplies(inquiry.id)
+  /* 답변 템플릿은 이 문의의 카테고리에 매여 있다(공통 + 같은 카테고리 · 사용 중인 것).
+     답변 폼을 그리지 않는 경우(읽기 전용 · 취소 · 종료)에도 함께 읽는다 — 한 번의
+     왕복이고, 조건을 나누면 "답변 폼이 보이는데 선택지는 비어 있는" 경로가 생긴다. */
+  const [replies, templates] = await Promise.all([
+    getInquiryReplies(inquiry.id),
+    getInquiryReplyTemplateOptions(inquiry.category),
+  ])
   // 사용자가 스스로 취소한 접수는 읽기 전용이다(액션도 같은 규칙으로 거절한다).
   const isLocked = isCancelledInquiry(inquiry.cancelledAt)
   /* 이메일 문의에는 취소할 사용자가 없으므로 위 잠금은 항상 false 다 — 그래도 규칙을
@@ -117,6 +124,13 @@ export default async function InquiryDetailPage(props: PageProps<'/inquiries/[id
             inquiryId={inquiry.id}
             adminNickname={admin.nickname}
             isEmail={isEmail}
+            templates={templates}
+            inquiry={{
+              id: inquiry.id,
+              title: inquiry.title,
+              category: inquiry.category,
+              nickname: inquiry.nickname,
+            }}
           />
         )}
       </div>

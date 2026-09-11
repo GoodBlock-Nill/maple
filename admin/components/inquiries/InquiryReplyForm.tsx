@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useCallback, useRef } from 'react'
+import { useActionState, useCallback, useRef, useState } from 'react'
 
+import { InquiryReplyTemplatePicker } from '@/components/inquiries/InquiryReplyTemplatePicker'
 import { Button, Card, CardBody, CardHeader, FormBanner, Textarea, useToast } from '@/components/ui'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { replyToInquiryAction } from '@/lib/actions/inquiries-actions'
@@ -11,7 +12,10 @@ import {
   INQUIRY_STATUS_LABELS,
 } from '@/lib/validation/inquiries'
 
+import type { TemplateApplyMode } from '@/components/inquiries/InquiryReplyTemplatePicker'
 import type { FormState } from '@/lib/actions/form-state'
+import type { InquiryReplyTemplateOption } from '@/lib/data/inquiry-reply-templates'
+import type { InquiryPlaceholderSource } from '@/lib/utils/inquiry-reply-template'
 
 const OPERATOR_NAME = '운영자'
 
@@ -26,6 +30,9 @@ const OPERATOR_NAME = '운영자'
  *
  * 이메일 문의는 **되돌릴 수 없는 발송**이라 문구를 바꾼다. "답변 등록"이라고 적혀
  * 있으면 운영자가 콘솔 안에만 남는 메모로 오해하고 계정 정보를 적을 수 있다.
+ *
+ * 입력을 상태로 쥐는 이유는 '템플릿 불러오기' 때문이다(2026-09-11). 비제어 textarea 에
+ * DOM 으로 값을 밀어 넣으면 React 가 그 사실을 모르고, 글자수 표시가 옛 숫자에 멈춘다.
  */
 const COPY = {
   web: {
@@ -46,14 +53,29 @@ export function InquiryReplyForm({
   inquiryId,
   adminNickname,
   isEmail,
+  templates,
+  inquiry,
 }: {
   inquiryId: string
   adminNickname: string
   isEmail: boolean
+  /** 이 문의에서 쓸 수 있는 답변 템플릿(공통 + 같은 카테고리 · 사용 중인 것만). */
+  templates: readonly InquiryReplyTemplateOption[]
+  /** 자리표시자 치환에 쓰는 문의 정보. */
+  inquiry: InquiryPlaceholderSource
 }) {
   const copy = isEmail ? COPY.email : COPY.web
   const formRef = useRef<HTMLFormElement>(null)
+  const [content, setContent] = useState('')
   const { showToast } = useToast()
+
+  const applyTemplate = useCallback((text: string, mode: TemplateApplyMode) => {
+    /* 이어 붙일 때는 빈 줄 하나를 사이에 둔다. 두 문안이 한 문단으로 붙으면 사용자가
+       읽을 때 어디서 이야기가 바뀌는지 알 수 없다. */
+    setContent((current) =>
+      mode === 'append' && current.trim() !== '' ? `${current.trimEnd()}\n\n${text}` : text,
+    )
+  }, [])
 
   const run = useCallback(
     async (prevState: FormState, formData: FormData): Promise<FormState> => {
@@ -61,7 +83,9 @@ export function InquiryReplyForm({
 
       if (result.message !== undefined) {
         showToast(result.message, 'success')
-        /* 글자수는 폼 reset 을 Textarea 가 직접 듣고 0 으로 돌린다(useInputLength). */
+        /* 본문은 상태가 쥐고 있으므로 직접 비운다. reset() 은 명의 체크박스·등록 후
+           상태 셀렉트를 기본값으로 되돌리는 몫만 한다. */
+        setContent('')
         formRef.current?.reset()
       }
 
@@ -81,6 +105,13 @@ export function InquiryReplyForm({
 
           <FormBanner message={state.formError} />
 
+          <InquiryReplyTemplatePicker
+            templates={templates}
+            inquiry={inquiry}
+            hasContent={content.trim() !== ''}
+            onApply={applyTemplate}
+          />
+
           <Textarea
             label="답변 내용"
             name="content"
@@ -90,6 +121,8 @@ export function InquiryReplyForm({
             placeholder="사용자가 그대로 읽는 문장입니다."
             hint={copy.hint}
             error={state.fieldErrors?.content}
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">

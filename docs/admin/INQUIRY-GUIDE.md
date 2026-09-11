@@ -3,6 +3,8 @@
 최종 갱신 2026-09-11 · 기준 커밋 `af1a886` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-GUIDE.html` (다이어그램 포함)
+>
+> **§5.6 답변 템플릿(2026-09-11)은 아직 HTML 에 없습니다.** 다음 재생성 때 함께 반영합니다 — 이 MD 가 원본입니다.
 
 1:1 문의는 **한 테이블(`inquiries`)에 두 경로**가 들어옵니다 — 사용자 사이트의 웹 폼(`source='web'`)과 메일 수신 함수(`source='email'`). 문의의 **분류·세부 유형·프리필 양식은 코드가 아니라 DB(`inquiry_categories`)가 소유**하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 크기 때문에 **이미지·PDF 와 영상이 서로 다른 길**로 스토리지에 도착합니다.
 
@@ -464,26 +466,57 @@ stateDiagram-v2
 
 개명에 따른 재라벨링은 그 문의들의 `updated_at` 을 밀어 올립니다(`set_updated_at` 트리거). 트리거를 끄면 잠금 범위가 테이블 전체로 커지므로 그대로 뒀습니다 — "수정일"이 밀릴 뿐 내용·상태·이력은 그대로입니다.
 
-### 5.6 권한 · 감사 로그
+### 5.6 답변 템플릿
 
-모듈 키는 `inquiries`(라벨 '1:1 문의') 하나입니다. 문의 목록·상세·답변과 **카테고리 관리가 같은 모듈**입니다. FAQ 만 하위 메뉴에 있으면서 별도 모듈(`faqs`)입니다.
+`/inquiries/reply-templates` — 카테고리 화면 헤더의 '답변 템플릿' · 사이드바 고객지원 하위
 
-| 등급    | 되는 것                                                                              |
-| ------- | ------------------------------------------------------------------------------------ |
-| `read`  | 목록 · 상세 · 첨부 서명 URL · 카테고리 목록 보기                                     |
-| `write` | + 상태 변경 · 종료 · 답변 등록 · 답신 다시 보내기 · 카테고리 CRUD · 순서 · 활성 토글 |
+답변에 쓰는 상용구입니다. `public.inquiry_reply_templates`(마이그레이션 `20260911000200`) 한 테이블이 소유하고, **사용자 사이트는 이 테이블을 읽지 않습니다**(관리자 전용 RLS — 아직 공지되지 않은 점검 일정이나 보상 기준이 문안에 적힙니다).
 
-| `action`                                                       | 대상                 | 남는 내용                                                               | 목록 표기           |
-| -------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------- | ------------------- |
-| `inquiry.status`                                               | `inquiries`          | `before {status}` · `after {status}`                                    | 1:1 문의 상태 변경  |
-| `inquiry.reply`                                                | `inquiry_replies`    | `after {inquiry_id, author_name, length}`                               | 1:1 문의 답변       |
-| `inquiry.email.reply`                                          | `inquiry_replies`    | 동일(이메일 문의의 답신)                                                | 1:1 문의 email 답변 |
-| `inquiry.email.resend`                                         | `inquiry_replies`    | `after {result}` = `sent\|queued\|not_configured\|unauthorized\|failed` | **원문 그대로**     |
-| `inquiry_category.create` · `.update` · `.delete` · `.reorder` | `inquiry_categories` | 수정은 `before`/`after` 전체 + `relabelled_inquiries`                   | **원문 그대로**     |
+| 열            | 쓰임                                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `category_id` | 붙는 카테고리. **NULL 이면 공통**(모든 문의에서 보입니다). 카테고리를 지우면 그 전용 템플릿도 함께 사라집니다(`on delete cascade`) |
+| `name`        | 선택 상자에 보이는 이름(≤ 40자). 같은 묶음 안에서 중복 불가 — 23505 → `같은 카테고리에 같은 이름의 템플릿이 있습니다.`             |
+| `body`        | 답변 칸에 채워지는 평문(**≤ 2000자 = 답변 상한**). 여기가 더 관대하면 "불러왔는데 등록할 수 없는" 템플릿이 만들어집니다            |
+| `sort_order`  | 묶음 안에서의 순서. ▲▼ + '순서 저장'(묶음마다 따로 있습니다 — 한 화면에 저장 버튼이 하나면 어느 묶음을 저장하는지 알 수 없습니다)  |
+| `is_active`   | 끄면 답변 화면의 선택 상자에서 사라집니다. 행과 문안은 그대로 남습니다                                                             |
 
-> **알려진 흠** — `admin/components/audit/audit-labels.ts` 는 **영역 + 동작 조합**으로 라벨을 만듭니다. `DOMAIN_LABELS` 에 `inquiry_category` 가 없고 `VERB_LABELS` 에 `resend` 가 없어 그 둘은 감사 목록에 **영문 원문**으로 남습니다. 고치려면 `DOMAIN_LABELS['inquiry_category'] = '문의 카테고리'` 와 `VERB_LABELS['resend'] = '다시 보내기'` 두 줄이면 됩니다.
+**자리표시자는 불러오는 그 순간 치환됩니다**(`admin/lib/utils/inquiry-reply-template.ts`). 저장되는 답변에는 `{{…}}` 가 남지 않습니다 — 남으면 사용자 화면에 그대로 노출됩니다.
 
-### 5.7 오류 · 문구 규칙
+| 자리표시자     | 값                                                           |
+| -------------- | ------------------------------------------------------------ |
+| `{{닉네임}}`   | 문의한 회원의 닉네임(이메일 문의는 발신자 이름). 비면 `고객` |
+| `{{문의번호}}` | 문의 ID 앞 8자리(대문자). 사용자가 대조하는 접수번호         |
+| `{{카테고리}}` | `inquiries.category`(라벨 문자열)                            |
+| `{{제목}}`     | 문의 제목                                                    |
+
+아는 이름만 바꿉니다 — `{{점검일}}` 처럼 모르는 표시는 **그대로 둡니다**(운영자가 손으로 채우려고 적어 둔 것일 수 있고, 조용히 지우면 빈칸인 채로 발송됩니다). 등록 화면은 예시 문의로 **치환된 뒤의 문장**을 미리 보여 줍니다.
+
+- **불러오기**는 문의 상세의 답변 폼 위에 있습니다(웹·이메일 공통 · `admin/components/inquiries/InquiryReplyTemplatePicker.tsx`). 선택지는 **공통 + 그 문의의 카테고리**, 사용 중인 것만입니다. 등록된 카테고리가 없는 옛 라벨('계정' 등)이나 이메일 문의면 공통만 남습니다.
+- 답변 칸이 비어 있으면 **묻지 않고** 넣습니다(잃을 것이 없습니다). 쓰던 글이 있으면 확인 창을 세웁니다 — `템플릿으로 바꾸기` / `끝에 추가`(빈 줄 하나를 사이에 둡니다) / `취소`.
+- **답변 액션은 그대로입니다.** 템플릿은 입력칸을 채울 뿐이고 저장·발송 경로(§5.4)는 손대지 않았습니다. 다만 답변 textarea 는 이 기능 때문에 **제어 입력**이 되었습니다 — DOM 으로 값을 밀어 넣으면 React 가 모르고 글자수 표시가 멈춥니다.
+- 시드 6개(공통 2 · 접속·서버 · 저장·데이터 · 재화·아이템 · 기타·건의)는 `where not exists` 로 넣습니다. 문안을 고치거나 지운 뒤 마이그레이션을 다시 돌려도 되살아나지 않습니다.
+
+### 5.7 권한 · 감사 로그
+
+모듈 키는 `inquiries`(라벨 '1:1 문의') 하나입니다. 문의 목록·상세·답변과 **카테고리 관리 · 답변 템플릿이 같은 모듈**입니다. FAQ 만 하위 메뉴에 있으면서 별도 모듈(`faqs`)입니다.
+
+| 등급    | 되는 것                                                                                                |
+| ------- | ------------------------------------------------------------------------------------------------------ |
+| `read`  | 목록 · 상세 · 첨부 서명 URL · 카테고리 목록 · 답변 템플릿 목록 보기                                    |
+| `write` | + 상태 변경 · 종료 · 답변 등록 · 답신 다시 보내기 · 카테고리 CRUD · **답변 템플릿 CRUD** · 순서 · 토글 |
+
+| `action`                                                             | 대상                      | 남는 내용                                                               | 목록 표기                                    |
+| -------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------- | -------------------------------------------- |
+| `inquiry.status`                                                     | `inquiries`               | `before {status}` · `after {status}`                                    | 1:1 문의 상태 변경                           |
+| `inquiry.reply`                                                      | `inquiry_replies`         | `after {inquiry_id, author_name, length}`                               | 1:1 문의 답변                                |
+| `inquiry.email.reply`                                                | `inquiry_replies`         | 동일(이메일 문의의 답신)                                                | 1:1 문의 이메일 답변                         |
+| `inquiry.email.resend`                                               | `inquiry_replies`         | `after {result}` = `sent\|queued\|not_configured\|unauthorized\|failed` | 1:1 문의 이메일 재발송                       |
+| `inquiry_category.create` · `.update` · `.delete` · `.reorder`       | `inquiry_categories`      | 수정은 `before`/`after` 전체 + `relabelled_inquiries`                   | 문의 카테고리 등록 · 수정 · 삭제 · 순서 변경 |
+| `inquiry_reply_template.create` · `.update` · `.delete` · `.reorder` | `inquiry_reply_templates` | 수정·삭제는 `before`/`after` 전체(문안 포함) · 순서는 `after {ids}`     | 답변 템플릿 등록 · 수정 · 삭제 · 순서 변경   |
+
+`admin/components/audit/audit-labels.ts` 는 **영역 + 동작 조합**으로 라벨을 만듭니다. 새 영역을 만들 때는 `DOMAIN_LABELS`(`inquiry_reply_template` → '답변 템플릿')와 `TABLE_LABELS`(`inquiry_reply_templates`)에 한 줄씩 넣으세요 — 빠뜨리면 목록에 **영문 원문**이 그대로 남습니다.
+
+### 5.8 오류 · 문구 규칙
 
 - **운영자가 스스로 고칠 수 있는 실패**는 원인을 그대로 적습니다(중복 라벨, 삭제 불가 건수, 이미 같은 상태). **고칠 수 없는 실패**만 "잠시 후 다시 시도해 주세요"로 뭉갭니다.
 - 실패 문구는 **지금 상태와 다음 행동**을 함께 적습니다 — `답신은 저장했지만 메일을 보내지 못했습니다. 스레드에서 다시 보내기를 눌러 주세요.`
@@ -528,29 +561,33 @@ stateDiagram-v2
 
 ### 7.1 단위 테스트
 
-2026-09-11 실행 결과: **사용자 사이트 179개(17파일) · 관리자 80개(5파일) 통과**.
+2026-09-11 실행 결과: **사용자 사이트 179개(17파일) · 관리자 119개(9파일) 통과**.
 
-| 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                         |
-| ---------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------- |
-| `tests/unit/validation/inquiry.test.ts`                                                  | 39    | 필수 항목 · 계정 ID 서식 · 상한 · CRLF · 세부 유형 대조 · 첨부 검증 · `isInquiryFormFilled`             |
-| `tests/unit/actions/inquiry-edit-actions.test.ts`                                        | 15    | 수정 가능 상태 · 옛 카테고리/유형 허용 · 첨부 분리 · 쿨다운 · 42501 문구 · 취소                         |
-| `tests/unit/support/InquiryFields.test.tsx`                                              | 13    | 프리필 교체 · 확인 모달 · 유형 셀렉트 잠금과 hidden '기타' · 계정 ID 프리필                             |
-| `tests/unit/validation/inquiry-video.test.ts`                                            | 13    | 영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(`null` vs `[]`)                                          |
-| `tests/unit/constants/support.test.ts`                                                   | 12    | 상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지                                         |
-| `tests/unit/actions/inquiry-actions.test.ts`                                             | 11    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect                                    |
-| `tests/unit/actions/inquiry-videos.test.ts`                                              | 11    | `claimPendingVideos` 의 세 검사와 롤백 · 서비스 롤 부재                                                 |
-| `tests/unit/data/inquiries.test.ts`                                                      | 10    | jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑                                                        |
-| `tests/unit/supabase/inquiry-pending-path.test.ts`                                       | 9     | pending 경로 조립과 `isInquiryPendingPath`(깊이 · uid · 트래버설)                                       |
-| `tests/unit/support/InquiryAttachmentField.test.tsx` · `InquiryAttachmentVideo.test.tsx` | 9 · 8 | 선택 → 축소 → 잠금 · 삭제 체크의 켜짐 표시 · 영상이 `input.files` 에서 빠지는지 · 진행률/취소/다시 시도 |
-| `tests/unit/utils/inquiry-prefill.test.ts`                                               | 8     | `isDiscardableContent` · `withLegacyCategory`                                                           |
-| `tests/unit/utils/inquiry-permissions.test.ts`                                           | 5     | `canEditInquiry` · `canCancelInquiry` · 취소 판정                                                       |
-| `tests/unit/support/InquiryConsentField.test.tsx` · `InquiryForm.test.tsx`               | 5 · 3 | 동의 체크박스가 보이는지 · 켜짐 표시(흰 체크) · 라벨 클릭 · 오류 연결 · 동의 없이는 제출 잠김           |
-| `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 4 · 4 | 폴백 · 캐시 태그 · 접수 완료 모달                                                                       |
-| `admin/tests/unit/inquiries-validation.test.ts`                                          | 33    | 상태 전이표 · 탭 파싱 · 검색어 정제 · 기간 경계(KST) · 마스킹 · 답변 스키마                             |
-| `admin/tests/unit/inquiry-category-actions.test.ts`                                      | 18    | RPC 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화                                  |
-| `admin/tests/unit/inquiry-categories-validation.test.ts`                                 | 16    | 라벨/설명/프리필 상한 · `toCategoryKey` · 세부 유형 중복·개수·길이                                      |
-| `admin/tests/unit/inquiry-email-actions.test.ts`                                         | 7     | 다시 보내기 — 방향 · 출처 · 이미 보낸 답신 차단 · 감사 로그                                             |
-| `admin/tests/unit/inquiry-email-auth.test.ts`                                            | 6     | `parseEmailAuth` · `hasEmailAuthFailure`(`none`·null 은 실패가 아니다)                                  |
+| 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                          |
+| ---------------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
+| `tests/unit/validation/inquiry.test.ts`                                                  | 39    | 필수 항목 · 계정 ID 서식 · 상한 · CRLF · 세부 유형 대조 · 첨부 검증 · `isInquiryFormFilled`              |
+| `tests/unit/actions/inquiry-edit-actions.test.ts`                                        | 15    | 수정 가능 상태 · 옛 카테고리/유형 허용 · 첨부 분리 · 쿨다운 · 42501 문구 · 취소                          |
+| `tests/unit/support/InquiryFields.test.tsx`                                              | 13    | 프리필 교체 · 확인 모달 · 유형 셀렉트 잠금과 hidden '기타' · 계정 ID 프리필                              |
+| `tests/unit/validation/inquiry-video.test.ts`                                            | 13    | 영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(`null` vs `[]`)                                           |
+| `tests/unit/constants/support.test.ts`                                                   | 12    | 상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지                                          |
+| `tests/unit/actions/inquiry-actions.test.ts`                                             | 11    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect                                     |
+| `tests/unit/actions/inquiry-videos.test.ts`                                              | 11    | `claimPendingVideos` 의 세 검사와 롤백 · 서비스 롤 부재                                                  |
+| `tests/unit/data/inquiries.test.ts`                                                      | 10    | jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑                                                         |
+| `tests/unit/supabase/inquiry-pending-path.test.ts`                                       | 9     | pending 경로 조립과 `isInquiryPendingPath`(깊이 · uid · 트래버설)                                        |
+| `tests/unit/support/InquiryAttachmentField.test.tsx` · `InquiryAttachmentVideo.test.tsx` | 9 · 8 | 선택 → 축소 → 잠금 · 삭제 체크의 켜짐 표시 · 영상이 `input.files` 에서 빠지는지 · 진행률/취소/다시 시도  |
+| `tests/unit/utils/inquiry-prefill.test.ts`                                               | 8     | `isDiscardableContent` · `withLegacyCategory`                                                            |
+| `tests/unit/utils/inquiry-permissions.test.ts`                                           | 5     | `canEditInquiry` · `canCancelInquiry` · 취소 판정                                                        |
+| `tests/unit/support/InquiryConsentField.test.tsx` · `InquiryForm.test.tsx`               | 5 · 3 | 동의 체크박스가 보이는지 · 켜짐 표시(흰 체크) · 라벨 클릭 · 오류 연결 · 동의 없이는 제출 잠김            |
+| `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 4 · 4 | 폴백 · 캐시 태그 · 접수 완료 모달                                                                        |
+| `admin/tests/unit/inquiries-validation.test.ts`                                          | 33    | 상태 전이표 · 탭 파싱 · 검색어 정제 · 기간 경계(KST) · 마스킹 · 답변 스키마                              |
+| `admin/tests/unit/inquiry-category-actions.test.ts`                                      | 18    | RPC 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화                                   |
+| `admin/tests/unit/inquiry-categories-validation.test.ts`                                 | 16    | 라벨/설명/프리필 상한 · `toCategoryKey` · 세부 유형 중복·개수·길이                                       |
+| `admin/tests/unit/inquiry-email-actions.test.ts`                                         | 7     | 다시 보내기 — 방향 · 출처 · 이미 보낸 답신 차단 · 감사 로그                                              |
+| `admin/tests/unit/inquiry-email-auth.test.ts`                                            | 6     | `parseEmailAuth` · `hasEmailAuthFailure`(`none`·null 은 실패가 아니다)                                   |
+| `admin/tests/unit/inquiry-reply-template-actions.test.ts`                                | 13    | 권한 가드 5종 · 공통=NULL 저장 · 23505/23503 문구 · 카테고리 이동 시 순서 재배치 · 감사 로그 · 부분 반영 |
+| `admin/tests/unit/inquiry-reply-templates-validation.test.ts`                            | 10    | 이름/본문 상한(= 답변 상한) · 경계값 · CRLF · 공통(빈 값) vs uuid · 정렬 입력                            |
+| `admin/tests/unit/inquiry-reply-template-placeholders.test.ts`                           | 9     | 자리표시자 4종 치환 · 반복·공백 허용 · 모르는 표시 보존 · 빈 값 폴백 · 접수번호                          |
+| `admin/tests/unit/inquiry-reply-template-picker.test.tsx`                                | 7     | 빈 칸이면 바로 삽입 · 쓰던 글이 있으면 확인 창 · 끝에 추가 · 취소 · 선택 전 버튼 잠금                    |
 
 ```bash
 # 사용자 사이트
@@ -562,11 +599,12 @@ cd admin && pnpm test -- tests/unit/inquir
 
 ### 7.2 E2E
 
-| 파일                                         | 건수 | 시나리오                                                                                                                                                                                                                   |
-| -------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/e2e/support-inquiries.spec.ts`        | 9    | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** |
-| `admin/tests/e2e/inquiries.spec.ts`          | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                        |
-| `admin/tests/e2e/inquiry-categories.spec.ts` | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                           |
+| 파일                                              | 건수 | 시나리오                                                                                                                                                                                                                   |
+| ------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/e2e/support-inquiries.spec.ts`             | 9    | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** |
+| `admin/tests/e2e/inquiries.spec.ts`               | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                        |
+| `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                           |
+| `admin/tests/e2e/inquiry-reply-templates.spec.ts` | 3    | 카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · **저장된 답변에 치환된 닉네임** / 삭제 후 선택지에서 사라짐                                                                       |
 
 1. **스텁 로그인** — 사용자 e2e 는 `/login?next=…` → `button[name="provider"][value="google"]` 클릭. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩(닉네임 · 월드 UID · 약관 3종)을 거치고, 데모 계정 폴백이면 곧장 목적지에 도착합니다.
 2. **관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.** `ADMIN_E2E_SECRETS`(기본값은 스크래치패드의 `admin-bootstrap.env`)를 실행 중에만 읽고, 서비스 롤은 `.env.local` 에서 읽어 픽스처·검증에만 씁니다.
@@ -579,7 +617,7 @@ cd admin && pnpm test -- tests/unit/inquir
 pnpm test:e2e -- tests/e2e/support-inquiries.spec.ts
 
 # 관리자(3100 자동 기동 · 사용자 3000 이 먼저 떠 있어야 한다)
-cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categories.spec.ts
+cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categories.spec.ts tests/e2e/inquiry-reply-templates.spec.ts
 ```
 
 > **flaky 주의** — 카테고리 e2e 는 캐시 TTL 만큼 기다립니다. 사용자 폼의 카테고리는 `unstable_cache`(태그 `inquiry-categories` · **300초**)에 담기고 관리자는 다른 프로세스라 `revalidateTag()` 가 닿지 않습니다. 저장 뒤 `revalidateClient()` 가 `POST /api/revalidate` 를 두드리지만 그 호출이 끊겼을 때를 대비해 **6분(`CLIENT_CACHE_BUDGET_MS`)** 예산으로 폴링합니다 — 느린 것은 정상입니다. 사용자 e2e 는 `fullyParallel` 이고 매 실행이 새 계정을 만듭니다. 같은 계정을 공유하면 접수 쿨다운(30초)에 걸려 간헐 실패합니다. 관리자 e2e 가 `workers: 1` · `fullyParallel: false` 인 이유도 같습니다 — 상태 전이 시나리오가 서로를 밟습니다.
@@ -601,7 +639,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 5. **계정 ID 서식은 일부러 느슨합니다.** 숫자 15자리로 굳히지 않고 영문·숫자·`_`·`-` 2~40자만 받습니다 — 클라이언트가 보여 주는 ID 모양이 바뀌었을 때 **접수 자체가 막히는** 것이 오탈자보다 비쌉니다.
 6. **마스킹은 두 앱이 같은 규칙입니다.** `1234****000` — 앞 4자 + 고정 `****` + 뒤 3자, 7자 이하이면 `첫 글자 + ****`, 없으면 `-`(`lib/utils/mask.ts` · `admin/lib/validation/inquiries.ts`). **마스크 길이를 원문 길이에 맞추지 않습니다**(자릿수까지 새어 나가지 않게). 관리자 **검색은 원문을 그대로 훑습니다**(`account_id.ilike`).
 7. **이메일은 아직 켜지지 않았습니다.** `503 not_configured` 가 정상입니다. 제공자 비밀은 **Supabase Edge Function secret 에만** 들어가고 관리자 콘솔(Vercel)에는 새 환경 변수가 없습니다.
-8. **감사 로그 라벨 두 개가 영문으로 남습니다** — `inquiry_category.*` 와 `inquiry.email.resend`(§5.6).
+8. **새 감사 영역을 만들면 라벨 두 줄을 함께 넣으세요** — `DOMAIN_LABELS` · `TABLE_LABELS`(§5.7). 빠뜨리면 감사 목록에 영문 원문이 남습니다.
 9. **순서 저장은 부분 반영될 수 있습니다.** 행마다 UPDATE 라 중간에 실패하면 앞쪽 몇 건은 이미 저장돼 있습니다.
 10. **프리필을 고칠 때 "세부 문의 유형" 목록을 본문에 다시 넣지 마세요.** 셀렉트가 이미 같은 것을 묻습니다 — 두 곳에 두면 어긋난 문의가 들어옵니다(`20260910000800` 이 그 블록만 도려낸 이유).
 11. **새 환경을 만들 때** — 마이그레이션 9개 적용 → 시드 8종 확인 → 버킷 MIME·크기 확인 → `SUPABASE_SERVICE_ROLE_KEY`(영상 확정용) → 사용자 사이트 `REVALIDATE_SECRET`/`CLIENT_SITE_URL`(카테고리 무효화) → `supabase functions deploy purge-withdrawn`.
@@ -685,7 +723,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `admin/lib/email/send-inquiry-reply.ts`                                                                                                 | `email-outbound` 호출 계약(응답 코드 → 문구)                      |
 | `admin/lib/revalidate.ts`                                                                                                               | `CLIENT_CACHE_TAGS.inquiryCategories` · `revalidateClient()`      |
 | `admin/lib/nav.ts` · `admin/lib/auth/permissions.ts`                                                                                    | 고객지원 메뉴(출처 프리셋) · `inquiries` 모듈                     |
-| `admin/components/audit/audit-labels.ts`                                                                                                | 감사 로그 영역·동작 라벨(§5.6 의 흠)                              |
+| `admin/components/audit/audit-labels.ts`                                                                                                | 감사 로그 영역·동작 라벨(§5.7)                                    |
 
 ### 이메일 · 배치 · 문서
 

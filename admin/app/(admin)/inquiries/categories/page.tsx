@@ -1,6 +1,6 @@
 import { InquiryCategoryFormDialog } from '@/components/inquiry-categories/InquiryCategoryFormDialog'
 import { InquiryCategoryList } from '@/components/inquiry-categories/InquiryCategoryList'
-import { FormBanner, PageHeader } from '@/components/ui'
+import { Button, FormBanner, PageHeader } from '@/components/ui'
 import { hasPermission } from '@/lib/auth/permissions'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
@@ -26,7 +26,16 @@ export default async function InquiryCategoriesPage() {
       <PageHeader
         title="문의 카테고리"
         description="사용자 사이트 1:1 문의 폼의 카테고리와 프리필(문의 내용 양식)입니다. ▲▼ 로 순서를 바꾸고 '순서 저장'을 눌러 확정합니다. 숨긴 카테고리는 사용자 폼에서 사라집니다."
-        action={canWrite ? <InquiryCategoryFormDialog triggerLabel="카테고리 등록" /> : undefined}
+        /* 답변 템플릿은 같은 모듈의 형제 화면이다. 카테고리를 고치러 온 운영자가
+           "이 분류의 상용구도 손보자"는 순간에 여기서 바로 건너갈 수 있어야 한다. */
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button href="/inquiries/reply-templates" variant="ghost">
+              답변 템플릿
+            </Button>
+            {canWrite && <InquiryCategoryFormDialog triggerLabel="카테고리 등록" />}
+          </div>
+        }
       />
 
       {hasError && (

@@ -187,22 +187,22 @@ flowchart TD
 
 ### 3.4 모듈 × 페이지 × 권한 × 쓰기 액션
 
-| 모듈        | 페이지 경로                                                                                 | 페이지 가드                                              | 쓰기 액션 파일                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `dashboard` | `/`                                                                                         | `requireAdmin()` + `hasPermission(…,'dashboard','read')` | 없음                                                                                |
-| `news`      | `/news`<br>`/news/new`<br>`/news/[id]`<br>`/news/templates`<br>`/news/templates/[category]` | `read`<br>`write`<br>`write`<br>`write`<br>`write`       | `news-actions.ts` · `news-template-actions.ts`                                      |
-| `community` | `/community/posts`<br>`/community/comments`                                                 | `read`                                                   | `admin/lib/actions/moderation-actions.ts`                                           |
-| `reports`   | `/reports`                                                                                  | `read`                                                   | `admin/lib/actions/reports-actions.ts`                                              |
-| `members`   | `/members`<br>`/members/[id]`                                                               | `read`                                                   | `admin/lib/actions/members-actions.ts`                                              |
-| `coupons`   | `/coupons`<br>`/coupons/[id]`                                                               | `read`                                                   | `coupons-actions.ts` · `coupon-redemption-actions.ts`                               |
-| `inquiries` | `/inquiries`<br>`/inquiries/[id]`<br>`/inquiries/categories`                                | `read`                                                   | `inquiries-actions.ts` · `inquiry-email-actions.ts` · `inquiry-category-actions.ts` |
-| `faqs`      | `/faqs`                                                                                     | `read`                                                   | `admin/lib/actions/faqs-actions.ts`                                                 |
-| `gacha`     | `/gacha`<br>`/gacha/new`<br>`/gacha/[id]`                                                   | `read`<br>`write`<br>`write`                             | `admin/lib/actions/gacha-actions.ts`                                                |
-| `rankings`  | `/rankings`                                                                                 | `read`                                                   | `admin/lib/actions/rankings-actions.ts` (롤백 하나뿐)                               |
-| `settings`  | `/settings`                                                                                 | `read`                                                   | `admin/lib/actions/settings-actions.ts`                                             |
-| `legal`     | `/legal`<br>`/legal/[slug]`                                                                 | `read`<br>`write`                                        | `admin/lib/actions/legal-actions.ts`                                                |
-| `admins`    | `/admins`                                                                                   | **`requireSuperAdmin()`**                                | `admin-actions.ts` · `admin-invite-actions.ts` · `admin-role-actions.ts`            |
-| `audit`     | `/audit`                                                                                    | `read`                                                   | 없음(추가 전용)                                                                     |
+| 모듈        | 페이지 경로                                                                                  | 페이지 가드                                              | 쓰기 액션 파일                                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `dashboard` | `/`                                                                                          | `requireAdmin()` + `hasPermission(…,'dashboard','read')` | 없음                                                                                                                      |
+| `news`      | `/news`<br>`/news/new`<br>`/news/[id]`<br>`/news/templates`<br>`/news/templates/[category]`  | `read`<br>`write`<br>`write`<br>`write`<br>`write`       | `news-actions.ts` · `news-template-actions.ts`                                                                            |
+| `community` | `/community/posts`<br>`/community/comments`                                                  | `read`                                                   | `admin/lib/actions/moderation-actions.ts`                                                                                 |
+| `reports`   | `/reports`                                                                                   | `read`                                                   | `admin/lib/actions/reports-actions.ts`                                                                                    |
+| `members`   | `/members`<br>`/members/[id]`                                                                | `read`                                                   | `admin/lib/actions/members-actions.ts`                                                                                    |
+| `coupons`   | `/coupons`<br>`/coupons/[id]`                                                                | `read`                                                   | `coupons-actions.ts` · `coupon-redemption-actions.ts`                                                                     |
+| `inquiries` | `/inquiries`<br>`/inquiries/[id]`<br>`/inquiries/categories`<br>`/inquiries/reply-templates` | `read`                                                   | `inquiries-actions.ts` · `inquiry-email-actions.ts` · `inquiry-category-actions.ts` · `inquiry-reply-template-actions.ts` |
+| `faqs`      | `/faqs`                                                                                      | `read`                                                   | `admin/lib/actions/faqs-actions.ts`                                                                                       |
+| `gacha`     | `/gacha`<br>`/gacha/new`<br>`/gacha/[id]`                                                    | `read`<br>`write`<br>`write`                             | `admin/lib/actions/gacha-actions.ts`                                                                                      |
+| `rankings`  | `/rankings`                                                                                  | `read`                                                   | `admin/lib/actions/rankings-actions.ts` (롤백 하나뿐)                                                                     |
+| `settings`  | `/settings`                                                                                  | `read`                                                   | `admin/lib/actions/settings-actions.ts`                                                                                   |
+| `legal`     | `/legal`<br>`/legal/[slug]`                                                                  | `read`<br>`write`                                        | `admin/lib/actions/legal-actions.ts`                                                                                      |
+| `admins`    | `/admins`                                                                                    | **`requireSuperAdmin()`**                                | `admin-actions.ts` · `admin-invite-actions.ts` · `admin-role-actions.ts`                                                  |
+| `audit`     | `/audit`                                                                                     | `read`                                                   | 없음(추가 전용)                                                                                                           |
 
 특이 케이스 둘.
 
@@ -457,6 +457,24 @@ sequenceDiagram
   `INQUIRY_CATEGORY_FALLBACK`). 카테고리를 못 읽었다고 접수를 막으면 하필 장애 때 문의가 들어올 길이 사라진다.
   폴백에는 양식이 없으므로 접수는 되고 프리필만 빠진다.
 
+**1:1 문의 답변 템플릿(2026-09-11).** 답변 상용구는 `public.inquiry_reply_templates` 가 소유한다(마이그레이션 `20260911000200`).
+관리 화면은 `/inquiries/reply-templates`(문의 카테고리 화면 헤더의 **답변 템플릿** · 사이드바 고객지원 하위), 권한은 문의와 같은
+`inquiries` 모듈이다. **사용자 사이트가 읽는 테이블이 아니다** — 아직 공지하지 않은 점검 일정·보상 기준이 문안에 적히므로 RLS 는
+`is_admin()` 하나뿐이고 anon 에게는 select 도 열지 않는다. 사용자가 보는 것은 템플릿이 아니라, 운영자가 **불러다 등록한 답변**이다.
+
+- **공통은 `category_id IS NULL`** 이다. 별도 플래그를 두면 "NULL 인데 공통이 아닌" 모순이 생긴다. 답변 화면의 선택 상자는
+  공통 → 그 문의의 카테고리 순으로 보여 주고, 등록된 카테고리가 없는 옛 라벨이나 이메일 문의에서는 공통만 남는다.
+- **본문 상한은 답변 입력칸과 같은 2000자**(`INQUIRY_REPLY_MAX_LENGTH`). 불러온 문안이 그대로 답변이 되므로, 여기가 더
+  관대하면 "불러왔는데 등록할 수 없는" 템플릿이 만들어진다. 이름은 40자이고 같은 묶음 안에서 중복되지 않는다(23505 → 필드 오류).
+- **자리표시자는 불러오는 순간 치환된다**(`admin/lib/utils/inquiry-reply-template.ts`) — `{{닉네임}}` · `{{문의번호}}`(문의 ID 앞
+  8자리 대문자) · `{{카테고리}}` · `{{제목}}`. 저장되는 답변에 `{{…}}` 가 남으면 사용자 화면에 그대로 노출된다. 모르는 표시는
+  손대지 않는다(운영자가 손으로 채우려고 적어 둔 것일 수 있다). 등록 화면의 미리보기와 실제 삽입이 **같은 함수**를 쓴다.
+- **쓰던 글이 있으면 확인을 세운다** — `템플릿으로 바꾸기` / `끝에 추가` / `취소`(§7.4 의 3요소). 빈칸이면 묻지 않는다.
+  답변 저장·발송 경로는 그대로다. 다만 답변 textarea 가 **제어 입력**이 되었다 — DOM 으로 값을 밀어 넣으면 React 가 그 사실을
+  모르고 글자수 표시가 옛 숫자에 멈춘다.
+- 자세한 내용은 `docs/admin/INQUIRY-GUIDE.md` §5.6. **HTML 가이드(`DEVELOPER-GUIDE.html` · `INQUIRY-GUIDE.html`)는 아직 이
+  내용을 담고 있지 않다** — 다음 재생성 때 함께 반영한다(원본은 이 MD 다).
+
 **1:1 문의 필수 항목(2026-09-11 제품 결정).** 접수의 필수 항목은 **카테고리 · 세부 문의 유형 · 글자월드 계정 ID ·
 제목 · 문의 내용 · 개인정보 수집 동의** 여섯이고, **첨부만 선택**이다. 라벨에는 별표(`*`)가 붙고, 하나라도 비어 있으면
 제출 버튼이 잠긴 채 그 아래에 이유("필수 항목(\*)을 모두 입력해 주세요.")가 선다
@@ -530,40 +548,6 @@ is_published and deleted_at is null and not is_hidden and published_at <= now()
 ```
 
 관리자 화면의 상태 뱃지는 같은 조건을 `deriveNewsVisibility()`(`admin/lib/constants/news.ts`)로 계산해 `visible` / `scheduled` / `invisible` 로 보여 준다. 숨김(`is_hidden`, 운영 행위)과 소프트 삭제(`deleted_at`, 작성자 행위)는 다른 축이다. 숨긴 글은 **작성자에게도 보이지 않는다** (`posts_select_own` 에 `and not is_hidden`) — 예외를 두면 운영 조치가 무의미해진다.
-
-**뉴스 카테고리 템플릿(2026-09-11).** 카테고리마다 "글을 어떻게 시작할 것인가"를 미리 적어 두는 양식이다
-(`public.news_category_templates`, 마이그레이션 `20260911000100`). 관리 화면은 `/news/templates`(뉴스 목록 헤더의
-**카테고리 템플릿** 버튼 · 사이드바 뉴스 하위), 권한은 뉴스와 같은 `news` 모듈이되 **`write` 전용**이다 — 편집·되돌리기
-말고는 아무것도 없는 화면이라 읽기 전용 관리자에게 열어 줄 이유가 없다.
-
-| 열                                | 쓰임                                                                                                        |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `category_key` (+ 고정값 `board`) | `board_categories(board='news')` 의 key. 복합 FK 라 없는 카테고리를 가리킬 수 없고, 카테고리당 한 행뿐이다. |
-| `title_template`                  | 제목 칸이 **비어 있을 때만** 채운다(≤ 100자 = `NEWS_TITLE_MAX`).                                            |
-| `summary_template`                | 요약 칸이 비어 있을 때만 채운다(≤ 200자 = `NEWS_SUMMARY_MAX`).                                              |
-| `body_template`                   | 본문 프리필(Tiptap HTML · ≤ 20000자). 뉴스 본문과 **같은 정제기**를 통과한 값만 저장된다.                   |
-| `is_active`                       | 끄면 그 카테고리에서 아무것도 채우지 않는다. 문안은 그대로 남는다.                                          |
-
-- **상한이 글 필드와 같은 숫자인 것이 핵심이다.** 템플릿이 더 관대하면 "불러왔는데 글로는 저장할 수 없는" 문안이
-  만들어진다(DB CHECK · zod · `maxLength` 가 모두 같은 값).
-- **화면 문구는 '카테고리' 로 통일한다(2026-09-11 운영 요청).** 코드·주석에서 쓰던 '말머리'는 관리자 화면에 쓰지 않는다 —
-  같은 것을 두 이름으로 부르면 운영자가 다른 기능으로 읽는다(뉴스 목록 필터·표 머리글이 이미 '카테고리' 다).
-- **자리표시자는 치환되지 않는다.** `{{날짜}}` 는 운영자가 직접 고쳐 쓰는 평범한 글자다. DB·앱 어디에도 치환 코드가
-  없고, 화면의 안내 문구가 그 사실을 적는다.
-- **프리필 동작**(`admin/lib/utils/news-template-prefill.ts` · `components/news/use-news-template-prefill.ts`).
-  새 글에서 카테고리를 고르면 제목·요약은 **빈 칸에만**, 본문은 갈아 끼운다. 본문이 비었거나 **직전에 적용한 템플릿
-  그대로**면 묻지 않고, 운영자가 쓴 내용이 남아 있을 때만 확인 모달("작성 중인 내용이 지워집니다")을 세운다. 취소해도
-  카테고리 변경은 남는다 — 바꾸려던 것은 글의 카테고리이고 템플릿은 그에 딸린 편의다. **기존 글 수정 화면에서는 자동
-  적용하지 않는다**(발행된 본문이 카테고리 한 번 바꿨다고 덮이면 복구할 길이 없다). 대신 '템플릿 불러오기' 버튼이 같은
-  확인을 거쳐 적용한다.
-- **본문은 상위 상태로 올리지 않는다.** 판정이 필요한 순간에만 폼의 숨은 input 에서 읽고(`readEditorBody`), 갈아 끼울
-  때만 `key` 를 올려 `PostEditor` 를 다시 마운트한다 — 에디터를 제어 컴포넌트로 만들면 한 글자마다 리렌더되어 한글
-  조합이 끊긴다.
-- **기본값으로 되돌리기.** 원본은 코드 상수(`admin/lib/constants/news-templates.ts`)이고, 마이그레이션 시드와 **같은
-  생성기에서 나온 같은 문자열**이라 되돌린 결과가 첫 배포 상태와 정확히 같다. 되돌리는 것은 문안 셋뿐이고 사용 여부는
-  건드리지 않는다. 성공하면 목록으로 돌아간다 — 편집 폼의 비제어 입력이 옛 문안을 계속 보여 주지 않게 하려는 것이다.
-- **사용자 사이트 캐시는 태우지 않는다.** 템플릿은 글이 되기 전의 양식이고, RLS 가 관리자에게만 열려 있어 사용자
-  사이트는 이 테이블을 읽지도 못한다(`revalidatePath` 로 관리자 화면 셋만 비운다 — 목록 · 편집 · 새 글 작성).
 
 **랭킹.** 사용자 사이트는 `rank_type` 별 **가장 최근 `snapshot_at`** 만 읽는다. 그래서 새 스냅샷을 넣는 순간 교체가 끝난 것과 같고, "지우고 넣기"를 하지 않는다(`rankings-actions.ts` 헤더).
 
@@ -742,7 +726,7 @@ await writeAuditLog(actor.id, {
 
 | 도메인      | action                                                                                                                                                    |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 뉴스        | `news.create` `news.update` `news.publish` `news.hide` `news.unhide` `news.delete` `news.restore` `news_template.update` `news_template.reset`            |
+| 뉴스        | `news.create` `news.update` `news.publish` `news.hide` `news.unhide` `news.delete` `news.restore`                                                         |
 | 커뮤니티    | `community.post.hide` `…unhide` `…delete` `…restore` `…bulk_hide` — `community.comment.*` 도 같은 접미사                                                  |
 | 신고        | `report.resolve` `report.dismiss`                                                                                                                         |
 | 회원        | `member.suspend` `member.unsuspend` `member.nickname.force_change`                                                                                        |

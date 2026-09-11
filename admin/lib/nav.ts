@@ -89,6 +89,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
          프리필 양식을 여기서 고친다 — 문의를 처리하는 사람과 분류를 정하는 사람이
          같기 때문에 별도 모듈로 쪼개지 않는다. */
       { label: '문의 카테고리', href: '/inquiries/categories' },
+      /* 답변 템플릿도 같은 모듈이다. 문의를 처리하는 사람이 곧 상용구를 고치는
+         사람이라, 카테고리 바로 아래에 둔다. */
+      { label: '답변 템플릿', href: '/inquiries/reply-templates' },
       { label: 'FAQ', href: '/faqs', module: 'faqs' },
     ],
   },
