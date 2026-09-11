@@ -86,7 +86,7 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: true,
     height: 588,
     panelTop: 165,
-    panelClass: 'glass-panel',
+    panelClass: 'glass-panel-dark',
     mascot: {
       src: '/images/footer/home-mascot.gif',
       width: 276,
@@ -204,7 +204,7 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     needsGrassPatch: false,
     height: 939,
     panelTop: subPanelTop(939),
-    panelClass: 'glass-panel-sub',
+    panelClass: 'glass-panel-dark',
     panelMaxWidth: 1200,
     panelPaddingX: 140,
     panelPaddingTop: 40,
@@ -232,7 +232,7 @@ export const FOOTER_CONFIG: Record<FooterVariant, FooterConfig> = {
     panelTop: subPanelTop(703),
     /* 소개만 배경이 어두워서 밝은 회색(`-sub`)을 얹으면 시안보다 20 정도
        밝아진다. 홈과 같은 어두운 글래스 값이 시안 실측과 맞는다. */
-    panelClass: 'glass-panel',
+    panelClass: 'glass-panel-dark',
     mascot: {
       /* 시안의 마스코트는 애니메이션 GIF 이고 좌우가 뒤집혀 있다. */
       src: '/images/about/mascot-footer.gif',

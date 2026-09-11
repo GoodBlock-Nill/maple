@@ -79,6 +79,21 @@
     -webkit-backdrop-filter: blur(15px);
   }
 
+  /* 짙은 배경(숲·언덕) 위에 얹는 푸터 패널 — 홈·소개·마이페이지 v2 공용.
+     `.glass-panel`/`.glass-panel-sub` 는 110% 지점에서 완전히 투명으로
+     빠지는데, 마이페이지 v2 처럼 패널이 넓으면(1200px) 우측 절반(Legal 열·
+     SNS 아이콘)이 배경 원색 위에 그대로 얹혀 대비가 무너진다(시안 실측:
+     mypage-v2 profile-pc.png 패널 영역 대비 렌더 평균 휘도 약 1.6배 밝음).
+     시안 패널은 위치에 따라 배경 톤이 살짝 비치지만 전 구간에서 어두운
+     톤을 유지한다 — 끝점 알파를 0 대신 0.5 로 올려 우측까지 어두움을
+     유지한다. */
+  .glass-panel-dark {
+    border: 1px solid rgb(255 255 255 / 0.4);
+    background-image: linear-gradient(147deg, rgb(26 26 26 / 0.62) 0%, rgb(26 26 26 / 0.5) 110%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+
   .cta-dark {
     border: 1px solid #000;
     background-color: var(--color-ink);
@@ -299,7 +314,9 @@
 
 @layer components {
   /* 서브 페이지 푸터 패널 — 시안(Figma) 실측값 그대로.
-     홈(.glass-panel)보다 밝은 회색으로 시작해 110% 지점에서 투명으로 빠진다. */
+     홈(.glass-panel)보다 밝은 회색으로 시작해 110% 지점에서 투명으로 빠진다.
+     뉴스·커뮤니티·가이드·고객지원처럼 배경 자체가 밝은 변형에만 쓴다 —
+     숲·언덕처럼 짙은 배경에는 `.glass-panel-dark` 를 쓴다. */
   .glass-panel-sub {
     border: 1px solid rgb(255 255 255 / 0.4);
     background-image: linear-gradient(147deg, rgb(178 178 178 / 0.5) 0%, rgb(0 0 0 / 0) 110%);
