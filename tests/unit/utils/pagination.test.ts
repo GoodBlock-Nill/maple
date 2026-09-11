@@ -69,6 +69,14 @@ describe('getPageRange', () => {
     expect(result).toEqual([16, 17, 18, 19, 20])
   })
 
+  it('should slide a five-wide window with the current page in the middle', () => {
+    /* Arrange & Act & Assert — 내 문의 내역 페이지네이션(시안 v2)은 이 창을 그대로
+       그린다. 창이 움직이지 않으면 6페이지째부터 현재 페이지가 목록에서 사라진다. */
+    expect(getPageRange(3, 12, 5)).toEqual([1, 2, 3, 4, 5])
+    expect(getPageRange(6, 12, 5)).toEqual([4, 5, 6, 7, 8])
+    expect(getPageRange(12, 12, 5)).toEqual([8, 9, 10, 11, 12])
+  })
+
   it('should use default size of 5 when size is not provided', () => {
     // Arrange
     const total = 20

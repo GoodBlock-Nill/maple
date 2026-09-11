@@ -97,14 +97,14 @@ export function InquiryForm({
   useEffect(syncRequired, [syncRequired])
 
   return (
-    /* 세로 리듬은 시안 렌더(support.png) 기준 행 간격 17(라벨 25.5 + 8 + 필드 40). */
+    /* 세로 리듬은 시안 v2 기준 행 간격 20(라벨 25.5 + 10 + 필드 40). */
     <form
       ref={formRef}
       action={formAction}
       /* 리액트의 onChange 는 입력마다 올라오므로(제어·비제어 모두) 폼 하나에
          걸어 두면 모든 칸의 변화를 한 번에 받는다. */
       onChange={syncRequired}
-      className="flex flex-col gap-5 lg:gap-[17px]"
+      className="flex flex-col gap-5"
     >
       {isAuthenticated && !isEditMode ? (
         <div className="flex justify-end">
@@ -135,7 +135,7 @@ export function InquiryForm({
       {/* 동의는 접수 시점에 이미 받아 저장돼 있다. 수정 화면에서 다시 묻지 않는다. */}
       {isEditMode ? null : <InquiryConsentField error={fieldErrors.consent} />}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col items-start gap-2">
         <InquirySubmitButton
           disabled={!isAuthenticated || isAttachmentBlocked || isIncomplete}
           describedBy={requiredDescribedBy(isAuthenticated, isIncomplete)}
@@ -143,7 +143,7 @@ export function InquiryForm({
           pendingLabel={isEditMode ? '저장 중…' : undefined}
         />
         {isAuthenticated ? null : (
-          <p id={SUBMIT_NOTICE_ID} className="text-ink-muted text-center text-[15px]">
+          <p id={SUBMIT_NOTICE_ID} className="text-ink-muted text-[15px]">
             <Link href={LOGIN_HREF} className="tap-area underline underline-offset-4">
               {LOGIN_REQUIRED_INQUIRY_NOTICE}
             </Link>
@@ -152,7 +152,7 @@ export function InquiryForm({
 
         {/* 잠긴 버튼 옆에 이유를 남긴다 — 로그인 안내와 같은 자리, 같은 문투다. */}
         {isAuthenticated && isIncomplete ? (
-          <p id={REQUIRED_NOTICE_ID} className="text-ink-muted text-center text-[15px]">
+          <p id={REQUIRED_NOTICE_ID} className="text-ink-muted text-[15px]">
             {INQUIRY_REQUIRED_NOTICE}
           </p>
         ) : null}

@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
+import { ATTACHMENT_NOTICE_LINES } from '@/lib/constants/inquiry-attachment'
 import {
   INQUIRY_CANCELLED_OPTION,
-  INQUIRY_PAGE_SIZE,
   INQUIRY_STATUS_MAP,
   INQUIRY_STATUS_VALUES,
-  MY_INQUIRIES_PATH,
   resolveInquiryStatus,
-  SUPPORT_MENU,
-} from '@/lib/constants/support'
-import { accumulatedCount } from '@/lib/utils/pagination'
+} from '@/lib/constants/inquiry-status'
+import { INQUIRY_PAGE_SIZE, MY_INQUIRIES_PATH, SUPPORT_MENU } from '@/lib/constants/support'
+import {
+  INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+  INQUIRY_FILE_MAX_COUNT,
+  INQUIRY_VIDEO_MAX_COUNT,
+  INQUIRY_VIDEO_MAX_MB,
+} from '@/lib/supabase/storage'
+import { getTotalPages } from '@/lib/utils/pagination'
 
 import type { InquiryStatus } from '@/types/domain'
 
@@ -30,16 +36,22 @@ describe('INQUIRY_STATUS_MAP', () => {
     expect(labels).toEqual(['접수 대기', '처리 중', '답변 완료', '종료'])
   })
 
-  it('should use the blue token pair while in progress and the green pair once answered', () => {
-    // Arrange & Act & Assert — 시안 색(#2e6eff/#e5efff, #00b894/#e5fff1)의 토큰 이름이다.
-    expect(INQUIRY_STATUS_MAP.in_progress.className).toBe('bg-tag-blue-bg text-tag-blue')
-    expect(INQUIRY_STATUS_MAP.answered.className).toBe('bg-tag-green-bg text-tag-green')
+  it('should drop the pill for 답변 완료 and keep it for every other status', () => {
+    /* Arrange & Act & Assert — 시안 v2: 답변 완료만 알약을 벗고 분홍 글자가 된다.
+       모양 판정이 화면마다 갈리면 목록·상세가 서로 다른 상태를 그린다. */
+    expect(INQUIRY_STATUS_MAP.answered.variant).toBe('text')
+    expect(INQUIRY_STATUS_MAP.answered.className).toBe('text-[#e8308a]')
+
+    for (const status of ['pending', 'in_progress', 'closed'] as const) {
+      expect(INQUIRY_STATUS_MAP[status].variant).toBe('pill')
+    }
   })
 
-  it('should keep pending neutral and closed muted', () => {
-    // Arrange & Act & Assert
-    expect(INQUIRY_STATUS_MAP.pending.className).toContain('bg-tray')
-    expect(INQUIRY_STATUS_MAP.closed.className).toContain('text-ink-muted')
+  it('should paint every pill with the same neutral surface', () => {
+    // Arrange & Act & Assert — 시안 실측: bg #f1f1f5, 처리 중만 글자색이 다르다.
+    expect(INQUIRY_STATUS_MAP.pending.className).toBe('bg-[#f1f1f5] text-[#727272]')
+    expect(INQUIRY_STATUS_MAP.closed.className).toBe('bg-[#f1f1f5] text-[#727272]')
+    expect(INQUIRY_STATUS_MAP.in_progress.className).toBe('bg-[#f1f1f5] text-[#625b71]')
   })
 
   it('should spell out full Tailwind class strings', () => {
@@ -78,7 +90,8 @@ describe('resolveInquiryStatus', () => {
 
   it('should spell out a full Tailwind class string for the cancelled badge', () => {
     // Arrange & Act & Assert — v4 는 소스를 정적으로 스캔한다.
-    expect(INQUIRY_CANCELLED_OPTION.className).toBe('bg-tray text-ink-muted')
+    expect(INQUIRY_CANCELLED_OPTION.className).toBe('bg-[#f1f1f5] text-[#727272]')
+    expect(INQUIRY_CANCELLED_OPTION.variant).toBe('pill')
   })
 })
 
@@ -103,11 +116,31 @@ describe('SUPPORT_MENU', () => {
 })
 
 describe('INQUIRY_PAGE_SIZE', () => {
-  it('should accumulate ten rows per page like the other lists', () => {
-    // Arrange & Act & Assert — "더보기"는 1~N 페이지를 한 번에 보여 준다.
-    expect(INQUIRY_PAGE_SIZE).toBe(10)
-    expect(accumulatedCount(1, INQUIRY_PAGE_SIZE, 25)).toBe(10)
-    expect(accumulatedCount(2, INQUIRY_PAGE_SIZE, 25)).toBe(20)
-    expect(accumulatedCount(3, INQUIRY_PAGE_SIZE, 25)).toBe(25)
+  it('should draw six rows per page like the v2 mock', () => {
+    // Arrange & Act & Assert — 번호 페이지네이션은 한 장(6건)만 그린다.
+    expect(INQUIRY_PAGE_SIZE).toBe(6)
+    expect(getTotalPages(25, INQUIRY_PAGE_SIZE)).toBe(5)
+    expect(getTotalPages(6, INQUIRY_PAGE_SIZE)).toBe(1)
+  })
+})
+
+describe('ATTACHMENT_NOTICE_LINES', () => {
+  it('should compose the limits from the storage constants', () => {
+    /* Arrange & Act & Assert — 안내와 실제 제한이 갈리면 사용자는 "된다고 적힌
+       파일"을 고르고 오류를 본다. 숫자는 전부 검증 상수에서 나온다. */
+    const [limits] = ATTACHMENT_NOTICE_LINES
+
+    expect(limits).toContain(`이미지·PDF ${INQUIRY_ATTACHMENT_MAX_MB}MB/개`)
+    expect(limits).toContain(`최대 ${INQUIRY_FILE_MAX_COUNT}개`)
+    expect(limits).toContain(`총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`)
+    expect(limits).toContain(`영상 ${INQUIRY_VIDEO_MAX_MB}MB/개`)
+    expect(limits).toContain(`최대 ${INQUIRY_VIDEO_MAX_COUNT}개`)
+    expect(limits).toContain(`총 ${INQUIRY_VIDEO_MAX_MB * INQUIRY_VIDEO_MAX_COUNT}MB`)
+  })
+
+  it('should list the accepted formats on a second line', () => {
+    // Arrange & Act & Assert — 확장자 목록도 검증 상수(MIME)에서 뽑는다.
+    expect(ATTACHMENT_NOTICE_LINES).toHaveLength(2)
+    expect(ATTACHMENT_NOTICE_LINES[1]).toBe('(PNG, JPG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)')
   })
 })

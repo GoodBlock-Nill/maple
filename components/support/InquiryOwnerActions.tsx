@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
-import { BOARD_ACTION_CLASS } from '@/components/board/board-styles'
 import { CancelInquiryButton } from '@/components/support/CancelInquiryButton'
+import { SUPPORT_ACTION_EDIT_CLASS } from '@/components/support/support-styles'
 import { INQUIRY_EDIT_LABEL, MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { canCancelInquiry, canEditInquiry } from '@/lib/utils/inquiry-permissions'
 
@@ -31,9 +31,9 @@ export function InquiryOwnerActions({ inquiryId, status, cancelledAt }: InquiryO
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 lg:gap-3">
       {showEdit ? (
-        <Link href={`${MY_INQUIRIES_PATH}/${inquiryId}/edit`} className={BOARD_ACTION_CLASS}>
+        <Link href={`${MY_INQUIRIES_PATH}/${inquiryId}/edit`} className={SUPPORT_ACTION_EDIT_CLASS}>
           {INQUIRY_EDIT_LABEL}
         </Link>
       ) : null}

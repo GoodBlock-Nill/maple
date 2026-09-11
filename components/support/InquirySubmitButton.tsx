@@ -13,12 +13,13 @@ type InquirySubmitButtonProps = {
   pendingLabel?: string
 }
 
-/** 시안 실측: 전폭 h48 pill · bg #2a2a2a · border #505967 · Inter 17px medium #edeef0. */
+/** 시안 v2 실측: 142×48(모바일) · 183×54(PC) pill · bg #2a2a2a · Inter semibold white. */
 const SUBMIT_CLASS =
-  'font-ui rounded-pill h-12 w-full border border-[#505967] bg-[#2a2a2a] text-ui font-medium ' +
-  'text-[#edeef0] transition-[filter] hover:brightness-125 focus-visible:outline-2 ' +
-  'focus-visible:outline-offset-2 focus-visible:outline-focus disabled:pointer-events-none ' +
-  'disabled:opacity-60'
+  'font-ui rounded-pill inline-flex h-12 w-[142px] items-center justify-center bg-[#2a2a2a] ' +
+  'text-[16px] leading-[24px] font-semibold text-white transition-[filter] hover:brightness-125 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ' +
+  'disabled:pointer-events-none disabled:opacity-60 lg:h-[54px] lg:w-[183px] lg:text-[18px] ' +
+  'lg:leading-[26px]'
 
 /**
  * 문의 등록 버튼.

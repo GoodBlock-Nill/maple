@@ -8,16 +8,24 @@ import {
 } from '@/components/support/InquiryAttachmentLists'
 import { FieldError } from '@/components/support/InquiryFormRow'
 import { InquiryVideoList } from '@/components/support/InquiryVideoList'
-import { SUPPORT_LABEL_CLASS } from '@/components/support/support-styles'
 import { useInquiryVideos } from '@/components/support/use-inquiry-videos'
-import { ATTACHMENT_NOTICE } from '@/lib/constants/support'
-import { INQUIRY_FILE_MAX_COUNT, INQUIRY_VIDEO_MAX_COUNT } from '@/lib/supabase/storage'
+import {
+  ATTACHMENT_NOTICE_LINES,
+  INQUIRY_FILE_PICK_LABEL,
+} from '@/lib/constants/inquiry-attachment'
+import { INQUIRY_ATTACHMENT_HEADING } from '@/lib/constants/support'
 import { downscaleImage } from '@/lib/utils/downscale-image'
 import { INQUIRY_ATTACHMENT_ACCEPT, validateInquiryAttachments } from '@/lib/validation/inquiry'
 import { INQUIRY_VIDEO_FIELD, isVideoAttachment } from '@/lib/validation/inquiry-video'
 
 import type { InquiryAttachment } from '@/types/domain'
 import type { ChangeEvent } from 'react'
+
+/** 시안 v2: 파일 선택 버튼(bg #e7e7e7 · border #d5d9df · radius 5 · h40 · px16). */
+const PICK_BUTTON_CLASS =
+  'order-2 flex h-10 w-fit cursor-pointer items-center rounded-[5px] border border-[#d5d9df] ' +
+  'bg-[#e7e7e7] px-4 focus-within:outline-2 focus-within:outline-offset-2 ' +
+  'focus-within:outline-[var(--color-focus)] lg:order-1'
 
 type InquiryAttachmentFieldProps = {
   /** 수정 모드에서 이미 올라가 있는 첨부. 접수 모드에서는 빈 배열. */
@@ -74,31 +82,39 @@ export function InquiryAttachmentField({
 
   const videos = useInquiryVideos(keptVideoCount)
 
-  const fileCount = keptFileCount + selected.length
   const isBlocked = isPreparing || localError !== null || videos.isBlocked
 
   useEffect(() => {
     onBlockedChange?.(isBlocked)
   }, [isBlocked, onBlockedChange])
 
-  function clearSelection(): void {
+  /** 고른 파일 목록을 input 과 화면에 동시에 되돌린다(검사도 다시 돈다). */
+  function replaceSelection(files: readonly File[]): void {
     const input = inputRef.current
 
     if (input !== null) {
-      /* 빈 문자열 대입이 파일 목록을 비우는 규정된 방법이다. 목록을 직접 갈아
-         끼우는 경로도 함께 태워 둔다(둘 중 하나만 되는 환경이 있다). */
-      input.value = ''
-      replaceFiles(input, [])
+      if (files.length === 0) {
+        /* 빈 문자열 대입이 파일 목록을 비우는 규정된 방법이다. 목록을 직접 갈아
+           끼우는 경로도 함께 태워 둔다(둘 중 하나만 되는 환경이 있다). */
+        input.value = ''
+      }
+
+      replaceFiles(input, files)
     }
 
-    setSelected([])
-    setLocalError(null)
+    setSelected(files)
+
+    const check = validateInquiryAttachments(files, keptFileCount, videos.count)
+
+    setLocalError(check.ok ? null : check.message)
   }
 
-  function toggleRemoved(path: string, isRemoved: boolean): void {
-    setRemovedPaths((paths) =>
-      isRemoved ? [...paths, path] : paths.filter((value) => value !== path),
-    )
+  function removeSelected(index: number): void {
+    replaceSelection(selected.filter((_, position) => position !== index))
+  }
+
+  function markRemoved(path: string): void {
+    setRemovedPaths((paths) => (paths.includes(path) ? paths : [...paths, path]))
     setLocalError(null)
   }
 
@@ -134,7 +150,7 @@ export function InquiryAttachmentField({
     )
 
     /* 어긋난 선택도 화면에는 남겨 둔다(무엇이 문제인지 보여야 다시 고를 수 있다).
-       대신 제출은 잠기고, 첨부를 포기하려면 "첨부 지우기"로 명시적으로 비운다. */
+       대신 제출은 잠기고, 첨부를 포기하려면 칩의 X 로 하나씩 내린다. */
     setSelected(check.ok ? files : pickedFiles)
     setLocalError(videoOutcome.message ?? (check.ok ? null : check.message))
 
@@ -145,41 +161,50 @@ export function InquiryAttachmentField({
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
-      <p className="flex flex-wrap items-center gap-2">
-        <span className={`${SUPPORT_LABEL_CLASS} font-bold`}>첨부파일</span>
-        <span className="text-ink-muted text-ui">{ATTACHMENT_NOTICE}</span>
-      </p>
+    <div className="flex flex-col gap-3">
+      <span className="text-ink text-[16px] leading-[22px] font-medium">
+        {INQUIRY_ATTACHMENT_HEADING}
+      </span>
 
-      {/* 종류별 남은 자리를 한눈에 보여 준다 — 이미지·PDF 와 영상이 각자 상한을 쓰므로
-          합쳐서 세면 "왜 아직 되는지/왜 막히는지"를 알 수 없다. */}
-      <p className="text-ink-muted text-ui">
-        이미지·PDF {fileCount}/{INQUIRY_FILE_MAX_COUNT} · 영상 {videos.count}/
-        {INQUIRY_VIDEO_MAX_COUNT}
-      </p>
+      {/* 폰에서는 안내가 버튼 위에 선다(시안 m-4) — 버튼 옆에 두면 두 줄 안내가
+          버튼을 밀어내 한 글자씩 접힌다. */}
+      <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-3">
+        <label className={PICK_BUTTON_CLASS}>
+          <span className="text-ink text-[15px] font-medium lg:text-[16px] lg:leading-[22px]">
+            {INQUIRY_FILE_PICK_LABEL}
+          </span>
+          <input
+            ref={inputRef}
+            type="file"
+            name="attachments"
+            multiple
+            accept={INQUIRY_ATTACHMENT_ACCEPT}
+            onChange={(event) => void handleChange(event)}
+            className="sr-only"
+          />
+        </label>
 
-      <ExistingAttachmentList attachments={attachments} onToggle={toggleRemoved} />
+        <p className="order-1 text-[13px] leading-[18px] text-[#727272] lg:order-2">
+          {ATTACHMENT_NOTICE_LINES.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+        </p>
+      </div>
 
-      {/* 시안: 라벨 폭에 맞는 작은 버튼. 블록 <label> 이라 전폭으로 늘어나던 것을 막는다. */}
-      <label className="text-ui w-fit rounded-[5px] border border-[#d5d9df] bg-[#e7e7e7] px-4 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--color-focus)]">
-        <span className="text-ink flex h-10 items-center">파일 선택</span>
-        <input
-          ref={inputRef}
-          type="file"
-          name="attachments"
-          multiple
-          accept={INQUIRY_ATTACHMENT_ACCEPT}
-          onChange={(event) => void handleChange(event)}
-          className="sr-only"
-        />
-      </label>
+      <ExistingAttachmentList
+        attachments={attachments}
+        removedPaths={removedPaths}
+        onRemove={markRemoved}
+      />
 
       {/* 서버는 이 필드의 JSON 만 보고 영상 첨부를 확정한다(경로의 진위는 다시 검사한다). */}
       <input type="hidden" name={INQUIRY_VIDEO_FIELD} value={videos.value} readOnly />
 
       <InquiryVideoList rows={videos.rows} onRemove={videos.remove} onRetry={videos.retry} />
 
-      <SelectedFileList files={selected} isPreparing={isPreparing} onClear={clearSelection} />
+      <SelectedFileList files={selected} isPreparing={isPreparing} onRemove={removeSelected} />
 
       <FieldError message={localError ?? error} />
     </div>

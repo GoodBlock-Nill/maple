@@ -1,8 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { SupportTabs } from '@/components/support/SupportTabs'
 import { SUPPORT_CARD_CLASS } from '@/components/support/support-styles'
-import { SUPPORT_DESCRIPTION, SUPPORT_HEADING, SUPPORT_MENU } from '@/lib/constants/support'
+import { SUPPORT_MENU } from '@/lib/constants/support'
 import { cn } from '@/lib/utils/cn'
 
 import type { SupportMenuItem } from '@/lib/constants/support'
@@ -11,55 +12,41 @@ import type { ReactNode } from 'react'
 type SupportCardProps = {
   /** 현재 활성 메뉴 경로. */
   activeHref: string
-  /** 좌 컬럼 제목·설명. 기본값은 시안의 "1:1 문의하기" 카피다. */
-  heading?: string
-  description?: string
   children: ReactNode
 }
 
 /**
- * 고객지원 공통 카드. 좌측 메뉴 + 세로 구분선 + 우측 슬롯.
- * 모바일에서는 구분선을 가로로 눕히고 메뉴가 위로 올라간다.
+ * 고객지원 공통 카드(시안 v2).
+ *
+ * PC 는 좌측 메뉴 374 · 세로 구분선 · 우측 콘텐츠 698 이고, 폰에서는 메뉴가
+ * **세그먼트 탭 3개**로 바뀐다 — 374 짜리 메뉴를 세로로 쌓으면 카드 첫 화면이
+ * 전부 내비게이션이 되어 정작 문의 폼이 접히기 때문이다.
+ *
+ * 좌 열 위의 제목·설명 문단은 시안 v2 에서 없어졌다(카드가 바로 메뉴부터 선다).
  */
-export function SupportCard({
-  activeHref,
-  heading = SUPPORT_HEADING,
-  description = SUPPORT_DESCRIPTION,
-  children,
-}: SupportCardProps) {
+export function SupportCard({ activeHref, children }: SupportCardProps) {
   return (
-    /* 세로 리듬은 시안 렌더(support.png)와 글리프 단위로 맞춘 값이다. */
-    <div
-      className={cn(
-        SUPPORT_CARD_CLASS,
-        'mt-6 flex flex-col gap-8 lg:mt-[2px] lg:flex-row lg:gap-6',
-      )}
-    >
-      <div className="flex w-full flex-col gap-8 lg:max-w-[525px] lg:gap-7">
-        <div className="flex flex-col gap-2 lg:gap-1">
-          <h2 className="font-ui text-ink text-[clamp(24px,3vw,30px)] leading-none font-medium">
-            {heading}
-          </h2>
-          <p className="text-ink-muted text-prose leading-relaxed">{description}</p>
-        </div>
+    /* 세로 리듬은 시안 렌더 기준(제목 y≈352 · 카드 top 462)이라 그대로 둔다. */
+    <div className={cn(SUPPORT_CARD_CLASS, 'mt-6 lg:mt-[2px] lg:flex lg:items-stretch')}>
+      <SupportTabs activeHref={activeHref} />
 
-        <nav aria-label="고객지원 메뉴">
-          <ul className="flex flex-col gap-2.5">
-            {SUPPORT_MENU.map((item) => (
-              <li key={item.href}>
-                <SupportMenuLink item={item} isActive={item.href === activeHref} />
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
+      <nav aria-label="고객지원 메뉴" className="hidden shrink-0 lg:block lg:w-[374px]">
+        <ul className="flex flex-col gap-2.5 pt-3">
+          {SUPPORT_MENU.map((item) => (
+            <li key={item.href}>
+              <SupportMenuLink item={item} isActive={item.href === activeHref} />
+            </li>
+          ))}
+        </ul>
+      </nav>
 
+      {/* 구분선은 카드 콘텐츠 높이에 맞춰 늘어난다(시안 667 이 최소 높이다). */}
       <div
         aria-hidden
-        className="bg-line h-px w-full shrink-0 lg:h-auto lg:min-h-[667px] lg:w-px"
+        className="bg-line-soft hidden w-px shrink-0 lg:mr-12 lg:ml-4 lg:block lg:min-h-[667px]"
       />
 
-      <div className="w-full lg:max-w-[561px]">{children}</div>
+      <div className="w-full min-w-0 lg:max-w-[698px] lg:flex-1">{children}</div>
     </div>
   )
 }
@@ -75,7 +62,7 @@ function SupportMenuLink({ item, isActive }: SupportMenuLinkProps) {
       href={item.href}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-2.5 rounded-[10px] border p-2.5 transition-colors',
+        'flex h-[68px] items-center gap-2.5 rounded-[10px] border p-2.5 transition-colors',
         isActive
           ? 'border-line-soft bg-page-sub shadow-chip'
           : 'hover:border-line-soft border-transparent',
@@ -98,7 +85,9 @@ function SupportMenuLink({ item, isActive }: SupportMenuLinkProps) {
           </span>
         )}
       </span>
-      <span className="text-ink text-label-lg font-medium">{item.label}</span>
+      <span className="text-ink text-[18px] leading-[26px] font-medium tracking-[-0.45px]">
+        {item.label}
+      </span>
     </Link>
   )
 }

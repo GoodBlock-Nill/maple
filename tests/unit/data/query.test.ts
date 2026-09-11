@@ -4,8 +4,65 @@ import {
   accumulatedRange,
   containsPattern,
   escapeLikePattern,
+  pageRange,
   toListResult,
+  toPagedListResult,
 } from '@/lib/data/query'
+
+/**
+ * 번호 페이지네이션(내 문의 내역)의 경계.
+ *
+ * 누적 목록과 달리 앞 페이지를 다시 읽지 않는다 — 한 장만 그리는 화면에서
+ * 0번 행부터 읽으면 페이지를 넘길수록 응답이 무거워진다.
+ */
+describe('pageRange', () => {
+  it('should request only the first page when page is one', () => {
+    // Arrange & Act & Assert — range() 는 양끝 포함이라 0..5 가 6건이다.
+    expect(pageRange(1, 6)).toEqual({ from: 0, to: 5 })
+  })
+
+  it('should skip the previous pages when page is greater than one', () => {
+    // Arrange & Act & Assert
+    expect(pageRange(3, 6)).toEqual({ from: 12, to: 17 })
+  })
+
+  it('should fall back to the first page for zero, negative and fractional pages', () => {
+    // Arrange & Act & Assert — 주소창의 잘못된 값도 404 대신 첫 페이지다.
+    expect(pageRange(0, 6)).toEqual({ from: 0, to: 5 })
+    expect(pageRange(-2, 6)).toEqual({ from: 0, to: 5 })
+    expect(pageRange(2.9, 6)).toEqual({ from: 6, to: 11 })
+  })
+})
+
+describe('toPagedListResult', () => {
+  const items = Array.from({ length: 6 }, (_, index) => index)
+
+  it('should report the rows of this page only', () => {
+    // Arrange & Act
+    const result = toPagedListResult(items, 25, 2, 6)
+
+    // Assert — shown 은 누적이 아니라 이 페이지에 그린 건수다.
+    expect(result).toEqual({ items, total: 25, shown: 6, page: 2, hasMore: true })
+  })
+
+  it('should judge the last page by the page boundary, not by the row count', () => {
+    // Arrange & Act — 마지막 페이지가 덜 차도 "더 있다"로 남으면 안 된다.
+    const result = toPagedListResult(items.slice(0, 1), 25, 5, 6)
+
+    // Assert
+    expect(result.shown).toBe(1)
+    expect(result.hasMore).toBe(false)
+  })
+
+  it('should treat the received rows as the total when count is null', () => {
+    // Arrange & Act
+    const result = toPagedListResult(items, null, 1, 6)
+
+    // Assert
+    expect(result.total).toBe(6)
+    expect(result.hasMore).toBe(false)
+  })
+})
 
 describe('accumulatedRange', () => {
   it('should request exactly one page when page is one', () => {

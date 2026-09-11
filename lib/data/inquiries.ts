@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { INQUIRY_PAGE_SIZE } from '@/lib/constants/support'
-import { accumulatedRange, toListResult } from '@/lib/data/query'
+import { pageRange, toPagedListResult } from '@/lib/data/query'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/lib/supabase/storage'
 
@@ -114,17 +114,18 @@ function toSummary(row: InquiryListRow): InquirySummary {
 }
 
 /**
- * 내 문의 목록(누적 "더보기", 최신순).
+ * 내 문의 목록(번호 페이지네이션, 최신순).
  *
- * 답변 수는 임베드 집계로 같은 왕복에서 받는다. 목록 10건에 대해 답변 테이블을
- * 따로 훑으면 왕복이 하나 더 늘 뿐 얻는 게 없다.
+ * `?page=N` 은 N 페이지 한 장만 읽는다(시안 v2 — 누적 "더보기"가 번호 페이지로
+ * 바뀌었다). 답변 수는 임베드 집계로 같은 왕복에서 받는다 — 한 페이지 건수에 대해
+ * 답변 테이블을 따로 훑으면 왕복이 하나 더 늘 뿐 얻는 게 없다.
  */
 export async function getMyInquiries(
   userId: string,
   page = 1,
 ): Promise<ListResult<InquirySummary>> {
   const supabase = await createClient()
-  const { from, to } = accumulatedRange(page, INQUIRY_PAGE_SIZE)
+  const { from, to } = pageRange(page, INQUIRY_PAGE_SIZE)
 
   const { data, count, error } = await supabase
     .from('inquiries')
@@ -140,7 +141,7 @@ export async function getMyInquiries(
     throw new Error(`문의 내역을 불러오지 못했습니다: ${error.message}`)
   }
 
-  return toListResult(data.map(toSummary), count, page, INQUIRY_PAGE_SIZE)
+  return toPagedListResult(data.map(toSummary), count, page, INQUIRY_PAGE_SIZE)
 }
 
 /**

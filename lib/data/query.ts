@@ -31,6 +31,20 @@ export function accumulatedRange(page: number, pageSize: number, offset = 0): Ra
 }
 
 /**
+ * 번호 페이지네이션이 요청할 `range()` 경계 — **그 페이지만** 읽는다.
+ *
+ * 누적 목록(`accumulatedRange`)과 달리 앞 페이지를 다시 읽지 않는다. 두 함수를
+ * 나란히 두는 이유는 목록마다 방식이 다르기 때문이다(내 문의 내역만 번호 방식).
+ */
+export function pageRange(page: number, pageSize: number): RangeBounds {
+  const safePage = Number.isFinite(page) && page > 1 ? Math.floor(page) : 1
+  const safeSize = pageSize > 0 ? pageSize : 1
+  const from = (safePage - 1) * safeSize
+
+  return { from, to: from + safeSize - 1 }
+}
+
+/**
  * `ilike` 패턴에 들어갈 사용자 입력을 리터럴로 만든다.
  *
  * PostgreSQL 의 `ILIKE` 는 `%`(임의 문자열) · `_`(임의 1글자)를 와일드카드로,
@@ -69,4 +83,29 @@ export function toListResult<TItem>(
   const shown = Math.min(items.length, accumulatedCount(page, pageSize, total))
 
   return { items, total, shown, page, hasMore: shown < total }
+}
+
+/**
+ * 번호 페이지네이션 응답의 `ListResult`.
+ *
+ * `shown` 은 **이 페이지에 그린 건수**다(누적이 아니다). 다음 페이지가 있는지는
+ * 건수가 아니라 페이지 경계로 판단해야 한다 — 마지막 페이지가 덜 찬 목록에서
+ * `shown < total` 로 보면 영원히 "더 있다"가 된다.
+ */
+export function toPagedListResult<TItem>(
+  items: readonly TItem[],
+  count: number | null,
+  page: number,
+  pageSize: number,
+): ListResult<TItem> {
+  const total = count ?? items.length
+  const safePage = Number.isFinite(page) && page > 1 ? Math.floor(page) : 1
+
+  return {
+    items,
+    total,
+    shown: items.length,
+    page: safePage,
+    hasMore: safePage * pageSize < total,
+  }
 }

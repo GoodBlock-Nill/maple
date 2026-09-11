@@ -1,15 +1,5 @@
-import {
-  INQUIRY_ATTACHMENT_MAX_MB,
-  INQUIRY_ATTACHMENT_MAX_TOTAL,
-  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
-  INQUIRY_FILE_MAX_COUNT,
-  INQUIRY_VIDEO_MAX_COUNT,
-  INQUIRY_VIDEO_MAX_MB,
-} from '@/lib/supabase/storage'
-import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
-
 import type { BoardOption } from '@/lib/constants/board'
-import type { FaqCategory, InquiryCategoryOption, InquiryStatus } from '@/types/domain'
+import type { FaqCategory, InquiryCategoryOption } from '@/types/domain'
 
 export type SupportMenuItem = {
   href: string
@@ -51,11 +41,6 @@ export const SUPPORT_MENU: readonly SupportMenuItem[] = [
     height: 26,
   },
 ]
-
-export const SUPPORT_HEADING = '1:1 문의하기'
-
-export const SUPPORT_DESCRIPTION =
-  '이용 중 궁금한 사항이나 불편한 점을 자세히 기재하여 문의해 주세요.'
 
 /**
  * 카테고리 폴백.
@@ -137,18 +122,6 @@ export const INQUIRY_SUBTYPE_PLACEHOLDER = '세부 문의 유형을 선택해주
 
 export const INQUIRY_SUBTYPE_LOCKED_PLACEHOLDER = '카테고리를 먼저 선택해주세요'
 
-/**
- * 첨부 안내.
- *
- * 숫자를 문구에 박지 않고 검증 상수에서 끌어온다 — 안내와 실제 제한이 갈리면
- * 사용자는 "된다고 적힌 파일"을 고르고 오류를 본다. 이미지·PDF 와 영상은 각자
- * 자리를 쓰므로(2026-09-11 오너 지시) 둘을 나눠 적고, 끝에 합계를 덧붙인다.
- */
-export const ATTACHMENT_NOTICE =
-  `이미지·PDF 최대 ${INQUIRY_FILE_MAX_COUNT}개(각 ${INQUIRY_ATTACHMENT_MAX_MB}MB, 합계 ` +
-  `${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB) · 영상 최대 ${INQUIRY_VIDEO_MAX_COUNT}개(각 ` +
-  `${INQUIRY_VIDEO_MAX_MB}MB) — 최대 ${INQUIRY_ATTACHMENT_MAX_TOTAL}개`
-
 export const PRIVACY_CONSENT_LABEL = '개인정보 수집 및 이용에 동의합니다.'
 
 export const PRIVACY_CONSENT_LINK_LABEL = '내용 보기'
@@ -172,74 +145,15 @@ export const FAQ_CATEGORY_VALUES = FAQ_CATEGORIES.map((category) => category.val
  * 내 문의 내역
  * ---------------------------------------------------------------------- */
 
-export type InquiryStatusOption = {
-  value: InquiryStatus
-  label: string
-  /**
-   * 완전한 Tailwind 클래스 문자열.
-   * Tailwind v4 는 소스를 정적으로 스캔하므로 `bg-tag-${x}` 같은 보간은 인식하지 못한다.
-   */
-  className: string
-}
-
 /**
- * 상태 뱃지. 진행 중(파랑)·답변 완료(초록)는 게시판 말머리와 같은 tag 토큰 쌍을 쓰고,
- * 접수 대기는 중립 회색, 종료는 한 단계 물러난 아웃라인으로 그린다 — 끝난 문의가
- * 목록에서 시선을 끌 이유가 없다.
- */
-export const INQUIRY_STATUS_MAP: Record<InquiryStatus, InquiryStatusOption> = {
-  pending: { value: 'pending', label: '접수 대기', className: 'bg-tray text-ink' },
-  in_progress: {
-    value: 'in_progress',
-    label: '처리 중',
-    className: 'bg-tag-blue-bg text-tag-blue',
-  },
-  answered: {
-    value: 'answered',
-    label: '답변 완료',
-    className: 'bg-tag-green-bg text-tag-green',
-  },
-  closed: {
-    value: 'closed',
-    label: '종료',
-    className: 'border-line-soft text-ink-muted border bg-page-sub',
-  },
-}
-
-/**
- * 접수 취소 뱃지.
+ * 목록 한 페이지의 건수(시안 v2: 카드 6장).
  *
- * 취소한 문의는 DB 에 `status = 'closed'` 로 저장되고 `cancelled_at` 으로만
- * 구분된다. 그래서 상태 맵에는 넣지 않는다 — 맵은 `inquiry_status` enum 과 1:1
- * 이어야 관리자 화면·통계가 같은 값을 본다. 색은 종료보다 한 단계 더 물러난
- * 중립 회색이다(사용자가 스스로 끝낸 문의라 시선을 끌 이유가 없다).
+ * 누적 "더보기"가 번호 페이지네이션으로 바뀌면서 `?page=N` 은 **N 페이지만** 그린다.
+ * 6 은 시안의 카드 수이자 카드 최소 높이(667)를 채우는 수다.
  */
-export const INQUIRY_CANCELLED_OPTION: InquiryStatusOption = {
-  value: 'closed',
-  label: '접수 취소',
-  className: 'bg-tray text-ink-muted',
-}
-
-/** 목록·상세가 함께 쓰는 뱃지 판정. 취소 여부가 상태 라벨보다 우선한다. */
-export function resolveInquiryStatus(
-  status: InquiryStatus,
-  cancelledAt: string | null,
-): InquiryStatusOption {
-  return isInquiryCancelled(cancelledAt) ? INQUIRY_CANCELLED_OPTION : INQUIRY_STATUS_MAP[status]
-}
-
-export const INQUIRY_STATUSES: readonly InquiryStatusOption[] = Object.values(INQUIRY_STATUS_MAP)
-
-export const INQUIRY_STATUS_VALUES: readonly InquiryStatus[] = INQUIRY_STATUSES.map(
-  (status) => status.value,
-)
-
-/** 목록 한 페이지에 추가로 쌓이는 건수. "더보기"는 1~N 페이지를 누적 표시한다. */
-export const INQUIRY_PAGE_SIZE = 10
+export const INQUIRY_PAGE_SIZE = 6
 
 export const MY_INQUIRIES_HEADING = '내 문의 내역'
-
-export const MY_INQUIRIES_DESCRIPTION = '접수한 1:1 문의와 운영자 답변을 확인할 수 있습니다.'
 
 export const MY_INQUIRIES_EMPTY_TITLE = '아직 남긴 문의가 없습니다'
 
@@ -271,6 +185,14 @@ export const MY_INQUIRIES_LINK_LABEL = '내 문의 내역 보기'
 
 export const INQUIRY_REPLY_HEADING = '답변'
 
+/** 상세 본문 상자 위의 소제목. 시안 v2 에서 제목 줄과 본문을 가르는 표시다. */
+export const INQUIRY_CONTENT_HEADING = '문의내용'
+
+/** 상세·수정 화면 맨 위의 뒤로 가기 링크 문구. */
+export const INQUIRY_BACK_TO_LIST_LABEL = '내 문의 내역으로'
+
+export const INQUIRY_BACK_TO_DETAIL_LABEL = '문의로 돌아가기'
+
 export const INQUIRY_NO_REPLY_NOTICE = '운영자가 확인 중입니다. 답변이 등록되면 이곳에 표시됩니다.'
 
 /** 접수 취소된 문의(답변 없음)의 안내. 처리 중 문구와 구분해 다시 확인할 것이 없음을 알린다. */
@@ -300,15 +222,16 @@ export const INQUIRY_CANCEL_CONFIRM_DESCRIPTION = '취소한 문의는 되돌릴
 
 export const INQUIRY_CANCEL_CONFIRM_LABEL = '접수 취소'
 
-export const INQUIRY_EDIT_HEADING = '문의 수정'
-
-export const INQUIRY_EDIT_DESCRIPTION = '접수 대기 중인 문의만 수정할 수 있습니다.'
-
 export const INQUIRY_EDIT_SUBMIT_LABEL = '수정 완료'
 
 export const INQUIRY_EXISTING_ATTACHMENT_HEADING = '기존 첨부파일'
 
-/** 체크하면 저장 시 그 첨부를 뺀다. 체크 상태를 폼이 그대로 서버로 넘긴다. */
+/**
+ * 칩의 X 버튼이 읽히는 이름.
+ *
+ * 누르면 곧바로 지우는 것이 아니라 "저장할 때 뺄 것"으로 표시한다 — 실제 삭제는
+ * 수정이 성공한 뒤 서버 액션이 한다. 표시된 경로는 숨은 입력으로 그대로 전송된다.
+ */
 export const INQUIRY_ATTACHMENT_REMOVE_LABEL = '삭제'
 
 export const INQUIRY_ATTACHMENT_REMOVE_FIELD = 'removeAttachments'

@@ -3,7 +3,8 @@
 import { useActionState, useCallback, useState } from 'react'
 
 import { FormFeedback } from '@/components/auth/FormFeedback'
-import { BOARD_ACTION_CLASS, BOARD_DANGER_CLASS } from '@/components/board/board-styles'
+import { BOARD_DANGER_CLASS } from '@/components/board/board-styles'
+import { SUPPORT_ACTION_CANCEL_CLASS } from '@/components/support/support-styles'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { cancelInquiry } from '@/lib/actions/inquiry-edit-actions'
@@ -45,7 +46,7 @@ export function CancelInquiryButton({ inquiryId }: CancelInquiryButtonProps) {
         type="button"
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className={BOARD_ACTION_CLASS}
+        className={SUPPORT_ACTION_CANCEL_CLASS}
       >
         {INQUIRY_CANCEL_LABEL}
       </button>

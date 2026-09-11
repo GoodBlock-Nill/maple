@@ -54,19 +54,28 @@ describe('getMyInquiries', () => {
     expect(list.items[0]).toMatchObject({ id: INQUIRY_ID, status: 'pending', replyCount: 2 })
   })
 
-  it('should report the accumulated page state for the 더보기 button', async () => {
-    // Arrange — 전체 25건 중 1페이지(10건)만 받은 상태.
+  it('should report the state of a single page for the numbered pagination', async () => {
+    // Arrange — 전체 25건 중 2페이지(6건)만 받은 상태.
     stub = createSupabaseStub([
-      { data: Array.from({ length: 10 }, () => LIST_ROW), error: null, count: 25 } as never,
+      { data: Array.from({ length: 6 }, () => LIST_ROW), error: null, count: 25 } as never,
     ])
 
     // Act
-    const list = await getMyInquiries(USER_ID, 1)
+    const list = await getMyInquiries(USER_ID, 2)
 
-    // Assert
-    expect(list.shown).toBe(10)
+    // Assert — 누적이 아니라 이 페이지 건수다.
+    expect(list.shown).toBe(6)
+    expect(list.page).toBe(2)
     expect(list.total).toBe(25)
     expect(list.hasMore).toBe(true)
+  })
+
+  it('should read only the requested page from the table', async () => {
+    // Arrange & Act — 누적 조회로 남아 있으면 페이지를 넘길수록 응답이 무거워진다.
+    await getMyInquiries(USER_ID, 2)
+
+    // Assert — 페이지 크기 6 → 2페이지는 6..11 행이다.
+    expect(stub.ranges).toContainEqual([6, 11])
   })
 
   it('should treat a query failure as an error the page can surface', async () => {

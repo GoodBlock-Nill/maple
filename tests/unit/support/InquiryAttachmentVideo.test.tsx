@@ -178,7 +178,7 @@ describe('InquiryAttachmentField (영상)', () => {
     const upload = latest()
 
     // Act
-    await user.click(screen.getByRole('button', { name: '업로드 취소' }))
+    await user.click(screen.getByRole('button', { name: 'clip.mp4 업로드 취소' }))
 
     // Assert — 잠긴 폼에서 빠져나오는 길이 없으면 접수 자체가 막힌다.
     expect(upload.abort).toHaveBeenCalledTimes(1)
@@ -202,7 +202,7 @@ describe('InquiryAttachmentField (영상)', () => {
     await screen.findByText('첨부 완료')
 
     // Act
-    await user.click(screen.getByRole('button', { name: '삭제' }))
+    await user.click(screen.getByRole('button', { name: 'clip.mp4 첨부 해제' }))
 
     // Assert
     expect(deleteInquiryPendingVideo).toHaveBeenCalledWith('uid/pending/abc.mp4')

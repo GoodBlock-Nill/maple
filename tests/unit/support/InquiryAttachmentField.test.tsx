@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { InquiryAttachmentField } from '@/components/support/InquiryAttachmentField'
-import { CHECK_MARK_TEST_ID } from '@/components/support/SupportCheckbox'
+import { INQUIRY_ATTACHMENT_REMOVE_FIELD } from '@/lib/constants/support'
 import {
   INQUIRY_ATTACHMENT_MAX_BYTES,
   INQUIRY_ATTACHMENT_MAX_MB,
@@ -33,24 +33,27 @@ function fileInput(): HTMLInputElement {
 }
 
 describe('InquiryAttachmentField', () => {
-  it('should state the real limits next to the label', () => {
+  it('should state the real limits next to the button', () => {
     // Arrange & Act — 안내와 실제 제한이 갈리면 사용자는 "된다고 적힌 파일"을 고르고 실패한다.
     render(<InquiryAttachmentField attachments={[]} error={undefined} />)
 
     // Assert
     expect(
       screen.getByText(
-        new RegExp(`각 ${INQUIRY_ATTACHMENT_MAX_MB}MB, 합계 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`),
+        new RegExp(
+          `이미지·PDF ${INQUIRY_ATTACHMENT_MAX_MB}MB/개 · 최대 ${INQUIRY_FILE_MAX_COUNT}개 · ` +
+            `총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`,
+        ),
       ),
     ).toBeInTheDocument()
   })
 
-  it('should show per-kind counters for images/pdf and video', () => {
-    // Arrange & Act — 종류별 상한이 갈리므로 합친 숫자만으로는 몇 자리가 남았는지 알 수 없다.
+  it('should list the accepted formats under the limits', () => {
+    // Arrange & Act — 형식을 적지 않으면 사용자는 고를 수 없는 파일을 먼저 시도한다.
     render(<InquiryAttachmentField attachments={[]} error={undefined} />)
 
     // Assert
-    expect(screen.getByText(/이미지·PDF 0\/3 · 영상 0\/2/)).toBeInTheDocument()
+    expect(screen.getByText(/JPG.*PDF.*MP4/u)).toBeInTheDocument()
   })
 
   it('should list a selected file with its size', async () => {
@@ -92,7 +95,7 @@ describe('InquiryAttachmentField', () => {
     })
   })
 
-  it('should unlock submission when the bad selection is cleared', async () => {
+  it('should unlock submission when the bad chip is removed', async () => {
     // Arrange — 첨부를 포기하는 길이 없으면 잠긴 폼에서 빠져나올 수 없다.
     const user = userEvent.setup()
     const onBlockedChange = vi.fn()
@@ -108,8 +111,8 @@ describe('InquiryAttachmentField', () => {
       fileOf('photo.jpg', 'image/jpeg', INQUIRY_ATTACHMENT_MAX_BYTES + 1),
     )
 
-    // Act
-    await user.click(await screen.findByRole('button', { name: '첨부 지우기' }))
+    // Act — 칩의 X 가 어긋난 선택에서 빠져나오는 길이다.
+    await user.click(await screen.findByRole('button', { name: 'photo.jpg 첨부 해제' }))
 
     /* Assert — 파일 목록 자체가 비는지는 브라우저 동작이라 e2e
        (`tests/e2e/support-inquiries.spec.ts`)가 본다. 여기서는 화면과 잠금을 본다. */
@@ -153,7 +156,7 @@ describe('InquiryAttachmentField', () => {
     render(<InquiryAttachmentField attachments={existing} error={undefined} />)
 
     // Act
-    await user.click(screen.getAllByRole('checkbox')[0] as HTMLElement)
+    await user.click(screen.getByRole('button', { name: 'old1.png 삭제' }))
     await user.upload(fileInput(), fileOf('new.png', 'image/png', 1024))
 
     // Assert
@@ -193,30 +196,31 @@ describe('InquiryAttachmentField', () => {
     expect(screen.getByText('첨부파일을 올리지 못했습니다.')).toBeInTheDocument()
   })
 
-  it('should show a check mark on the removal box once it is ticked', async () => {
-    /* 수정 화면의 삭제 체크박스도 접수 폼의 동의 체크박스와 같은 부품이다 —
-       켠 표시가 없으면 "무엇이 지워질지"를 화면에서 알 수 없다. */
+  it('should submit the removed attachment path as a hidden value', async () => {
+    /* 칩의 X 는 파일을 즉시 지우지 않는다 — 저장하지 않고 떠난 사용자의 파일이
+       사라지면 안 되기 때문이다. 대신 "뺄 것"을 폼 전송값으로 남긴다. */
     // Arrange
     const user = userEvent.setup()
 
-    render(
+    const { container } = render(
       <InquiryAttachmentField
         attachments={[{ name: 'old.png', path: 'uid/old.png', size: 1024, mimeType: 'image/png' }]}
         error={undefined}
       />,
     )
 
-    // Assert — 꺼진 상태에는 표시가 없다.
-    const removal = screen.getByRole('checkbox')
+    // Assert — 표시하기 전에는 전송값이 없다.
+    const removedInputs = () =>
+      container.querySelectorAll(`input[name="${INQUIRY_ATTACHMENT_REMOVE_FIELD}"]`)
 
-    expect(removal).toBeVisible()
-    expect(screen.queryByTestId(CHECK_MARK_TEST_ID)).not.toBeInTheDocument()
+    expect(removedInputs()).toHaveLength(0)
 
     // Act
-    await user.click(removal)
+    await user.click(screen.getByRole('button', { name: 'old.png 삭제' }))
 
-    // Assert
-    expect(removal).toBeChecked()
-    expect(screen.getByTestId(CHECK_MARK_TEST_ID)).toBeInTheDocument()
+    // Assert — 칩은 사라지고 오브젝트 키가 숨은 입력으로 남는다.
+    expect(screen.queryByText('old.png')).not.toBeInTheDocument()
+    expect(removedInputs()).toHaveLength(1)
+    expect((removedInputs()[0] as HTMLInputElement).value).toBe('uid/old.png')
   })
 })

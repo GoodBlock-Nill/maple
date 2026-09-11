@@ -40,8 +40,12 @@ export function InquiryAttachmentList({ attachments }: InquiryAttachmentListProp
   }
 
   return (
-    <section className="flex flex-col gap-2.5">
-      <h3 className="text-ink text-ui font-bold">{INQUIRY_ATTACHMENT_HEADING}</h3>
+    /* 본문 상자 아래에 같은 리듬(gap 12)으로 붙는다 — 시안에는 없는 블록이라
+       본문과 톤을 맞추고 제목은 한 단계 작게 둔다. */
+    <section className="mt-3 flex flex-col gap-2.5">
+      <h3 className="text-ink text-[14px] leading-[20px] font-semibold lg:text-[16px] lg:leading-[22px]">
+        {INQUIRY_ATTACHMENT_HEADING}
+      </h3>
       <ul className="flex flex-wrap items-start gap-3">
         {attachments.map((attachment) => (
           <li

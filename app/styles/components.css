@@ -352,10 +352,10 @@
     color: var(--color-ink-muted);
   }
 
-  /* 네이티브 select 의 기본 화살표를 지우고 시안의 caret 아이콘을 얹는다. */
+  /* 네이티브 select 의 기본 화살표를 지우고 시안 v2 의 꺾쇠(40×40 박스)를 얹는다. */
   .support-select {
     appearance: none;
-    background-image: url('/images/brand/icon-select-caret.svg');
+    background-image: url('/images/support/v2/select-chevron.svg');
     background-repeat: no-repeat;
     background-position: right 0 center;
     background-size: 40px 40px;

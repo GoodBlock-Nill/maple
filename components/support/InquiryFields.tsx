@@ -118,7 +118,8 @@ export function InquiryFields({
           placeholder={INQUIRY_ACCOUNT_PLACEHOLDER}
           defaultValue={values?.accountId ?? defaultAccountId}
           aria-describedby="inquiry-account-hint"
-          className={cn(SUPPORT_INPUT_CLASS, 'rounded-pill')}
+          /* 시안 v2: 계정 ID 만 345 폭 알약이다(값이 17자리로 짧고 고정 폭이다). */
+          className={cn(SUPPORT_INPUT_CLASS, 'rounded-pill sm:max-w-[345px]')}
         />
       </FormRow>
 
@@ -206,7 +207,7 @@ export function InquiryFields({
           /* 시안의 150 은 **빈 칸의** 높이다. 실제 높이는 내용에 맞춰
              `useAutoGrowTextarea` 가 인라인 스타일로 다시 잡는다(카테고리 양식은
              3~13줄로 길이가 제각각이다). */
-          className={cn(SUPPORT_FIELD_CLASS, 'rounded-panel h-[150px] resize-none p-4')}
+          className={cn(SUPPORT_FIELD_CLASS, 'rounded-panel h-[150px] resize-none px-4 py-2.5')}
         />
       </FormRow>
 

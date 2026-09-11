@@ -1,14 +1,15 @@
 import { notFound, redirect } from 'next/navigation'
 
-import { BackToListLink } from '@/components/board/BackToListLink'
 import { FlashNotice } from '@/components/board/FlashNotice'
 import { PageShell } from '@/components/layout/PageShell'
 import { InquiryDetailCard } from '@/components/support/InquiryDetailCard'
 import { InquiryReplyThread } from '@/components/support/InquiryReplyThread'
 import { InquirySubmittedDialog } from '@/components/support/InquirySubmittedDialog'
+import { SupportBackLink } from '@/components/support/SupportBackLink'
 import { SupportCard } from '@/components/support/SupportCard'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
+  INQUIRY_BACK_TO_LIST_LABEL,
   INQUIRY_CANCELLED_NOTICE,
   INQUIRY_CANCELLED_PARAM,
   INQUIRY_EDIT_LOCKED_NOTICE,
@@ -16,8 +17,6 @@ import {
   INQUIRY_SUBMITTED_PARAM,
   INQUIRY_UPDATED_NOTICE,
   INQUIRY_UPDATED_PARAM,
-  MY_INQUIRIES_DESCRIPTION,
-  MY_INQUIRIES_HEADING,
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { getInquiryReplies, getMyInquiry, getSignedAttachments } from '@/lib/data/inquiries'
@@ -84,12 +83,9 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
 
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
-      <SupportCard
-        activeHref={MY_INQUIRIES_PATH}
-        heading={MY_INQUIRIES_HEADING}
-        description={MY_INQUIRIES_DESCRIPTION}
-      >
-        <div className="flex flex-col gap-6">
+      <SupportCard activeHref={MY_INQUIRIES_PATH}>
+        {/* 시안 세로 리듬: 뒤로 링크 → 16 → 본문 카드 → 32 → 답변(= gap 16 + mt 16). */}
+        <div className="flex flex-col gap-4">
           {/* 접수 직후에만 뜨는 완료 모달. 닫으면 주소에서 파라미터가 사라진다. */}
           {isSubmitted ? (
             <InquirySubmittedDialog
@@ -100,15 +96,17 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
 
           {notice === null ? null : <FlashNotice param={notice.param} message={notice.message} />}
 
+          <SupportBackLink href={MY_INQUIRIES_PATH} label={INQUIRY_BACK_TO_LIST_LABEL} />
+
           <InquiryDetailCard inquiry={inquiry} attachments={attachments} />
 
-          <InquiryReplyThread
-            replies={replies}
-            status={inquiry.status}
-            cancelledAt={inquiry.cancelledAt}
-          />
-
-          <BackToListLink href={MY_INQUIRIES_PATH} />
+          <div className="mt-4">
+            <InquiryReplyThread
+              replies={replies}
+              status={inquiry.status}
+              cancelledAt={inquiry.cancelledAt}
+            />
+          </div>
         </div>
       </SupportCard>
       <div className="pb-16 xl:pb-0" />

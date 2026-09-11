@@ -44,10 +44,10 @@ type FormRowProps = {
   children: ReactNode
 }
 
-/** 라벨 + 필드 + 안내 + 오류 한 묶음. 시안의 라벨-필드 간격 8 을 지킨다. */
+/** 라벨 + 필드 + 안내 + 오류 한 묶음. 시안 v2 의 라벨-필드 간격 10 을 지킨다. */
 export function FormRow({ label, htmlFor, error, required, hint, children }: FormRowProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       <label htmlFor={htmlFor} className={SUPPORT_LABEL_CLASS}>
         {label}
         {required === true && (

@@ -6,11 +6,8 @@ import {
   MYPAGE_LEGACY_HELP_CLASS,
 } from '@/components/account/mypage-styles'
 import { BOARD_PILL_CLASS } from '@/components/board/board-styles'
-import {
-  INQUIRY_STATUS_MAP,
-  MY_INQUIRIES_PATH,
-  resolveInquiryStatus,
-} from '@/lib/constants/support'
+import { INQUIRY_STATUS_MAP, resolveInquiryStatus } from '@/lib/constants/inquiry-status'
+import { MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { cn } from '@/lib/utils/cn'
 import { formatDateIso } from '@/lib/utils/format-date'
 import { formatInquiryNo } from '@/lib/utils/inquiry-no'

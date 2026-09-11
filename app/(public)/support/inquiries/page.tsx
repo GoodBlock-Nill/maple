@@ -8,8 +8,6 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import {
   INQUIRY_CANCELLED_NOTICE,
   INQUIRY_CANCELLED_PARAM,
-  MY_INQUIRIES_DESCRIPTION,
-  MY_INQUIRIES_HEADING,
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { getMyInquiries } from '@/lib/data/inquiries'
@@ -49,13 +47,11 @@ export default async function MyInquiriesPage(props: PageProps<'/support/inquiri
 
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
-      <SupportCard
-        activeHref={MY_INQUIRIES_PATH}
-        heading={MY_INQUIRIES_HEADING}
-        description={MY_INQUIRIES_DESCRIPTION}
-      >
+      <SupportCard activeHref={MY_INQUIRIES_PATH}>
         {isCancelled ? (
-          <FlashNotice param={INQUIRY_CANCELLED_PARAM} message={INQUIRY_CANCELLED_NOTICE} />
+          <div className="mb-4">
+            <FlashNotice param={INQUIRY_CANCELLED_PARAM} message={INQUIRY_CANCELLED_NOTICE} />
+          </div>
         ) : null}
         <InquiryList list={list} />
       </SupportCard>

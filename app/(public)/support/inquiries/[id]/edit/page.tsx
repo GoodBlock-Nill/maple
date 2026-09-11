@@ -1,20 +1,18 @@
 import { notFound, redirect } from 'next/navigation'
 
-import { BackToListLink } from '@/components/board/BackToListLink'
 import { PageShell } from '@/components/layout/PageShell'
 import { InquiryForm } from '@/components/support/InquiryForm'
+import { SupportBackLink } from '@/components/support/SupportBackLink'
 import { SupportCard } from '@/components/support/SupportCard'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
-  INQUIRY_EDIT_DESCRIPTION,
-  INQUIRY_EDIT_HEADING,
+  INQUIRY_BACK_TO_DETAIL_LABEL,
   INQUIRY_EDIT_LOCKED_PARAM,
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
 import { getMyInquiry } from '@/lib/data/inquiries'
 import { getInquiryCategories } from '@/lib/data/inquiry-categories'
 import { canEditInquiry } from '@/lib/utils/inquiry-permissions'
-import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import { withLegacyCategory } from '@/lib/utils/inquiry-prefill'
 
 import type { Metadata } from 'next'
@@ -61,13 +59,13 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
 
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
-      <SupportCard
-        activeHref={MY_INQUIRIES_PATH}
-        /* 어떤 문의를 고치는 중인지 제목에서 바로 읽히게 한다 — 여러 건을 접수한
-           사용자가 목록·상세를 오가다 잘못된 글을 고치는 일을 막는다. */
-        heading={`${INQUIRY_EDIT_HEADING} ${formatInquiryNo(inquiry.inquiryNo)}`}
-        description={INQUIRY_EDIT_DESCRIPTION}
-      >
+      <SupportCard activeHref={MY_INQUIRIES_PATH}>
+        {/* 어떤 문의를 고치는 중인지 돌아갈 길로 알려 준다 — 좌 열 제목이 없어진
+            시안 v2 에서 사용자가 "지금 어느 글을 고치는가"를 잃지 않게 한다. */}
+        <div className="mb-4">
+          <SupportBackLink href={detailPath} label={INQUIRY_BACK_TO_DETAIL_LABEL} />
+        </div>
+
         <InquiryForm
           isAuthenticated
           categories={categories}
@@ -82,8 +80,7 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
           attachments={inquiry.attachments}
         />
       </SupportCard>
-
-      <BackToListLink href={detailPath} label="문의로 돌아가기" />
+      <div className="pb-16 xl:pb-0" />
     </PageShell>
   )
 }

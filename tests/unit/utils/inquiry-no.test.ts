@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatInquiryNo } from '@/lib/utils/inquiry-no'
+import { formatInquiryNo, formatInquiryNoLabel } from '@/lib/utils/inquiry-no'
 
 /**
  * 접수번호 표기.
@@ -27,5 +27,31 @@ describe('formatInquiryNo', () => {
     expect(formatInquiryNo(null)).toBe('-')
     expect(formatInquiryNo(undefined)).toBe('-')
     expect(formatInquiryNo(Number.NaN)).toBe('-')
+  })
+})
+
+/**
+ * 목록·상세의 `No.` 표기(시안 v2).
+ *
+ * `#1024`(접수 완료 모달·관리자)와 **같은 숫자**를 가리킨다는 것이 눈에 보여야
+ * 한다. 그래서 접두사만 다르고 숫자는 손대지 않는다.
+ */
+describe('formatInquiryNoLabel', () => {
+  it('should read as No. followed by the plain number', () => {
+    // Arrange & Act & Assert
+    expect(formatInquiryNoLabel(1024)).toBe('No. 1024')
+    expect(formatInquiryNoLabel(12345)).toBe('No. 12345')
+  })
+
+  it('should point at the same number as the hash form', () => {
+    // Arrange & Act & Assert — 두 표기가 갈리면 고객센터 통화에서 번호가 어긋난다.
+    expect(formatInquiryNoLabel(1024).endsWith(formatInquiryNo(1024).slice(1))).toBe(true)
+  })
+
+  it('should fall back to a bare dash when the number is missing', () => {
+    // Arrange & Act & Assert — "No. -" 는 번호가 있는 것처럼 읽힌다.
+    expect(formatInquiryNoLabel(null)).toBe('-')
+    expect(formatInquiryNoLabel(undefined)).toBe('-')
+    expect(formatInquiryNoLabel(Number.NaN)).toBe('-')
   })
 })

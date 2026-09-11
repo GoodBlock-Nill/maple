@@ -398,8 +398,12 @@ test('should accept an inquiry, list it, and surface the operator reply', async 
   const row = page.getByRole('link', { name: new RegExp(title) })
   await expect(row).toBeVisible()
   await expect(row).toContainText('접수 대기')
-  await expect(row).toContainText(`${CATEGORY_LABEL} · ${SUBTYPE_LABEL}`)
-  await expect(row).toContainText('답변 0')
+  /* 시안 v2: 카테고리와 유형 사이는 가운뎃점이 아니라 꺾쇠 아이콘이고, 접수번호는
+     `No. 1024` 로 제목 줄 오른쪽에 선다("답변 N" 표기는 없어졌다). */
+  await expect(row).toContainText(CATEGORY_LABEL)
+  await expect(row).toContainText(SUBTYPE_LABEL)
+  await expect(row).toContainText(/No\. \d+/)
+  await expect(row).not.toContainText('답변 0')
 
   if (isDesktop) {
     await page.screenshot({ path: `${SCREENSHOT_DIR}/inquiries-list-1440.png`, fullPage: true })
@@ -420,10 +424,15 @@ test('should accept an inquiry, list it, and surface the operator reply', async 
 
   await page.goto(`${LIST_PATH}/${inquiryId}`)
 
-  // Assert — 답변 스레드에 운영자 답변이 뜨고 상태가 올라간다
+  // Assert — 답변 스레드에 운영자 답변이 뜬다
   await expect(page.getByText(REPLY_CONTENT)).toBeVisible()
   await expect(page.getByText('운영자', { exact: true })).toBeVisible()
-  await expect(page.getByText('답변 완료')).toBeVisible()
+
+  /* 시안 v2(pc-3): 답변이 달린 상세에는 상태 알약을 그리지 않는다 — 답변 블록이
+     상태를 말한다. 상태가 올라갔다는 것은 목록에서 확인한다. */
+  await page.goto(LIST_PATH)
+  await expect(page.getByRole('link', { name: new RegExp(title) })).toContainText('답변 완료')
+  await page.goto(`${LIST_PATH}/${inquiryId}`)
 
   // Assert — 비로그인은 상세에서 로그인으로 안내된다
   const anonymousContext = await browser.newContext()
@@ -579,8 +588,8 @@ test('should refuse an oversized attachment before submitting and accept a real 
   await expect(page.getByText(/oversize\.pdf .*MB/)).toBeVisible()
   await expect(submitButton).toBeDisabled()
 
-  // Act — 첨부를 포기하면 다시 열린다
-  await page.getByRole('button', { name: '첨부 지우기' }).click()
+  // Act — 칩의 X 로 첨부를 포기하면 다시 열린다(시안 v2: "첨부 지우기" 대신 칩 X)
+  await page.getByRole('button', { name: 'oversize.pdf 첨부 해제' }).click()
 
   // Assert
   await expect(submitButton).toBeEnabled()
@@ -639,8 +648,9 @@ test('should upload a video straight to storage and play it on the detail page',
   // Act — 고르는 즉시 업로드가 시작된다
   await fileInput.setInputFiles(source as string)
 
-  // Assert — 진행 상태가 보이고, 끝나면 "첨부 완료"가 된다
-  await expect(page.getByText('inquiry-e2e.mp4')).toBeVisible()
+  /* Assert — 진행 상태가 보이고, 끝나면 "첨부 완료"가 된다. 칩은 이름의 앞부분만
+     보여 주므로(시안 v2) 전체 이름은 `title` 로 찾는다. */
+  await expect(page.getByTitle('inquiry-e2e.mp4')).toBeVisible()
   await expect(page.getByText('첨부 완료')).toBeVisible({ timeout: 60_000 })
 
   /* 영상은 본문에 실리지 않는다 — input 은 비어 있고, 경로만 숨은 필드에 있다. */
@@ -719,8 +729,9 @@ test('should refuse a fourth image and accept three images with two videos toget
   await expect(page.getByText('이미지·PDF는 최대 3개까지 첨부할 수 있습니다.')).toBeVisible()
   await expect(submitButton).toBeDisabled()
 
-  // Act — 첨부를 포기하고, 이미지 3장 + 영상 2편을 한 번에 고른다
-  await page.getByRole('button', { name: '첨부 지우기' }).click()
+  // Act — 칩 하나를 내려 이미지 자리를 맞추고, 이미지 3장 + 영상 2편을 한 번에 고른다
+  await page.getByRole('button', { name: 'pixel.png 첨부 해제' }).first().click()
+  await expect(submitButton).toBeEnabled()
   await fileInput.setInputFiles([
     'tests/fixtures/pixel.png',
     'tests/fixtures/pixel.png',
@@ -730,8 +741,8 @@ test('should refuse a fourth image and accept three images with two videos toget
   ])
 
   // Assert — 영상 두 편 모두 업로드가 끝나야 제출이 열린다
-  await expect(page.getByText('inquiry-e2e-max-a.mp4')).toBeVisible()
-  await expect(page.getByText('inquiry-e2e-max-b.mp4')).toBeVisible()
+  await expect(page.getByTitle('inquiry-e2e-max-a.mp4')).toBeVisible()
+  await expect(page.getByTitle('inquiry-e2e-max-b.mp4')).toBeVisible()
   await expect(page.getByText('첨부 완료')).toHaveCount(2, { timeout: 60_000 })
   await expect(submitButton).toBeEnabled()
 
