@@ -1342,6 +1342,10 @@ export type Database = {
         }[]
       }
       increment_post_view: { Args: { p_id: string }; Returns: number }
+      inquiry_attachment_kind_count: {
+        Args: { p_attachments: Json; p_is_video: boolean }
+        Returns: number
+      }
       inquiry_category_usage: {
         Args: never
         Returns: {

@@ -3,10 +3,11 @@ import { z } from 'zod'
 import { allowedInquiryTypes } from '@/lib/utils/inquiry-subtypes'
 import {
   INQUIRY_ATTACHMENT_MAX_BYTES,
-  INQUIRY_ATTACHMENT_MAX_COUNT,
   INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_MAX_TOTAL,
   INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+  INQUIRY_FILE_MAX_COUNT,
 } from '@/lib/supabase/storage'
 import { INQUIRY_VIDEO_EXTENSIONS, INQUIRY_VIDEO_MIME_TYPES } from '@/lib/validation/inquiry-video'
 
@@ -268,20 +269,32 @@ function totalBytes(files: readonly UploadCandidate[]): number {
  * 합계 제한은 버킷이 아니라 서버 액션 본문 상한 때문에 있다. 합계가 상한을 넘으면
  * 액션이 실행되지 않아 **아무 메시지도 돌려줄 수 없으므로**, 폼이 보내기 전에
  * 여기서 먼저 걸러야 한다(`InquiryAttachmentField` 가 같은 함수를 부른다).
+ *
+ * `files` 는 이미지·PDF 만 받는다(영상은 이 함수에 실리지 않고 `validateInquiryVideo`
+ * 가 따로 본다). 개수는 이미지·PDF 와 영상이 **각자 자리**를 쓰므로(2026-09-11
+ * 오너 지시) 종류별 상한을 먼저 보고, 그다음 둘을 합친 전체 상한을 한 번 더 본다 —
+ * DB CHECK 도 같은 순서로 셋을 나눠 둔다(`inquiries_attachments_file_kind_max_3` ·
+ * `inquiries_attachments_video_kind_max_2` · `inquiries_attachments_max_5`).
  */
 export function validateInquiryAttachments(
   files: readonly UploadCandidate[],
-  /* 수정 화면에서 그대로 두는 기존 첨부 수. 개수 제한은 DB CHECK
-     (`inquiries_attachments_max_3`)와 같아야 하므로 남길 것까지 합쳐서 센다. */
-  keptCount = 0,
-  /* 버킷에 직접 올라간 영상 수. 본문에는 실리지 않지만 같은 문의의 첨부라
-     개수에는 함께 들어간다(DB CHECK 는 셋을 구분하지 않는다). */
+  /* 수정 화면에서 그대로 두는 기존 "이미지·PDF" 첨부 수(영상은 넣지 않는다). */
+  keptFileCount = 0,
+  /* 이미 확정됐거나(기존 첨부) 지금 올리는 중인 영상 수. 본문에는 실리지 않지만
+     같은 문의의 첨부라 전체 상한에는 함께 들어간다. */
   videoCount = 0,
 ): InquiryAttachmentCheck {
-  if (files.length + keptCount + videoCount > INQUIRY_ATTACHMENT_MAX_COUNT) {
+  if (files.length + keptFileCount > INQUIRY_FILE_MAX_COUNT) {
     return {
       ok: false,
-      message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개까지 올릴 수 있습니다.`,
+      message: `이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`,
+    }
+  }
+
+  if (files.length + keptFileCount + videoCount > INQUIRY_ATTACHMENT_MAX_TOTAL) {
+    return {
+      ok: false,
+      message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_TOTAL}개까지 첨부할 수 있습니다.`,
     }
   }
 

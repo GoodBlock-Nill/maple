@@ -682,3 +682,89 @@ test('should upload a video straight to storage and play it on the detail page',
     await service.from('inquiries').delete().eq('id', inquiryId)
   }
 })
+
+/**
+ * 첨부 상한 — 이미지·PDF 3개 + 영상 2개, 합쳐서 최대 5개(오너 지시, 2026-09-11).
+ *
+ * 종류별 상한과 합계 상한을 한 흐름에서 함께 본다 — 이미지 4번째는 이미지·PDF 자리가
+ * 이미 찬 시점에 거절되고, 이미지 3개 + 영상 2개(정확히 5개)는 그대로 접수돼야 한다.
+ */
+test('should refuse a fourth image and accept three images with two videos together', async ({
+  page,
+}) => {
+  // Arrange
+  const videoA = makeTestVideo(`${VIDEO_FIXTURE_DIR}/inquiry-e2e-max-a.mp4`)
+  const videoB = makeTestVideo(`${VIDEO_FIXTURE_DIR}/inquiry-e2e-max-b.mp4`)
+
+  test.skip(videoA === null || videoB === null, 'ffmpeg 이 없어 테스트용 mp4 를 만들 수 없습니다.')
+
+  await stubLogin(page, SUPPORT_PATH)
+
+  const title = `E2E 첨부 상한 ${Date.now()}`
+
+  await fillRequiredFields(page, title)
+
+  const fileInput = page.locator('input[name="attachments"]')
+  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+
+  // Act — 이미지 4장을 한 번에 고른다(이미지·PDF 상한은 3개, 영상과 별도 자리다)
+  await fileInput.setInputFiles([
+    'tests/fixtures/pixel.png',
+    'tests/fixtures/pixel.png',
+    'tests/fixtures/pixel.png',
+    'tests/fixtures/pixel.png',
+  ])
+
+  // Assert — 종류별 오류 문구로 거절되고 제출이 잠긴다
+  await expect(page.getByText('이미지·PDF는 최대 3개까지 첨부할 수 있습니다.')).toBeVisible()
+  await expect(submitButton).toBeDisabled()
+
+  // Act — 첨부를 포기하고, 이미지 3장 + 영상 2편을 한 번에 고른다
+  await page.getByRole('button', { name: '첨부 지우기' }).click()
+  await fileInput.setInputFiles([
+    'tests/fixtures/pixel.png',
+    'tests/fixtures/pixel.png',
+    'tests/fixtures/pixel.png',
+    videoA as string,
+    videoB as string,
+  ])
+
+  // Assert — 영상 두 편 모두 업로드가 끝나야 제출이 열린다
+  await expect(page.getByText('inquiry-e2e-max-a.mp4')).toBeVisible()
+  await expect(page.getByText('inquiry-e2e-max-b.mp4')).toBeVisible()
+  await expect(page.getByText('첨부 완료')).toHaveCount(2, { timeout: 60_000 })
+  await expect(submitButton).toBeEnabled()
+
+  // Act — 접수
+  const inquiryId = await submitInquiry(page, title)
+
+  await page
+    .getByRole('dialog', { name: '문의가 접수되었습니다' })
+    .getByRole('button', { name: '확인' })
+    .click()
+
+  // Assert — 상세에 이미지 3장 + 영상 2편, 정확히 5개가 뜬다
+  await expect(page.getByRole('link', { name: /pixel\.png/ })).toHaveCount(3)
+  await expect(page.locator('video')).toHaveCount(2)
+  expect(inquiryId).not.toBe('')
+
+  // Assert · 뒷정리 — 저장된 첨부가 정확히 5개인지 서비스 롤로 확인하고 지운다.
+  const service = createServiceClient()
+
+  if (service !== null) {
+    const stored = await service
+      .from('inquiries')
+      .select('attachments')
+      .eq('id', inquiryId)
+      .single()
+    const attachments = (stored.data?.attachments ?? []) as { path: string }[]
+
+    expect(attachments).toHaveLength(5)
+
+    if (attachments.length > 0) {
+      await service.storage.from('inquiry-attachments').remove(attachments.map((a) => a.path))
+    }
+
+    await service.from('inquiries').delete().eq('id', inquiryId)
+  }
+})

@@ -8,6 +8,7 @@ import {
   INQUIRY_ATTACHMENT_MAX_BYTES,
   INQUIRY_ATTACHMENT_MAX_MB,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+  INQUIRY_FILE_MAX_COUNT,
 } from '@/lib/supabase/storage'
 
 /**
@@ -39,9 +40,17 @@ describe('InquiryAttachmentField', () => {
     // Assert
     expect(
       screen.getByText(
-        new RegExp(`각 ${INQUIRY_ATTACHMENT_MAX_MB}MB · 합계 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`),
+        new RegExp(`각 ${INQUIRY_ATTACHMENT_MAX_MB}MB, 합계 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`),
       ),
     ).toBeInTheDocument()
+  })
+
+  it('should show per-kind counters for images/pdf and video', () => {
+    // Arrange & Act — 종류별 상한이 갈리므로 합친 숫자만으로는 몇 자리가 남았는지 알 수 없다.
+    render(<InquiryAttachmentField attachments={[]} error={undefined} />)
+
+    // Assert
+    expect(screen.getByText(/이미지·PDF 0\/3 · 영상 0\/2/)).toBeInTheDocument()
   })
 
   it('should list a selected file with its size', async () => {
@@ -111,7 +120,7 @@ describe('InquiryAttachmentField', () => {
   })
 
   it('should reject a fourth file when three are already attached', async () => {
-    // Arrange — 개수 제한은 DB CHECK(`inquiries_attachments_max_3`)와 같아야 한다.
+    // Arrange — 개수 제한은 DB CHECK(`inquiries_attachments_file_kind_max_3`)와 같아야 한다.
     const user = userEvent.setup()
     const existing = [1, 2, 3].map((index) => ({
       name: `old${index}.png`,
@@ -125,7 +134,11 @@ describe('InquiryAttachmentField', () => {
     await user.upload(fileInput(), fileOf('new.png', 'image/png', 1024))
 
     // Assert
-    expect(await screen.findByText('첨부파일은 최대 3개까지 올릴 수 있습니다.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        `이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`,
+      ),
+    ).toBeInTheDocument()
   })
 
   it('should count an existing attachment marked for removal as freed up', async () => {
@@ -145,7 +158,9 @@ describe('InquiryAttachmentField', () => {
 
     // Assert
     expect(await screen.findByText('new.png')).toBeInTheDocument()
-    expect(screen.queryByText('첨부파일은 최대 3개까지 올릴 수 있습니다.')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(`이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`),
+    ).not.toBeInTheDocument()
   })
 
   it('should lock submission while it prepares the files', async () => {

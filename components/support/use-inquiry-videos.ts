@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   deleteInquiryPendingVideo,
@@ -54,7 +54,7 @@ export type AddVideosOutcome = {
 
 export type InquiryVideosState = {
   rows: readonly InquiryVideoRow[]
-  /** 지금 잡고 있는 첨부 자리 수(올라가는 중 + 완료 + 실패). */
+  /** 지금 잡고 있는 첨부 자리 수(기존에 남기는 영상 + 올라가는 중 + 완료 + 실패). */
   count: number
   /** 폼의 숨은 필드에 실을 JSON. 완료된 영상만 담긴다. */
   value: string
@@ -70,12 +70,25 @@ function toPublicRow({ id, name, size, status, progress, message }: InternalRow)
   return { id, name, size, status, progress, message }
 }
 
-export function useInquiryVideos(): InquiryVideosState {
+/**
+ * @param baseVideoCount 수정 화면에서 그대로 두는 **기존** 영상 첨부 수. 이 훅은
+ *   지금 세션에서 새로 고른 영상만 들고 있으므로, 영상 개수 상한(`INQUIRY_VIDEO_MAX_COUNT`)을
+ *   기존 것까지 합쳐서 재려면 매 렌더의 최신 값을 받아야 한다. 접수 화면은 0이다.
+ */
+export function useInquiryVideos(baseVideoCount = 0): InquiryVideosState {
   const [rows, setRows] = useState<readonly InternalRow[]>([])
   /* 상태 갱신은 비동기라, 같은 이벤트 안에서 "지금 몇 개인지"를 물으려면 거울이
      필요하다(파일 하나를 고를 때 영상 검사와 이미지 검사가 서로의 개수를 쓴다). */
   const rowsRef = useRef<readonly InternalRow[]>([])
   const handlesRef = useRef(new Map<string, VideoUploadHandle>())
+  /* 렌더마다 최신 값으로 덮어쓴다 — addFiles 의 콜백은 마운트 시점 값을 닫아 두므로
+     ref 를 거치지 않으면 그사이 바뀐 "삭제 체크" 를 못 본다. 렌더 중이 아니라
+     effect 에서 써야 한다(ref 는 렌더의 결과가 아니다 — react-hooks/refs). */
+  const baseCountRef = useRef(baseVideoCount)
+
+  useEffect(() => {
+    baseCountRef.current = baseVideoCount
+  }, [baseVideoCount])
 
   const applyRows = useCallback(
     (updater: (current: readonly InternalRow[]) => readonly InternalRow[]) => {
@@ -126,7 +139,7 @@ export function useInquiryVideos(): InquiryVideosState {
 
       for (const file of files) {
         const check = validateInquiryVideo(file, {
-          videoCount: rowsRef.current.length + accepted,
+          videoCount: baseCountRef.current + rowsRef.current.length + accepted,
           otherCount,
         })
 
@@ -210,7 +223,7 @@ export function useInquiryVideos(): InquiryVideosState {
 
   return {
     rows: rows.map(toPublicRow),
-    count: rows.length,
+    count: baseVideoCount + rows.length,
     /* 빈 목록도 그대로 보낸다 — 서버는 빈 문자열과 `[]` 를 같게 읽는다. */
     value: uploaded.length === 0 ? '' : JSON.stringify(uploaded),
     isBlocked: rows.some((row) => row.status !== 'done'),

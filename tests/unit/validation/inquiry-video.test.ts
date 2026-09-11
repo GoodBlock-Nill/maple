@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  INQUIRY_ATTACHMENT_MAX_TOTAL,
   INQUIRY_VIDEO_MAX_BYTES,
   INQUIRY_VIDEO_MAX_COUNT,
   INQUIRY_VIDEO_MAX_MB,
@@ -76,28 +77,43 @@ describe('validateInquiryVideo', () => {
   })
 
   it('should refuse more videos than the video-only limit', () => {
-    // Arrange & Act
+    // Arrange & Act — 3번째 영상(이미지·PDF 는 하나도 없어도 영상 자리는 2개뿐이다).
     const check = validateInquiryVideo(videoOf('third.mp4', 'video/mp4', 1024), {
       videoCount: INQUIRY_VIDEO_MAX_COUNT,
       otherCount: 0,
     })
 
-    // Assert
+    // Assert — 2026-09-11 부터 영상은 이미지·PDF 와 별도 자리를 쓴다.
     expect(check).toEqual({
       ok: false,
-      message: `영상은 최대 ${INQUIRY_VIDEO_MAX_COUNT}개까지 올릴 수 있습니다.`,
+      message: `영상은 최대 ${INQUIRY_VIDEO_MAX_COUNT}개까지 첨부할 수 있습니다.`,
     })
   })
 
-  it('should count videos against the overall attachment limit', () => {
-    // Arrange — 이미지 2장이 이미 자리를 잡고 있으면 영상 1개로 3개가 찬다.
+  it('should accept a video even when the image slots are already full', () => {
+    // Arrange & Act — 이미지·PDF 3개가 이미 자리를 잡고 있어도 영상은 별도 자리다.
     const check = validateInquiryVideo(videoOf('clip.mp4', 'video/mp4', 1024), {
-      videoCount: 1,
-      otherCount: 2,
+      videoCount: 0,
+      otherCount: 3,
     })
 
-    // Assert — DB CHECK(`inquiries_attachments_max_3`)와 같은 숫자다.
-    expect(check).toEqual({ ok: false, message: '첨부파일은 최대 3개까지 올릴 수 있습니다.' })
+    // Assert — 3(이미지) + 1(영상) = 4, 전체 상한(5) 이내다.
+    expect(check.ok).toBe(true)
+  })
+
+  it('should count videos against the overall attachment limit', () => {
+    /* Arrange — 영상 자리는 아직 하나 남아 있지만(1/2), 전체로는 이미 5개가 찬 상태다.
+       (영상 상한 자체는 넘지 않으므로 이 케이스는 "합계" 검사만 걸린다.) */
+    const check = validateInquiryVideo(videoOf('clip.mp4', 'video/mp4', 1024), {
+      videoCount: 1,
+      otherCount: 4,
+    })
+
+    // Assert — DB CHECK(`inquiries_attachments_max_5`)와 같은 숫자다.
+    expect(check).toEqual({
+      ok: false,
+      message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_TOTAL}개까지 첨부할 수 있습니다.`,
+    })
   })
 })
 

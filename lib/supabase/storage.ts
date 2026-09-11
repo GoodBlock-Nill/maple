@@ -26,8 +26,12 @@ export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKET
  * 필드 오류가 아니라 "A server error occurred" 화면을 보고 입력을 통째로 잃는다.
  * 그래서 코드 쪽 상한을 본문 상한 안쪽으로 잡고, 버킷 값은 그 바깥의 보루로 둔다
  * (버킷은 이메일 수신 첨부도 함께 받으므로 좁히지 않는다).
+ *
+ * 개수 상한은 **이미지·PDF 만** 잰다(오너 지시, 2026-09-11) — 영상은 아래
+ * `INQUIRY_VIDEO_MAX_COUNT` 가 따로 갖는다. 둘을 더한 값이 전체 상한
+ * `INQUIRY_ATTACHMENT_MAX_TOTAL` 이다.
  */
-export const INQUIRY_ATTACHMENT_MAX_COUNT = 3
+export const INQUIRY_FILE_MAX_COUNT = 3
 export const INQUIRY_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024
 export const INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES = 12 * 1024 * 1024
 
@@ -40,11 +44,20 @@ export const INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES = 12 * 1024 * 1024
  * 상한이 아니라 버킷의 `file_size_limit`(200MiB)과 "운영자가 실제로 열어 볼 만한
  * 길이"다. 100MB 는 폰으로 찍은 1~2분짜리 화면 녹화가 들어가는 크기다.
  *
- * 개수를 따로 두는 이유는 전체 상한(3개)을 영상만으로 채우면 재현 화면과 영상을
- * 함께 낼 수 없기 때문이다. 2개까지만 받아 최소 한 자리를 이미지 쪽에 남긴다.
+ * 개수는 이미지·PDF 와 **완전히 별도**의 자리를 갖는다(2026-09-11 변경 전에는
+ * 전체 상한을 함께 나눠 썼다). 이미지를 3개 다 채운 뒤에도 영상 2개를 더 붙일 수 있다.
  */
 export const INQUIRY_VIDEO_MAX_BYTES = 100 * 1024 * 1024
 export const INQUIRY_VIDEO_MAX_COUNT = 2
+
+/**
+ * 전체 첨부 상한(이미지·PDF + 영상).
+ *
+ * `inquiries_attachments_max_5`(마이그레이션 `20260911000600`)와 같은 숫자여야
+ * 한다 — DB 는 이 합계와 함께 종류별 상한도 따로 검사한다
+ * (`inquiries_attachments_file_kind_max_3` · `inquiries_attachments_video_kind_max_2`).
+ */
+export const INQUIRY_ATTACHMENT_MAX_TOTAL = INQUIRY_FILE_MAX_COUNT + INQUIRY_VIDEO_MAX_COUNT
 
 /**
  * `next.config.ts` 의 `experimental.serverActions.bodySizeLimit` 값.

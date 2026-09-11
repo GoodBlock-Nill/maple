@@ -1,7 +1,8 @@
 import {
-  INQUIRY_ATTACHMENT_MAX_COUNT,
   INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_MAX_TOTAL,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
+  INQUIRY_FILE_MAX_COUNT,
   INQUIRY_VIDEO_MAX_COUNT,
   INQUIRY_VIDEO_MAX_MB,
 } from '@/lib/supabase/storage'
@@ -140,13 +141,13 @@ export const INQUIRY_SUBTYPE_LOCKED_PLACEHOLDER = '카테고리를 먼저 선택
  * 첨부 안내.
  *
  * 숫자를 문구에 박지 않고 검증 상수에서 끌어온다 — 안내와 실제 제한이 갈리면
- * 사용자는 "된다고 적힌 파일"을 고르고 오류를 본다. 시안 문구(각 200MB)는 서버
- * 액션 본문 상한을 넘겨 실제로는 접수가 통째로 실패해서 쓸 수 없다.
+ * 사용자는 "된다고 적힌 파일"을 고르고 오류를 본다. 이미지·PDF 와 영상은 각자
+ * 자리를 쓰므로(2026-09-11 오너 지시) 둘을 나눠 적고, 끝에 합계를 덧붙인다.
  */
 export const ATTACHMENT_NOTICE =
-  `최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개 — 이미지·PDF 는 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB · 합계 ` +
-  `${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB, 영상은 각 ${INQUIRY_VIDEO_MAX_MB}MB · ` +
-  `${INQUIRY_VIDEO_MAX_COUNT}개까지. (jpg, png, gif, webp, pdf, mp4, mov, webm, m4v)`
+  `이미지·PDF 최대 ${INQUIRY_FILE_MAX_COUNT}개(각 ${INQUIRY_ATTACHMENT_MAX_MB}MB, 합계 ` +
+  `${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB) · 영상 최대 ${INQUIRY_VIDEO_MAX_COUNT}개(각 ` +
+  `${INQUIRY_VIDEO_MAX_MB}MB) — 최대 ${INQUIRY_ATTACHMENT_MAX_TOTAL}개`
 
 export const PRIVACY_CONSENT_LABEL = '개인정보 수집 및 이용에 동의합니다.'
 

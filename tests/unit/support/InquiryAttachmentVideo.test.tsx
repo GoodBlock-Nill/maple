@@ -242,7 +242,7 @@ describe('InquiryAttachmentField (영상)', () => {
   })
 
   it('should refuse a third video and explain the video-only limit', async () => {
-    // Arrange — 전체 3개를 영상만으로 채우면 재현 화면과 영상을 함께 낼 수 없다.
+    // Arrange — 영상 자리는 이미지·PDF 와 별도로 2개뿐이다(2026-09-11).
     const user = userEvent.setup()
     render(<InquiryAttachmentField attachments={[]} error={undefined} />)
 
@@ -250,12 +250,12 @@ describe('InquiryAttachmentField (영상)', () => {
     await user.upload(fileInput(), [videoFile('a.mp4'), videoFile('b.mp4'), videoFile('c.mp4')])
 
     // Assert
-    expect(await screen.findByText('영상은 최대 2개까지 올릴 수 있습니다.')).toBeInTheDocument()
+    expect(await screen.findByText('영상은 최대 2개까지 첨부할 수 있습니다.')).toBeInTheDocument()
     expect(started).toHaveLength(2)
   })
 
-  it('should count existing attachments against the overall limit', async () => {
-    // Arrange — 이미 3개면 영상을 넣을 자리가 없다(DB CHECK 와 같은 숫자).
+  it('should still accept a video when the image/pdf slots are already full', async () => {
+    // Arrange — 이미지 3개(파일 상한)가 이미 차 있어도 영상은 별도 자리를 쓴다.
     const user = userEvent.setup()
     const existing = [1, 2, 3].map((index) => ({
       name: `old${index}.png`,
@@ -268,8 +268,41 @@ describe('InquiryAttachmentField (영상)', () => {
     // Act
     await user.upload(fileInput(), videoFile())
 
-    // Assert
-    expect(await screen.findByText('첨부파일은 최대 3개까지 올릴 수 있습니다.')).toBeInTheDocument()
-    expect(started).toHaveLength(0)
+    // Assert — 3(이미지) + 1(영상) = 4, 전체 상한(5) 이내이므로 업로드가 시작된다.
+    expect(await screen.findByText('clip.mp4')).toBeInTheDocument()
+    expect(started).toHaveLength(1)
+  })
+
+  it('should count an existing kept video against the video-only limit', async () => {
+    // Arrange — 이미 영상 하나를 남긴 채 수정 중이면 영상 자리는 하나만 남는다.
+    const user = userEvent.setup()
+    const existing = [{ name: 'old.mp4', path: 'uid/old.mp4', size: 1024, mimeType: 'video/mp4' }]
+    render(<InquiryAttachmentField attachments={existing} error={undefined} />)
+
+    // Act
+    await user.upload(fileInput(), [videoFile('a.mp4'), videoFile('b.mp4')])
+
+    // Assert — 기존 1개 + 새로 2개 = 3개는 영상 상한(2)을 넘는다.
+    expect(await screen.findByText('영상은 최대 2개까지 첨부할 수 있습니다.')).toBeInTheDocument()
+    expect(started).toHaveLength(1)
+  })
+
+  it('should accept the full five-attachment combination — three images and two videos', async () => {
+    // Arrange — 종류별 상한을 각각 채우면 정확히 전체 상한(5)이 된다.
+    const user = userEvent.setup()
+    const existing = [1, 2, 3].map((index) => ({
+      name: `old${index}.png`,
+      path: `uid/old${index}.png`,
+      size: 1024,
+      mimeType: 'image/png',
+    }))
+    render(<InquiryAttachmentField attachments={existing} error={undefined} />)
+
+    // Act
+    await user.upload(fileInput(), [videoFile('a.mp4'), videoFile('b.mp4')])
+
+    // Assert — 둘 다 업로드가 시작되고, 어떤 오류도 뜨지 않는다.
+    expect(started).toHaveLength(2)
+    expect(screen.queryByText(/최대.*개까지/)).not.toBeInTheDocument()
   })
 })

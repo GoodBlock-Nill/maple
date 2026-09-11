@@ -11,6 +11,7 @@ import { InquiryVideoList } from '@/components/support/InquiryVideoList'
 import { SUPPORT_LABEL_CLASS } from '@/components/support/support-styles'
 import { useInquiryVideos } from '@/components/support/use-inquiry-videos'
 import { ATTACHMENT_NOTICE } from '@/lib/constants/support'
+import { INQUIRY_FILE_MAX_COUNT, INQUIRY_VIDEO_MAX_COUNT } from '@/lib/supabase/storage'
 import { downscaleImage } from '@/lib/utils/downscale-image'
 import { INQUIRY_ATTACHMENT_ACCEPT, validateInquiryAttachments } from '@/lib/validation/inquiry'
 import { INQUIRY_VIDEO_FIELD, isVideoAttachment } from '@/lib/validation/inquiry-video'
@@ -59,9 +60,21 @@ export function InquiryAttachmentField({
   const [selected, setSelected] = useState<readonly File[]>([])
   const [localError, setLocalError] = useState<string | null>(null)
   const [isPreparing, setIsPreparing] = useState(false)
-  const videos = useInquiryVideos()
 
-  const keptCount = attachments.length - removedPaths.length
+  /* 이미지·PDF 와 영상은 각자 자리를 쓰므로(2026-09-11) 남기는 기존 첨부도
+     종류별로 나눠 센다 — 섞어 세면 "영상 2개를 남겼는데 이미지 자리가 준" 것처럼
+     보인다. */
+  const keptAttachments = attachments.filter(
+    (attachment) => !removedPaths.includes(attachment.path),
+  )
+  const keptFileCount = keptAttachments.filter(
+    (attachment) => !isVideoAttachment(attachment.mimeType),
+  ).length
+  const keptVideoCount = keptAttachments.length - keptFileCount
+
+  const videos = useInquiryVideos(keptVideoCount)
+
+  const fileCount = keptFileCount + selected.length
   const isBlocked = isPreparing || localError !== null || videos.isBlocked
 
   useEffect(() => {
@@ -111,10 +124,14 @@ export function InquiryAttachmentField({
     const videoOutcome =
       pickedVideos.length === 0
         ? { message: null, accepted: 0 }
-        : videos.addFiles(pickedVideos, keptCount + pickedFiles.length)
+        : videos.addFiles(pickedVideos, keptFileCount + pickedFiles.length)
 
     const files = await Promise.all(pickedFiles.map(downscaleImage))
-    const check = validateInquiryAttachments(files, keptCount, videos.count + videoOutcome.accepted)
+    const check = validateInquiryAttachments(
+      files,
+      keptFileCount,
+      videos.count + videoOutcome.accepted,
+    )
 
     /* 어긋난 선택도 화면에는 남겨 둔다(무엇이 문제인지 보여야 다시 고를 수 있다).
        대신 제출은 잠기고, 첨부를 포기하려면 "첨부 지우기"로 명시적으로 비운다. */
@@ -132,6 +149,13 @@ export function InquiryAttachmentField({
       <p className="flex flex-wrap items-center gap-2">
         <span className={`${SUPPORT_LABEL_CLASS} font-bold`}>첨부파일</span>
         <span className="text-ink-muted text-ui">{ATTACHMENT_NOTICE}</span>
+      </p>
+
+      {/* 종류별 남은 자리를 한눈에 보여 준다 — 이미지·PDF 와 영상이 각자 상한을 쓰므로
+          합쳐서 세면 "왜 아직 되는지/왜 막히는지"를 알 수 없다. */}
+      <p className="text-ink-muted text-ui">
+        이미지·PDF {fileCount}/{INQUIRY_FILE_MAX_COUNT} · 영상 {videos.count}/
+        {INQUIRY_VIDEO_MAX_COUNT}
       </p>
 
       <ExistingAttachmentList attachments={attachments} onToggle={toggleRemoved} />

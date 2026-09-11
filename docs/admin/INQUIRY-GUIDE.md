@@ -148,7 +148,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 1. **로그인 재확인** — 프록시의 검사는 낙관적입니다. → `로그인 후 이용할 수 있습니다.`
 2. **스키마 파싱** — 허용 카테고리·세부 유형을 `getInquiryCategories()` 로 **매번 새로** 읽어 스키마를 만듭니다. 상수로 굳히면 운영자가 추가한 카테고리가 서버에서 거절됩니다.
 3. **영상 목록 파싱** — `videoAttachments` 숨은 필드의 JSON. 모양이 어긋나면 `null`(빈 목록과 구분) → `영상 첨부 정보가 올바르지 않습니다. 다시 시도해 주세요.`
-4. **첨부 재검증** — 개수·형식·각 5MB·합계 12MB. 영상 수를 함께 세어 총 3개를 넘지 않게 합니다.
+4. **첨부 재검증** — 개수·형식·각 5MB·합계 12MB. 이미지·PDF 는 3개, 영상은 별도로 2개까지, 둘을 합친 전체는 5개를 넘지 않게 봅니다.
 5. **도배 판정** — 마지막 접수 시각 기준 **30초**(`WRITE_COOLDOWN_SECONDS`). 메모리 카운터가 아니라 DB 의 `created_at` 을 봅니다.
 6. **이미지 업로드** — `<uid>/<uuid>-<파일명>`. 도중 실패하면 이미 올린 것을 지웁니다.
 7. **영상 확정** — pending 오브젝트를 검증하고 접수 자리로 `move`. 실패하면 이미지 업로드분을 되돌립니다.
@@ -189,22 +189,33 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 
 출처: `lib/supabase/storage.ts` · `lib/supabase/upload-inquiry-video.ts` · `lib/actions/inquiry-attachments.ts` · `lib/actions/inquiry-videos.ts` · `components/support/InquiryAttachmentField.tsx`
 
-한 문의에 붙는 첨부는 **최대 3개**입니다(DB CHECK `inquiries_attachments_max_3`).
+한 문의에 붙는 첨부는 **이미지·PDF 3개 + 영상 2개, 합계 최대 5개**입니다(오너 지시,
+2026-09-11 — 이전에는 셋을 합쳐 3개였습니다). DB CHECK 는 이제 세 개입니다 —
+`inquiries_attachments_max_5`(합계 ≤5) · `inquiries_attachments_file_kind_max_3`
+(영상이 아닌 것 ≤3) · `inquiries_attachments_video_kind_max_2`(영상 ≤2, 마이그레이션
+`20260911000600`). 종류 판정은 jsonb 원소의 `mimeType` 이 `video/` 로 시작하는지로
+봅니다(별도 열이 없습니다).
 
-|        | 이미지 · PDF                                                                   | 영상                                                      |
-| ------ | ------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| 형식   | jpg · png · gif · webp · pdf                                                   | mp4 · mov · webm · m4v                                    |
-| 크기   | 각 **5MB** · **합계 12MB**                                                     | 각 **100MB**(합계 제한 없음)                              |
-| 개수   | 셋을 합쳐 3개 이내. 영상은 그중 **2개**까지 — 최소 한 자리를 이미지에 남깁니다 |                                                           |
-| 전송   | 폼 → 서버 액션 본문(`multipart/form-data`) → 스토리지                          | 브라우저 → **스토리지 직접**, 폼에는 경로만               |
-| 전처리 | `downscaleImage()` — 최대 변 2000px, GIF 는 건너뜁니다                         | 없음. 확장자는 **MIME 에서 뽑습니다**                     |
-| 경로   | `<uid>/<uuid>-<파일명>`                                                        | `<uid>/pending/<uuid>.<ext>` → 확정 시 왼쪽 자리로 `move` |
+|        | 이미지 · PDF                                           | 영상                                                      |
+| ------ | ------------------------------------------------------ | --------------------------------------------------------- |
+| 형식   | jpg · png · gif · webp · pdf                           | mp4 · mov · webm · m4v                                    |
+| 크기   | 각 **5MB** · **합계 12MB**                             | 각 **100MB**(합계 제한 없음)                              |
+| 개수   | **3개까지**(영상과 별도 자리)                          | **2개까지**(이미지·PDF 와 별도 자리)                      |
+| 전송   | 폼 → 서버 액션 본문(`multipart/form-data`) → 스토리지  | 브라우저 → **스토리지 직접**, 폼에는 경로만               |
+| 전처리 | `downscaleImage()` — 최대 변 2000px, GIF 는 건너뜁니다 | 없음. 확장자는 **MIME 에서 뽑습니다**                     |
+| 경로   | `<uid>/<uuid>-<파일명>`                                | `<uid>/pending/<uuid>.<ext>` → 확정 시 왼쪽 자리로 `move` |
 
-상수: `INQUIRY_ATTACHMENT_MAX_COUNT=3` · `MAX_BYTES=5MiB` · `TOTAL_MAX_BYTES=12MiB` · `INQUIRY_VIDEO_MAX_BYTES=100MiB` · `INQUIRY_VIDEO_MAX_COUNT=2` · `SERVER_ACTION_BODY_SIZE_LIMIT='14mb'`.
+상수: `INQUIRY_FILE_MAX_COUNT=3` · `MAX_BYTES=5MiB` · `TOTAL_MAX_BYTES=12MiB` ·
+`INQUIRY_VIDEO_MAX_BYTES=100MiB` · `INQUIRY_VIDEO_MAX_COUNT=2` ·
+`INQUIRY_ATTACHMENT_MAX_TOTAL=5`(= `INQUIRY_FILE_MAX_COUNT + INQUIRY_VIDEO_MAX_COUNT`) ·
+`SERVER_ACTION_BODY_SIZE_LIMIT='14mb'`.
 
 > **14mb** — 합계 12MB 는 버킷이 아니라 **서버 액션 본문 상한** 때문입니다. `next.config.ts` 의 `experimental.serverActions.bodySizeLimit` 은 `SERVER_ACTION_BODY_SIZE_LIMIT` 한 상수를 그대로 씁니다. 본문이 상한을 넘으면 액션이 **실행되기도 전에** 요청이 500 으로 끊겨 아무 문구도 돌려줄 수 없습니다. 그래서 합계 검사는 **보내기 전** 화면에서 합니다.
 
-첨부 오류 문구: `첨부파일은 최대 3개까지 올릴 수 있습니다.` / `jpg · png · gif · webp · pdf 파일만 올릴 수 있습니다.` / `<파일명> 은(는) 5MB 를 넘습니다…` / `첨부파일은 합쳐서 12MB 이하만 올릴 수 있습니다.` / `빈 파일은 올릴 수 없습니다.` / `mp4 · mov · webm · m4v 영상만 올릴 수 있습니다.` / `영상은 최대 2개까지 올릴 수 있습니다.`
+첨부 오류 문구: `이미지·PDF는 최대 3개까지 첨부할 수 있습니다.` / `첨부파일은 최대 5개까지 첨부할 수 있습니다.`(전체 합계) / `jpg · png · gif · webp · pdf 파일만 올릴 수 있습니다.` / `<파일명> 은(는) 5MB 를 넘습니다…` / `첨부파일은 합쳐서 12MB 이하만 올릴 수 있습니다.` / `빈 파일은 올릴 수 없습니다.` / `mp4 · mov · webm · m4v 영상만 올릴 수 있습니다.` / `영상은 최대 2개까지 첨부할 수 있습니다.`
+
+화면(`InquiryAttachmentField.tsx`)은 안내 문구 아래에 종류별 남은 자리도 보여 줍니다 —
+`이미지·PDF 2/3 · 영상 1/2` 처럼 지금 고른(또는 남긴) 개수 / 상한을 그대로 적습니다.
 
 ### 3.1 영상 경로 — 왜 직접 올리나
 
@@ -221,7 +232,7 @@ sequenceDiagram
     participant DB as inquiries
 
     U->>B: 파일 선택 · 영상 MIME
-    B->>B: validateInquiryVideo<br/>형식 → 크기 → 영상 2개 → 전체 3개
+    B->>B: validateInquiryVideo<br/>형식 → 크기 → 영상 2개 → 전체 5개
     B->>S: createSignedUploadUrl(uid/pending/uuid.ext)
     Note over S: inquiry_attachments_insert_own 정책이<br/>여기서 이미 남의 uid 를 거절
     S-->>B: signedUrl

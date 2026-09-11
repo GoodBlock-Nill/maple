@@ -213,7 +213,11 @@ function parseUserIdParam(raw: string | string[] | undefined): string | null {
 export type InquiryFilters = {
   tab: InquiryStatusTab
   statuses: readonly InquiryStatus[]
-  /** '접수 취소' 탭에서만 true. 취소분은 '종료'·'전체' 탭에도 함께 보인다. */
+  /**
+   * '접수 취소' 탭에서만 true. 취소분은 그 탭에서만 보인다 — 다른 탭(종료·전체
+   * 포함)은 `applyInquiryFilters` 가 `cancelled_at is null` 을 걸어 뺀다
+   * (오너 요청, 2026-09-11).
+   */
   cancelledOnly: boolean
   category: string | null
   /** 세부 문의 유형. 옵션은 카테고리의 subtypes + 데이터에 남은 옛 값이다. */

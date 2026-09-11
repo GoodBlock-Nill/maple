@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import {
-  INQUIRY_ATTACHMENT_MAX_COUNT,
+  INQUIRY_ATTACHMENT_MAX_TOTAL,
   INQUIRY_VIDEO_MAX_BYTES,
   INQUIRY_VIDEO_MAX_COUNT,
   INQUIRY_VIDEO_MAX_MB,
@@ -61,9 +61,9 @@ export type InquiryVideoCheck = { ok: true } | { ok: false; message: string }
 export type VideoCandidate = { name: string; type: string; size: number }
 
 export type VideoCountContext = {
-  /** 이미 올라갔거나 올라가는 중인 영상 수. */
+  /** 이미 올라갔거나(기존 첨부 포함) 올라가는 중인 영상 수. */
   videoCount: number
-  /** 이 영상을 뺀 나머지 첨부 수(기존 첨부 + 지금 고른 이미지). */
+  /** 영상이 아닌 첨부 수(기존에 남기는 것 + 지금 고른 이미지·PDF). */
   otherCount: number
 }
 
@@ -93,13 +93,19 @@ export function validateInquiryVideo(
   }
 
   if (videoCount + 1 > INQUIRY_VIDEO_MAX_COUNT) {
-    return { ok: false, message: `영상은 최대 ${INQUIRY_VIDEO_MAX_COUNT}개까지 올릴 수 있습니다.` }
-  }
-
-  if (videoCount + otherCount + 1 > INQUIRY_ATTACHMENT_MAX_COUNT) {
     return {
       ok: false,
-      message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개까지 올릴 수 있습니다.`,
+      message: `영상은 최대 ${INQUIRY_VIDEO_MAX_COUNT}개까지 첨부할 수 있습니다.`,
+    }
+  }
+
+  /* 영상 개수는 이미지·PDF 와 별도 자리를 쓰지만, 전체 합계(이미지·PDF + 영상)는
+     여전히 상한이 있다 — 종류별 상한을 둘 다 지켜도 합계가 어긋나는 입력(예: 옛
+     첨부가 섞인 수정 화면)을 한 번 더 막는다. */
+  if (videoCount + otherCount + 1 > INQUIRY_ATTACHMENT_MAX_TOTAL) {
+    return {
+      ok: false,
+      message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_TOTAL}개까지 첨부할 수 있습니다.`,
     }
   }
 

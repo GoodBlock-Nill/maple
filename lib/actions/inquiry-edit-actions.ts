@@ -38,6 +38,7 @@ import {
   updateInquirySchema,
   validateInquiryAttachments,
 } from '@/lib/validation/inquiry'
+import { isVideoAttachment } from '@/lib/validation/inquiry-video'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { CurrentUser } from '@/lib/auth/current-user'
@@ -194,14 +195,21 @@ export async function updateInquiry(
   const { kept, removed } = splitAttachments(guard.inquiry.attachments, formData)
   const files = readFiles(formData, 'attachments')
   /* 영상은 접수와 같은 길로 들어온다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
-     싣는다. 개수 제한은 남길 기존 첨부까지 합쳐서 센다. */
+     싣는다. 개수 제한은 남길 기존 첨부까지 합쳐서 센다. 이미지·PDF 와 영상은 각자
+     자리를 쓰므로(2026-09-11) 남기는 것도 종류별로 나눠 센다. */
+  const keptFileCount = kept.filter((attachment) => !isVideoAttachment(attachment.mimeType)).length
+  const keptVideoCount = kept.length - keptFileCount
   const videos = readPendingVideos(formData)
 
   if (videos === null) {
     return { fieldErrors: { attachments: VIDEO_FORM_INVALID_MESSAGE } }
   }
 
-  const attachmentCheck = validateInquiryAttachments(files, kept.length, videos.length)
+  const attachmentCheck = validateInquiryAttachments(
+    files,
+    keptFileCount,
+    keptVideoCount + videos.length,
+  )
 
   if (!attachmentCheck.ok) {
     return { fieldErrors: { attachments: attachmentCheck.message } }
