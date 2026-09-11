@@ -54,6 +54,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
     children: [
       { label: '목록', href: '/news' },
       { label: '새 글 작성', href: '/news/new', level: 'write' },
+      /* 카테고리별 글 양식. 읽기 전용 관리자에게는 보여 주지 않는다 — 편집·되돌리기
+         말고는 아무것도 없는 화면이라 열어 봐야 할 일이 없다. */
+      { label: '카테고리 템플릿', href: '/news/templates', level: 'write' },
     ],
   },
   {

@@ -1,7 +1,7 @@
 /**
- * 뉴스 모듈의 도메인 상수 — 말머리 6종과 운영 상태 판정.
+ * 뉴스 모듈의 도메인 상수 — 카테고리 6종과 운영 상태 판정.
  *
- * 말머리 키는 `board_categories`(board = 'news')의 `key` 와 1:1 이다. DB 에서
+ * 카테고리 키는 `board_categories`(board = 'news')의 `key` 와 1:1 이다. DB 에서
  * 매번 읽어 오지 않고 여기 고정해 두는 이유는 두 가지다.
  *  1) 목록 필터·뱃지·폼 select 가 서버 왕복 없이 같은 목록을 쓴다.
  *  2) 저장 전 검증(zod enum)이 DB 조회 없이도 허용 목록을 강제한다 —
@@ -160,7 +160,7 @@ export type NewsSnapshot = {
  *
  * 본문은 담지 않는다. 수십 KB 의 HTML 이 행마다 두 벌씩 쌓이면 로그 테이블이
  * 감사용이 아니라 백업본이 되고 목록 조회가 눈에 띄게 느려진다. 되짚어 볼 값
- * (제목 · 상태 · 말머리)만 남긴다.
+ * (제목 · 상태 · 카테고리)만 남긴다.
  */
 export function newsAuditSnapshot(row: NewsSnapshotRow, now: Date = new Date()): NewsSnapshot {
   return {

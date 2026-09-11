@@ -74,10 +74,16 @@ describe('visibleNavItems', () => {
     expect(news?.children?.map((child) => child.label)).toEqual(['목록'])
   })
 
-  it('should keep the write-only child when the role can write', () => {
+  it('should keep the write-only children when the role can write', () => {
     const news = visibleNavItems({ news: 'write' })[0]
 
-    expect(news?.children?.map((child) => child.label)).toEqual(['목록', '새 글 작성'])
+    /* 카테고리 템플릿도 쓰기 전용이다 — 편집·되돌리기 말고는 아무것도 없는 화면이라
+       읽기 전용 관리자에게는 열어 줄 이유가 없다. */
+    expect(news?.children?.map((child) => child.label)).toEqual([
+      '목록',
+      '새 글 작성',
+      '카테고리 템플릿',
+    ])
   })
 
   /* 고객지원은 1:1 문의(inquiries)와 FAQ(faqs) 두 모듈을 한 메뉴에 담는다. 첫 하위가

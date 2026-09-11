@@ -18,6 +18,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   member: '회원',
   profile: '회원',
   news: '뉴스',
+  news_template: '뉴스 카테고리 템플릿',
   post: '게시글',
   comment: '댓글',
   inquiry: '1:1 문의',
@@ -57,6 +58,9 @@ const VERB_LABELS: Record<string, string> = {
   activate: '활성화',
   deactivate: '비활성화',
   status: '상태 변경',
+  /* 기본값 복원. '되돌리기'(rollback)는 랭킹 스냅샷이 쓰고 있어 말을 갈라 둔다 —
+     목록에서 두 조작이 같은 말로 보이면 무엇을 되돌렸는지 알 수 없다. */
+  reset: '기본값 복원',
 }
 
 /** `rankings.snapshot.apply` 처럼 중간 마디가 있는 경우의 보조 표기. */
@@ -122,6 +126,7 @@ const TABLE_LABELS: Record<string, string> = {
   reports: '신고',
   admin_invites: '관리자 초대',
   legal_documents: '약관',
+  news_category_templates: '뉴스 카테고리 템플릿',
 }
 
 export function auditTableLabel(table: string | null): string {

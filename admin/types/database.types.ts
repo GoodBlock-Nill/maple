@@ -685,6 +685,67 @@ export type Database = {
           },
         ]
       }
+      inquiry_reply_templates: {
+        Row: {
+          body: string
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiry_reply_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inquiry_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiry_reply_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiry_reply_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       legal_document_versions: {
         Row: {
           content_html: string
@@ -762,6 +823,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      news_category_templates: {
+        Row: {
+          board: Database["public"]["Enums"]["board_type"]
+          body_template: string
+          category_key: string
+          created_at: string
+          id: string
+          is_active: boolean
+          summary_template: string
+          title_template: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          board?: Database["public"]["Enums"]["board_type"]
+          body_template?: string
+          category_key: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          summary_template?: string
+          title_template?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          board?: Database["public"]["Enums"]["board_type"]
+          body_template?: string
+          category_key?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          summary_template?: string
+          title_template?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_category_templates_category_fkey"
+            columns: ["board", "category_key"]
+            isOneToOne: false
+            referencedRelation: "board_categories"
+            referencedColumns: ["board", "key"]
+          },
+          {
+            foreignKeyName: "news_category_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_likes: {
         Row: {

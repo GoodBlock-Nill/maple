@@ -265,10 +265,10 @@ export type NewsCategoryOption = {
 }
 
 /**
- * 말머리 목록.
+ * 카테고리 목록.
  *
  * 화면 순서·라벨의 기준은 DB(`board_categories`)다. 조회가 실패하거나 비어 있으면
- * 상수 목록으로 떨어진다 — 말머리를 못 읽었다고 글쓰기 화면이 통째로 막히면
+ * 상수 목록으로 떨어진다 — 카테고리를 못 읽었다고 글쓰기 화면이 통째로 막히면
  * 운영이 멈춘다.
  */
 export async function listNewsCategories(): Promise<readonly NewsCategoryOption[]> {

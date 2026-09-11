@@ -17,7 +17,7 @@ import type { NewsDetail } from '@/lib/data/news'
  *
  * 관리자에서 쓴 것과 독자가 보는 것 사이에 틈이 생기지 않게 하려고, 사용자 사이트의
  * 세 조각을 그대로 옮겼다.
- *  · 말머리 배너 (`components/board/NewsBanner.tsx`)
+ *  · 카테고리 배너 (`components/board/NewsBanner.tsx`)
  *  · 상세 카드 머리 (`components/board/ArticleCard.tsx` — 뱃지 · 제목 · 메타)
  *  · 본문 타이포그래피 (`.prose-board` → `PREVIEW_PROSE_CLASS`)
  *
@@ -28,7 +28,7 @@ import type { NewsDetail } from '@/lib/data/news'
 
 const BANNER_DIR = '/images/news/banners'
 
-/** 사용자 사이트가 모르는 말머리는 공지사항 배너로 떨어진다(`getNewsBanner` 와 동일). */
+/** 사용자 사이트가 모르는 카테고리는 공지사항 배너로 떨어진다(`getNewsBanner` 와 동일). */
 const KNOWN_BANNERS = ['notice', 'maintenance', 'update', 'patch', 'event', 'info']
 
 type NewsPreviewProps = {

@@ -62,7 +62,17 @@ export default async function NewsListPage(props: PageProps<'/news'>) {
       <PageHeader
         title="뉴스"
         description="뉴스 게시글을 작성·수정하고 발행 상태를 관리합니다."
-        action={canWrite ? <Button href={`${NEWS_PATH}/new`}>새 뉴스 작성</Button> : undefined}
+        action={
+          canWrite ? (
+            <span className="flex flex-wrap items-center gap-2">
+              {/* 템플릿은 '다음 글을 어떻게 시작할 것인가' 라서 작성 버튼 옆이 자리다. */}
+              <Button href={`${NEWS_PATH}/templates`} variant="secondary">
+                카테고리 템플릿
+              </Button>
+              <Button href={`${NEWS_PATH}/new`}>새 뉴스 작성</Button>
+            </span>
+          ) : undefined
+        }
       />
 
       {list.hasError && (

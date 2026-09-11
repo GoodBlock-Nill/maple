@@ -13,6 +13,7 @@ import {
 } from '@/lib/constants/news'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { getNewsPost, listNewsCategories } from '@/lib/data/news'
+import { listNewsTemplateOptions } from '@/lib/data/news-templates'
 import { clientSiteUrl } from '@/lib/supabase/env'
 import { formatDateTime } from '@/lib/utils/format-date'
 
@@ -27,7 +28,11 @@ export const dynamic = 'force-dynamic'
 export default async function EditNewsPage(props: PageProps<'/news/[id]'>) {
   await requirePermission('news', 'write')
   const { id } = await props.params
-  const [post, categories] = await Promise.all([getNewsPost(id), listNewsCategories()])
+  const [post, categories, templates] = await Promise.all([
+    getNewsPost(id),
+    listNewsCategories(),
+    listNewsTemplateOptions(),
+  ])
 
   if (post === null) {
     notFound()
@@ -61,7 +66,7 @@ export default async function EditNewsPage(props: PageProps<'/news/[id]'>) {
         }
       />
 
-      <NewsForm categories={categories} post={post} />
+      <NewsForm categories={categories} templates={templates} post={post} />
 
       <div className="mt-6" data-testid="news-preview">
         <NewsPreview post={post} clientSiteUrl={siteUrl} />
