@@ -1,12 +1,47 @@
 # 1:1 문의 — 2026-09-10 · 09-11 변경 사항 정리
 
-기준 커밋 `fb448aa`(2026-09-11 11:40) · 대상 기간 **2026-09-10 ~ 2026-09-11** · 현재 상태 문서 `docs/admin/INQUIRY-GUIDE.md`
+기준 커밋 `0f186be`(2026-09-11 14:38) · 대상 기간 **2026-09-10 ~ 2026-09-11** · 현재 상태 문서 `docs/admin/INQUIRY-GUIDE.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-CHANGELOG.html` (다이어그램 포함)
 >
 > 이 문서는 **무엇이 어떻게 바뀌었는지**만 다룹니다. "지금 어떻게 동작하는가"는 `docs/admin/INQUIRY-GUIDE.md`, 템플릿 세 갈래 비교는 `docs/admin/TEMPLATES-GUIDE.md`, 이메일 유입은 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `EMAIL-INQUIRY-ACTIVATION.md` 입니다.
 
-이틀 동안 1:1 문의는 **폼 하나에서 운영 도구로** 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 **여러 운영자가 겹치지 않게 처리**하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었습니다.
+이틀 동안 1:1 문의는 **폼 하나에서 운영 도구로** 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 **여러 운영자가 겹치지 않게 처리**하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 **고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다**.
+
+---
+
+## 0. 2026-09-11 오후 — 고객지원 v2 디자인 적용
+
+새 시안(메이플 글자월드, `docs/reference/figma/support-v2-spec.md`)을 사용자 사이트 고객지원 화면에 반영했습니다. **로직·데이터 흐름은 바뀌지 않았습니다** — 카테고리·세부 유형·계정 ID·첨부 3+2·동의·프리필·접수번호·수정/취소 권한은 이전 그대로이고, 카드 골격·목록·상세·폼의 마크업만 다시 그렸습니다. 자세한 화면 설명은 `docs/admin/INQUIRY-GUIDE.md` §2.7 로 옮겼습니다 — 이 절은 **무엇이 바뀌었는지**만 요약합니다.
+
+| 날짜 · 시각 | 커밋 | 영역 | 변경 요약 | 마이그레이션 |
+| ----------- | ---- | ---- | --------- | ------------- |
+| 09-11 14:07 | `6acbe50` | 클라 | 헤더 바 1200px 폭 · 핑크 활성 밑줄(현행 검은 밑줄 대체), 고객지원 푸터를 마이페이지 v2 와 같은 1200 어두운 글래스 패널로 | — |
+| 09-11 14:38 | `0f186be` | 클라 | **고객지원 v2** — 카드 좌측 메뉴에서 제목·설명 삭제, 모바일 세그먼트 탭 3개(`SupportTabs`) · 내 문의 내역 번호 페이지네이션(6건/페이지, 누적 "더보기" 폐지) · 상세 레이아웃 재구성(뒤로 링크 `SupportBackLink` · 메타 줄 `InquiryDetailMeta` · 문의내용 액션 · 답변 박스 287px 스크롤) · 폼 파일 칩(`InquiryFileChip`) · `support.ts` 를 `inquiry-status.ts`/`inquiry-attachment.ts` 로 분리 | — |
+
+### 무엇이 바뀌었나
+
+- 카드 좌측 메뉴에서 "1:1 문의하기" 제목·설명 문단이 사라지고 메뉴가 카드 상단부터 섭니다. 모바일은 메뉴 대신 세그먼트 탭 3개("1:1 문의하기 / 자주 묻는 질문 / 내 문의 내역")가 대체합니다.
+- 내 문의 내역의 누적 "더보기"가 번호 페이지네이션으로 바뀌었습니다 — `?page=N` 은 이제 N 페이지 한 장만 그립니다(6건/페이지, 이전에는 10건 단위 누적). `getMyInquiries()` 는 `accumulatedRange()`/`toListResult()` 대신 `pageRange()`/`toPagedListResult()` 를 씁니다.
+- 접수번호 표기가 자리마다 갈립니다 — 목록 행 · 상세 메타 줄은 새 `formatInquiryNoLabel()` 이 만드는 **`No. 1024`**, 접수 완료 모달 · 마이페이지 표 · 관리자는 그대로 `formatInquiryNo()` 의 **`#1024`**.
+- 상태 표기 — 접수 대기 · 처리 중은 그대로 회색 알약, **답변 완료만 알약을 벗고 분홍 글자(`#e8308a`)** 가 됩니다. 상세는 답변 완료 상태에서 제목 옆 알약 자체를 그리지 않습니다(답변 블록이 이미 상태를 말합니다).
+- 상세 레이아웃 — 뒤로 가기 링크가 화면 맨 위로 올라오고("내 문의 내역으로"), 하단의 "목록으로" 버튼은 없어졌습니다. "문의내용" 소제목 옆에 수정 · 접수 취소가 알약으로 붙고, 답변이 없으면 파선 상자, 있으면 `#f3f6fe` 상자(287px 넘으면 내부 스크롤)로 그립니다.
+- 폼 첨부 — 기존 첨부의 "삭제" 체크박스가 파일 칩의 X 버튼으로 바뀌었습니다. **전송 값은 그대로** `removeAttachments`(오브젝트 키) — 화면만 바뀌었고 서버 계약은 그대로입니다. 첨부 안내 문구는 `lib/constants/inquiry-attachment.ts` 의 `ATTACHMENT_NOTICE_LINES` 로 옮겨 스토리지 상수에서 두 줄을 조합합니다.
+- 상수 파일 분리 — `lib/constants/support.ts` 에서 상태 표(`INQUIRY_STATUS_MAP` 등)가 `lib/constants/inquiry-status.ts` 로, 첨부 안내가 `lib/constants/inquiry-attachment.ts` 로 옮겨졌습니다.
+- 수정 화면 상단의 "문의 수정 #1024" 제목·설명 블록이 사라지고, 대신 폼 위에 "← 문의로 돌아가기" 뒤로 링크가 섭니다. 접수 폼(`/support`)의 우측 상단 "내 문의 내역 보기" 링크는 그대로입니다.
+
+### 영향 범위
+
+사용자 사이트 화면만입니다 — `app/(public)/support/**` · `components/support/**` · `components/layout/**`(헤더·푸터) · `lib/constants/{support,inquiry-status,inquiry-attachment}.ts`. 서버 액션 · 검증 스키마 · RLS · DB 스키마는 손대지 않았습니다. 관리자 콘솔도 영향 없습니다.
+
+### 마이그레이션
+
+없음. DB · RLS · RPC 변경 없음.
+
+### 테스트
+
+- 단위: `pnpm test`(사용자 사이트) — **127파일 · 1292건 전체 통과**.
+- E2E: `pnpm test:e2e -- tests/e2e/support-inquiries.spec.ts` — **chromium · Pixel 7 두 프로젝트, 20건 전체 통과**(시나리오 10건 × 프로젝트 2개).
 
 ---
 
@@ -398,6 +433,8 @@ sequenceDiagram
 | `components/support/use-inquiry-prefill.ts` · `InquiryFields.tsx`                                                                    | `b78dfd7` · `af1a886`             |
 | `components/support/SupportCheckbox.tsx` · `InquiryConsentField.tsx` · `support-styles.ts`                                           | `643834c`                         |
 | `components/support/InquiryRow.tsx` · `InquiryDetailCard.tsx` · `InquirySubmittedDialog.tsx` · `components/account/InquiryTable.tsx` | `fb448aa`                         |
+| `components/support/SupportCard.tsx` · `SupportTabs.tsx` · `SupportBackLink.tsx` · `InquiryPagination.tsx` · `InquiryDetailMeta.tsx` · `InquiryFileChip.tsx`(신규) · `lib/constants/inquiry-status.ts` · `inquiry-attachment.ts`(분리) · `lib/utils/file-name.ts`(신규) · `lib/data/query.ts`(`pageRange`/`toPagedListResult`) | `0f186be` |
+| `components/layout/SiteHeader.tsx` · `SiteNav.tsx` · `footer-variants.ts`(1200px 헤더 · 핑크 밑줄 · 고객지원 푸터 v2) | `6acbe50` |
 
 ### 관리자 콘솔
 

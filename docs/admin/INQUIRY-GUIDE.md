@@ -1,6 +1,6 @@
 # 1:1 문의 — 개발 가이드
 
-최종 갱신 2026-09-11 · 기준 커밋 `fb448aa` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md`
+최종 갱신 2026-09-11 · 기준 커밋 `0f186be` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` · 고객지원 v2 시안 `docs/reference/figma/support-v2-spec.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-GUIDE.html` (다이어그램 포함)
 >
@@ -20,6 +20,7 @@
 | ----------------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
 | DB 마이그레이션 11개                            | 적용됨            | `20260908000400` ~ `20260911000400`                                            |
 | 사용자 사이트 접수·수정·취소                    | 배포됨            | `/support` · `/support/inquiries` · 마이페이지 문의내역                        |
+| 고객지원 v2 디자인                              | 2026-09-11        | 커밋 `6acbe50` · `0f186be` · 카드·목록·상세·폼 재구성, §2.7                    |
 | 카테고리 · 프리필                               | 2026-09-10        | 커밋 `b78dfd7` · 시드 8종(`docs/1on1.md`)                                      |
 | 영상 첨부 직접 업로드                           | 2026-09-10        | 커밋 `2e3f6ae` · 각 100MB · 2개                                                |
 | 세부 유형 · 계정 ID 필수                        | 2026-09-11        | 커밋 `af1a886` · 첨부만 선택                                                   |
@@ -43,6 +44,8 @@
 | 2026-09-11 | 답변 템플릿(공통 · 카테고리별 · 자리표시자)                     | `20260911000200`                                                                                        |
 | 2026-09-11 | **운영자 협업** — 담당자 · 작성 중 잠금 · 저장 충돌 · 내부 메모 | `20260911000300_inquiry_assignment.sql` · §5.9                                                          |
 | 2026-09-11 | **접수번호**(`inquiry_no`, 1001부터 · `#1024` 표기)             | `20260911000400_inquiry_no.sql`                                                                         |
+| 2026-09-11 | 헤더 바 1200px 폭 · 핑크 활성 밑줄, 고객지원 푸터 v2 패널        | 커밋 `6acbe50`                                                                                           |
+| 2026-09-11 | **고객지원 v2 디자인** — 카드 골격 · 번호 페이지네이션 · 상세 레이아웃 · 폼 첨부 UI(§2.7) | 커밋 `0f186be`                                                                                           |
 
 ### 1.3 용어
 
@@ -159,12 +162,13 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 
 ### 2.5 목록 · 상세
 
-- **두 개의 목록** — 고객지원 `/support/inquiries`(누적 "더보기" · 10건 단위)와 마이페이지 `/account/inquiries`(첫 10건 표). 둘 다 `getMyInquiries()` 하나를 쓰고 상세는 고객지원 쪽으로 보냅니다.
+- **두 개의 목록** — 고객지원 `/support/inquiries`(시안 v2 부터 **번호 페이지네이션**, 6건/페이지)와 마이페이지 `/account/inquiries`(첫 10건 표). 둘 다 `getMyInquiries()` 하나를 쓰고 상세는 고객지원 쪽으로 보냅니다.
+- **`?page=N` 은 N 페이지 한 장만 그립니다**(2026-09-11 시안 v2 — 누적 "더보기"를 대체). `getMyInquiries()` 는 `accumulatedRange()` 대신 `pageRange()` 로 그 페이지 구간만 읽고, `toListResult()` 대신 `toPagedListResult()` 로 `shown`·`hasMore` 를 **페이지 경계** 기준으로 계산합니다(누적 건수가 아닙니다). 페이지 크기는 `INQUIRY_PAGE_SIZE = 6`. 화면은 현재 페이지를 가운데 두고 최대 5개 번호를 보여 줍니다(`InquiryPagination.tsx` · `getPageRange()`).
 - **접수 취소한 문의는 두 목록 모두에서 사라집니다**(오너 요청, 2026-09-11) — `getMyInquiries()` 가 `cancelled_at is null` 을 겁니다. 상세는 **직접 주소로만** 계속 열립니다(이력, 읽기 전용) — 더 이상 목록에서 링크되지 않을 뿐입니다. 취소 액션도 상세가 아니라 **목록으로** 리다이렉트합니다(`/support/inquiries?cancelled=1`), 안내 문구는 그 화면에서 뜹니다.
 - **소유권** — RLS 위에 `.eq('user_id', …)` 를 **한 번 더** 겁니다. 관리자 세션에는 전체 행이 열려 있어 조건을 빼면 "내 문의 내역"이 남의 문의를 그립니다.
 - **없는 문의는 `notFound()`** — "권한 없음"을 구분해 알리면 남의 문의 id 존재 여부가 새어 나갑니다.
 - **답변 수**는 임베드 집계 `inquiry_replies(count)` 로 같은 왕복에서 받습니다.
-- **접수번호(`#1024`)** 는 네 자리에 모두 보입니다 — 접수 완료 모달 · 고객지원 목록 행 · 마이페이지 표의 '접수번호' 칸(예전의 화면 순번을 대체) · 상세 제목 위 · 수정 화면 제목. 마이페이지가 순번을 쓰던 때는 '더보기'로 목록이 늘어날 때마다 같은 문의가 다른 번호로 보였습니다.
+- **접수번호 표기가 자리마다 갈립니다**(2026-09-11 시안 v2) — 고객지원 목록 행 · 상세 메타 줄은 `formatInquiryNoLabel()` 이 만드는 **`No. 1024`**(`lib/utils/inquiry-no.ts`), 접수 완료 모달 · 마이페이지 표 · 관리자는 그대로 `formatInquiryNo()` 의 **`#1024`**. 둘 다 같은 숫자를 가리킨다는 것이 보이도록 접두사만 다르고 숫자는 손대지 않습니다. 수정 화면은 시안 v2 에서 제목·설명 블록 자체가 없어져 접수번호를 그 자리에 적지 않습니다(§2.7). 마이페이지가 화면 순번을 쓰던 때는 '더보기'로 목록이 늘어날 때마다 같은 문의가 다른 번호로 보였습니다.
 - **1회성 안내** — `?submitted=1` · `?updated=1` · `?cancelled=1` · `?locked=1`. **문구는 서버가 정합니다** — 주소에 문구를 실으면 링크 하나로 임의 텍스트를 이 화면에 띄울 수 있습니다.
 - 목록·상세·수정 모두 `robots: { index:false, follow:false }`. 제목에 개인정보가 섞일 수 있어 메타에도 싣지 않습니다.
 - 답변이 없을 때 문구는 상태별로 다릅니다 — 취소 `접수가 취소된 문의입니다.` / 종료 `운영자 검토 후 종료된 문의입니다. 추가 문의는 새 1:1 문의로 남겨 주세요.` / 처리 중 `운영자가 처리 중입니다…` / 그 밖 `운영자가 확인 중입니다…`.
@@ -181,7 +185,21 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 - 수정 액션은 **옛 카테고리·옛 유형을 허용**합니다(`withLegacyCategory()` · `updateInquirySchema(…, [현재 type])`).
 - 문의 id 는 폼 필드가 아니라 **`bind` 로** 실어 보냅니다.
 - 저장이 `42501` 로 떨어지면 `접수 대기 상태의 문의만 수정할 수 있습니다.` 로 안내합니다 — 그 사이 운영자가 상태를 올렸다는 뜻입니다.
-- 첨부 삭제는 `removeAttachments`(값 = **오브젝트 키**) 체크박스로 표시하고 **행 저장이 끝난 뒤에** 지웁니다.
+- 첨부 삭제는 `removeAttachments`(값 = **오브젝트 키**)로 표시하고 **행 저장이 끝난 뒤에** 지웁니다. 화면은 2026-09-11 시안 v2 부터 "삭제" 체크박스가 아니라 **파일 칩의 X 버튼**입니다(§2.7) — 전송 필드 이름과 값은 그대로라 서버 쪽은 손대지 않았습니다.
+
+### 2.7 화면 v2(2026-09-11, 시안 `docs/reference/figma/support-v2-spec.md`)
+
+`SupportCard.tsx` · `SupportTabs.tsx` · `SupportBackLink.tsx` · `InquiryPagination.tsx` · `InquiryDetailMeta.tsx` · `InquiryFileChip.tsx`
+
+이번 개편은 **로직·데이터 흐름을 바꾸지 않습니다** — 카테고리·세부 유형·계정 ID·첨부 3+2·동의·프리필·접수번호·수정/취소 권한은 그대로이고, 카드 골격·목록·상세·폼의 **마크업만** 다시 그렸습니다. 픽셀 단위 수치는 시안 문서를 보고, 여기서는 동작이 바뀐 지점만 짚습니다.
+
+- **좌측 메뉴에 제목·설명이 없습니다.** `SupportCard` 의 "1:1 문의하기" 제목·설명 문단 블록이 삭제됐고, 메뉴가 카드 상단부터 섭니다. 모바일에서는 메뉴 자체가 숨고 대신 카드 위에 **세그먼트 탭 3개**(`SupportTabs`)가 섭니다 — PC 의 메뉴와 같은 경로·같은 라벨을 씁니다.
+- **상태 표기** — 접수 대기 · 처리 중은 그대로 회색 알약(`bg-[#f1f1f5]`), **답변 완료만 알약을 벗고 분홍 글자**(`text-[#e8308a]`)가 됩니다. 모양 판정은 `InquiryStatusOption.variant`(`lib/constants/inquiry-status.ts`)에 있어 목록·상세가 같은 규칙을 봅니다. **상세는 답변 완료 상태에서 제목 옆 알약을 아예 그리지 않습니다**(`InquiryDetailCard.tsx` — `status.variant === 'pill'` 일 때만 뱃지를 렌더) — 바로 아래 답변 블록이 이미 "답변 완료"를 말하고 있어서입니다.
+- **상세 레이아웃이 재구성됐습니다.** 화면 맨 위에 `SupportBackLink`("내 문의 내역으로")가 서고, 화면 하단의 옛 "목록으로" 버튼은 없어졌습니다. 제목 아래 메타 줄(등록일 · 카테고리 · 계정 ID · 접수번호, `InquiryDetailMeta.tsx`)을 지나 구분선, "문의내용" 소제목과 같은 줄에 수정 · 접수 취소가 알약으로 붙습니다(`InquiryOwnerActions`). 답변 블록은 없으면 파선 상자, 있으면 `#f3f6fe` 상자이고 **287px 를 넘으면 내부 스크롤**(`REPLY_BODY_MAX_HEIGHT`, `InquiryReplyThread.tsx`) — 화면 전체를 밀어내지 않습니다.
+- **폼 첨부** — 기존 첨부의 "삭제" 체크박스가 파일 칩의 X 버튼(`InquiryFileChip.tsx`)으로 바뀌었습니다. **전송값은 그대로** `removeAttachments`(오브젝트 키) — 누른다고 바로 지우지 않고 표시만 해 두었다가 저장이 끝난 뒤 지우는 규칙도 그대로입니다. 칩의 파일명은 `truncateFileBase()`(`lib/utils/file-name.ts`)가 **확장자를 남기고 앞부분만** 6자로 줄입니다(CSS `truncate` 는 오른쪽을 잘라 확장자부터 사라져서 씁니다). 첨부 안내 문구는 `lib/constants/inquiry-attachment.ts` 의 `ATTACHMENT_NOTICE_LINES` 가 storage 상수(§3)에서 두 줄을 조합합니다 — 문구를 손으로 고치면 실제 상한과 갈립니다.
+- **수정 화면**의 "문의 수정 #1024" 제목·설명 블록이 없어지고, 대신 폼 위에 `SupportBackLink`("문의로 돌아가기")가 섭니다. 접수 폼(`/support`)의 우측 상단 "내 문의 내역 보기" 링크는 그대로입니다.
+- **URL 계약은 바뀌지 않았습니다** — `/support` · `/support/inquiries?page=N` · `/support/inquiries/[id]` · `/support/inquiries/[id]/edit` 그대로이고, 달라진 것은 `?page=N` 이 이제 **N 페이지 한 장만** 그린다는 점뿐입니다(§2.5).
+- **상수 파일이 나뉘었습니다.** `lib/constants/support.ts` 에 있던 상태 표(`INQUIRY_STATUS_MAP` · `resolveInquiryStatus()` 등)는 `lib/constants/inquiry-status.ts` 로, 첨부 안내 문구는 `lib/constants/inquiry-attachment.ts` 로 옮겨졌습니다. `support.ts` 에는 메뉴 · 페이지 크기 · 경로 · 그 밖 문구만 남았습니다.
 
 ---
 
@@ -214,8 +232,12 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 
 첨부 오류 문구: `이미지·PDF는 최대 3개까지 첨부할 수 있습니다.` / `첨부파일은 최대 5개까지 첨부할 수 있습니다.`(전체 합계) / `jpg · png · gif · webp · pdf 파일만 올릴 수 있습니다.` / `<파일명> 은(는) 5MB 를 넘습니다…` / `첨부파일은 합쳐서 12MB 이하만 올릴 수 있습니다.` / `빈 파일은 올릴 수 없습니다.` / `mp4 · mov · webm · m4v 영상만 올릴 수 있습니다.` / `영상은 최대 2개까지 첨부할 수 있습니다.`
 
-화면(`InquiryAttachmentField.tsx`)은 안내 문구 아래에 종류별 남은 자리도 보여 줍니다 —
-`이미지·PDF 2/3 · 영상 1/2` 처럼 지금 고른(또는 남긴) 개수 / 상한을 그대로 적습니다.
+화면(`InquiryAttachmentField.tsx`)의 안내 문구는 시안 v2(§2.7)부터 두 줄입니다 —
+`이미지·PDF 5MB/개 · 최대 3개 · 총 12MB / 영상 100MB/개 · 최대 2개 · 총 200MB` /
+`(JPG, PNG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)`. 숫자·형식 목록은 문구에 박지 않고
+`lib/constants/inquiry-attachment.ts` 의 `ATTACHMENT_NOTICE_LINES` 가 storage 상한 상수에서
+그대로 조합합니다 — 안내와 실제 제한이 갈리면 사용자는 "된다고 적힌 파일"을 고르고 오류를
+봅니다.
 
 ### 3.1 영상 경로 — 왜 직접 올리나
 
@@ -692,7 +714,7 @@ sequenceDiagram
 
 ### 7.1 단위 테스트
 
-2026-09-11(협업·접수번호 추가 뒤) 실행 결과: **사용자 사이트 1219개(119파일) · 관리자 817개(60파일) 전체 통과**. 아래는 문의와 직접 관련된 파일만 추린 것입니다.
+2026-09-11(고객지원 v2 디자인 적용 뒤) 실행 결과: **사용자 사이트 1292개(127파일) · 관리자 842개(62파일) 전체 통과**. 아래는 문의와 직접 관련된 파일만 추린 것입니다.
 
 | 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                          |
 | ---------------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
@@ -738,11 +760,13 @@ cd admin && pnpm test -- tests/unit/inquir
 
 | 파일                                              | 건수 | 시나리오                                                                                                                                                                                                                             |
 | ------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/e2e/support-inquiries.spec.ts`             | 9    | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생**           |
+| `tests/e2e/support-inquiries.spec.ts`             | 10   | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** / 이미지 3개·영상 2개 동시 첨부           |
 | `admin/tests/e2e/inquiries.spec.ts`               | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                                  |
 | `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                                     |
 | `admin/tests/e2e/inquiry-reply-templates.spec.ts` | 3    | 카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · **저장된 답변에 치환된 닉네임** / 삭제 후 선택지에서 사라짐                                                                                 |
 | `admin/tests/e2e/inquiry-assignment.spec.ts`      | 3    | 미배정 필터 + 접수번호 검색 → 나에게 배정(상태도 처리 중) / **브라우저 컨텍스트 두 개** — 두 번째 운영자에게 "작성 중" 배너·폼 잠금, 가로채기 뒤 첫 운영자가 먼저 답하면 **저장 거절 + 초안 유지**(답변은 1건) / 내부 메모 작성·삭제 |
+
+`playwright.config.ts` 는 사용자 사이트를 `chromium` · `Pixel 7` **두 프로젝트**로 돌립니다 — `support-inquiries.spec.ts` 10건은 실제로 **20건**(10 × 2) 실행됩니다.
 
 1. **스텁 로그인** — 사용자 e2e 는 `/login?next=…` → `button[name="provider"][value="google"]` 클릭. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩(닉네임 · 월드 UID · 약관 3종)을 거치고, 데모 계정 폴백이면 곧장 목적지에 도착합니다.
 2. **관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.** `ADMIN_E2E_SECRETS`(기본값은 스크래치패드의 `admin-bootstrap.env`)를 실행 중에만 읽고, 서비스 롤은 `.env.local` 에서 읽어 픽스처·검증에만 씁니다.
@@ -818,13 +842,15 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `app/(public)/support/page.tsx`                                                                     | 문의 폼 화면 — 로그인 여부 · 카테고리 · 계정 ID 프리필       |
 | `app/(public)/support/inquiries/page.tsx` · `[id]/page.tsx` · `[id]/edit/page.tsx`                  | 내 문의 내역 목록 · 상세 · 수정                              |
 | `app/(auth)/account/inquiries/page.tsx`                                                             | 마이페이지 문의내역 탭(첫 10건 표)                           |
+| `components/support/SupportCard.tsx` · `SupportTabs.tsx` · `SupportBackLink.tsx`                    | 카드 골격(좌측 메뉴 374 · 구분선 · 콘텐츠 698) · 모바일 세그먼트 탭 3개 · 상세/수정 상단 뒤로 링크(시안 v2) |
 | `components/support/InquiryForm.tsx`                                                                | 접수·수정 공용 폼 · 필수 항목 잠금 · 동의                    |
 | `components/support/InquiryFields.tsx`                                                              | 계정 ID · 카테고리/유형 · 제목 · 내용 마크업                 |
 | `components/support/InquiryConsentField.tsx` · `SupportCheckbox.tsx`                                | 개인정보 수집·이용 동의 줄 · 보이는 체크박스(켜짐 = 흰 체크) |
 | `components/support/use-inquiry-prefill.ts`                                                         | 프리필 상태 기계 · 확인 모달 · 자동 성장 textarea            |
-| `components/support/InquiryAttachmentField.tsx` · `InquiryAttachmentLists.tsx`                      | 파일 선택 · 축소 · 잠금 · 기존 첨부 삭제 체크                |
+| `components/support/InquiryAttachmentField.tsx` · `InquiryAttachmentLists.tsx` · `InquiryFileChip.tsx` | 파일 선택 · 축소 · 잠금 · 파일 칩(이름 말줄임·용량·X, 기존 첨부는 `removeAttachments` 로 표시) |
 | `components/support/use-inquiry-videos.ts` · `InquiryVideoList.tsx`                                 | 영상 업로드 행 상태 · 진행률 · 취소 · 다시 시도              |
-| `components/support/InquiryDetailCard.tsx` · `InquiryAttachmentList.tsx` · `InquiryReplyThread.tsx` | 상세 본문 · 첨부 보기 · 답변 스레드                          |
+| `components/support/InquiryDetailCard.tsx` · `InquiryDetailMeta.tsx` · `InquiryAttachmentList.tsx` · `InquiryReplyThread.tsx` | 상세 본문 · 메타 줄(등록일·카테고리·계정 ID·접수번호) · 첨부 보기 · 답변 스레드(287px 넘으면 내부 스크롤) |
+| `components/support/InquiryList.tsx` · `InquiryRow.tsx` · `InquiryPagination.tsx` · `InquiryStatusBadge.tsx` | 내 문의 내역 목록 · 행 카드 · 번호 페이지네이션(6건/페이지) · 상태 뱃지(답변 완료만 텍스트) |
 | `components/support/InquiryOwnerActions.tsx` · `CancelInquiryButton.tsx`                            | 수정 · 접수 취소 버튼과 확인 모달                            |
 | `components/account/InquiryTable.tsx`                                                               | 마이페이지 문의내역 표                                       |
 | `lib/actions/inquiry-actions.ts`                                                                    | 접수 서버 액션                                               |
@@ -840,8 +866,11 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `lib/supabase/upload-inquiry-video.ts`                                                              | 서명 업로드 URL + XHR PUT · 진행률 · 취소 · 조각 삭제        |
 | `lib/utils/inquiry-prefill.ts` · `inquiry-subtypes.ts` · `inquiry-permissions.ts`                   | 프리필 · 세부 유형 · 소유자 동작 판정(순수 함수)             |
 | `lib/utils/downscale-image.ts` · `mask.ts`                                                          | 업로드 전 축소 · 계정 ID 마스킹                              |
-| `lib/utils/inquiry-no.ts`                                                                           | 접수번호 표기 `#1024`(관리자 콘솔에 같은 내용의 사본)        |
-| `lib/constants/support.ts`                                                                          | 메뉴 · 상태 라벨 · 안내 문구 · 폴백 카테고리 · 파라미터 이름 |
+| `lib/utils/inquiry-no.ts`                                                                           | 접수번호 표기 `#1024`(관리자 콘솔에 같은 내용의 사본) · `No. 1024`(목록·상세, 시안 v2) |
+| `lib/utils/file-name.ts`                                                                            | 파일 칩 이름 말줄임 `truncateFileBase()`(확장자는 남기고 앞부분만, 시안 v2)              |
+| `lib/constants/support.ts`                                                                          | 메뉴 · 페이지 크기 · 안내 문구 · 폴백 카테고리 · 파라미터 이름 |
+| `lib/constants/inquiry-status.ts`                                                                   | 상태 라벨·색·모양 표(`INQUIRY_STATUS_MAP`) · `resolveInquiryStatus()`(`support.ts` 에서 분리, 시안 v2) |
+| `lib/constants/inquiry-attachment.ts`                                                               | 첨부 안내 문구(`ATTACHMENT_NOTICE_LINES`) · 파일 선택 버튼 라벨(`support.ts` 에서 분리, 시안 v2) |
 | `lib/actions/rate-limit.ts`                                                                         | 접수 30초 · 재수정 10초 쿨다운                               |
 
 ### 관리자 콘솔
