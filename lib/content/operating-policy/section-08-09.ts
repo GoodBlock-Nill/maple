@@ -1,72 +1,22 @@
-import type { PolicySection } from './types'
+import type { PolicyAddendum, PolicySection } from './types'
 
-/** 8. 아동·청소년 보호정책 */
+/**
+ * 8·9장 — 원래 9·10장이었다.
+ *
+ * 수정본에서 옛 8장(아동·청소년 보호정책)이 통째로 빠지면서 뒤 두 장이 하나씩
+ * 당겨졌다. 문구는 그대로고 번호(id·조항 코드)만 8/9 로 바뀐다.
+ */
+
+/** 8. 고객센터 담당자 보호 */
 export const SECTION_08: PolicySection = {
   id: 'section-8',
   number: 8,
-  title: '아동·청소년 보호정책',
-  blocks: [],
-  subsections: [
-    {
-      id: 'section-8-1',
-      title: '8-1. 개인정보 보호',
-      blocks: [
-        {
-          kind: 'paragraph',
-          code: '[8-1-1]',
-          text: '아동·청소년 시기에 본인 또는 제3자가 등록한 개인정보(휴대폰 번호, 주소, 이름, 이미지, 동영상 등)에 대해 삭제를 요청할 수 있습니다.',
-        },
-        {
-          kind: 'paragraph',
-          code: '[8-1-2]',
-          text: '아동·청소년의 개인정보에 해당하는 데이터는 본인 또는 제3자의 요청으로 예고 없이 삭제되거나 숨김 처리될 수 있습니다.',
-        },
-        {
-          kind: 'paragraph',
-          code: '[8-1-3]',
-          text: '아동·청소년의 개인정보를 획득하거나 이를 시도하는 경우 즉시 이용이 제한됩니다.',
-        },
-        {
-          kind: 'paragraph',
-          code: '[8-1-4]',
-          text: '아동·청소년의 개인정보를 도용하거나 유포하는 경우 적발 즉시 영구 이용제한 및 수사 의뢰가 진행됩니다.',
-        },
-      ],
-    },
-    {
-      id: 'section-8-2',
-      title: '8-2. 아동·청소년 인권 보호',
-      blocks: [
-        {
-          kind: 'paragraph',
-          code: '[8-2-1]',
-          text: '아동·청소년 대상 음란·비윤리적 행위, 욕설, 비하 등의 모욕적 언행은 즉시 이용 제한의 대상이 됩니다.',
-        },
-        {
-          kind: 'paragraph',
-          code: '[8-2-2]',
-          text: '성적 접촉을 목적으로 아동·청소년과 정서적 관계를 구축하거나, 외부 만남을 시도·주선하는 행위가 적발될 경우 즉시 접속제한 및 영구 이용제한, 수사 의뢰 등의 조치가 진행될 수 있습니다.',
-        },
-        {
-          kind: 'paragraph',
-          code: '[8-2-3]',
-          text: '아동·청소년 대상으로 성적인 내용을 직접·암시적으로 언급하는 행위가 적발될 경우 즉시 접속제한 및 영구 이용제한, 수사 의뢰 등의 조치가 진행될 수 있습니다.',
-        },
-      ],
-    },
-  ],
-}
-
-/** 9. 고객센터 담당자 보호 */
-export const SECTION_09: PolicySection = {
-  id: 'section-9',
-  number: 9,
   title: '고객센터 담당자 보호',
   blocks: [],
   subsections: [
     {
-      id: 'section-9-1',
-      title: '9-1. 금지 행위',
+      id: 'section-8-1',
+      title: '8-1. 금지 행위',
       blocks: [
         {
           kind: 'list',
@@ -81,8 +31,8 @@ export const SECTION_09: PolicySection = {
       ],
     },
     {
-      id: 'section-9-2',
-      title: '9-2. 제재 기준',
+      id: 'section-8-2',
+      title: '8-2. 제재 기준',
       blocks: [
         {
           kind: 'table',
@@ -106,5 +56,58 @@ export const SECTION_09: PolicySection = {
         },
       ],
     },
+  ],
+}
+
+/** 9. 이의신청 */
+export const SECTION_09: PolicySection = {
+  id: 'section-9',
+  number: 9,
+  title: '이의신청',
+  blocks: [
+    {
+      kind: 'paragraph',
+      code: '[9-1]',
+      text: '게임 이용 제한에 이의가 있는 경우, **제재일로부터 15일 이내**에 고객센터를 통해 이의신청을 할 수 있습니다.',
+    },
+    {
+      kind: 'paragraph',
+      code: '[9-2]',
+      text: '이의신청은 본인 명의의 계정에 한하여 가능하며, 타인을 대신한 이의신청은 접수되지 않습니다.',
+    },
+    {
+      kind: 'paragraph',
+      code: '[9-3]',
+      text: '관련 게임 데이터의 보유 기간이 경과한 경우에는 이의신청이 불가능할 수 있습니다.',
+    },
+    {
+      kind: 'list',
+      intro: '[9-4] 이의신청이 접수되지 않는 경우:',
+      items: [
+        '**비인가 프로그램** 사용으로 인한 영구 이용제한',
+        '타인의 개인정보 직접 유포로 인한 영구 이용제한',
+        '계정 도용으로 인한 영구 이용제한',
+      ],
+    },
+    {
+      kind: 'list',
+      intro: '[9-5] 이의신청 시 필요 정보:',
+      items: [
+        '이메일 주소',
+        '계정 ID 또는 고유번호',
+        '캐릭터 닉네임',
+        '제재 관련 상세 내용 및 소명 자료',
+      ],
+    },
+  ],
+}
+
+/** 목차에는 없는 말미의 부칙. */
+export const ADDENDUM: PolicyAddendum = {
+  title: '부칙',
+  items: [
+    '본 운영정책은 2026년 9월 18일 오픈 시점부터 효력이 발생합니다.',
+    '정책 변경 시 공식 홈페이지 및 디스코드를 통해 사전 안내합니다.',
+    '긴급한 경우 사후 안내가 이루어질 수 있습니다.',
   ],
 }

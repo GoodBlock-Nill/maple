@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { escapeHtml, inlineToHtml, policySectionsToHtml } from '@/lib/content/policy-to-html'
-import {
-  OPERATING_POLICY_ADDENDUM,
-  OPERATING_POLICY_NOTICE,
-  OPERATING_POLICY_SECTIONS,
-} from '@/lib/content/operating-policy'
-import { PRIVACY_POLICY_SECTIONS } from '@/lib/content/privacy-policy'
+import { OPERATING_POLICY_ADDENDUM, OPERATING_POLICY_SECTIONS } from '@/lib/content/operating-policy'
+import { PRIVACY_POLICY_NOTICE, PRIVACY_POLICY_SECTIONS } from '@/lib/content/privacy-policy'
 import { sanitizeLegalHtml } from '@/lib/sanitize/legal-html'
 
 import type { PolicySection } from '@/lib/content/operating-policy/types'
@@ -143,20 +139,32 @@ describe('변환 결과와 정제기의 합의', () => {
     }
   })
 
-  /* 발행본은 고지·부칙까지 붙인 값이다. `<br />` 의 표기(자기 닫힘 슬래시)가
-     정제기와 어긋나면 시드본과 관리자 저장본이 한 글자 차이로 갈라진다. */
-  it('should survive the sanitizer unchanged with the notice and addendum attached', () => {
+  /* 발행본은 부칙까지 붙인 값이다(운영정책은 -3 개정으로 본문 고지를 더 이상
+     신지 않는다 — 고지·`<br />` 표기 합의는 아래 개인정보처리방침 케이스가 본다). */
+  it('should survive the sanitizer unchanged with the addendum attached', () => {
     const source = policySectionsToHtml({
       sections: OPERATING_POLICY_SECTIONS,
-      notice: OPERATING_POLICY_NOTICE,
       addendum: OPERATING_POLICY_ADDENDUM,
     })
 
     expect(sanitizeLegalHtml(source)).toBe(source)
-    expect(source.startsWith('<p>본 서버는 넥슨(주)')).toBe(true)
-    expect(source.match(/<br \/>/gu)?.length).toBe(3)
-    // 10개 장 + 부칙. 고지는 장을 만들지 않는다.
+    // 9개 장 + 부칙.
     expect(source.match(/<h2>/gu)?.length).toBe(OPERATING_POLICY_SECTIONS.length + 1)
+  })
+
+  /* `<br />` 의 표기(자기 닫힘 슬래시)가 정제기와 어긋나면 시드본과 관리자
+     저장본이 한 글자 차이로 갈라진다. 지금 고지를 싣는 문서는 개인정보처리방침뿐이다. */
+  it('should survive the sanitizer unchanged with the privacy notice attached', () => {
+    const source = policySectionsToHtml({
+      sections: PRIVACY_POLICY_SECTIONS,
+      notice: PRIVACY_POLICY_NOTICE,
+    })
+
+    expect(sanitizeLegalHtml(source)).toBe(source)
+    expect(source.startsWith('<p>글자월드 운영자(이하 "운영자")')).toBe(true)
+    expect(source.match(/<br \/>/gu)?.length).toBe(1)
+    // 고지는 장을 만들지 않는다.
+    expect(source.match(/<h2>/gu)?.length).toBe(PRIVACY_POLICY_SECTIONS.length)
   })
 
   it('should keep every chapter of the privacy policy', () => {

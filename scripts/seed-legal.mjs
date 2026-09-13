@@ -98,10 +98,9 @@ const documents = [
     title: operating.OPERATING_POLICY_TITLE,
     version: operating.OPERATING_POLICY_VERSION,
     effectiveDate: toIsoDate(operating.OPERATING_POLICY_EFFECTIVE_DATE),
-    summary: '운영정책 1차 수정본 반영(2026-09-18)',
+    summary: '운영정책 1차 수정본(2026-09-18) 반영 — IP 고지·아동청소년 장 제거',
     html: policySectionsToHtml({
       sections: operating.OPERATING_POLICY_SECTIONS,
-      notice: operating.OPERATING_POLICY_NOTICE,
       addendum: operating.OPERATING_POLICY_ADDENDUM,
     }),
   },

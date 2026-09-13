@@ -30,7 +30,7 @@ export const DISCORD_POLICY_VERSION = '20260911-1'
 
 /**
  * 채널 상단 환영 인사 세 줄. 장(章)이 아니므로 목차에는 오르지 않는다
- * (`operating-policy/notice.ts`, `privacy-policy/notice.ts` 와 같은 규칙).
+ * (`privacy-policy/notice.ts` 와 같은 규칙 — 운영정책은 더 이상 고지를 본문에 싣지 않는다).
  */
 export const DISCORD_POLICY_NOTICE: PolicyNotice = {
   lines: [

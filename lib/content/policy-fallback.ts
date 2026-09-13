@@ -8,7 +8,6 @@ import {
 import {
   OPERATING_POLICY_ADDENDUM,
   OPERATING_POLICY_EFFECTIVE_DATE,
-  OPERATING_POLICY_NOTICE,
   OPERATING_POLICY_SECTIONS,
   OPERATING_POLICY_TITLE,
   OPERATING_POLICY_VERSION,
@@ -106,11 +105,10 @@ export const POLICY_FALLBACKS: Record<LegalSlug, PolicyFallback> = {
     heading: OPERATING_POLICY_TITLE,
     title: OPERATING_POLICY_TITLE,
     description:
-      '글자월드 이용 원칙, 이용자 권리·의무, 금지행위와 제재 기준, 복구·환불 정책, 아동·청소년 보호정책과 이의신청 절차를 안내합니다.',
+      '글자월드 이용 원칙, 이용자 권리·의무, 금지행위와 제재 기준, 복구·환불 정책, 고객센터 담당자 보호와 이의신청 절차를 안내합니다.',
     version: OPERATING_POLICY_VERSION,
     effectiveDate: OPERATING_POLICY_EFFECTIVE_DATE,
     sections: OPERATING_POLICY_SECTIONS,
-    notice: OPERATING_POLICY_NOTICE,
     addendum: OPERATING_POLICY_ADDENDUM,
     paragraphs: [],
     hasIpNotice: false,
