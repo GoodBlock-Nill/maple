@@ -158,6 +158,8 @@ test('문의 답변에 템플릿을 불러오면 자리표시자가 그 문의�
   await page.screenshot({ path: `${SHOT_DIR}/admin-template-inserted.png`, fullPage: true })
 
   // Act — 그대로 등록한다(답변 액션은 손대지 않았다)
+  // 기본값은 '처리 중'이다(오너 규칙 2026-09-14). 여기서는 답변 완료로 닫는다.
+  await page.getByLabel('등록 후 상태').selectOption('answered')
   await page.getByRole('button', { name: '답변 등록' }).click()
   await expect(page.getByTestId('inquiry-status')).toContainText('답변 완료')
 

@@ -218,6 +218,9 @@ test('답변을 등록하면 상태가 답변 완료가 되고 사용자 화면�
   await expect(page.getByRole('dialog')).toBeHidden()
 
   await page.getByLabel('답변 내용').fill(REPLY_BODY)
+  /* 등록 후 상태의 기본값은 '처리 중'이다(오너 규칙 2026-09-14 — 회원 답장을 열어 둔다).
+     이 검증은 대화를 닫는 경로라 '답변 완료'를 명시적으로 고른다. */
+  await page.getByLabel('등록 후 상태').selectOption('answered')
   await page.getByRole('button', { name: '답변 등록' }).click()
 
   await expect(page.getByTestId('inquiry-reply').filter({ hasText: REPLY_TEXT })).toBeVisible()

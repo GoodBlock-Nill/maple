@@ -3,6 +3,14 @@ import { z } from 'zod'
 import { isInquiryKind, type InquiryKind } from '@/lib/constants/inquiry-kind'
 import { firstValue, type QueryParams } from '@/lib/utils/table-query'
 import { parseInquiryAssigneeParams } from '@/lib/validation/inquiry-assignment'
+import {
+  parseInquiryAwaitingParam,
+  parseInquiryDateParam,
+  parseInquiryUserIdParam,
+  sanitizeInquiryCategory,
+  sanitizeInquirySearch,
+  sanitizeInquiryType,
+} from '@/lib/validation/inquiry-filter-values'
 import { parseInquiryNoSearch } from '@/lib/validation/inquiry-no-search'
 import { isInquirySource } from '@/lib/validation/inquiry-source'
 import { plainTextField } from '@/lib/validation/plain-text'
@@ -26,6 +34,8 @@ export * from '@/lib/validation/inquiry-source'
 /* 계정 마스킹과 평문 필드 조각도 각자의 파일이 갖는다(이 파일의 300줄 상한). 화면과
    스키마는 계속 `@/lib/validation/inquiries` 한 곳에서 가져다 쓴다. */
 export * from '@/lib/validation/inquiry-account-mask'
+/* 필터 값(검색어 · 카테고리 · 유형 · 기간 · 회원 · 회원 답장)의 정리 규칙도 마찬가지다. */
+export * from '@/lib/validation/inquiry-filter-values'
 export * from '@/lib/validation/plain-text'
 
 export type InquiryStatus = Enums<'inquiry_status'>
@@ -68,6 +78,11 @@ export function isCancelledInquiry(cancelledAt: string | null | undefined): bool
  *
  * 되돌리기는 "종료 → 처리 중" 하나만 연다. 답변 완료를 접수 대기로 되돌리는 길을
  * 열어 두면 사용자 화면의 상태가 앞뒤로 튀어 "답변이 사라졌다"는 문의를 부른다.
+ *
+ * **`answered → in_progress` 가 없는 것은 오너 확정 규칙이다**(2026-09-14,
+ * `docs/reference/inquiry-thread-spec.md` §1). 회원 답장은 '처리 중'에서만 열리므로
+ * 이 표의 빈칸이 곧 "답변 완료 = 대화가 닫힌다"는 뜻이다. 여기에 전이를 하나 더 열면
+ * 답변 폼의 안내 문구(`InquiryReplyFooter`)가 거짓말이 된다 — 함께 고쳐야 한다.
  */
 export const INQUIRY_STATUS_TRANSITIONS: Record<InquiryStatus, readonly InquiryStatus[]> = {
   pending: ['in_progress', 'answered', 'closed'],
@@ -132,85 +147,6 @@ export function statusesForTab(tab: InquiryStatusTab): readonly InquiryStatus[] 
   return match?.statuses ?? INQUIRY_STATUS_VALUES
 }
 
-/**
- * 카테고리 필터 값의 상한. DB CHECK(`inquiry_categories_label_length`)와 같은 숫자다.
- *
- * 옵션 목록은 DB(`inquiry_categories`) + 데이터에 남은 옛 라벨이라 여기서 고정 배열로
- * 검사할 수 없다. 대신 "라벨일 수 없는 값"만 걸러 낸다 — 필터는 `eq()` 로만 쓰이므로
- * 임의 문자열이 질의 문법으로 해석되지는 않지만, 길이가 상한을 넘는 값은 어떤 행과도
- * 맞지 않아 필터로서 의미가 없다.
- */
-export const INQUIRY_CATEGORY_MAX_LENGTH = 20
-
-/**
- * 유형 필터 값의 상한. DB CHECK(`inquiry_categories_subtypes_shape`)의 항목 길이와
- * 같은 숫자다. 옵션 목록은 DB(세부 유형) + 데이터에 남은 옛 값이라 고정 배열로
- * 검사할 수 없어, 카테고리와 같은 규칙으로 "유형일 수 없는 값"만 걸러 낸다.
- */
-export const INQUIRY_TYPE_MAX_LENGTH = 30
-
-export const INQUIRY_SEARCH_MAX_LENGTH = 60
-
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-
-/**
- * 검색어 정리.
- *
- * PostgREST 의 `or(...)` 는 쉼표·괄호를 **문법**으로 읽고, ilike 패턴에서 `%`·`_` 는
- * 와일드카드다. 그대로 흘려보내면 검색어 하나로 질의가 깨지거나 의도치 않은
- * 전체 스캔이 된다. 서식 문자는 지우고 길이도 자른다.
- */
-export function sanitizeInquirySearch(raw: string | string[] | undefined): string | null {
-  const value = firstValue(raw)
-
-  if (value === null) {
-    return null
-  }
-
-  const cleaned = value
-    .replace(/[,()%_*\\"']/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, INQUIRY_SEARCH_MAX_LENGTH)
-
-  return cleaned === '' ? null : cleaned
-}
-
-/** 카테고리 필터 값 정리. 옵션 목록은 DB 가 소유하므로 모양만 본다. */
-export function sanitizeInquiryCategory(raw: string | null): string | null {
-  const value = (raw ?? '').trim()
-
-  return value === '' || value.length > INQUIRY_CATEGORY_MAX_LENGTH ? null : value
-}
-
-/** 유형(세부 문의 유형) 필터 값 정리. 카테고리와 같은 규칙이다. */
-export function sanitizeInquiryType(raw: string | null): string | null {
-  const value = (raw ?? '').trim()
-
-  return value === '' || value.length > INQUIRY_TYPE_MAX_LENGTH ? null : value
-}
-
-function parseDateParam(raw: string | string[] | undefined): string | null {
-  const value = firstValue(raw)
-
-  if (value === null || !DATE_PATTERN.test(value)) {
-    return null
-  }
-
-  return Number.isNaN(new Date(`${value}T00:00:00Z`).getTime()) ? null : value
-}
-
-/* `profiles.id` 는 uuid 다. 모양이 아닌 값은 필터를 걸지 않는다(= 전체) — 회원
-   상세("전체 보기")가 항상 uuid 를 실어 보내므로 실사용에서는 걸릴 일이 없고,
-   임의 문자열이 `eq()` 값으로 그대로 흘러가는 것만 막으면 된다. */
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-function parseUserIdParam(raw: string | string[] | undefined): string | null {
-  const value = firstValue(raw)
-
-  return value !== null && UUID_PATTERN.test(value) ? value : null
-}
-
 export type InquiryFilters = {
   tab: InquiryStatusTab
   statuses: readonly InquiryStatus[]
@@ -237,6 +173,11 @@ export type InquiryFilters = {
   userId: string | null
   /** 담당자 필터(`?assignee=me|none|<uuid>`). `'me'` 의 실제 id 는 조회 계층이 채운다. */
   assignee: InquiryAssigneeFilter
+  /**
+   * '회원 답장 도착만'(`?awaiting=1`). 켜면 `user_replied_at` 이 찍힌 문의만 본다 —
+   * 공이 운영자에게 넘어온 줄만 남는다(20260914000400).
+   */
+  awaiting: boolean
 }
 
 export function parseInquiryFilters(params: QueryParams): InquiryFilters {
@@ -262,9 +203,11 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
     search: sanitizeInquirySearch(params.q),
     // 접수번호로도 찾을 수 있어야 한다 — 사용자가 불러 주는 값이 그것뿐이다.
     searchNo: parseInquiryNoSearch(params.q),
-    from: parseDateParam(params.from),
-    to: parseDateParam(params.to),
-    userId: parseUserIdParam(params.user),
+    from: parseInquiryDateParam(params.from),
+    to: parseInquiryDateParam(params.to),
+    userId: parseInquiryUserIdParam(params.user),
+    // 회원이 답장한 문의만 보기(체크박스 하나). 켜지는 값은 '1' 뿐이다.
+    awaiting: parseInquiryAwaitingParam(params.awaiting),
     // 담당자 필터의 규칙은 협업 모듈이 갖는다(`validation/inquiry-assignment.ts`).
     assignee: parseInquiryAssigneeParams(params),
   }
@@ -276,8 +219,14 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
 
 export const INQUIRY_REPLY_MAX_LENGTH = 2000
 
-/** 답변 뒤에 놓을 수 있는 상태. 기본은 답변 완료, 추가 확인이 필요하면 처리 중. */
-export const INQUIRY_REPLY_NEXT_STATUSES = ['answered', 'in_progress'] as const
+/**
+ * 답변 뒤에 놓을 수 있는 상태. **첫 값이 폼의 기본값**이다.
+ *
+ * 기본은 처리 중 — 답변 완료는 운영자가 명시적으로 고른다. 답변 완료 후에는 회원이
+ * 답장할 수 없고 재개도 없다(오너 규칙 2026-09-14). 기본값이 '답변 완료'면 손이 미끄러진
+ * 한 번으로 대화가 닫히고, 회원은 같은 이야기를 새 문의로 다시 접수해야 한다.
+ */
+export const INQUIRY_REPLY_NEXT_STATUSES = ['in_progress', 'answered'] as const
 
 export const inquiryReplySchema = z.object({
   inquiryId: z.uuid('문의를 찾을 수 없습니다.'),

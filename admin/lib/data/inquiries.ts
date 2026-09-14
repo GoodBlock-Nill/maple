@@ -31,7 +31,7 @@ import type {
    응답만 키운다. 검색은 서버 쪽 ilike 로 하므로 본문이 없어도 된다. */
 /* 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 /* prettier-ignore */
-const LIST_COLUMNS = 'id, inquiry_no, title, account_id, category, type, kind, status, cancelled_at, created_at, updated_at, user_id, source, email_from, email_auth, assigned_to, editing_by, editing_at, author:profiles!inquiries_user_id_fkey(nickname), assignee:profiles!inquiries_assigned_to_fkey(id, nickname), editor:profiles!inquiries_editing_by_fkey(id, nickname), inquiry_replies(count)'
+const LIST_COLUMNS = 'id, inquiry_no, title, account_id, category, type, kind, status, cancelled_at, created_at, updated_at, user_replied_at, user_id, source, email_from, email_auth, assigned_to, editing_by, editing_at, author:profiles!inquiries_user_id_fkey(nickname), assignee:profiles!inquiries_assigned_to_fkey(id, nickname), editor:profiles!inquiries_editing_by_fkey(id, nickname), inquiry_replies(count)'
 
 export type InquiryListItem = {
   id: string
@@ -56,6 +56,11 @@ export type InquiryListItem = {
   replyCount: number
   createdAt: string
   updatedAt: string
+  /**
+   * 회원이 마지막으로 답장한 시각(20260914000400). 운영자가 다시 답하면 null 로
+   * 돌아가므로, 값이 있으면 곧 "회원 답장 도착 = 운영자 차례"다.
+   */
+  userRepliedAt: string | null
   /** 담당 운영자. null 이면 '미배정'이다. */
   assignee: InquiryAdminRef | null
   /** 지금 답변을 쓰고 있는 운영자(살아 있는 잠금일 때만 채운다). */
@@ -142,6 +147,7 @@ export async function getInquiries(
     replyCount: toReplyCount(row.inquiry_replies),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    userRepliedAt: row.user_replied_at,
     assignee: toAdminRef(row.assigned_to, row.assignee),
     editing: toEditingRef(row.editing_by, row.editing_at, row.editor),
   }))

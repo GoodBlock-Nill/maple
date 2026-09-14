@@ -1,6 +1,8 @@
 import Link from 'next/link'
 
 import { InquiryAssigneeFilter } from '@/components/inquiries/InquiryAssigneeFilter'
+import { InquiryAwaitingFilter } from '@/components/inquiries/InquiryAwaitingFilter'
+import { InquiryDateRangeFilter } from '@/components/inquiries/InquiryDateRangeFilter'
 import { CONTROL_CLASS } from '@/components/inquiries/inquiry-filter-controls'
 import { Button, Input } from '@/components/ui'
 import { INQUIRY_KINDS } from '@/lib/constants/inquiry-kind'
@@ -53,7 +55,16 @@ export function InquiryFilters({
   const resetHref = buildHref(
     LIST_PATH,
     {},
-    { status: filters.tab, source: filters.source, user: filters.userId, kind: filters.kind },
+    {
+      status: filters.tab,
+      source: filters.source,
+      user: filters.userId,
+      kind: filters.kind,
+      /* '회원 답장 도착만'도 초기화에서 살아남는다(종류와 같은 취급) — 그 체크는
+         "검색 조건"이 아니라 지금 보고 있는 **묶음**이다. 끄려면 체크를 풀고
+         검색하면 된다(꺼진 체크박스는 아무것도 보내지 않는다). */
+      awaiting: filters.awaiting ? '1' : null,
+    },
   )
 
   return (
@@ -104,6 +115,8 @@ export function InquiryFilters({
 
         <InquiryAssigneeFilter value={filters.assignee} admins={admins} />
 
+        <InquiryAwaitingFilter checked={filters.awaiting} />
+
         {/* 종류를 고르면 카테고리·유형 선택지도 그 창구의 것만 남는다(다음 왕복에서). */}
         {!isEmail && (
           <label className="flex flex-col gap-1.5">
@@ -150,26 +163,7 @@ export function InquiryFilters({
           </label>
         )}
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-ink text-[13px] font-semibold">등록일</span>
-          <span className="flex items-center gap-1.5">
-            <input
-              type="date"
-              name="from"
-              aria-label="시작일"
-              defaultValue={filters.from ?? ''}
-              className={CONTROL_CLASS}
-            />
-            <span className="text-muted text-[13px]">~</span>
-            <input
-              type="date"
-              name="to"
-              aria-label="종료일"
-              defaultValue={filters.to ?? ''}
-              className={CONTROL_CLASS}
-            />
-          </span>
-        </label>
+        <InquiryDateRangeFilter from={filters.from} to={filters.to} />
 
         <Input
           label="검색"

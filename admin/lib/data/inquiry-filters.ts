@@ -54,6 +54,13 @@ export function applyInquiryFilters<TQuery extends FilterableQuery<TQuery>>(
     next = next.is('cancelled_at', null)
   }
 
+  /* '회원 답장 도착만'(`?awaiting=1`). 이 열은 트리거만 쓴다(20260914000400) — 값이
+     있으면 회원이 마지막으로 말했다는 뜻이고, 운영자가 답하면 null 로 돌아간다.
+     목록과 탭 건수가 이 함수를 함께 쓰므로 체크 하나로 탭의 숫자도 같이 좁혀진다. */
+  if (filters.awaiting) {
+    next = next.not('user_replied_at', 'is', null)
+  }
+
   if (filters.userId !== null) {
     // 회원 상세의 "전체 보기" 링크(`/inquiries?user=<id>`)가 쓰는 필터다.
     next = next.eq('user_id', filters.userId)

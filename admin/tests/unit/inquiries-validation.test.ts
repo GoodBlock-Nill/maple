@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_INQUIRY_STATUS_TAB,
   INQUIRY_REPLY_MAX_LENGTH,
+  INQUIRY_REPLY_NEXT_STATUSES,
   canTransitionInquiryStatus,
   inquiryReplySchema,
   inquiryStatusSchema,
@@ -54,6 +55,15 @@ describe('isCancelledInquiry', () => {
     expect(isCancelledInquiry(null)).toBe(false)
     expect(isCancelledInquiry(undefined)).toBe(false)
     expect(isCancelledInquiry('')).toBe(false)
+  })
+})
+
+describe('INQUIRY_REPLY_NEXT_STATUSES', () => {
+  it('첫 값(= 폼 기본값)은 처리 중이다 — 대화를 닫는 것은 명시적 선택이어야 한다', () => {
+    /* 오너 규칙 2026-09-14: 답변 완료는 회원 답장을 닫고 재개할 수 없다. 기본값이
+       '답변 완료'면 실수 한 번으로 대화가 끝난다. */
+    expect(INQUIRY_REPLY_NEXT_STATUSES[0]).toBe('in_progress')
+    expect(INQUIRY_REPLY_NEXT_STATUSES).toEqual(['in_progress', 'answered'])
   })
 })
 

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { InquiryAssigneeCell } from '@/components/inquiries/InquiryAssigneeCell'
+import { InquiryMemberReplyBadge } from '@/components/inquiries/InquiryMemberReplyBadge'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { Badge, Card, Pagination, Table, type Column } from '@/components/ui'
 import { INQUIRY_KIND_MAP } from '@/lib/constants/inquiry-kind'
@@ -110,7 +111,14 @@ export function InquiryTable({
       header: '상태',
       sortKey: 'status',
       className: 'w-28 min-w-[92px]',
-      cell: (row) => <InquiryStatusBadge status={row.status} cancelledAt={row.cancelledAt} />,
+      /* 회원 답장 뱃지는 상태 **옆**에 선다 — 별도 칸을 만들면 대부분의 행에서 빈
+         칸이 되고, 정작 필요한 줄에서는 상태와 떨어져 읽힌다. */
+      cell: (row) => (
+        <span className="flex flex-wrap items-center gap-1">
+          <InquiryStatusBadge status={row.status} cancelledAt={row.cancelledAt} />
+          <InquiryMemberReplyBadge userRepliedAt={row.userRepliedAt} />
+        </span>
+      ),
     },
     {
       key: 'replies',

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { InquiryMemberReplyBadge } from '@/components/inquiries/InquiryMemberReplyBadge'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { FormBanner } from '@/components/ui/FormField'
 import { Badge } from '@/components/ui/Badge'
@@ -110,8 +111,14 @@ const INQUIRY_COLUMNS: readonly Column<MemberInquirySummary>[] = [
   {
     key: 'status',
     header: '상태',
-    className: 'w-24',
-    cell: (row) => <InquiryStatusBadge status={row.status} cancelledAt={row.cancelledAt} />,
+    className: 'w-28',
+    // 문의 목록과 같은 자리·같은 뱃지다(회원 답장이 온 줄은 두 화면에서 같이 튄다).
+    cell: (row) => (
+      <span className="flex flex-wrap items-center gap-1">
+        <InquiryStatusBadge status={row.status} cancelledAt={row.cancelledAt} />
+        <InquiryMemberReplyBadge userRepliedAt={row.userRepliedAt} />
+      </span>
+    ),
   },
   {
     key: 'replies',

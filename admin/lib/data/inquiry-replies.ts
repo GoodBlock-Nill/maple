@@ -1,6 +1,9 @@
 import 'server-only'
 
+import { signInquiryAttachments, toAttachments } from '@/lib/data/inquiry-attachments'
 import { createClient } from '@/lib/supabase/server'
+
+import type { InquiryAttachment } from '@/lib/data/inquiry-attachments'
 
 /**
  * 문의 스레드(답글) 조회.
@@ -12,7 +15,7 @@ import { createClient } from '@/lib/supabase/server'
 
 /* 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 /* prettier-ignore */
-const REPLY_COLUMNS = 'id, author_id, author_name, content, created_at, direction, email_message_id, delivery_status'
+const REPLY_COLUMNS = 'id, author_id, author_name, content, created_at, direction, email_message_id, delivery_status, attachments'
 
 export type InquiryReplyDirection = 'inbound' | 'outbound'
 
@@ -27,6 +30,16 @@ export type InquiryReplyItem = {
   direction: InquiryReplyDirection
   emailMessageId: string | null
   deliveryStatus: InquiryReplyDeliveryStatus | null
+  /**
+   * 회원이 웹에서 남긴 답장인가(20260914000400).
+   *
+   * 이메일 인바운드도 `direction='inbound'` 라 방향만으로는 갈리지 않는다.
+   * 웹 답장만 `author_id` 가 채워지므로(RPC `add_inquiry_user_reply`) 그 유무로
+   * 가른다 — 화면이 "회원 답장"과 "받은 메일"을 다른 말로 불러야 한다.
+   */
+  isMemberReply: boolean
+  /** 이 답변·답장에 달린 첨부(서명 URL 포함). 없으면 빈 배열. */
+  attachments: readonly InquiryAttachment[]
 }
 
 const DELIVERY_STATUSES: readonly string[] = ['queued', 'sent', 'failed']
@@ -43,6 +56,35 @@ function toDeliveryStatus(value: string | null): InquiryReplyDeliveryStatus | nu
     : null
 }
 
+/**
+ * 스레드 전체의 첨부를 **한 번에** 서명한다.
+ *
+ * 답장마다 `signInquiryAttachments` 를 부르면 스레드 길이만큼 Storage 왕복이 생긴다
+ * (10건짜리 대화면 왕복 10번). 전부 펼쳐 한 번에 서명하고 같은 순서로 다시 나눈다 —
+ * `signInquiryAttachments` 는 입력 순서를 그대로 돌려준다.
+ */
+async function signThreadAttachments(
+  rows: readonly { attachments: unknown }[],
+): Promise<readonly (readonly InquiryAttachment[])[]> {
+  const perRow = rows.map((row) => toAttachments(row.attachments))
+  const flat = perRow.flat()
+
+  if (flat.length === 0) {
+    return perRow.map(() => [])
+  }
+
+  const signed = await signInquiryAttachments(flat)
+  const grouped: (readonly InquiryAttachment[])[] = []
+  let cursor = 0
+
+  for (const items of perRow) {
+    grouped.push(signed.slice(cursor, cursor + items.length))
+    cursor += items.length
+  }
+
+  return grouped
+}
+
 export async function getInquiryReplies(inquiryId: string): Promise<readonly InquiryReplyItem[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -57,7 +99,10 @@ export async function getInquiryReplies(inquiryId: string): Promise<readonly Inq
     return []
   }
 
-  return (data ?? []).map((row) => ({
+  const rows = data ?? []
+  const attachments = await signThreadAttachments(rows)
+
+  return rows.map((row, index) => ({
     id: row.id,
     authorName: row.author_name,
     content: row.content,
@@ -65,5 +110,7 @@ export async function getInquiryReplies(inquiryId: string): Promise<readonly Inq
     direction: toDirection(row.direction),
     emailMessageId: row.email_message_id,
     deliveryStatus: toDeliveryStatus(row.delivery_status),
+    isMemberReply: toDirection(row.direction) === 'inbound' && row.author_id !== null,
+    attachments: attachments[index] ?? [],
   }))
 }

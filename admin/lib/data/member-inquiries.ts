@@ -19,7 +19,7 @@ import type { InquiryStatus, InquirySource } from '@/lib/validation/inquiries'
  */
 
 /* prettier-ignore */
-const MEMBER_INQUIRY_COLUMNS = 'id, inquiry_no, title, category, type, kind, status, cancelled_at, source, created_at, inquiry_replies(count)'
+const MEMBER_INQUIRY_COLUMNS = 'id, inquiry_no, title, category, type, kind, status, cancelled_at, source, created_at, user_replied_at, inquiry_replies(count)'
 
 export type MemberInquirySummary = {
   id: string
@@ -34,6 +34,8 @@ export type MemberInquirySummary = {
   source: InquirySource
   replyCount: number
   createdAt: string
+  /** 회원이 마지막으로 답장한 시각. 값이 있으면 운영자 차례다(20260914000400). */
+  userRepliedAt: string | null
 }
 
 export type MemberInquiryResult = {
@@ -78,6 +80,7 @@ export async function getMemberInquiries(memberId: string): Promise<MemberInquir
       source: toInquirySource(row.source),
       replyCount: toReplyCount(row.inquiry_replies),
       createdAt: row.created_at,
+      userRepliedAt: row.user_replied_at,
     })),
     hasError: false,
   }

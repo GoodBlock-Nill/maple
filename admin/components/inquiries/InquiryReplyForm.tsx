@@ -8,24 +8,19 @@ import {
   InquiryThreadStaleBanner,
 } from '@/components/inquiries/InquiryEditLockBanner'
 import { INQUIRY_REPLY_COPY } from '@/components/inquiries/inquiry-reply-copy'
+import { InquiryReplyFooter } from '@/components/inquiries/InquiryReplyFooter'
 import { InquiryReplyTemplatePicker } from '@/components/inquiries/InquiryReplyTemplatePicker'
 import { useInquiryEditLock } from '@/components/inquiries/use-inquiry-edit-lock'
-import { Button, Card, CardBody, CardHeader, FormBanner, Textarea, useToast } from '@/components/ui'
+import { Card, CardBody, CardHeader, FormBanner, Textarea, useToast } from '@/components/ui'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { replyToInquiryAction } from '@/lib/actions/inquiries-actions'
-import {
-  INQUIRY_REPLY_MAX_LENGTH,
-  INQUIRY_REPLY_NEXT_STATUSES,
-  INQUIRY_STATUS_LABELS,
-} from '@/lib/validation/inquiries'
+import { INQUIRY_REPLY_MAX_LENGTH } from '@/lib/validation/inquiries'
 
 import type { TemplateApplyMode } from '@/components/inquiries/InquiryReplyTemplatePicker'
 import type { FormState } from '@/lib/actions/form-state'
 import type { InquiryReplyTemplateOption } from '@/lib/data/inquiry-reply-templates'
 import type { InquiryStatus } from '@/lib/validation/inquiries'
 import type { InquiryPlaceholderSource } from '@/lib/utils/inquiry-reply-template'
-
-const OPERATOR_NAME = '운영자'
 
 /**
  * 답변 작성.
@@ -161,39 +156,13 @@ export function InquiryReplyForm({
             onChange={(event) => setContent(event.target.value)}
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="text-ink flex items-center gap-2 text-[13px]">
-              <input
-                type="checkbox"
-                name="useOperatorName"
-                defaultChecked
-                className="accent-accent size-4"
-              />
-              {`'${OPERATOR_NAME}' 명의로 표시`}
-              <span className="text-muted">{`(해제하면 ${adminNickname})`}</span>
-            </label>
-
-            <div className="flex items-center gap-2">
-              <label className="text-muted text-[13px]" htmlFor="inquiry-next-status">
-                등록 후 상태
-              </label>
-              <select
-                id="inquiry-next-status"
-                name="nextStatus"
-                defaultValue={INQUIRY_REPLY_NEXT_STATUSES[0]}
-                className="rounded-panel border-line bg-surface text-ink focus:border-accent focus:outline-accent/40 h-9 border px-3 text-[13px] focus:outline-2"
-              >
-                {INQUIRY_REPLY_NEXT_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {INQUIRY_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" disabled={isPending || isLockedByOther}>
-                {isPending ? copy.pending : copy.submit}
-              </Button>
-            </div>
-          </div>
+          <InquiryReplyFooter
+            adminNickname={adminNickname}
+            isPending={isPending}
+            isDisabled={isLockedByOther}
+            submitLabel={copy.submit}
+            pendingLabel={copy.pending}
+          />
         </form>
       </CardBody>
     </Card>
