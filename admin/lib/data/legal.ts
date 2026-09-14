@@ -2,7 +2,9 @@ import 'server-only'
 
 import { LEGAL_DOCUMENTS, type LegalSlug } from '@/lib/constants/legal'
 import { createClient } from '@/lib/supabase/server'
-import { selectCurrentLegalVersion } from '@/lib/validation/legal'
+import { resolveLegalDocumentState } from '@/lib/validation/legal-state'
+
+import type { LegalDocumentState } from '@/lib/validation/legal-state'
 
 /**
  * 약관 조회 계층 (`legal_documents` + `legal_document_versions`).
@@ -44,9 +46,8 @@ export type LegalDocumentSummary = {
   label: string
   /** 문서 행이 아직 없으면 null(시드 전). 화면은 "미등록"으로 그린다. */
   title: string | null
-  current: LegalVersion | null
-  /** 가장 최근에 만든 개정본. "마지막 수정"의 근거다. */
-  latest: LegalVersion | null
+  /** 시행 중 · 예약 · 초안. 카드의 버튼이 이 세 값으로 갈린다. */
+  state: LegalDocumentState<LegalVersion>
   versionCount: number
 }
 
@@ -90,16 +91,12 @@ export async function listLegalDocuments(): Promise<readonly LegalDocumentSummar
   return LEGAL_DOCUMENTS.map((document) => {
     const row = (data ?? []).find((candidate) => candidate.slug === document.slug)
     const versions = (row?.legal_document_versions ?? []).map(toVersion)
-    const sorted = [...versions].sort((left, right) =>
-      right.createdAt.localeCompare(left.createdAt),
-    )
 
     return {
       slug: document.slug,
       label: document.label,
       title: row?.title ?? null,
-      current: selectCurrentLegalVersion(versions),
-      latest: sorted[0] ?? null,
+      state: resolveLegalDocumentState(versions),
       versionCount: versions.length,
     }
   })

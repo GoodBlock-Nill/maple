@@ -15,6 +15,9 @@ import type { Column } from '@/components/ui/Table'
  * 화면 상태를 컴포넌트가 아니라 **쿼리스트링**에 적는다(`?version=` · `?base=`).
  * 자바스크립트 없이도 동작하고, 운영자가 "이 두 버전을 비교한 화면"을 그대로
  * 링크로 공유할 수 있다.
+ *
+ * `?tab=` 도 링크마다 명시한다. 비교는 이 탭(이력·비교)에 머물러야 두 버전을 잇달아
+ * 견줄 수 있고, 열기·새 초안은 편집 탭으로 넘어가야 바로 손댈 수 있다.
  */
 
 type LegalVersionHistoryProps = {
@@ -77,14 +80,18 @@ export function LegalVersionHistory({
       className: 'w-64',
       cell: (row) => (
         <span className="flex flex-wrap items-center justify-end gap-1.5">
-          <Button href={href(slug, { version: row.id, base: baseId })} variant="ghost" size="sm">
+          <Button
+            href={href(slug, { version: row.id, base: baseId, tab: 'edit' })}
+            variant="ghost"
+            size="sm"
+          >
             보기
           </Button>
-          <Button href={href(slug, { from: row.id })} variant="ghost" size="sm">
+          <Button href={href(slug, { from: row.id, tab: 'edit' })} variant="ghost" size="sm">
             새 초안 만들기
           </Button>
           <Button
-            href={href(slug, { version: selectedId, base: row.id })}
+            href={href(slug, { version: selectedId, base: row.id, tab: 'history' })}
             variant="ghost"
             size="sm"
             aria-label={`${row.version} 과 비교`}
@@ -102,7 +109,7 @@ export function LegalVersionHistory({
         title="버전 이력"
         description="발행한 개정본은 고치지 않고 새 버전을 쌓습니다. 분쟁 시점의 문안을 되짚을 수 있어야 하기 때문입니다."
         action={
-          <Button href={href(slug, { from: 'new' })} variant="secondary" size="sm">
+          <Button href={href(slug, { from: 'new', tab: 'edit' })} variant="secondary" size="sm">
             빈 초안 만들기
           </Button>
         }

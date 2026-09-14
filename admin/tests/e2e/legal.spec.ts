@@ -19,6 +19,10 @@ import type { Page } from '@playwright/test'
  * 화면 단언만으로는 부족하다. 마지막에 사용자 사이트 HTML 을 직접 읽어 새 문단과
  * 새 버전 알약이 나오는지 확인한다.
  *
+ * 화면 규칙도 함께 못 박는다 — 발행본은 **열리기만 하고 고쳐지지 않는다**(에디터
+ * 잠금 + 배너), 발행·예약 저장은 확인창을 한 번 거친다, 초안이 있으면 목록 카드가
+ * 그 초안을 잇도록 권한다.
+ *
  * **운영 데이터를 남기지 않는다.** 테스트가 만든 개정본은 끝에서 서비스 롤로 지우고
  * 캐시를 다시 태워, 시드 발행본(20260918)이 현재 시행본으로 돌아온 것까지 확인한다.
  */
@@ -115,6 +119,19 @@ async function expectClientPolicy(needle: string, shouldContain: boolean): Promi
     .toBe(shouldContain)
 }
 
+/** 목록에서 문서 카드 하나. 카드가 네 장이라 제목으로 좁힌다. */
+function documentCard(page: Page, label: string) {
+  return page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: label, exact: true }) })
+}
+
+/** 탭 이동. 링크라서 클릭 후 URL 이 바뀐다(`?tab=`). */
+async function openTab(page: Page, name: '편집' | '미리보기' | '이력·비교'): Promise<void> {
+  await page.getByRole('link', { name, exact: true }).click()
+  await page.waitForURL(/tab=/u)
+}
+
 /** 편집기 첫 문단 뒤에 새 문단을 끼워 넣는다. */
 async function appendParagraph(page: Page, text: string): Promise<void> {
   const editor = page.getByRole('textbox', { name: '본문' })
@@ -126,7 +143,7 @@ async function appendParagraph(page: Page, text: string): Promise<void> {
   await expect(editor).toContainText(text)
 }
 
-test('약관 목록이 세 문서의 현재 발행 버전을 보여 준다', async ({ page }) => {
+test('약관 목록이 문서마다 시행 중 버전과 다음 할 일을 보여 준다', async ({ page }) => {
   await signInAsAdmin(page)
   await page.goto('/legal')
 
@@ -136,19 +153,55 @@ test('약관 목록이 세 문서의 현재 발행 버전을 보여 준다', asy
     await expect(page.getByRole('heading', { name: label })).toBeVisible()
   }
 
-  await expect(page.getByText(SEED_VERSION).first()).toBeVisible()
+  const card = documentCard(page, '개인정보처리방침')
+
+  /* 같은 날 재개정(20260918-2 …)이 쌓여 있을 수 있어 첫 일치만 본다. */
+  await expect(card.getByText(SEED_VERSION).first()).toBeVisible()
+  /* 모호한 '편집' 은 없앴다 — 발행본은 애초에 고칠 수 없어 그 이름이 사실과 달랐다. */
+  await expect(card.getByRole('link', { name: '편집', exact: true })).toHaveCount(0)
+  await expect(card.getByRole('link', { name: '현재 발행본 보기' })).toBeVisible()
+  await expect(card.getByRole('link', { name: '버전 이력' })).toHaveAttribute(
+    'href',
+    '/legal/privacy?tab=history',
+  )
+
   await page.screenshot({ path: screenshotPath('admin-legal.png'), fullPage: true })
 })
 
-test('개인정보처리방침 편집 화면이 발행본과 이력을 함께 보여 준다', async ({ page }) => {
+test('발행본을 열면 읽기 전용이고 세 탭이 각자 제 몫을 한다', async ({ page }) => {
   await signInAsAdmin(page)
   await page.goto('/legal/privacy')
 
   await expect(page.getByRole('heading', { name: '개인정보처리방침 편집' })).toBeVisible()
-  /* 발행본은 잠긴다 — 문안을 덮어쓰지 않고 새 버전을 쌓는 규칙이 화면에도 보여야 한다. */
-  await expect(page.getByText('이미 발행한 개정본입니다.')).toBeVisible()
+
+  /* 발행본은 잠긴다 — 문안을 덮어쓰지 않고 새 버전을 쌓는 규칙이 화면에도 보여야 한다.
+     안내는 화면 맨 위 배너이고, 다음 행동(새 초안)을 버튼으로 함께 준다. */
+  const banner = page.getByTestId('legal-readonly-banner')
+
+  await expect(banner).toBeVisible()
+  await expect(banner).toContainText('발행된 개정본은 수정할 수 없습니다.')
+  await expect(banner.getByRole('link', { name: '이 버전으로 새 초안 만들기' })).toBeVisible()
+
+  const editor = page.getByRole('textbox', { name: '본문' })
+
+  await expect(editor).toContainText('1. 개인정보의 처리 목적')
+  await expect(editor).not.toBeEditable()
+  // 잠긴 폼에 저장 버튼을 남겨 두면 "눌러도 아무 일이 없는" 버튼이 된다.
+  await expect(page.getByRole('button', { name: '저장' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '굵게' })).toHaveCount(0)
+
+  /* 버전 칩: 지금 노출 중인 버전이 한 줄로 보이고 그 자리에서 열린다. 접두어는
+     시행 전이면 '노출 중' 이라 버전 번호만 본다(로컬 데이터에 따라 갈린다). */
+  await expect(page.getByTestId('legal-version-strip')).toContainText(SEED_VERSION)
+
+  await openTab(page, '미리보기')
   await expect(page.getByTestId('legal-preview')).toContainText('1. 개인정보의 처리 목적')
   await expect(page.getByTestId('legal-preview')).toContainText('시행일 2026년 9월 18일')
+
+  await openTab(page, '이력·비교')
+  await expect(page.getByRole('heading', { name: '버전 이력' })).toBeVisible()
+  /* 새로고침해도 같은 탭이어야 한다(상태가 URL 에 있다). */
+  await page.reload()
   await expect(page.getByRole('heading', { name: '버전 이력' })).toBeVisible()
 
   await page.screenshot({ path: screenshotPath('admin-legal-edit.png'), fullPage: true })
@@ -163,13 +216,14 @@ test('새 초안을 만들어 미리보기로 확인하고 발행하면 사용�
   await signInAsAdmin(page)
   await page.goto('/legal/privacy')
 
-  // 현재 발행본을 복사해 새 초안으로 연다.
-  await page.getByRole('link', { name: '새 초안 만들기' }).first().click()
+  // 현재 발행본을 복사해 새 초안으로 연다 — 잠금 배너가 그 길을 안내한다.
+  await page.getByRole('link', { name: '이 버전으로 새 초안 만들기' }).click()
   /* Link 이동은 클라이언트 전환이라 즉시 끝나지 않는다. URL 과 잠금 해제를 함께
      기다려야 아래 입력이 **이전 화면**(발행본, 잠긴 폼)에 떨어지지 않는다. */
   await page.waitForURL(/from=/u)
-  await expect(page.getByText('이미 발행한 개정본입니다.')).toBeHidden()
+  await expect(page.getByTestId('legal-readonly-banner')).toHaveCount(0)
   await expect(page.getByRole('textbox', { name: '본문' })).toContainText('1. 개인정보의 처리 목적')
+  await expect(page.getByRole('textbox', { name: '본문' })).toBeEditable()
 
   /* 라우트 전환 후에도 폼이 새 초안 기본값으로 다시 마운트됐는지 본다(폼 key). */
   await expect(page.getByRole('radio', { name: /임시저장/u })).toBeChecked()
@@ -179,18 +233,41 @@ test('새 초안을 만들어 미리보기로 확인하고 발행하면 사용�
   await page.getByRole('textbox', { name: '시행일' }).fill(today())
   await page.getByRole('radio', { name: /임시저장/u }).check()
   await page.getByRole('button', { name: '저장' }).click()
+  /* 임시저장은 되돌릴 수 있으므로 묻지 않는다. 확인창이 뜨면 그대로 멈춘다. */
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.waitForURL(/saved=1/u)
 
   // 임시저장 상태의 미리보기에 새 문단이 보인다.
+  await openTab(page, '미리보기')
   await expect(page.getByTestId('legal-preview')).toContainText(E2E_PARAGRAPH)
   await expect(page.getByTestId('legal-preview')).toContainText(`버전 ${E2E_VERSION}`)
 
   // 아직 발행 전이므로 사용자 사이트는 시드 발행본 그대로다.
   await expectClientPolicy(E2E_PARAGRAPH, false)
 
+  /* 초안이 생겼으니 목록 카드의 첫 버튼은 "이어서 편집"이다. */
+  await page.goto('/legal')
+
+  const primary = documentCard(page, '개인정보처리방침').getByTestId('legal-card-primary')
+
+  await expect(primary).toHaveText('초안 이어서 편집')
+  await primary.click()
+  await page.waitForURL(/version=/u)
+  await expect(page.getByRole('textbox', { name: '본문' })).toContainText(E2E_PARAGRAPH)
+
+  // 발행은 되돌릴 수 없어 한 번 더 묻는다.
   await page.getByRole('radio', { name: /^발행/u }).check()
   await page.getByRole('button', { name: '저장' }).click()
-  await expect(page.getByText(`현재 시행 ${E2E_VERSION}`)).toBeVisible({ timeout: 15_000 })
+
+  const confirm = page.getByRole('dialog')
+
+  await expect(confirm).toContainText('저장 즉시 사용자 사이트에 공개됩니다.')
+  await expect(confirm).toContainText('발행한 개정본은 수정할 수 없습니다.')
+  await confirm.getByRole('button', { name: '발행' }).click()
+  /* 발행 직후 칩이 바뀐다 — 머리글 설명에도 같은 문구가 있어 칩만 본다. */
+  await expect(page.getByTestId('legal-version-strip')).toContainText(`시행 중 ${E2E_VERSION}`, {
+    timeout: 15_000,
+  })
 
   await expectClientPolicy(E2E_PARAGRAPH, true)
   /* 알약 문구는 HTML 에서 `버전 <!-- -->20260930` 으로 쪼개져 나온다(React 텍스트
@@ -205,11 +282,11 @@ test('새 초안을 만들어 미리보기로 확인하고 발행하면 사용�
 
 test('버전 이력에서 두 개정본을 비교하면 추가된 문단만 잡힌다', async ({ page }) => {
   await signInAsAdmin(page)
-  await page.goto('/legal/privacy')
+  await page.goto('/legal/privacy?tab=history')
 
-  const seedRow = page.getByRole('row', { name: new RegExp(SEED_VERSION, 'u') })
-
-  await seedRow.getByRole('link', { name: /비교/u }).click()
+  /* 같은 날 재개정(20260918-2 …)이 쌓여 있어 행 이름으로는 좁혀지지 않는다.
+     비교 버튼의 aria-label 이 버전을 통째로 담고 있어 그것으로 정확히 집는다. */
+  await page.getByRole('link', { name: `${SEED_VERSION} 과 비교`, exact: true }).click()
 
   const diff = page.getByRole('heading', { name: `${SEED_VERSION} → ${E2E_VERSION} 비교` })
 
