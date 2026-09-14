@@ -154,7 +154,7 @@
 - **`image/*`** — 96×96 썸네일 버튼 → 누르면 `Dialog` 안에서 원본(최대 70vh). **새 탭으로 열지 않는다**(서명 URL 이 주소창·히스토리에 남는다). `next/image` 도 쓰지 않는다(5분 뒤 만료되는 URL 을 최적화 캐시가 붙들면 깨진 이미지가 남는다).
 - **그 밖(PDF 등)** — `{url}&download={파일명}` 링크(새 탭). Storage 의 `download` 파라미터로 Content-Disposition 을 붙여 원래 이름으로 받게 한다.
 
-접수 시 상한은 사용자 사이트 상수(`lib/supabase/storage.ts`)가 소유한다: 이미지·PDF 5MB/개 · 최대 3개 · 합계 12MB, 영상 100MB/개 · 최대 2개. DB 도 같은 규칙을 건다 — `inquiries_attachments_max_5`(합계 5) · `inquiries_attachments_file_kind_max_3` · `inquiries_attachments_video_kind_max_2`(모두 `inquiry_attachment_kind_count()` 로 판정, 마이그레이션 20260911000600). 버킷 `inquiry-attachments` 의 `allowed_mime_types` 는 이미지 · PDF · zip · txt · 영상 4종을 연다.
+접수 시 상한은 사용자 사이트 상수(`lib/supabase/storage.ts`)가 소유한다: 형식(이미지·PDF·영상) 관계없이 최대 5개 · 합계 200MB(오너 지시, 2026-09-14 — 종류별 상한 없음). DB 도 같은 두 숫자만 건다 — `inquiries_attachments_max_5`(길이 ≤5) · `inquiries_attachments_total_bytes_max_200mb`(`inquiry_attachments_total_bytes()` 로 판정, 마이그레이션 20260914000500). 버킷 `inquiry-attachments` 의 `allowed_mime_types` 는 이미지 · PDF · zip · txt · 영상 4종을 연다.
 
 ### 4.2 답변 스레드 — 웹 (`InquiryReplyThread`)
 

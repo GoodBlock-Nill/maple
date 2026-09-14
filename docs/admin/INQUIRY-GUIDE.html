@@ -160,14 +160,14 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
     <li><a href="#s8"><span class="n">08</span>운영 체크리스트</a></li>
     <li><a href="#s9"><span class="n">09</span>파일 인덱스</a></li>
   </ol>
-  <p class="meta">최종 갱신 2026-09-14<br>기준 커밋 <code>6edbcf9</code><br>개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4<br>변경 이력 <code>docs/admin/INQUIRY-CHANGELOG.md</code><br>종류(kind) 설계 <code>docs/reference/inquiry-kinds-spec.md</code><br>대화 스레드 설계 <code>docs/reference/inquiry-thread-spec.md</code><br>고객지원 v2 시안 <code>docs/reference/figma/support-v2-spec.md</code></p>
+  <p class="meta">최종 갱신 2026-09-14<br>기준 커밋 <code>6fd50de</code><br>개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4<br>변경 이력 <code>docs/admin/INQUIRY-CHANGELOG.md</code><br>종류(kind) 설계 <code>docs/reference/inquiry-kinds-spec.md</code><br>대화 스레드 설계 <code>docs/reference/inquiry-thread-spec.md</code><br>고객지원 v2 시안 <code>docs/reference/figma/support-v2-spec.md</code></p>
 </nav>
 
 <main>
 <header class="title">
   <div class="eyebrow">Feature Handoff · 고객지원</div>
   <h1>고객지원(1:1 문의 · 버그제보 · 불법이용제보)</h1>
-  <p class="lede">고객지원은 <strong>한 테이블(<code>inquiries</code>)에 두 경로</strong>가 들어옵니다 — 사용자 사이트의 웹 폼(<code>source='web'</code>)과 메일 수신 함수(<code>source='email'</code>). 문의의 <strong>분류·세부 유형·프리필 양식은 코드가 아니라 DB(<code>inquiry_categories</code>)가 소유</strong>하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 크기 때문에 <strong>이미지·PDF 와 영상이 서로 다른 길</strong>로 스토리지에 도착합니다. 2026-09-14 부터는 같은 테이블 위에 <strong>접수 창구(kind)</strong> 축이 하나 더 있습니다 — 1:1 문의 · 버그제보 · 불법이용제보 세 창구가 같은 폼·같은 목록·같은 권한·같은 감사 로그를 공유하고 분류 하나만 다릅니다(§01-4).</p>
+  <p class="lede">고객지원은 <strong>한 테이블(<code>inquiries</code>)에 두 경로</strong>가 들어옵니다 — 사용자 사이트의 웹 폼(<code>source='web'</code>)과 메일 수신 함수(<code>source='email'</code>). 문의의 <strong>분류·세부 유형·프리필 양식은 코드가 아니라 DB(<code>inquiry_categories</code>)가 소유</strong>하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 <strong>형식(이미지·PDF·영상)에 관계없이 브라우저 → 스토리지로 같은 길</strong>을 거쳐 도착합니다(2026-09-14 부터 — 예전에는 이미지만 서버 액션 본문을 탔습니다). 같은 날부터 같은 테이블 위에 <strong>접수 창구(kind)</strong> 축이 하나 더 있습니다 — 1:1 문의 · 버그제보 · 불법이용제보 세 창구가 같은 폼·같은 목록·같은 권한·같은 감사 로그를 공유하고 분류 하나만 다릅니다(§01-4).</p>
   <div class="chips">
     <span class="chip db"><span class="dot"></span>DB · 마이그레이션 16개 · RPC 8개</span>
     <span class="chip client"><span class="dot"></span>사용자 사이트 · 접수 · 수정 · 취소 · 열람</span>
@@ -181,7 +181,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
     <div><span class="k">Client</span><span class="v">접수 · 수정 · 취소</span><span class="s done">배포됨</span><span class="d"><code>/support</code> · <code>/support/bug</code> · <code>/support/report</code> · <code>/support/inquiries</code> · 마이페이지 문의내역</span></div>
     <div><span class="k">Client</span><span class="v">고객지원 v2 디자인</span><span class="s done">2026-09-11</span><span class="d">커밋 <code>6acbe50</code> · <code>0f186be</code> · 카드·목록·상세·폼 재구성, §02-7</span></div>
     <div><span class="k">Client</span><span class="v">카테고리 · 프리필</span><span class="s done">2026-09-10</span><span class="d">커밋 <code>b78dfd7</code> · 시드 8종(<code>docs/1on1.md</code>)</span></div>
-    <div><span class="k">Client</span><span class="v">영상 첨부 직접 업로드</span><span class="s done">2026-09-10</span><span class="d">커밋 <code>2e3f6ae</code> · 각 100MB · 2개</span></div>
+    <div><span class="k">Client</span><span class="v">첨부 — 형식 무관 직접 업로드</span><span class="s done">2026-09-14</span><span class="d">커밋 <code>2e3f6ae</code>(영상, 09-10) → <code>6fd50de</code>(형식 통일, 09-14) · 최대 5개 · 합계 200MB · §03</span></div>
     <div><span class="k">Client</span><span class="v">세부 유형 · 계정 ID 필수</span><span class="s done">2026-09-11</span><span class="d">커밋 <code>af1a886</code> · 첨부만 선택</span></div>
     <div><span class="k">Admin</span><span class="v">고객지원 모듈("홈페이지 문의")</span><span class="s done">배포됨</span><span class="d"><code>/inquiries</code> · <code>/inquiries/categories</code> · 권한 <code>inquiries</code>. 메뉴 이름 2026-09-14 개명</span></div>
     <div><span class="k">Admin</span><span class="v">운영자 협업</span><span class="s done">2026-09-11</span><span class="d">배정 · 작성 중 잠금 · 충돌 · 내부 메모 — <code>20260911000300</code> · §05-9</span></div>
@@ -193,7 +193,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 
 <section id="s1">
   <div class="sec-head"><span class="num">01</span><h2>개요 · 용어</h2></div>
-  <p>이 문서는 <strong>기준 커밋 <code>6edbcf9</code>(2026-09-14)</strong> 의 코드를 그대로 기술합니다. 무엇이 바뀌었는지만 훑으려면 <code>docs/admin/INQUIRY-CHANGELOG.md</code> 를 보세요. 설계 배경은 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.3~§5.4 와 <code>docs/1on1.md</code>(카테고리 원안), 이메일 쪽은 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>EMAIL-INQUIRY-ACTIVATION.md</code>, 대화 스레드 설계는 <code>docs/reference/inquiry-thread-spec.md</code> 에 있습니다.</p>
+  <p>이 문서는 <strong>기준 커밋 <code>6fd50de</code>(2026-09-14)</strong> 의 코드를 그대로 기술합니다. 무엇이 바뀌었는지만 훑으려면 <code>docs/admin/INQUIRY-CHANGELOG.md</code> 를 보세요. 설계 배경은 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.3~§5.4 와 <code>docs/1on1.md</code>(카테고리 원안), 이메일 쪽은 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>EMAIL-INQUIRY-ACTIVATION.md</code>, 대화 스레드 설계는 <code>docs/reference/inquiry-thread-spec.md</code> 에 있습니다.</p>
 
   <h3>1.1 무엇이 언제 들어갔나</h3>
   <div class="tbl"><table>
@@ -353,7 +353,7 @@ flowchart TD
       <tr><td>세부 문의 유형</td><td><code>type</code></td><td>필수</td><td><strong>고른 카테고리의</strong> <code>subtypes</code> 안. 비어 있으면 <code>기타</code> 하나만</td><td><code>세부 문의 유형을 선택해 주세요.</code>(미선택·엇갈린 조합 모두 같은 문구)</td></tr>
       <tr><td>제목</td><td><code>title</code></td><td>필수</td><td>2~100자 · CRLF → LF 정규화 후 trim</td><td><code>제목은 2자 이상 입력해 주세요.</code> / <code>제목은 100자 이하로 입력해 주세요.</code></td></tr>
       <tr><td>문의 내용</td><td><code>content</code></td><td>필수</td><td>5~4000자(= 프리필 상한 2000 × 2) · 내용에 맞춰 늘어나는 textarea(150~420px)</td><td><code>내용은 5자 이상 입력해 주세요.</code> / <code>내용은 4000자 이하로 입력해 주세요.</code></td></tr>
-      <tr><td>첨부파일</td><td><code>attachments</code> · <code>videoAttachments</code></td><td><strong>선택</strong></td><td>§03</td><td>§03</td></tr>
+      <tr><td>첨부파일</td><td><code>pendingAttachments</code></td><td><strong>선택</strong></td><td>§03</td><td>§03</td></tr>
       <tr><td>개인정보 수집 동의</td><td><code>consent</code></td><td>필수(접수만)</td><td>체크박스 — 값이 아니라 <strong>존재 여부</strong>로 판정. 수정 화면에는 없습니다</td><td><code>개인정보 수집 및 이용에 동의해 주세요.</code></td></tr>
     </tbody>
   </table></div>
@@ -375,13 +375,12 @@ flowchart TD
   <div class="conveyor">
     <div class="stage"><span class="no">1</span><span class="what"><b>로그인 재확인</b><code>getCurrentUser()</code> — 프록시의 검사는 낙관적입니다</span><span class="out reject">로그인 후 이용할 수 있습니다.</span></div>
     <div class="stage"><span class="no">2</span><span class="what"><b>스키마 파싱</b>허용 카테고리·세부 유형을 <code>getInquiryCategories()</code> 로 <strong>매번 새로</strong> 읽어 스키마를 만듭니다 — 상수로 굳히면 운영자가 추가한 카테고리가 서버에서 거절됩니다</span><span class="out reject">필드 오류</span></div>
-    <div class="stage"><span class="no">3</span><span class="what"><b>영상 목록 파싱</b><code>videoAttachments</code> 숨은 필드의 JSON. 모양이 어긋나면 <code>null</code> — 빈 목록과 구분합니다</span><span class="out reject">영상 첨부 정보가 올바르지 않습니다.</span></div>
-    <div class="stage"><span class="no">4</span><span class="what"><b>첨부 재검증</b>이미지 개수·형식·각 5MB·합계 12MB. 영상 수를 함께 세어 총 3개를 넘지 않게 합니다</span><span class="out reject">첨부 오류 문구</span></div>
+    <div class="stage"><span class="no">3</span><span class="what"><b>첨부 목록 파싱</b><code>pendingAttachments</code> 숨은 필드의 JSON(형식 무관, 2026-09-14 부터 하나로 통일). 모양이 어긋나면 <code>null</code> — 빈 목록과 구분합니다</span><span class="out reject">첨부 정보가 올바르지 않습니다.</span></div>
+    <div class="stage"><span class="no">4</span><span class="what"><b>첨부 재검증</b>형식에 관계없이 개수·합계만 봅니다(최대 5개 · 합계 200MB, 종류별 상한 없음)</span><span class="out reject">첨부 오류 문구</span></div>
     <div class="stage"><span class="no">5</span><span class="what"><b>도배 판정</b>마지막 접수 시각 기준 <strong>30초</strong>(<code>WRITE_COOLDOWN_SECONDS</code>). 메모리 카운터가 아니라 DB 의 <code>created_at</code> 을 보므로 인스턴스가 늘어도 같은 결론이 납니다</span><span class="out reject">너무 빠르게 작성하고 있습니다. N초 후에…</span></div>
-    <div class="stage"><span class="no">6</span><span class="what"><b>이미지 업로드</b><code>&lt;uid&gt;/&lt;uuid&gt;-&lt;파일명&gt;</code>. 도중 실패하면 이미 올린 것을 지웁니다</span><span class="out drop">롤백</span></div>
-    <div class="stage"><span class="no">7</span><span class="what"><b>영상 확정</b>pending 오브젝트를 검증하고 접수 자리로 <code>move</code>. 실패하면 이미지 업로드분을 되돌립니다</span><span class="out drop">롤백</span></div>
-    <div class="stage"><span class="no">8</span><span class="what"><b>INSERT</b><code>status:'pending'</code> 을 명시합니다 — <code>inquiries_insert_own</code> 정책이 <code>pending</code> 만 허용하므로 기본값이 바뀌어도 어긋나지 않습니다</span><span class="out pass">id 반환</span></div>
-    <div class="stage"><span class="no">9</span><span class="what"><b>무효화 · 이동</b><code>revalidatePath('/support/inquiries')</code> · <code>revalidatePath('/support')</code> 뒤 <code>redirect(상세?submitted=1)</code></span><span class="out pass">접수 완료 모달</span></div>
+    <div class="stage"><span class="no">6</span><span class="what"><b>첨부 확정</b><code>claimFormUploads</code> — pending 오브젝트를 스토리지에 다시 물어 검증하고 접수 자리(<code>&lt;uid&gt;/&lt;uuid&gt;-&lt;파일명&gt;</code>)로 <code>move</code>(이미지·PDF·영상 공통 경로)</span><span class="out drop">롤백</span></div>
+    <div class="stage"><span class="no">7</span><span class="what"><b>INSERT</b><code>status:'pending'</code> 을 명시합니다 — <code>inquiries_insert_own</code> 정책이 <code>pending</code> 만 허용하므로 기본값이 바뀌어도 어긋나지 않습니다</span><span class="out pass">id 반환</span></div>
+    <div class="stage"><span class="no">8</span><span class="what"><b>무효화 · 이동</b><code>revalidatePath('/support/inquiries')</code> · <code>revalidatePath('/support')</code> 뒤 <code>redirect(상세?submitted=1)</code></span><span class="out pass">접수 완료 모달</span></div>
   </div>
   <div class="callout rule"><span class="icon">순서</span><p><code>redirect()</code> 는 <strong>예외를 던집니다</strong>. 그래서 성공 경로의 마지막에서만 부르고, 그 앞의 롤백은 전부 끝나 있어야 합니다.</p></div>
 
@@ -447,54 +446,54 @@ flowchart TD
       <tr><td>접수 취소</td><td>문구 없음 — 스레드 자리에 이미 "접수가 취소된 문의입니다"가 서 있습니다</td></tr>
     </tbody>
   </table></div>
-  <p>RPC 실패 코드 → 문구(<code>INQUIRY_REPLY_ERROR_MESSAGE</code>): <code>not_owner</code> "문의를 찾을 수 없습니다."(없는 문의·남의 문의를 가르지 않습니다) · <code>cancelled</code> "접수가 취소된 문의에는 답장할 수 없습니다." · <code>not_in_progress</code>·<code>no_operator_reply</code>·<code>too_many</code> 는 위 표와 같은 문구 · <code>invalid</code> "답장은 1~2000자, 첨부는 이미지·PDF 3개 + 영상 2개까지 보낼 수 있습니다." 화면 판정과 RPC 판정(§04-4)은 <strong>같은 순서</strong>입니다 — 폼은 보이는데 보내면 거절되는 상태를 만들지 않기 위해서입니다.</p>
+  <p>RPC 실패 코드 → 문구(<code>INQUIRY_REPLY_ERROR_MESSAGE</code>): <code>not_owner</code> "문의를 찾을 수 없습니다."(없는 문의·남의 문의를 가르지 않습니다) · <code>cancelled</code> "접수가 취소된 문의에는 답장할 수 없습니다." · <code>not_in_progress</code>·<code>no_operator_reply</code>·<code>too_many</code> 는 위 표와 같은 문구 · <code>invalid</code> "답장은 1~2000자, 첨부는 형식에 관계없이 최대 5개 · 총 200MB 까지 보낼 수 있습니다." 화면 판정과 RPC 판정(§04-4)은 <strong>같은 순서</strong>입니다 — 폼은 보이는데 보내면 거절되는 상태를 만들지 않기 위해서입니다.</p>
 </section>
 
 <section id="s3">
   <div class="sec-head"><span class="num">03</span><h2>첨부 파일</h2></div>
-  <p class="src">lib/supabase/storage.ts · lib/supabase/upload-inquiry-video.ts · lib/actions/inquiry-attachments.ts · lib/actions/inquiry-videos.ts · components/support/InquiryAttachmentField.tsx</p>
-  <p>한 문의에 붙는 첨부는 <strong>이미지·PDF 3개 + 영상 2개, 합계 최대 5개</strong>입니다(오너 지시, 2026-09-11 — 이전에는 셋을 합쳐 3개였습니다). DB CHECK 는 세 개입니다 — <code>inquiries_attachments_max_5</code>(합계 ≤5) · <code>inquiries_attachments_file_kind_max_3</code>(영상이 아닌 것 ≤3) · <code>inquiries_attachments_video_kind_max_2</code>(영상 ≤2, 마이그레이션 <code>20260911000600</code>). 종류 판정은 jsonb 원소의 <code>mimeType</code> 이 <code>video/</code> 로 시작하는지로 봅니다(별도 열이 없습니다).</p>
+  <p class="src">lib/supabase/storage.ts · lib/supabase/upload-inquiry-file.ts · lib/actions/inquiry-uploads.ts · lib/validation/inquiry-upload.ts · components/support/InquiryAttachmentField.tsx</p>
+  <p>한 문의에 붙는 첨부는 <strong>형식(이미지·PDF·영상)에 관계없이 최대 5개 · 합계 200MB</strong>입니다(오너 지시, 2026-09-14 — 종류별 상한과 이미지 개당 5MB·합계 12MB 를 없애고 하나로 합쳤습니다. 이전에는 이미지·PDF 3개 + 영상 2개였습니다). DB CHECK 는 두 개입니다 — <code>inquiries_attachments_max_5</code>(길이 ≤5) · <code>inquiries_attachments_total_bytes_max_200mb</code>(<code>inquiry_attachments_total_bytes()</code> 로 잰 합계 ≤200MB, 마이그레이션 <code>20260914000500</code>). 종류별 CHECK(<code>inquiries_attachments_file_kind_max_3</code> · <code>inquiries_attachments_video_kind_max_2</code>, <code>20260911000600</code>)는 이 마이그레이션에서 지웠습니다.</p>
 
   <div class="tbl"><table>
-    <thead><tr><th></th><th>이미지 · PDF</th><th>영상</th></tr></thead>
+    <thead><tr><th></th><th>형식 무관(이미지 · PDF · 영상)</th></tr></thead>
     <tbody>
-      <tr><th>형식</th><td>jpg · png · gif · webp · pdf</td><td>mp4 · mov · webm · m4v</td></tr>
-      <tr><th>크기</th><td>각 <strong>5MB</strong> · <strong>합계 12MB</strong></td><td>각 <strong>100MB</strong>(합계 제한 없음)</td></tr>
-      <tr><th>개수</th><td><strong>3개까지</strong>(영상과 별도 자리)</td><td><strong>2개까지</strong>(이미지·PDF 와 별도 자리)</td></tr>
-      <tr><th>전송</th><td>폼 → 서버 액션 본문(<code>multipart/form-data</code>) → 스토리지</td><td>브라우저 → <strong>스토리지 직접</strong>, 폼에는 경로만</td></tr>
-      <tr><th>전처리</th><td><code>downscaleImage()</code> — 최대 변 2000px, GIF 는 건너뜁니다(캔버스를 거치면 첫 프레임만 남습니다)</td><td>없음. 확장자는 <strong>MIME 에서 뽑습니다</strong></td></tr>
-      <tr><th>경로</th><td><code>&lt;uid&gt;/&lt;uuid&gt;-&lt;파일명&gt;</code></td><td>접수 전 <code>&lt;uid&gt;/pending/&lt;uuid&gt;.&lt;ext&gt;</code> → 확정 시 왼쪽과 같은 자리로 <code>move</code></td></tr>
-      <tr><th>상수</th><td colspan="2"><code>INQUIRY_FILE_MAX_COUNT=3</code> · <code>MAX_BYTES=5MiB</code> · <code>TOTAL_MAX_BYTES=12MiB</code> · <code>INQUIRY_VIDEO_MAX_BYTES=100MiB</code> · <code>INQUIRY_VIDEO_MAX_COUNT=2</code> · <code>INQUIRY_ATTACHMENT_MAX_TOTAL=5</code> · <code>SERVER_ACTION_BODY_SIZE_LIMIT='14mb'</code></td></tr>
+      <tr><th>형식</th><td>jpg · png · gif · webp · pdf · mp4 · mov · webm · m4v</td></tr>
+      <tr><th>크기</th><td>파일 하나의 상한이 곧 합계 상한입니다 — <strong>각 · 합계 모두 200MB</strong></td></tr>
+      <tr><th>개수</th><td><strong>5개까지</strong>(종류 구분 없이 함께 셉니다)</td></tr>
+      <tr><th>전송</th><td>브라우저 → <strong>스토리지 직접</strong>(서명 업로드 URL), 폼에는 경로만 실립니다</td></tr>
+      <tr><th>전처리</th><td>이미지만 <code>downscaleImage()</code> — 최대 변 2000px, GIF 는 건너뜁니다(캔버스를 거치면 첫 프레임만 남습니다). 확장자는 <strong>MIME 에서 뽑습니다</strong></td></tr>
+      <tr><th>경로</th><td><code>&lt;uid&gt;/pending/&lt;uuid&gt;.&lt;ext&gt;</code> → 접수 확정 시 <code>&lt;uid&gt;/&lt;uuid&gt;-&lt;파일명&gt;</code> 으로 <code>move</code></td></tr>
+      <tr><th>상수</th><td><code>INQUIRY_ATTACHMENT_MAX_COUNT=5</code> · <code>INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES=200MiB</code> · <code>INQUIRY_ATTACHMENT_FILE_MAX_BYTES</code>(합계와 같은 값) · <code>SERVER_ACTION_BODY_SIZE_LIMIT='2mb'</code></td></tr>
     </tbody>
   </table></div>
-  <p>첨부 안내 문구는 <code>lib/constants/inquiry-attachment.ts</code> 의 <code>ATTACHMENT_NOTICE_LINES</code> 가 이 표의 상수들에서 두 줄로 조합합니다(시안 v2, §02-7) — <code>이미지·PDF 5MB/개 · 최대 3개 · 총 12MB / 영상 100MB/개 · 최대 2개 · 총 200MB</code> / <code>(JPG, PNG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)</code>.</p>
+  <p><strong>2026-09-14 부터 이미지·PDF 도 영상과 같은 길을 씁니다.</strong> 예전에는 이미지만 서버 액션 본문(<code>multipart/form-data</code>)에 실렸고 그 본문 상한이 곧 이미지 상한이었습니다(그래서 "사진은 3장 5MB, 영상은 2편 100MB" 같은 표가 나왔습니다). 첨부 안내 문구는 <code>lib/constants/inquiry-attachment.ts</code> 의 <code>ATTACHMENT_NOTICE_LINES</code> 가 이 표의 상수들에서 두 줄로 조합합니다 — <code>이미지·PDF·영상 형식에 관계없이 최대 5개 · 총 200MB</code> / <code>(JPG, PNG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)</code>.</p>
 
-  <div class="callout rule"><span class="icon">14mb</span><p>합계 12MB 는 <strong>버킷이 아니라 서버 액션 본문 상한</strong> 때문입니다. <code>next.config.ts</code> 의 <code>experimental.serverActions.bodySizeLimit</code> 은 <code>SERVER_ACTION_BODY_SIZE_LIMIT</code>(<code>'14mb'</code>) 한 상수를 그대로 씁니다 — 두 값을 한곳에 두어야 한쪽만 올라가 "검증은 통과하는데 요청이 끊기는" 조합이 생기지 않습니다. 본문이 상한을 넘으면 액션이 <strong>실행되기도 전에</strong> 요청이 500 으로 끊겨 아무 문구도 돌려줄 수 없고 사용자는 입력을 통째로 잃습니다. 그래서 합계 검사는 <strong>보내기 전</strong> 화면에서 합니다.</p></div>
+  <div class="callout rule"><span class="icon">2mb</span><p>첨부는 더는 서버 액션 본문에 실리지 않습니다(경로 몇 줄의 JSON 만 갑니다). 그래서 <code>next.config.ts</code> 의 <code>experimental.serverActions.bodySizeLimit</code>(<code>SERVER_ACTION_BODY_SIZE_LIMIT</code>) 을 기본값을 살짝 넘는 <code>'2mb'</code> 로 좁혔습니다 — 넓게 열어 두면 파일이 다시 본문으로 흘러도 아무도 눈치채지 못한 채 서버가 한 요청에 그만큼의 메모리를 받아 내게 됩니다. 상한은 이제 버킷의 <code>file_size_limit</code>(200MiB)과 DB CHECK 만 맞추면 됩니다.</p></div>
 
-  <h3>3.1 영상 경로 — 왜 직접 올리나</h3>
-  <p>상한을 100MB 로 올리는 선택지는 없습니다. 올리면 <strong>모든</strong> 서버 액션이 한 요청에 그만큼을 받아 낼 수 있게 되고, 그래도 파일은 결국 서버를 한 번 더 거쳐 스토리지로 갑니다. 그래서 파일은 브라우저 → 스토리지로 바로 보내고 폼에는 <strong>경로만</strong> 싣습니다.</p>
-  <div class="diagram"><p class="cap">영상 첨부 — 서명 업로드 URL · 진행률 · 취소 · 서버 재검증 · 확정 이동</p>
+  <h3>3.1 직접 업로드 경로 — 왜 직접 올리나</h3>
+  <p>서버 액션 본문으로 200MB 를 받게 하는 선택지는 없습니다. 올리면 <strong>모든</strong> 서버 액션이 한 요청에 그만큼을 받아 낼 수 있게 되고, 그래도 파일은 결국 서버를 한 번 더 거쳐 스토리지로 갑니다. 그래서 이미지·PDF·영상 모두 브라우저 → 스토리지로 바로 보내고 폼에는 <strong>경로만</strong> 싣습니다(2026-09-14 부터 — 예전에는 영상만 이 길이었습니다).</p>
+  <div class="diagram"><p class="cap">첨부 — 서명 업로드 URL · 진행률 · 취소 · 서버 재검증 · 확정 이동(형식 무관)</p>
 <pre class="mermaid">
 sequenceDiagram
     autonumber
     participant U as 사용자
-    participant B as 브라우저<br/>useInquiryVideos
+    participant B as 브라우저<br/>useInquiryUploads
     participant S as Supabase Storage<br/>inquiry-attachments
     participant A as 서버 액션<br/>createInquiry
     participant SR as 서비스 롤 클라이언트
     participant DB as inquiries
 
-    U->>B: 파일 선택 · 영상 MIME
-    B->>B: validateInquiryVideo<br/>형식 → 크기 → 영상 2개 → 전체 3개
+    U->>B: 파일 선택(이미지 · PDF · 영상 무관)
+    B->>B: validateInquiryAttachments<br/>형식 → 개수 ≤5 → 합계 ≤200MB
     B->>S: createSignedUploadUrl(uid/pending/uuid.ext)
     Note over S: inquiry_attachments_insert_own 정책이<br/>여기서 이미 남의 uid 를 거절
     S-->>B: signedUrl
     B->>S: XHR PUT · x-upsert:false
     S-->>B: progress 이벤트 → 진행률
     U-->>B: 취소를 누르면 xhr.abort() + 조각 삭제
-    B->>B: 완료 행을 videoAttachments JSON 으로
+    B->>B: 완료 행을 pendingAttachments JSON 으로
     U->>A: 폼 제출 · 경로 · 이름 · 크기 · MIME
-    A->>SR: claimFormVideos
+    A->>SR: claimFormUploads
     SR->>S: list(uid/pending)
     S-->>SR: 실제 크기 · mimetype
     Note over SR: 폼이 신고한 숫자가 아니라<br/>스토리지가 아는 값으로 판정
@@ -505,17 +504,17 @@ sequenceDiagram
 </pre></div>
 
   <h3>3.2 서버가 다시 보는 세 가지</h3>
-  <p class="src">lib/actions/inquiry-videos.ts <code>claimPendingVideos</code></p>
+  <p class="src">lib/actions/inquiry-uploads.ts <code>claimPendingUploads</code>(예전 <code>inquiry-videos.ts</code> <code>claimPendingVideos</code> 를 형식 무관으로 일반화한 것입니다)</p>
   <ol class="steps">
     <li><strong>경로가 이 사용자의 pending 인가</strong> — <code>isInquiryPendingPath(path, userId)</code> 가 uid · 폴더 이름 · <strong>깊이 3</strong> 을 모두 못 박습니다. 남의 uid 로 시작하는 경로를 그대로 옮기면 남의 첨부를 내 문의로 끌어오는 길이 열립니다.</li>
-    <li><strong>오브젝트가 실제로 있고 규칙 안인가</strong> — <code>list()</code> 로 pending 폴더를 한 번 훑어 <code>metadata.size</code> · <code>metadata.mimetype</code> 을 읽습니다. 폼이 신고한 값을 믿으면 100MB 제한이 "100 이라고 적어 보내면 통과하는" 규칙이 됩니다.</li>
+    <li><strong>오브젝트가 실제로 있고 규칙 안인가</strong> — <code>list()</code> 로 pending 폴더를 한 번 훑어 <code>metadata.size</code> · <code>metadata.mimetype</code> 을 읽습니다. 폼이 신고한 값을 믿으면 200MB 제한이 "200 이라고 적어 보내면 통과하는" 규칙이 됩니다.</li>
     <li><strong>목적지가 자기 폴더인가</strong> — <code>isUserScopedPath()</code> 를 옮기기 직전에 한 번 더 겁니다.</li>
   </ol>
-  <div class="callout warn"><span class="icon">경계</span><p>옮기는 주체는 <strong>서비스 롤</strong>입니다. <code>move</code> 는 <code>storage.objects</code> 의 UPDATE 인데 이 버킷에는 사용자용 UPDATE 정책이 없습니다(관리자 전용 <code>inquiry_attachments_admin_write</code> 뿐). 즉 <strong>RLS 가 이 이동을 막아 주지 않습니다</strong> — 위 세 검사가 유일한 경계입니다. 서비스 롤 키가 없는 환경에서는 <code>createVideoStorageClient()</code> 가 <code>null</code> 을 돌려주고 <strong>영상 첨부만</strong> 거절됩니다(<code>영상 첨부를 처리할 수 없습니다…</code>) — 영상 없는 접수는 평소대로 됩니다.</p></div>
+  <div class="callout warn"><span class="icon">경계</span><p>옮기는 주체는 <strong>서비스 롤</strong>입니다. <code>move</code> 는 <code>storage.objects</code> 의 UPDATE 인데 이 버킷에는 사용자용 UPDATE 정책이 없습니다(관리자 전용 <code>inquiry_attachments_admin_write</code> 뿐). 즉 <strong>RLS 가 이 이동을 막아 주지 않습니다</strong> — 위 세 검사가 유일한 경계입니다. 서비스 롤 키가 없는 환경에서는 <code>createUploadStorageClient()</code> 가 <code>null</code> 을 돌려주고 <strong>첨부가 있는 접수만</strong> 거절됩니다(<code>첨부파일을 처리할 수 없습니다…</code>) — 첨부 없는 접수는 평소대로 됩니다.</p></div>
 
   <h3>3.3 버려진 pending 청소</h3>
   <div class="kv">
-    <div><div class="k">왜 남나</div><div class="v">폼에 영상만 올려 두고 떠나면 어떤 문의도 참조하지 않는 오브젝트가 비공개 버킷에 쌓입니다</div></div>
+    <div><div class="k">왜 남나</div><div class="v">폼에 파일만 올려 두고 접수하지 않고 떠나면 어떤 문의도 참조하지 않는 오브젝트가 비공개 버킷에 쌓입니다</div></div>
     <div><div class="k">조회</div><div class="v"><code>public.stale_inquiry_pending_attachments(p_cutoff_hours=24, p_limit=500)</code> — <code>SECURITY DEFINER</code> · 실행 권한 <strong><code>service_role</code> 뿐</strong></div></div>
     <div><div class="k">판정</div><div class="v"><code>bucket_id='inquiry-attachments'</code> 이고 경로 <strong>두 번째 세그먼트가 <code>pending</code></strong> 이며 생성 24시간 경과</div></div>
     <div><div class="k">삭제</div><div class="v">Edge Function <code>purge-withdrawn</code> 이 경로를 받아 <strong>Storage API</strong> 로 지웁니다(응답의 <code>pendingAttachmentsRemoved</code>)</div></div>
@@ -542,7 +541,7 @@ sequenceDiagram
   <ul>
     <li>사용자 상세와 관리자 상세 <strong>모두 5분(300초)짜리 서명 URL</strong> 을 <strong>세션 클라이언트로</strong> 발급합니다. 서비스 롤로 서명하면 <code>inquiry_attachments_read_own</code> 검사가 사라져 코드 실수 하나가 곧 남의 첨부 노출이 됩니다.</li>
     <li><code>next/image</code> 를 쓰지 않습니다 — 최적화기는 만료되는 URL 을 캐시하고, 통과시키려면 스토리지 호스트를 <code>remotePatterns</code> 에 열어야 합니다(= 임의 오브젝트 프록시 경로가 생깁니다).</li>
-    <li><strong>영상은 그 자리에서 재생</strong>합니다(<code>&lt;video controls preload="metadata"&gt;</code>). 새 탭으로 열면 서명 URL 이 주소창·방문 기록에 남고 만료 뒤에는 되돌아올 수도 없습니다. <code>preload="metadata"</code> 라 상세를 여는 것만으로 100MB 를 내려받지 않습니다.</li>
+    <li><strong>영상은 그 자리에서 재생</strong>합니다(<code>&lt;video controls preload="metadata"&gt;</code>). 새 탭으로 열면 서명 URL 이 주소창·방문 기록에 남고 만료 뒤에는 되돌아올 수도 없습니다. <code>preload="metadata"</code> 라 상세를 여는 것만으로 원본(최대 200MB)을 내려받지 않습니다.</li>
     <li>내려받기는 <code>?…&amp;download=&lt;파일명&gt;</code> 질의 파라미터로 붙입니다 — <code>&lt;a download&gt;</code> 는 <strong>동일 출처에서만</strong> 동작해서 서명 URL(Supabase 도메인)에는 듣지 않습니다.</li>
     <li>서명에 실패한 항목은 링크 없이 이름만 남깁니다(관리자는 <code>(링크 발급 실패)</code>). 관리자 화면의 이미지는 새 탭이 아니라 <strong>다이얼로그 미리보기</strong>입니다.</li>
   </ul>
@@ -605,7 +604,7 @@ sequenceDiagram
       <tr><td><code>direction</code></td><td>CHECK <code>in ('outbound','inbound')</code>. <strong>콘솔에서 쓴 글은 언제나 outbound</strong>. inbound 는 이메일 회신과 <strong>2026-09-14 부터 웹 회원 답장</strong>을 함께 담습니다 — 갈래는 <code>author_id</code> 유무(웹 답장만 채워집니다, RPC <code>add_inquiry_user_reply</code>)</td></tr>
       <tr><td><code>email_message_id</code></td><td>outbound 는 제공자가 돌려준 발송 id, inbound 는 원본 Message-ID. <strong>부분 유니크</strong></td></tr>
       <tr><td><code>delivery_status</code></td><td>CHECK <code>null | 'queued' | 'sent' | 'failed'</code>. 웹 문의 답변과 inbound 는 <code>null</code></td></tr>
-      <tr><td><code>attachments</code></td><td><code>jsonb</code> NOT NULL <code>'[]'</code>. <strong>2026-09-14</strong> 부터 — <code>inquiries.attachments</code> 와 같은 모양·같은 상한(이미지·PDF 3 + 영상 2, 합계 5). 기존 행은 빈 배열(백필 없음)</td></tr>
+      <tr><td><code>attachments</code></td><td><code>jsonb</code> NOT NULL <code>'[]'</code>. <strong>2026-09-14</strong> 부터 — <code>inquiries.attachments</code> 와 같은 모양·같은 상한(형식 무관 최대 5개 · 합계 200MB). 기존 행은 빈 배열(백필 없음)</td></tr>
     </tbody>
   </table></div>
 
@@ -999,7 +998,7 @@ sequenceDiagram
       <tr><td><code>tests/unit/validation/inquiry-video.test.ts</code></td><td>13</td><td>영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(<code>null</code> vs <code>[]</code>)</td></tr>
       <tr><td><code>tests/unit/constants/support.test.ts</code></td><td>12</td><td>상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지</td></tr>
       <tr><td><code>tests/unit/actions/inquiry-actions.test.ts</code></td><td>11</td><td>접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect</td></tr>
-      <tr><td><code>tests/unit/actions/inquiry-videos.test.ts</code></td><td>11</td><td><code>claimPendingVideos</code> 의 세 검사와 롤백 · 서비스 롤 부재</td></tr>
+      <tr><td><code>tests/unit/actions/inquiry-uploads.test.ts</code></td><td>14</td><td><code>claimPendingUploads</code>(형식 무관, 예전 <code>claimPendingVideos</code>)의 세 검사와 롤백 · 서비스 롤 부재</td></tr>
       <tr><td><code>tests/unit/data/inquiries.test.ts</code></td><td>10</td><td>jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑</td></tr>
       <tr><td><code>tests/unit/supabase/inquiry-pending-path.test.ts</code></td><td>9</td><td>pending 경로 조립과 <code>isInquiryPendingPath</code>(깊이 · uid · 트래버설)</td></tr>
       <tr><td><code>tests/unit/support/InquiryAttachmentField.test.tsx</code> · <code>InquiryAttachmentVideo.test.tsx</code></td><td>9 · 8</td><td>선택 → 축소 → 잠금 · 삭제 체크의 켜짐 표시 · 영상이 <code>input.files</code> 에서 빠지는지 · 진행률/취소/다시 시도</td></tr>
@@ -1038,14 +1037,14 @@ cd admin &amp;&amp; pnpm test -- tests/unit/inquir</code></pre>
   <div class="tbl"><table>
     <thead><tr><th>파일</th><th>건수</th><th>시나리오</th></tr></thead>
     <tbody>
-      <tr><td><code>tests/e2e/support-inquiries.spec.ts</code></td><td>12</td><td>프리필·교체 확인 모달 / 필수 항목 잠금 / <strong>동의 체크박스가 보이고 켜짐 표시가 뜨는지</strong> / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 실제 이미지 통과 / <strong>영상 직접 업로드 후 상세에서 재생</strong> / 이미지 3개·영상 2개 동시 첨부 / <strong>버그제보·불법이용제보 접수 1건씩 + 내 문의 내역 종류 라벨 확인</strong>(2026-09-14) / <strong>운영자 답변 → 회원 답장(텍스트+이미지) → 스레드 표시 → 답변 완료 후 폼 사라짐</strong>(2026-09-14)</td></tr>
+      <tr><td><code>tests/e2e/support-inquiries.spec.ts</code></td><td>13</td><td>프리필·교체 확인 모달 / 필수 항목 잠금 / <strong>동의 체크박스가 보이고 켜짐 표시가 뜨는지</strong> / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / <strong>여섯 번째 첨부 거절 후 나머지는 접수</strong>(형식 무관 5개 상한) / <strong>합계 상한을 넘는 파일은 올리기 전에 거절</strong>(형식 무관 200MB) / <strong>영상 직접 업로드 후 상세에서 재생</strong> / <strong>이미지 4개 + 영상 1개 동시 첨부</strong>(형식 무관 5개 확인, 2026-09-14) / <strong>버그제보·불법이용제보 접수 1건씩 + 내 문의 내역 종류 라벨 확인</strong>(2026-09-14) / <strong>운영자 답변 → 회원 답장(텍스트+이미지) → 스레드 표시 → 답변 완료 후 폼 사라짐</strong>(2026-09-14)</td></tr>
       <tr><td><code>admin/tests/e2e/inquiries.spec.ts</code></td><td>3</td><td>새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + <strong>사용자 화면에 노출</strong> / 취소된 접수는 읽기 전용</td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-categories.spec.ts</code></td><td>2</td><td>등록·개명·프리필 수정·삭제가 <strong>사용자 폼에 반영</strong>(kind 별 3섹션 · <strong>종류 변경 확인 + 과거 문의 재배치</strong>, 2026-09-14) / 접수된 문의가 있으면 삭제 대신 비활성화 안내</td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-reply-templates.spec.ts</code></td><td>3</td><td>카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · <strong>저장된 답변에 치환된 닉네임</strong> / 삭제 후 선택지에서 사라짐</td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-assignment.spec.ts</code></td><td>3</td><td>미배정 필터 + 접수번호 검색 → 나에게 배정(상태도 처리 중) / <strong>브라우저 컨텍스트 두 개</strong> — 두 번째 운영자에게 "작성 중" 배너·폼 잠금, 가로채기 뒤 첫 운영자가 먼저 답하면 <strong>저장 거절 + 초안 유지</strong>(답변은 1건) / 내부 메모 작성·삭제</td></tr>
     </tbody>
   </table></div>
-  <p><code>playwright.config.ts</code> 는 사용자 사이트를 <code>chromium</code> · <code>Pixel 7</code> <strong>두 프로젝트</strong>로 돌립니다 — <code>support-inquiries.spec.ts</code> 12건은 실제로 <strong>24건</strong>(12 × 2) 실행됩니다(2026-09-14 기준 chromium 프로젝트에서 12건 전체 통과 확인).</p>
+  <p><code>playwright.config.ts</code> 는 사용자 사이트를 <code>chromium</code> · <code>Pixel 7</code> <strong>두 프로젝트</strong>로 돌립니다 — <code>support-inquiries.spec.ts</code> 13건은 실제로 <strong>26건</strong>(13 × 2) 실행됩니다(2026-09-14 기준 chromium 프로젝트에서 13건 전체 통과 확인).</p>
   <ol class="steps">
     <li><strong>스텁 로그인.</strong> 사용자 e2e 는 <code>/login?next=…</code> → <code>button[name="provider"][value="google"]</code> 클릭으로 들어갑니다. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩을 거치고(닉네임 · 월드 UID · 약관 3종), 데모 계정 폴백이면 곧장 목적지에 도착합니다.</li>
     <li><strong>관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.</strong> <code>ADMIN_E2E_SECRETS</code>(기본값은 스크래치패드의 <code>admin-bootstrap.env</code>)를 <strong>실행 중에만</strong> 읽고, 서비스 롤은 <code>.env.local</code> 에서 읽어 픽스처 생성·검증에만 씁니다.</li>
@@ -1069,7 +1068,7 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
 <section id="s8">
   <div class="sec-head"><span class="num">08</span><h2>운영 체크리스트 · 주의사항</h2></div>
   <ol class="steps">
-    <li><strong>첨부 상한을 바꾸려면 네 곳이 함께 움직입니다.</strong> <code>lib/supabase/storage.ts</code> 의 상수 → <code>next.config.ts</code> 의 <code>bodySizeLimit</code>(<code>SERVER_ACTION_BODY_SIZE_LIMIT</code>) → 버킷의 <code>file_size_limit</code>·<code>allowed_mime_types</code> → 안내 문구(<code>lib/constants/inquiry-attachment.ts</code> 의 <code>ATTACHMENT_NOTICE_LINES</code> 가 상수에서 문구를 만듭니다). 합계(12MB)가 본문 상한(14MB) <strong>안쪽</strong>이어야 하고, 버킷 목록이 앱 목록보다 좁으면 업로드가 <strong>영문 400</strong> 으로 막힙니다.</li>
+    <li><strong>첨부 상한을 바꾸려면 세 곳이 함께 움직입니다.</strong> <code>lib/supabase/storage.ts</code> 의 상수(<code>INQUIRY_ATTACHMENT_MAX_COUNT</code> · <code>INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES</code>) → 버킷의 <code>file_size_limit</code>·<code>allowed_mime_types</code> → 안내 문구(<code>lib/constants/inquiry-attachment.ts</code> 의 <code>ATTACHMENT_NOTICE_LINES</code> 가 상수에서 문구를 만듭니다). 2026-09-14 부터 첨부는 서버 액션 본문을 지나지 않으므로(<code>bodySizeLimit='2mb'</code> 는 첨부와 무관) <strong>본문 상한과 맞출 필요가 없습니다</strong> — 상한은 버킷의 <code>file_size_limit</code>(200MiB)과 DB CHECK 만 맞추면 됩니다. 버킷 MIME 목록이 앱 목록보다 좁으면 업로드가 <strong>영문 400</strong> 으로 막힙니다.</li>
     <li><strong>pending 청소는 함수 배포가 있어야 돕니다.</strong> <code>20260910000600</code> 을 적용한 뒤 <code>supabase functions deploy purge-withdrawn</code> 을 함께 해야 <code>stale_inquiry_pending_attachments()</code> 를 태우는 코드가 운영에 올라갑니다. 도는지 확인은 배치 응답의 <code>pendingAttachmentsRemoved</code> 로 합니다. 2026-09-10 에 <code>purge-withdrawn</code> 을 재배포했습니다(version 4). 새 환경을 만들 때는 같은 절차를 반복합니다.</li>
     <li><strong>옛 카테고리 · 옛 유형은 지우지 마세요.</strong> <code>inquiries.category</code>·<code>type</code> 은 라벨 문자열 사본입니다. 목록 필터의 옵션은 "등록된 값 + 데이터에만 남은 옛 값"(<code>inquiry_category_usage()</code> · <code>inquiry_type_usage()</code>)이라, 옛 값을 없애면 <code>계정</code>·<code>문의</code>·<code>신고</code>·<code>제안</code>·<code>general</code> 로 접수된 과거 문의를 <strong>필터로 찾을 길이 사라집니다</strong>. 카테고리를 정리할 때는 삭제가 아니라 <strong>비활성화</strong>가 기본값입니다.</li>
     <li><strong>계정 ID 프리필은 지금 사실상 비어 있습니다.</strong> 폼은 <code>profiles.msw_uid</code> 를 미리 채우는데, 그 값을 입력받는 화면(온보딩·마이페이지의 월드 계정 칸)이 <code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> 플래그로 <strong>기본 OFF</strong> 입니다. 플래그를 켜기 전에는 대부분의 사용자가 계정 ID 를 직접 적습니다. 켤 때는 배포 환경 변수에도 함께 넣으세요.</li>
@@ -1122,18 +1121,20 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
       <tr><td><code>components/support/InquiryFields.tsx</code></td><td>계정 ID · 카테고리/유형 · 제목 · 내용 마크업</td></tr>
       <tr><td><code>components/support/InquiryConsentField.tsx</code> · <code>SupportCheckbox.tsx</code></td><td>개인정보 수집·이용 동의 줄 · 보이는 체크박스(켜짐 = 흰 체크)</td></tr>
       <tr><td><code>components/support/use-inquiry-prefill.ts</code></td><td>프리필 상태 기계 · 확인 모달 · 자동 성장 textarea</td></tr>
-      <tr><td><code>components/support/InquiryAttachmentField.tsx</code> · <code>InquiryAttachmentLists.tsx</code> · <code>InquiryFileChip.tsx</code></td><td>파일 선택 · 축소 · 잠금 · 파일 칩(이름 말줄임·용량·X, 기존 첨부는 <code>removeAttachments</code> 로 표시)</td></tr>
-      <tr><td><code>components/support/use-inquiry-videos.ts</code> · <code>InquiryVideoList.tsx</code></td><td>영상 업로드 행 상태 · 진행률 · 취소 · 다시 시도</td></tr>
+      <tr><td><code>components/support/InquiryAttachmentField.tsx</code> · <code>InquiryAttachmentLists.tsx</code> · <code>InquiryFileChip.tsx</code></td><td>파일 선택 · 잠금 · 파일 칩(이름 말줄임·용량·X, 기존 첨부는 <code>removeAttachments</code> 로 표시)</td></tr>
+      <tr><td><code>components/support/use-inquiry-uploads.ts</code> · <code>InquiryUploadList.tsx</code></td><td>첨부 업로드 행 상태(이미지·PDF·영상 공통, 2026-09-14 부터 일반화 — 예전 <code>use-inquiry-videos.ts</code>) · 진행률 · 취소 · 다시 시도</td></tr>
       <tr><td><code>components/support/InquiryDetailCard.tsx</code> · <code>InquiryDetailMeta.tsx</code> · <code>InquiryAttachmentList.tsx</code> · <code>InquiryReplyThread.tsx</code></td><td>상세 본문 · 메타 줄(<strong>종류</strong>·등록일·카테고리·계정 ID·접수번호, 2026-09-14 부터 종류 추가) · 첨부 보기 · 답변 스레드(287px 넘으면 내부 스크롤)</td></tr>
       <tr><td><code>components/support/InquiryList.tsx</code> · <code>InquiryRow.tsx</code> · <code>InquiryPagination.tsx</code> · <code>InquiryStatusBadge.tsx</code></td><td>내 문의 내역 목록(세 창구 함께, 필터 없음) · 행 카드(<strong>종류 알약</strong> 추가, 2026-09-14) · 번호 페이지네이션(6건/페이지) · 상태 뱃지(답변 완료만 텍스트)</td></tr>
       <tr><td><code>components/support/InquiryOwnerActions.tsx</code> · <code>CancelInquiryButton.tsx</code></td><td>수정 · 접수 취소 버튼과 확인 모달</td></tr>
       <tr><td><code>components/account/InquiryTable.tsx</code></td><td>마이페이지 문의내역 표</td></tr>
       <tr><td><code>lib/actions/inquiry-actions.ts</code></td><td>접수 서버 액션(<code>kind</code> 를 <code>bind</code> 로 받음, 2026-09-14)</td></tr>
       <tr><td><code>lib/actions/inquiry-edit-actions.ts</code></td><td>수정 · 접수 취소 서버 액션(카테고리 목록을 <strong>접수된 kind</strong> 로 조회)</td></tr>
-      <tr><td><code>lib/actions/inquiry-attachments.ts</code></td><td>이미지 업로드 · 삭제 · 수정 폼의 첨부 분리</td></tr>
-      <tr><td><code>lib/actions/inquiry-videos.ts</code></td><td>pending 영상 검증 · 확정 이동 · 롤백(서비스 롤)</td></tr>
-      <tr><td><code>lib/validation/inquiry.ts</code></td><td>접수·수정 스키마 · 필수 항목 · 첨부 검증 · 문구</td></tr>
-      <tr><td><code>lib/validation/inquiry-video.ts</code></td><td>영상 MIME·크기·개수 · 숨은 필드 JSON 계약</td></tr>
+      <tr><td><code>lib/actions/inquiry-attachments.ts</code></td><td>첨부 삭제 · 수정 폼의 첨부 분리(업로드는 2026-09-14 부터 여기 없음 — <code>upload-inquiry-file.ts</code>·<code>inquiry-uploads.ts</code> 로 이동)</td></tr>
+      <tr><td><code>lib/actions/inquiry-uploads.ts</code></td><td>pending 첨부(형식 무관) 검증 · 확정 이동 · 롤백(서비스 롤). 예전 <code>inquiry-videos.ts</code> 를 일반화</td></tr>
+      <tr><td><code>lib/supabase/upload-inquiry-file.ts</code></td><td>브라우저 → 스토리지 직접 업로드(서명 URL · XHR PUT · 진행률 · 취소), 형식 무관</td></tr>
+      <tr><td><code>lib/validation/inquiry.ts</code></td><td>접수·수정 스키마 · 필수 항목 · 문구(첨부 검증은 2026-09-14 부터 <code>inquiry-upload.ts</code> 로 이동)</td></tr>
+      <tr><td><code>lib/validation/inquiry-upload.ts</code></td><td>첨부 개수·형식·합계 검증(형식 무관 5개·200MB) · pending 업로드 스키마</td></tr>
+      <tr><td><code>lib/validation/inquiry-video.ts</code></td><td>영상 MIME↔확장자 맵만 남음(개수·크기 규칙은 <code>inquiry-upload.ts</code> 로 이동, 2026-09-14)</td></tr>
       <tr><td><code>lib/data/inquiries.ts</code></td><td>내 문의 목록·상세·답변·서명 URL</td></tr>
       <tr><td><code>lib/data/inquiry-categories.ts</code></td><td>창구(kind)별 활성 카테고리 캐시 조회 · 폴백(2026-09-14 부터 kind 인자)</td></tr>
       <tr><td><code>lib/constants/inquiry-kind.ts</code></td><td>접수 종류 값·라벨·경로·제출 문구(<code>INQUIRY_KINDS</code>, 관리자 쪽에 같은 내용의 사본, 2026-09-14)</td></tr>
@@ -1202,7 +1203,7 @@ cd admin &amp;&amp; pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inqui
   </table></div>
 </section>
 
-<footer>글자월드 고객지원 개발 가이드(1:1 문의 · 버그제보 · 불법이용제보) · 최종 갱신 2026-09-14 · 기준 커밋 <code>6edbcf9</code> · 개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4 · 카테고리 원안 <code>docs/1on1.md</code> · 종류(kind) 설계 <code>docs/reference/inquiry-kinds-spec.md</code> · 대화 스레드 설계 <code>docs/reference/inquiry-thread-spec.md</code></footer>
+<footer>글자월드 고객지원 개발 가이드(1:1 문의 · 버그제보 · 불법이용제보) · 최종 갱신 2026-09-14 · 기준 커밋 <code>6fd50de</code> · 개발자 가이드 <code>docs/admin/DEVELOPER-GUIDE.md</code> §5.4 · 카테고리 원안 <code>docs/1on1.md</code> · 종류(kind) 설계 <code>docs/reference/inquiry-kinds-spec.md</code> · 대화 스레드 설계 <code>docs/reference/inquiry-thread-spec.md</code></footer>
 </main>
 </div>
 

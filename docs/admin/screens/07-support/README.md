@@ -115,7 +115,7 @@
 
 | DB 요소 | 규칙 | 지금 화면에서 |
 |---|---|---|
-| `inquiry_replies.attachments` | 이미지·PDF 3 + 영상 2, 합계 5 (`inquiry_attachment_kind_count`) | 관리자 스레드가 서명 URL 로 그림(일괄 서명). 사용자 스레드도 같은 첨부 표시 |
+| `inquiry_replies.attachments` | 형식 무관 최대 5개 · 합계 200MB(2026-09-14) | 관리자 스레드가 서명 URL 로 그림(일괄 서명). 사용자 스레드도 같은 첨부 표시 |
 | `inquiries.user_replied_at` | 회원 답장 도착 시각. 운영자 답변(outbound)이 들어오면 트리거가 null 로 되돌린다 | 목록·회원 상세에 "회원 답장" 뱃지, `?awaiting=1` 필터가 이 값을 읽는다 |
 | `add_inquiry_user_reply(uuid, text, jsonb)` | 조건 체인·오류 코드(아래) | 사용자 답장 폼(`InquiryUserReplyForm` → `replyToInquiry`)의 유일한 호출부 |
 | `touch_inquiry_on_reply()` | 답변·답장 INSERT 마다 `inquiries.updated_at = now()` | 목록 '업데이트' 칸이 이미 이 값을 본다 |

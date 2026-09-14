@@ -1,6 +1,6 @@
 # 고객지원(1:1 문의 · 버그제보 · 불법이용제보) — 개발 가이드
 
-최종 갱신 2026-09-14 · 기준 커밋 `6edbcf9` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 종류(kind) 설계 `docs/reference/inquiry-kinds-spec.md` · 대화 스레드(회원 답장) 설계 `docs/reference/inquiry-thread-spec.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` · 고객지원 v2 시안 `docs/reference/figma/support-v2-spec.md`
+최종 갱신 2026-09-14 · 기준 커밋 `6fd50de` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 종류(kind) 설계 `docs/reference/inquiry-kinds-spec.md` · 대화 스레드(회원 답장) 설계 `docs/reference/inquiry-thread-spec.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` · 고객지원 v2 시안 `docs/reference/figma/support-v2-spec.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-GUIDE.html` (다이어그램 포함)
 >
@@ -26,7 +26,7 @@
 | 사용자 사이트 접수·수정·취소                    | 배포됨            | `/support` · `/support/bug` · `/support/report` · `/support/inquiries` · 마이페이지 문의내역 |
 | 고객지원 v2 디자인                              | 2026-09-11        | 커밋 `6acbe50` · `0f186be` · 카드·목록·상세·폼 재구성, §2.7                    |
 | 카테고리 · 프리필                               | 2026-09-10        | 커밋 `b78dfd7` · 시드 8종(`docs/1on1.md`)                                      |
-| 영상 첨부 직접 업로드                           | 2026-09-10        | 커밋 `2e3f6ae` · 각 100MB · 2개                                                |
+| 첨부 — 형식 무관 직접 업로드                    | 2026-09-14        | 커밋 `2e3f6ae`(영상, 09-10) → `6fd50de`(형식 통일, 09-14) · 최대 5개 · 합계 200MB · §3 |
 | 세부 유형 · 계정 ID 필수                        | 2026-09-11        | 커밋 `af1a886` · 첨부만 선택                                                   |
 | 관리자 고객지원 모듈                            | 배포됨            | `/inquiries` · `/inquiries/categories` · 권한 `inquiries`                      |
 | 운영자 협업(배정 · 잠금 · 충돌 · 메모)          | 2026-09-11        | `20260911000300` · §5.9                                                        |
@@ -217,7 +217,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 1. **로그인 재확인** — 프록시의 검사는 낙관적입니다. → `로그인 후 이용할 수 있습니다.`
 2. **스키마 파싱** — 그 창구의 허용 카테고리·세부 유형을 `getInquiryCategories(kind)` 로 **매번 새로** 읽어 스키마를 만듭니다. 상수로 굳히면 운영자가 추가한 카테고리가 서버에서 거절됩니다.
 3. **영상 목록 파싱** — `videoAttachments` 숨은 필드의 JSON. 모양이 어긋나면 `null`(빈 목록과 구분) → `영상 첨부 정보가 올바르지 않습니다. 다시 시도해 주세요.`
-4. **첨부 재검증** — 개수·형식·각 5MB·합계 12MB. 이미지·PDF 는 3개, 영상은 별도로 2개까지, 둘을 합친 전체는 5개를 넘지 않게 봅니다.
+4. **첨부 재검증** — 형식에 관계없이 개수·합계(최대 5개 · 합계 200MB)만 봅니다(오너 지시, 2026-09-14 — 종류별 상한은 없습니다).
 5. **도배 판정** — 마지막 접수 시각 기준 **30초**(`WRITE_COOLDOWN_SECONDS`). 메모리 카운터가 아니라 DB 의 `created_at` 을 봅니다.
 6. **이미지 업로드** — `<uid>/<uuid>-<파일명>`. 도중 실패하면 이미 올린 것을 지웁니다.
 7. **영상 확정** — pending 오브젝트를 검증하고 접수 자리로 `move`. 실패하면 이미지 업로드분을 되돌립니다.
@@ -315,7 +315,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 | `not_in_progress` | `답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.` |
 | `no_operator_reply` | `운영자 답변 후 답장할 수 있습니다.` |
 | `too_many` | `운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.` |
-| `invalid` | `답장은 1~2000자, 첨부는 이미지·PDF 3개 + 영상 2개까지 보낼 수 있습니다.` |
+| `invalid` | `답장은 1~2000자, 첨부는 형식에 관계없이 최대 5개 · 총 200MB 까지 보낼 수 있습니다.` |
 
 화면 판정(`canUserReply()`)과 RPC 판정(§4.4)은 **같은 순서**입니다 — 폼은 보이는데 보내면 거절되는 상태를 만들지 않기 위해서입니다. 다만 실제 권한은 RPC 가 다시 봅니다 — 이 화면은 마지막 방어선이 아닙니다.
 
@@ -325,63 +325,74 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 
 출처: `lib/supabase/storage.ts` · `lib/supabase/upload-inquiry-video.ts` · `lib/actions/inquiry-attachments.ts` · `lib/actions/inquiry-videos.ts` · `components/support/InquiryAttachmentField.tsx`
 
-한 문의에 붙는 첨부는 **이미지·PDF 3개 + 영상 2개, 합계 최대 5개**입니다(오너 지시,
-2026-09-11 — 이전에는 셋을 합쳐 3개였습니다). DB CHECK 는 이제 세 개입니다 —
-`inquiries_attachments_max_5`(합계 ≤5) · `inquiries_attachments_file_kind_max_3`
-(영상이 아닌 것 ≤3) · `inquiries_attachments_video_kind_max_2`(영상 ≤2, 마이그레이션
-`20260911000600`). 종류 판정은 jsonb 원소의 `mimeType` 이 `video/` 로 시작하는지로
-봅니다(별도 열이 없습니다).
+한 문의에 붙는 첨부는 **형식(이미지·PDF·영상)에 관계없이 최대 5개 · 합계 200MB**입니다
+(오너 지시, 2026-09-14 — 종류별 상한과 이미지 개당 5MB·합계 12MB 를 없애고 하나로
+합쳤습니다. 이전에는 이미지·PDF 3개 + 영상 2개였습니다). DB CHECK 는 두 개입니다 —
+`inquiries_attachments_max_5`(길이 ≤5) · `inquiries_attachments_total_bytes_max_200mb`
+(`inquiry_attachments_total_bytes()` 로 잰 합계 ≤200MB, 마이그레이션
+`20260914000500`). 종류별 CHECK(`inquiries_attachments_file_kind_max_3` ·
+`inquiries_attachments_video_kind_max_2`, `20260911000600`)는 이 마이그레이션에서
+지웠습니다.
 
-|        | 이미지 · PDF                                           | 영상                                                      |
-| ------ | ------------------------------------------------------ | --------------------------------------------------------- |
-| 형식   | jpg · png · gif · webp · pdf                           | mp4 · mov · webm · m4v                                    |
-| 크기   | 각 **5MB** · **합계 12MB**                             | 각 **100MB**(합계 제한 없음)                              |
-| 개수   | **3개까지**(영상과 별도 자리)                          | **2개까지**(이미지·PDF 와 별도 자리)                      |
-| 전송   | 폼 → 서버 액션 본문(`multipart/form-data`) → 스토리지  | 브라우저 → **스토리지 직접**, 폼에는 경로만               |
-| 전처리 | `downscaleImage()` — 최대 변 2000px, GIF 는 건너뜁니다 | 없음. 확장자는 **MIME 에서 뽑습니다**                     |
-| 경로   | `<uid>/<uuid>-<파일명>`                                | `<uid>/pending/<uuid>.<ext>` → 확정 시 왼쪽 자리로 `move` |
+|        | 형식 무관(이미지 · PDF · 영상)                                                 |
+| ------ | ---------------------------------------------------------------------------------- |
+| 형식   | jpg · png · gif · webp · pdf · mp4 · mov · webm · m4v                              |
+| 크기   | 파일 하나의 상한이 곧 합계 상한입니다 — **각 · 합계 모두 200MB**                   |
+| 개수   | **5개까지**(종류 구분 없이 함께 셉니다)                                            |
+| 전송   | 브라우저 → **스토리지 직접**(서명 업로드 URL), 폼에는 경로만 실립니다              |
+| 전처리 | 이미지만 `downscaleImage()` — 최대 변 2000px, GIF 는 건너뜁니다. 확장자는 **MIME 에서 뽑습니다** |
+| 경로   | `<uid>/pending/<uuid>.<ext>` → 접수 확정 시 `<uid>/<uuid>-<파일명>` 으로 `move`    |
 
-상수: `INQUIRY_FILE_MAX_COUNT=3` · `MAX_BYTES=5MiB` · `TOTAL_MAX_BYTES=12MiB` ·
-`INQUIRY_VIDEO_MAX_BYTES=100MiB` · `INQUIRY_VIDEO_MAX_COUNT=2` ·
-`INQUIRY_ATTACHMENT_MAX_TOTAL=5`(= `INQUIRY_FILE_MAX_COUNT + INQUIRY_VIDEO_MAX_COUNT`) ·
-`SERVER_ACTION_BODY_SIZE_LIMIT='14mb'`.
+**2026-09-14 부터 이미지·PDF 도 영상과 같은 길을 씁니다.** 예전에는 이미지만 서버
+액션 본문(`multipart/form-data`)에 실렸고 그 본문 상한이 곧 이미지 상한이었습니다(그
+래서 "사진은 3장 5MB, 영상은 2편 100MB" 같은 표가 나왔습니다). 지금은 첨부가 더는
+본문에 실리지 않으므로(경로 몇 줄의 JSON 만 갑니다) `SERVER_ACTION_BODY_SIZE_LIMIT`
+을 기본값을 살짝 넘는 `'2mb'` 로 좁혔습니다 — 넓게 열어 두면 파일이 다시 본문으로
+흘러도 아무도 눈치채지 못합니다.
 
-> **14mb** — 합계 12MB 는 버킷이 아니라 **서버 액션 본문 상한** 때문입니다. `next.config.ts` 의 `experimental.serverActions.bodySizeLimit` 은 `SERVER_ACTION_BODY_SIZE_LIMIT` 한 상수를 그대로 씁니다. 본문이 상한을 넘으면 액션이 **실행되기도 전에** 요청이 500 으로 끊겨 아무 문구도 돌려줄 수 없습니다. 그래서 합계 검사는 **보내기 전** 화면에서 합니다.
+상수(`lib/supabase/storage.ts`): `INQUIRY_ATTACHMENT_MAX_COUNT=5` ·
+`INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES=200MiB` · `INQUIRY_ATTACHMENT_FILE_MAX_BYTES`
+(합계와 같은 값 — 파일 하나가 합계를 넘을 수는 없습니다) ·
+`SERVER_ACTION_BODY_SIZE_LIMIT='2mb'`.
 
-첨부 오류 문구: `이미지·PDF는 최대 3개까지 첨부할 수 있습니다.` / `첨부파일은 최대 5개까지 첨부할 수 있습니다.`(전체 합계) / `jpg · png · gif · webp · pdf 파일만 올릴 수 있습니다.` / `<파일명> 은(는) 5MB 를 넘습니다…` / `첨부파일은 합쳐서 12MB 이하만 올릴 수 있습니다.` / `빈 파일은 올릴 수 없습니다.` / `mp4 · mov · webm · m4v 영상만 올릴 수 있습니다.` / `영상은 최대 2개까지 첨부할 수 있습니다.`
+첨부 오류 문구(`lib/validation/inquiry-upload.ts`): `첨부파일은 최대 5개까지 올릴 수
+있습니다.` / `이미지(JPG, PNG, GIF, WEBP) · PDF · 영상(MP4, MOV, WEBM, M4V) 파일만
+올릴 수 있습니다.` / `<파일명> 은(는) 200MB 를 넘습니다. 첨부파일은 각 200MB 이하만
+올릴 수 있습니다.` / `첨부파일은 합쳐서 200MB 이하만 올릴 수 있습니다.` / `빈 파일은
+올릴 수 없습니다.`
 
-화면(`InquiryAttachmentField.tsx`)의 안내 문구는 시안 v2(§2.7)부터 두 줄입니다 —
-`이미지·PDF 5MB/개 · 최대 3개 · 총 12MB / 영상 100MB/개 · 최대 2개 · 총 200MB` /
+화면(`InquiryAttachmentField.tsx`)의 안내 문구는 두 줄입니다 —
+`이미지·PDF·영상 형식에 관계없이 최대 5개 · 총 200MB` /
 `(JPG, PNG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)`. 숫자·형식 목록은 문구에 박지 않고
 `lib/constants/inquiry-attachment.ts` 의 `ATTACHMENT_NOTICE_LINES` 가 storage 상한 상수에서
 그대로 조합합니다 — 안내와 실제 제한이 갈리면 사용자는 "된다고 적힌 파일"을 고르고 오류를
 봅니다.
 
-### 3.1 영상 경로 — 왜 직접 올리나
+### 3.1 직접 업로드 경로 — 왜 직접 올리나
 
-상한을 100MB 로 올리면 **모든** 서버 액션이 한 요청에 그만큼을 받아 낼 수 있게 되고, 그래도 파일은 결국 서버를 한 번 더 거쳐 스토리지로 갑니다.
+서버 액션 본문으로 200MB 를 받게 하면 **모든** 서버 액션이 한 요청에 그만큼을 받아 낼 수 있게 되고, 그래도 파일은 결국 서버를 한 번 더 거쳐 스토리지로 갑니다. 그래서 이미지·PDF·영상 모두 브라우저가 버킷에 직접 올립니다(2026-09-14 부터 — 예전에는 영상만 이 길이었습니다).
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant U as 사용자
-    participant B as 브라우저<br/>useInquiryVideos
+    participant B as 브라우저<br/>useInquiryUploads
     participant S as Supabase Storage<br/>inquiry-attachments
     participant A as 서버 액션<br/>createInquiry
     participant SR as 서비스 롤 클라이언트
     participant DB as inquiries
 
-    U->>B: 파일 선택 · 영상 MIME
-    B->>B: validateInquiryVideo<br/>형식 → 크기 → 영상 2개 → 전체 5개
+    U->>B: 파일 선택(이미지 · PDF · 영상 무관)
+    B->>B: validateInquiryAttachments<br/>형식 → 개수 ≤5 → 합계 ≤200MB
     B->>S: createSignedUploadUrl(uid/pending/uuid.ext)
     Note over S: inquiry_attachments_insert_own 정책이<br/>여기서 이미 남의 uid 를 거절
     S-->>B: signedUrl
     B->>S: XHR PUT · x-upsert:false
     S-->>B: progress 이벤트 → 진행률
     U-->>B: 취소를 누르면 xhr.abort() + 조각 삭제
-    B->>B: 완료 행을 videoAttachments JSON 으로
+    B->>B: 완료 행을 pendingAttachments JSON 으로
     U->>A: 폼 제출 · 경로 · 이름 · 크기 · MIME
-    A->>SR: claimFormVideos
+    A->>SR: claimFormUploads
     SR->>S: list(uid/pending)
     S-->>SR: 실제 크기 · mimetype
     Note over SR: 폼이 신고한 숫자가 아니라<br/>스토리지가 아는 값으로 판정
@@ -393,17 +404,17 @@ sequenceDiagram
 
 ### 3.2 서버가 다시 보는 세 가지
 
-`lib/actions/inquiry-videos.ts` `claimPendingVideos`
+`lib/actions/inquiry-uploads.ts` `claimPendingUploads`(예전 `inquiry-videos.ts` `claimPendingVideos` 를 형식 무관으로 일반화한 것입니다)
 
 1. **경로가 이 사용자의 pending 인가** — `isInquiryPendingPath(path, userId)` 가 uid · 폴더 이름 · **깊이 3** 을 모두 못 박습니다.
-2. **오브젝트가 실제로 있고 규칙 안인가** — `list()` 로 pending 폴더를 훑어 `metadata.size` · `metadata.mimetype` 을 읽습니다. 폼이 신고한 값을 믿으면 100MB 제한이 "100 이라고 적어 보내면 통과하는" 규칙이 됩니다.
+2. **오브젝트가 실제로 있고 규칙 안인가** — `list()` 로 pending 폴더를 훑어 `metadata.size` · `metadata.mimetype` 을 읽습니다. 폼이 신고한 값을 믿으면 200MB 제한이 "200 이라고 적어 보내면 통과하는" 규칙이 됩니다.
 3. **목적지가 자기 폴더인가** — `isUserScopedPath()` 를 옮기기 직전에 한 번 더 겁니다.
 
-옮기는 주체는 **서비스 롤**입니다. `move` 는 `storage.objects` 의 UPDATE 인데 이 버킷에는 사용자용 UPDATE 정책이 없습니다 — **RLS 가 이 이동을 막아 주지 않으므로** 위 세 검사가 유일한 경계입니다. 서비스 롤 키가 없는 환경에서는 **영상 첨부만** 거절되고(`영상 첨부를 처리할 수 없습니다…`) 영상 없는 접수는 평소대로 됩니다.
+옮기는 주체는 **서비스 롤**입니다. `move` 는 `storage.objects` 의 UPDATE 인데 이 버킷에는 사용자용 UPDATE 정책이 없습니다 — **RLS 가 이 이동을 막아 주지 않으므로** 위 세 검사가 유일한 경계입니다. 서비스 롤 키가 없는 환경에서는 **첨부가 있는 접수만** 거절되고(`첨부파일을 처리할 수 없습니다…`) 첨부 없는 접수는 평소대로 됩니다.
 
 ### 3.3 버려진 pending 청소
 
-- 폼에 영상만 올려 두고 떠나면 어떤 문의도 참조하지 않는 오브젝트가 남습니다.
+- 폼에 파일만 올려 두고 접수하지 않고 떠나면 어떤 문의도 참조하지 않는 오브젝트가 남습니다.
 - `public.stale_inquiry_pending_attachments(p_cutoff_hours=24, p_limit=500)` — `SECURITY DEFINER` · 실행 권한 **`service_role` 뿐**. 판정은 `bucket_id='inquiry-attachments'` 이고 경로 **두 번째 세그먼트가 `pending`** 이며 생성 24시간 경과.
 - Edge Function `purge-withdrawn` 이 경로를 받아 **Storage API** 로 지웁니다(응답의 `pendingAttachmentsRemoved`). SQL 로 `storage.objects` 행만 지우면 실제 파일이 S3 에 남아 용량만 샙니다.
 - 개인정보 파기와 독립이라 실패를 삼킵니다.
@@ -446,7 +457,7 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 | `category`                       | `text` NOT NULL                         | 카테고리 **라벨 문자열**                                                                                                                                                                                                                                |
 | `type`                           | `text` NOT NULL                         | 세부 유형 라벨. 옛 값 `문의`·`신고`·`제안`, 이메일 문의는 `general`                                                                                                                                                                                     |
 | `title` · `content`              | `text` NOT NULL                         | 평문. 화면은 줄바꿈만 살립니다                                                                                                                                                                                                                          |
-| `attachments`                    | `jsonb` NOT NULL `'[]'`                 | CHECK 둘 — `jsonb_typeof='array'`, `jsonb_array_length <= 3`                                                                                                                                                                                            |
+| `attachments`                    | `jsonb` NOT NULL `'[]'`                 | CHECK 셋 — `jsonb_typeof='array'`, `jsonb_array_length <= 5`, 합계 바이트 `inquiry_attachments_total_bytes() <= 200MB`(마이그레이션 `20260914000500`)                                                                                                 |
 | `privacy_consent`                | `boolean` NOT NULL                      | CHECK `privacy_consent or source = 'email'`(`20260909000300` 에서 완화)                                                                                                                                                                                 |
 | `status`                         | `inquiry_status` NOT NULL               | `pending · in_progress · answered · closed`                                                                                                                                                                                                             |
 | `cancelled_at`                   | `timestamptz`                           | 사용자의 접수 취소 시각. enum 에 값을 더하지 않은 이유는 상태를 읽는 코드가 이미 네 값을 전제로 갈라져 있기 때문                                                                                                                                        |
@@ -485,7 +496,7 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 | `direction`                 | CHECK `in ('outbound','inbound')`. **콘솔에서 쓴 글은 언제나 outbound**. `inbound` 는 이메일 회신과 **2026-09-14 부터 웹 회원 답장**을 함께 담습니다 — 갈래는 `author_id` 유무(웹 답장만 채워집니다, RPC `add_inquiry_user_reply`) |
 | `email_message_id`          | outbound 는 제공자 발송 id, inbound 는 원본 Message-ID. **부분 유니크**                                 |
 | `delivery_status`           | CHECK `null \| 'queued' \| 'sent' \| 'failed'`. 웹 답변과 inbound 는 `null`                             |
-| `attachments`                | `jsonb` NOT NULL `'[]'`. **2026-09-14** 부터. `inquiries.attachments` 와 같은 모양·같은 상한(이미지·PDF 3 + 영상 2, 합계 5 — `inquiry_attachment_kind_count()` 재사용). 기존 행은 빈 배열(백필 없음) |
+| `attachments`                | `jsonb` NOT NULL `'[]'`. **2026-09-14** 부터. `inquiries.attachments` 와 같은 모양·같은 상한(형식 무관 최대 5개 · 합계 200MB). 기존 행은 빈 배열(백필 없음) |
 
 ### 4.3 `inquiry_categories`
 
@@ -912,13 +923,13 @@ cd admin && pnpm test -- tests/unit/inquir
 
 | 파일                                              | 건수 | 시나리오                                                                                                                                                                                                                             |
 | ------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/e2e/support-inquiries.spec.ts`             | 12   | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** / 이미지 3개·영상 2개 동시 첨부 / **버그제보·불법이용제보 접수 1건씩 + 내 문의 내역 종류 라벨 확인**(2026-09-14) / **운영자 답변(서비스 롤 outbound + 처리 중) → 회원 답장(텍스트+이미지) → 스레드 표시 → 답변 완료 후 폼 사라짐**(2026-09-14)           |
+| `tests/e2e/support-inquiries.spec.ts`             | 13   | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / **여섯 번째 첨부 거절 후 나머지는 접수**(형식 무관 5개 상한) / **합계 상한을 넘는 파일은 올리기 전에 거절**(형식 무관 200MB) / **영상 직접 업로드 후 상세에서 재생** / **이미지 4개 + 영상 1개 동시 첨부**(형식 무관 5개 확인, 2026-09-14) / **버그제보·불법이용제보 접수 1건씩 + 내 문의 내역 종류 라벨 확인**(2026-09-14) / **운영자 답변(서비스 롤 outbound + 처리 중) → 회원 답장(텍스트+이미지) → 스레드 표시 → 답변 완료 후 폼 사라짐**(2026-09-14)           |
 | `admin/tests/e2e/inquiries.spec.ts`               | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                                  |
 | `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영**(kind 별 3섹션 확인 · **종류 변경 확인 창 + 과거 문의 kind 재배치**, 2026-09-14) / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                    |
 | `admin/tests/e2e/inquiry-reply-templates.spec.ts` | 3    | 카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · **저장된 답변에 치환된 닉네임** / 삭제 후 선택지에서 사라짐                                                                                 |
 | `admin/tests/e2e/inquiry-assignment.spec.ts`      | 3    | 미배정 필터 + 접수번호 검색 → 나에게 배정(상태도 처리 중) / **브라우저 컨텍스트 두 개** — 두 번째 운영자에게 "작성 중" 배너·폼 잠금, 가로채기 뒤 첫 운영자가 먼저 답하면 **저장 거절 + 초안 유지**(답변은 1건) / 내부 메모 작성·삭제 |
 
-`playwright.config.ts` 는 사용자 사이트를 `chromium` · `Pixel 7` **두 프로젝트**로 돌립니다 — `support-inquiries.spec.ts` 12건은 실제로 두 프로젝트만큼 곱해 실행됩니다(2026-09-14 기준 chromium 프로젝트에서 **12건 전체 통과** 확인).
+`playwright.config.ts` 는 사용자 사이트를 `chromium` · `Pixel 7` **두 프로젝트**로 돌립니다 — `support-inquiries.spec.ts` 13건은 실제로 두 프로젝트만큼 곱해 실행됩니다(2026-09-14 기준 chromium 프로젝트에서 **13건 전체 통과** 확인).
 
 1. **스텁 로그인** — 사용자 e2e 는 `/login?next=…` → `button[name="provider"][value="google"]` 클릭. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩(닉네임 · 월드 UID · 약관 3종)을 거치고, 데모 계정 폴백이면 곧장 목적지에 도착합니다.
 2. **관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.** `ADMIN_E2E_SECRETS`(기본값은 스크래치패드의 `admin-bootstrap.env`)를 실행 중에만 읽고, 서비스 롤은 `.env.local` 에서 읽어 픽스처·검증에만 씁니다.
@@ -947,7 +958,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 
 ## 8. 운영 체크리스트 · 주의사항
 
-1. **첨부 상한을 바꾸려면 네 곳이 함께 움직입니다.** `lib/supabase/storage.ts` 상수 → `next.config.ts` 의 `bodySizeLimit` → 버킷의 `file_size_limit`·`allowed_mime_types` → 안내 문구(`ATTACHMENT_NOTICE` 는 상수에서 문구를 만듭니다). 합계(12MB)가 본문 상한(14MB) **안쪽**이어야 하고, 버킷 목록이 앱 목록보다 좁으면 업로드가 **영문 400** 으로 막힙니다.
+1. **첨부 상한을 바꾸려면 세 곳이 함께 움직입니다.** `lib/supabase/storage.ts` 상수(`INQUIRY_ATTACHMENT_MAX_COUNT` · `INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES`) → 버킷의 `file_size_limit`·`allowed_mime_types` → 안내 문구(`ATTACHMENT_NOTICE_LINES` 는 상수에서 문구를 만듭니다). 2026-09-14 부터 첨부는 서버 액션 본문을 지나지 않으므로(`bodySizeLimit='2mb'` 는 첨부와 무관) **본문 상한과 맞출 필요가 없습니다** — 상한은 버킷의 `file_size_limit`(200MiB) 과 DB CHECK(`inquiries_attachments_total_bytes_max_200mb`) 만 맞추면 됩니다. 버킷 MIME 목록이 앱 목록보다 좁으면 업로드가 **영문 400** 으로 막힙니다.
 2. **pending 청소는 함수 배포가 있어야 돕니다.** `20260910000600` 을 적용한 뒤 `supabase functions deploy purge-withdrawn` 을 함께 해야 합니다. 도는지는 배치 응답의 `pendingAttachmentsRemoved` 로 확인합니다. 2026-09-10 에 `purge-withdrawn` 을 재배포했습니다(version 4). 새 환경을 만들 때는 같은 절차를 반복합니다.
 3. **옛 카테고리 · 옛 유형은 지우지 마세요.** 목록 필터의 옵션은 "등록된 값 + 데이터에만 남은 옛 값"(`inquiry_category_usage()` · `inquiry_type_usage()`)이라, 옛 값을 없애면 `계정`·`문의`·`신고`·`제안`·`general` 로 접수된 과거 문의를 **필터로 찾을 길이 사라집니다**. 정리할 때는 삭제가 아니라 **비활성화**가 기본값입니다.
 4. **계정 ID 프리필은 지금 사실상 비어 있습니다.** 폼은 `profiles.msw_uid` 를 미리 채우는데, 그 값을 입력받는 화면(온보딩·마이페이지의 월드 계정 칸)이 `NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS` 플래그로 **기본 OFF** 입니다. 켤 때는 배포 환경 변수에도 함께 넣으세요.

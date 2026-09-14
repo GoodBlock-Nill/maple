@@ -1,3 +1,4 @@
+import { INQUIRY_ATTACHMENT_MAX_COUNT, INQUIRY_ATTACHMENT_TOTAL_MAX_MB } from '@/lib/supabase/storage'
 import { INQUIRY_CONTENT_MAX } from '@/lib/validation/inquiry'
 
 /**
@@ -61,7 +62,8 @@ export const INQUIRY_REPLY_NOT_FOUND_MESSAGE = '문의를 찾을 수 없습니�
 
 export const INQUIRY_REPLY_CANCELLED_MESSAGE = '접수가 취소된 문의에는 답장할 수 없습니다.'
 
-export const INQUIRY_REPLY_INVALID_MESSAGE = `답장은 1~${INQUIRY_USER_REPLY_MAX}자, 첨부는 이미지·PDF 3개 + 영상 2개까지 보낼 수 있습니다.`
+/* 첨부 상한은 접수 폼과 같은 상수에서 끌어온다 — 문구가 규칙과 갈리면(2026-09-14 5개·200MB 통일) 사용자가 틀린 안내를 본다. */
+export const INQUIRY_REPLY_INVALID_MESSAGE = `답장은 1~${INQUIRY_USER_REPLY_MAX}자, 첨부는 형식에 관계없이 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개 · 총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB 까지 보낼 수 있습니다.`
 
 /**
  * RPC 실패 코드 → 한국어 문구.

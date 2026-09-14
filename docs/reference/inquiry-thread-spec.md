@@ -21,7 +21,7 @@
 
 ## 3. 클라이언트
 - 상세(`/support/inquiries/[id]`) 답변 영역 → **스레드**: 시간순으로 운영자 답변(기존 #f3f6fe 상자 + 머리줄 "글자월드 운영팀 | 일시")과 유저 답장(흰 상자 · border #cdd3db · 머리줄 "내 답변 | 일시")을 섞어 그린다. 각 메시지의 첨부는 기존 `InquiryAttachmentList` 방식(서명 URL, 이미지 썸네일·PDF·영상)으로 아래에.
-- 허용 조건이 맞으면 스레드 아래 **답장 폼**(`InquiryUserReplyForm`, 클라이언트 컴포넌트): 내용 textarea(필수, ≤2000) + 첨부(기존 `InquiryAttachmentField` 재사용: 이미지·PDF 3 + 영상 2, 같은 안내 문구) + "답장 보내기" 버튼(183×54 스타일 동일). 서버 액션 `replyToInquiry(inquiryId, prev, formData)`: 로그인·쿨다운 → 파일 업로드(`uploadAttachments`)·영상 claim(`claimFormVideos`) → RPC → 실패 시 업로드 롤백(기존 패턴) → `revalidatePath` 상세 → 리다이렉트 `?replied=1`(1회성 안내 "답장을 보냈습니다").
+- 허용 조건이 맞으면 스레드 아래 **답장 폼**(`InquiryUserReplyForm`, 클라이언트 컴포넌트): 내용 textarea(필수, ≤2000) + 첨부(기존 `InquiryAttachmentField` 재사용: 형식 무관 최대 5개 · 합계 200MB, 2026-09-14, 같은 안내 문구) + "답장 보내기" 버튼(183×54 스타일 동일). 서버 액션 `replyToInquiry(inquiryId, prev, formData)`: 로그인·쿨다운 → 파일 업로드(`uploadAttachments`)·영상 claim(`claimFormVideos`) → RPC → 실패 시 업로드 롤백(기존 패턴) → `revalidatePath` 상세 → 리다이렉트 `?replied=1`(1회성 안내 "답장을 보냈습니다").
 - 허용되지 않을 때 안내 한 줄(파선 상자 톤): 답변 완료/종료 → "답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요."; 접수 대기 → "운영자 답변 후 답장할 수 있습니다."; 3건 초과 → "운영자 답변을 기다려 주세요."
 - 목록 행 상태 pill 은 그대로(처리 중). 상세 메타 변화 없음.
 - `InquiryReply` 타입에 `direction: 'outbound'|'inbound'`, `attachments`, `isMine` 추가. `getInquiryReplies` 가 `direction, author_id, attachments` 를 읽고 첨부 서명은 `getSignedAttachments` 재사용.
