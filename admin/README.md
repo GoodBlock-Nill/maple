@@ -36,7 +36,6 @@ admin/
       community/          posts/ · comments/ (모더레이션)
       reports/            신고 처리
       members/            회원 목록 · [id](상세, 홈페이지 문의 탭 포함)
-      coupons/            쿠폰 발급 · [id](등록 내역·지급 처리)
       inquiries/          홈페이지 문의(1:1 문의·버그제보·불법이용제보)·이메일 문의 목록 · [id] · categories/ · reply-templates/
       faqs/               FAQ
       gacha/              확률형 아이템 정보 · new/ · [id]
@@ -116,8 +115,8 @@ admin/
 
 권한은 **역할(`admin_roles`) × 모듈**이다. 모듈마다 `none` · `read` · `write` 중
 하나를 갖고, `write` 는 `read` 를 포함한다. 모듈 목록의 단일 출처는
-`lib/auth/permissions.ts` 의 `ADMIN_MODULES` 14개다(대시보드 · 뉴스 · 커뮤니티 ·
-신고 · 회원 · 쿠폰 · 홈페이지 문의 · FAQ · 가이드 · 랭킹 · 사이트 설정 · Legal · 관리자 · 감사 로그).
+`lib/auth/permissions.ts` 의 `ADMIN_MODULES` 13개다(대시보드 · 뉴스 · 커뮤니티 ·
+신고 · 회원 · 홈페이지 문의 · FAQ · 가이드 · 랭킹 · 사이트 설정 · Legal · 관리자 · 감사 로그).
 
 | 역할                     | 성격                        | 내용                                               |
 | ------------------------ | --------------------------- | -------------------------------------------------- |

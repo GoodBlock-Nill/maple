@@ -13,7 +13,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { StatCard } from '@/components/ui/StatCard'
 import { hasPermission } from '@/lib/auth/permissions'
 import { requirePermission } from '@/lib/auth/require-admin'
-import { countRedemptionsByMember } from '@/lib/data/coupon-redemptions'
 import { getMember, getMemberActivity } from '@/lib/data/members'
 import { getMemberInquiries } from '@/lib/data/member-inquiries'
 import { getReportsFor } from '@/lib/data/reports'
@@ -36,7 +35,7 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
   const [actor, member] = await Promise.all([requirePermission('members', 'read'), getMember(id)])
   const canWrite = hasPermission(actor.permissions, 'members', 'write')
   /* 문의는 별도 모듈이다 — 회원 읽기 권한만으로 다른 모듈(홈페이지 문의)의 내용을
-     보여 주지 않는다. 아래 쿠폰 건수와 같은 이유. */
+     보여 주지 않는다. RLS 는 이 구분을 모른다. */
   const canReadInquiries = hasPermission(actor.permissions, 'inquiries', 'read')
 
   if (member === null) {
@@ -44,13 +43,7 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
   }
 
   const lifecycle = memberLifecycle(member)
-  /* 쿠폰 등록 건수는 `coupons` 모듈을 읽을 수 있는 운영자에게만 보여 준다 — 회원
-     권한만 가진 사람에게 다른 모듈의 수치를 흘리지 않는다. RLS 는 이 구분을 모른다. */
-  const canReadCoupons = hasPermission(actor.permissions, 'coupons', 'read')
-  const [activity, couponCount] = await Promise.all([
-    getMemberActivity(id),
-    canReadCoupons ? countRedemptionsByMember(id) : Promise.resolve(null),
-  ])
+  const activity = await getMemberActivity(id)
   const requested = firstValue(searchParams.tab)
   const tab: ActivityTab = ACTIVITY_TABS.includes(requested as ActivityTab)
     ? (requested as ActivityTab)
@@ -86,7 +79,6 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
 
       <MemberProfileCard
         member={member}
-        couponCount={couponCount}
         actions={
           canWrite ? (
             <MemberActions

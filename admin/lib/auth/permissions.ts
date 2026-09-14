@@ -35,7 +35,6 @@ export const ADMIN_MODULES = [
   { key: 'community', label: '커뮤니티' },
   { key: 'reports', label: '신고' },
   { key: 'members', label: '회원' },
-  { key: 'coupons', label: '쿠폰' },
   { key: 'inquiries', label: '홈페이지 문의' },
   { key: 'faqs', label: 'FAQ' },
   { key: 'gacha', label: '가이드' },
@@ -107,6 +106,11 @@ export function hasAnyPermission(
  * 모르는 키·모르는 값은 **버린다.** 스키마가 앞서 나가 저장된 값(예: 새 모듈)을
  * 그대로 통과시키면 `permissionLevel` 이 타입에 없는 문자열을 돌려주고, 그 값이
  * 비교에서 조용히 `none` 보다 크게 취급될 수 있다.
+ *
+ * 같은 규칙이 **없어진 모듈**도 받아 낸다. 폐지된 `coupons` 처럼 DB 의 역할 jsonb 에
+ * 남아 있는 옛 키는 파싱을 깨뜨리지 않고 조용히 빠진다 — 마이그레이션 없이 화면에서
+ * 모듈을 지울 수 있는 이유다. 역할을 한 번 저장하면 그 키는 자연히 사라진다
+ * (`toModulePermissions()` 가 `ADMIN_MODULE_KEYS` 로만 표를 다시 만든다).
  */
 export function parsePermissions(value: unknown): ModulePermissions {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {

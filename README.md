@@ -89,7 +89,7 @@ DB 를 처음 붙이는 경우 `supabase/README.md` §1 을 먼저 본다(로컬
 | 가이드        | `/guide`                                                                                   | 확률형 아이템 정보. "준비 중" 플래그 있음                     |
 | 랭킹          | `/ranking`                                                                                 | "준비 중" 플래그 있음                                         |
 | 고객지원      | `/support`(1:1 문의) · `/support/bug`(버그제보) · `/support/report`(불법이용제보), `/support/faq`, `/support/inquiries`(+`[id]`, `[id]/edit`) | 세 창구가 같은 폼·로직(종류별 카테고리·프리필·세부 유형, 첨부 이미지 3+영상 2, 접수번호). 내 문의 내역은 세 종류를 종류 라벨과 함께 표시 — `docs/reference/inquiry-kinds-spec.md` |
-| 마이페이지    | `/account`, `/account/link`                                                                | 닉네임·계정 관리, 계정 연동, 쿠폰 등록, 회원 탈퇴              |
+| 마이페이지    | `/account`, `/account/link`                                                                | 닉네임·계정 관리, 계정 연동, 회원 탈퇴              |
 | 정책 문서     | `/policy/[slug]`                                                                           | `privacy` · `operating` · `discord` · `marketing`             |
 | 소개          | `/about`                                                                                   | 기본 비활성(플래그)                                            |
 | 로그인/온보딩 | `/login`, `/register`, `/auth/onboarding`, `/auth/restore`, `/auth/callback`               | 간편로그인(구글·네이버) 전용, 이메일·비밀번호 가입 없음         |

@@ -541,6 +541,7 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string | null
+          user_replied_at: string | null
         }
         Insert: {
           account_id?: string | null
@@ -570,6 +571,7 @@ export type Database = {
           type: string
           updated_at?: string
           user_id?: string | null
+          user_replied_at?: string | null
         }
         Update: {
           account_id?: string | null
@@ -599,6 +601,7 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string | null
+          user_replied_at?: string | null
         }
         Relationships: [
           {
@@ -710,6 +713,7 @@ export type Database = {
       }
       inquiry_replies: {
         Row: {
+          attachments: Json
           author_id: string | null
           author_name: string
           content: string
@@ -722,6 +726,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachments?: Json
           author_id?: string | null
           author_name?: string
           content: string
@@ -734,6 +739,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachments?: Json
           author_id?: string | null
           author_name?: string
           content?: string
@@ -1325,6 +1331,10 @@ export type Database = {
           p_expected_status: Database["public"]["Enums"]["inquiry_status"]
           p_inquiry_id: string
         }
+        Returns: Json
+      }
+      add_inquiry_user_reply: {
+        Args: { p_attachments?: Json; p_content: string; p_inquiry_id: string }
         Returns: Json
       }
       can_report_target: {

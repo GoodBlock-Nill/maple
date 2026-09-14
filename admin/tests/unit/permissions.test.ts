@@ -76,6 +76,15 @@ describe('parsePermissions', () => {
     })
   })
 
+  /* 폐지된 모듈의 키가 역할 jsonb 에 그대로 남아 있다(마이그레이션을 돌리지 않았다).
+     파싱이 깨지거나 그 값이 판정에 섞이면 기존 역할이 통째로 망가진다. */
+  it('should ignore a retired module key left in stored json', () => {
+    const stored = { news: 'write', coupons: 'write', members: 'read' }
+
+    expect(parsePermissions(stored)).toEqual({ news: 'write', members: 'read' })
+    expect(isAdminModule('coupons')).toBe(false)
+  })
+
   it('should return an empty table for non-objects', () => {
     expect(parsePermissions(null)).toEqual({})
     expect(parsePermissions('write')).toEqual({})
@@ -91,7 +100,6 @@ describe('ADMIN_MODULES', () => {
       'community',
       'reports',
       'members',
-      'coupons',
       'inquiries',
       'faqs',
       'gacha',

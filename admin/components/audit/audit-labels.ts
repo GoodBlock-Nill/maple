@@ -5,6 +5,10 @@
  * 고정 표를 만들면 새 모듈이 붙을 때마다 여기를 고쳐야 하고, 고치지 않으면 목록에
  * 영문 문자열이 그대로 남는다. 그래서 **영역 + 동작**으로 나눠 조합한다 — 표에
  * 없는 조합도 "무엇을 했는지"는 읽힌다.
+ *
+ * 표에서 빠진 영역·테이블(폐지된 모듈의 옛 기록)은 원문을 그대로 보여 준다. 감사 로그는
+ * 지우지 않으므로, 모듈이 사라져도 과거 행은 계속 렌더된다 — 라벨이 없다고 화면이
+ * 비거나 깨지지 않는다.
  */
 
 /** `gacha.create` 의 앞부분. */
@@ -25,8 +29,6 @@ const DOMAIN_LABELS: Record<string, string> = {
   inquiry_note: '문의 내부 메모',
   inquiry_category: '문의 카테고리',
   inquiry_reply_template: '답변 템플릿',
-  coupon: '쿠폰',
-  coupon_redemption: '쿠폰 등록',
   faq: 'FAQ',
   report: '신고',
   legal: '약관',
@@ -89,10 +91,6 @@ const ACTION_LABELS: Record<string, string> = {
   'member.restore': '탈퇴 복구(본인)',
   'member.purge': '개인정보 파기',
   'member.force_withdraw': '강제 탈퇴',
-  /* 조합으로 만들면 `coupon.create`(쿠폰 등록)와 `coupon_redemption.*`(쿠폰 등록 …)이
-     같은 말이 되어 목록에서 구분되지 않는다. 만드는 쪽은 '생성'으로 떼어 놓는다. */
-  'coupon.create': '쿠폰 생성',
-  'coupon_redemption.status': '쿠폰 등록 처리',
 }
 
 export function auditActionLabel(action: string): string {
@@ -129,8 +127,6 @@ const TABLE_LABELS: Record<string, string> = {
   inquiry_replies: '문의 답변',
   inquiry_notes: '문의 내부 메모',
   inquiry_reply_templates: '답변 템플릿',
-  coupons: '쿠폰',
-  coupon_redemptions: '쿠폰 등록',
   faqs: 'FAQ',
   reports: '신고',
   admin_invites: '관리자 초대',

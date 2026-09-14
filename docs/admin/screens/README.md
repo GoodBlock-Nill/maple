@@ -13,8 +13,7 @@ HTML 한 벌(`docs/admin/SCREENS-GUIDE.html`)은 이 파일들을 메뉴 탭으�
 | 02 | 뉴스 | [02-news.md](02-news.md) | `/news`, `/news/new`, `/news/[id]`, `/news/templates` | 발행·숨김·고정 → `news-list` 재검증 → `/news` 카드형·리스트형 |
 | 03 | 커뮤니티 | [03-community.md](03-community.md) | `/community/posts`, `/community/comments` | 숨김·삭제 → `community-list` → `/community` |
 | 04 | 신고 | [04-reports.md](04-reports.md) | `/reports` | 클라이언트 신고 접수 → 처리/기각 → 숨김·삭제·정지 연계 |
-| 05 | 회원 | [05-members.md](05-members.md) | `/members`, `/members/[id]` | 정지·탈퇴 처리 → 로그인/복구 화면, 활동 탭(게시글·댓글·신고·문의·쿠폰) |
-| 06 | 쿠폰 | [06-coupons.md](06-coupons.md) | `/coupons`, `/coupons/[id]` | 클라이언트 쿠폰 등록 → 지급 처리 → 내역 |
+| 05 | 회원 | [05-members.md](05-members.md) | `/members`, `/members/[id]` | 정지·탈퇴 처리 → 로그인/복구 화면, 활동 탭(게시글·댓글·신고·문의) |
 | 07 | 고객지원 — 문의·FAQ | [07-support.md](07-support.md) | `/inquiries`(홈페이지·이메일), `/inquiries/[id]`, `/faqs` | 1:1 문의·버그제보·불법이용제보 접수 → 배정·잠금·답변 → `/support/inquiries/[id]`; FAQ → `faqs` |
 | 07b | 고객지원 — 카테고리·답변 템플릿 | [07b-support-categories-templates.md](07b-support-categories-templates.md) | `/inquiries/categories`, `/inquiries/reply-templates` | 카테고리·프리필·세부 유형 → `inquiry-categories` → 접수 폼 |
 | 08 | 가이드(확률형 아이템) | [08-gacha.md](08-gacha.md) | `/gacha`, `/gacha/new`, `/gacha/[id]` | `gacha` 재검증 → `/guide` (준비중 플래그 우선) |

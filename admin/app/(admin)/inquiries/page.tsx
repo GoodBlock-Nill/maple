@@ -77,7 +77,7 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
         viewerId: admin.id,
       }),
       getInquiryTabCounts(filters, admin.id),
-      /* 종류를 고르면 그 창구의 카테고리만 고를 수 있다 — 버그제보 목록에서 '쿠폰'을
+      /* 종류를 고르면 그 창구의 카테고리만 고를 수 있다 — 버그제보 목록에서 '결제'을
          고를 수 있으면 결과는 언제나 0건이다. 옛 라벨은 어느 창구의 것인지 알 수
          없으므로 그대로 남는다(그 값으로 접수된 과거 문의를 찾을 유일한 길이다). */
       getInquiryCategoryFilterOptions(filters.kind),

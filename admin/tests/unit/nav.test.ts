@@ -13,7 +13,6 @@ describe('NAV_ITEMS', () => {
       '/community/posts',
       '/reports',
       '/members',
-      '/coupons',
       '/inquiries?source=web',
       '/gacha',
       '/rankings',

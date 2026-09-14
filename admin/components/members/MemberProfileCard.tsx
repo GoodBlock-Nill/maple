@@ -23,12 +23,9 @@ import type { ReactNode } from 'react'
 export function MemberProfileCard({
   member,
   actions,
-  couponCount = null,
 }: {
   member: MemberProfile
   actions: ReactNode
-  /** 쿠폰 등록 건수. 집계가 깨졌거나 권한이 없으면 `null` 이고 칸을 그리지 않는다. */
-  couponCount?: number | null
 }) {
   /* 현재 시각 비교는 헬퍼에 맡긴다. 컴포넌트 본문에서 `Date.now()` 를 직접 부르면
      렌더가 순수하지 않게 되고(react-hooks/purity) 값이 렌더마다 흔들린다. */
@@ -79,11 +76,6 @@ export function MemberProfileCard({
               <OptOutValue sms={member.marketingSmsOptOut} email={member.marketingEmailOptOut} />
             }
           />
-        )}
-        {/* 쿠폰 등록 건수. `/coupons` 는 쿠폰 목록이라 회원으로 좁힐 자리가 없다 —
-            링크 대신 숫자만 두고, 상세는 쿠폰별 화면에서 본다. */}
-        {couponCount !== null && (
-          <MemberField label="쿠폰 등록" value={`${couponCount.toLocaleString('ko-KR')}건`} />
         )}
         <MemberField label="이용약관 동의" value={formatDateTime(member.termsAgreedAt)} />
         <MemberField label="개인정보 동의" value={formatDateTime(member.privacyAgreedAt)} />

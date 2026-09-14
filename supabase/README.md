@@ -82,7 +82,7 @@ supabase/
 | `site_settings` · `hero_banners` | 사이트 설정 · 히어로 배너                          |
 | `gacha_items`                  | 확률형 아이템 정보                                  |
 | `rankings`                     | 랭킹 스냅샷                                         |
-| `coupons` · `coupon_redemptions` | 쿠폰 발급 · 등록 이력                              |
+| `coupons` · `coupon_redemptions` | (기능 폐기, 2026-09-14 — 테이블만 남아 있고 관리자·클라이언트 화면 없음) |
 | `legal_documents` · `legal_document_versions` | 약관·정책 문서와 개정 이력                |
 | `news_category_templates`      | 뉴스 카테고리별 작성 기본 양식                       |
 | `admin_invites` · `admin_roles`| 관리자 초대 · 역할(모듈별 권한)                     |

@@ -9,7 +9,7 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
  *
  * 집계는 `count: 'exact', head: true` 로 낸다. 행을 실제로 가져오지 않으므로
  * 네트워크 페이로드가 0 이고, 지표가 늘어도 응답 크기가 커지지 않는다.
- * 14개 남짓한 질의는 서로 의존하지 않으니 `Promise.all` 로 한 번에 던진다.
+ * 십수 개의 질의는 서로 의존하지 않으니 `Promise.all` 로 한 번에 던진다.
  *
  * "오늘"의 기준은 한국시간 자정이다. UTC 자정으로 세면 오전 9시 이전의 글이
  * 어제로 밀려 운영자가 보는 숫자와 실제가 어긋난다.
@@ -32,8 +32,6 @@ export type DashboardMetrics = {
   comments: MetricWindow
   openReports: number | null
   pendingInquiries: number | null
-  /** 아직 지급·거절 처리를 하지 않은 쿠폰 등록 건수. */
-  pendingCouponRedemptions: number | null
   /** 탈퇴 후 보존 기간 중(개인정보 파기 전)인 회원 수. */
   withdrawnPending: number | null
   /** 최근 7일 안에 개인정보가 파기된 회원 수. */
@@ -127,7 +125,6 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
     comments,
     reports,
     inquiries,
-    couponRedemptions,
     withdrawnPending,
     purgedThisWeek,
   ] = await Promise.all([
@@ -147,12 +144,6 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
     ),
     supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-    /* 쿠폰 등록은 접수만 자동이고 **지급은 사람이 한다.** 이 숫자가 쌓여 있으면 사용자
-       쪽에서는 "코드는 넣었는데 아이템이 안 온다"가 된다 — 문의로 돌아오기 전에 보여야 한다. */
-    supabase
-      .from('coupon_redemptions')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending'),
     /* 탈퇴 대기 = 탈퇴했고 아직 파기되지 않은 회원. 파기까지 남은 시간이 있는
        사람들이라 이 숫자가 곧 "지금 복구가 가능한 회원 수"이기도 하다. */
     supabase
@@ -175,7 +166,6 @@ export async function getDashboardMetrics(now: Date = new Date()): Promise<Dashb
     comments,
     openReports: toCount('reports:open', reports),
     pendingInquiries: toCount('inquiries:pending', inquiries),
-    pendingCouponRedemptions: toCount('coupon_redemptions:pending', couponRedemptions),
     withdrawnPending: toCount('profiles:withdrawn', withdrawnPending),
     purgedThisWeek: toCount('profiles:purged', purgedThisWeek),
   }
