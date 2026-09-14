@@ -31,7 +31,7 @@ export default async function InquiryReplyTemplatesPage() {
     <>
       <PageHeader
         title="답변 템플릿"
-        description="1:1 문의 답변에 불러다 쓰는 상용구입니다. 공통 템플릿은 모든 문의에서, 카테고리 템플릿은 그 분류의 문의에서만 보입니다. 자리표시자({{닉네임}} 등)는 불러오는 순간 그 문의의 정보로 바뀝니다."
+        description="홈페이지 문의 답변에 불러다 쓰는 상용구입니다. 공통 템플릿은 모든 문의에서, 카테고리 템플릿은 그 분류의 문의에서만 보입니다. 자리표시자({{닉네임}} 등)는 불러오는 순간 그 문의의 정보로 바뀝니다."
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Button href="/inquiries/categories" variant="ghost">

@@ -1,6 +1,9 @@
 import 'server-only'
 
+import { DEFAULT_INQUIRY_KIND, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import { createClient } from '@/lib/supabase/server'
+
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
 
 /**
  * 문의 카테고리 조회 계층 (`inquiry_categories`).
@@ -14,7 +17,7 @@ import { createClient } from '@/lib/supabase/server'
  */
 
 const CATEGORY_COLUMNS =
-  'id, key, label, description, prefill, subtypes, sort_order, is_active, updated_at'
+  'id, key, label, description, prefill, subtypes, kind, sort_order, is_active, updated_at'
 
 export type AdminInquiryCategory = {
   id: string
@@ -24,6 +27,9 @@ export type AdminInquiryCategory = {
   prefill: string
   /** 사용자 폼의 유형 셀렉트 선택지. 순서가 곧 표시 순서다. 비면 '기타' 로 접수된다. */
   subtypes: readonly string[]
+  /** 어느 창구의 분류인가. 관리 화면이 이 값으로 세 섹션을 가른다. */
+  kind: InquiryKind
+  /** **kind 안에서의** 순서다(마이그레이션 20260914000100). 전역 순서가 아니다. */
   sortOrder: number
   isActive: boolean
   /** 이 라벨로 접수된 문의 수. 0 일 때만 삭제할 수 있다. */
@@ -65,6 +71,13 @@ export async function getInquiryCategoryUsage(): Promise<ReadonlyMap<string, num
   return new Map(data.map((row) => [row.category, Number(row.total)]))
 }
 
+/**
+ * 관리 화면의 전체 목록.
+ *
+ * 한 번만 읽고 **화면이 kind 로 나눈다**(`groupInquiryCategoriesByKind`). 창구마다
+ * 질의를 던지면 사용 건수 집계도 세 번 하게 되고, 세 섹션의 숫자가 서로 다른 시점을
+ * 보게 된다. `sort_order` 는 kind 안에서의 순서이므로 정렬은 그대로 둔다.
+ */
 export async function getInquiryCategories(): Promise<InquiryCategoryListResult> {
   const supabase = await createClient()
   const [{ data, error }, usage] = await Promise.all([
@@ -91,6 +104,8 @@ export async function getInquiryCategories(): Promise<InquiryCategoryListResult>
       description: row.description,
       prefill: row.prefill,
       subtypes: row.subtypes,
+      // CHECK 제약은 생성된 타입에 없다(`kind: string`). 경계에서 한 번 좁힌다.
+      kind: isInquiryKind(row.kind) ? row.kind : DEFAULT_INQUIRY_KIND,
       sortOrder: row.sort_order,
       isActive: row.is_active,
       usageCount: usage.get(row.label) ?? 0,
@@ -100,12 +115,18 @@ export async function getInquiryCategories(): Promise<InquiryCategoryListResult>
   }
 }
 
-/** 새 카테고리를 맨 뒤에 붙이기 위한 다음 순번. */
-export async function getNextInquiryCategorySortOrder(): Promise<number> {
+/**
+ * 새 카테고리를 **그 창구의** 맨 뒤에 붙이기 위한 다음 순번.
+ *
+ * 순번은 kind 안에서만 뜻이 있다 — 전역 최대값을 쓰면 버그제보에 하나를 더할 때마다
+ * 1:1 문의의 순번까지 끌고 올라가 섹션 사이의 숫자가 벌어진다.
+ */
+export async function getNextInquiryCategorySortOrder(kind: InquiryKind): Promise<number> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('inquiry_categories')
     .select('sort_order')
+    .eq('kind', kind)
     .order('sort_order', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -122,16 +143,29 @@ export async function getNextInquiryCategorySortOrder(): Promise<number> {
  *
  * 등록된 카테고리(비활성 포함) + **데이터에만 남은 옛 라벨**을 함께 준다. 옛 라벨을
  * 빼면 '계정' 으로 접수된 과거 문의를 필터로 찾을 방법이 사라진다.
+ *
+ * 종류를 고른 화면에서는 **그 창구의 카테고리만** 남긴다(버그제보 목록에서 '쿠폰'을
+ * 고를 수 있으면 언제나 0건이 나온다). 옛 라벨은 어느 창구의 것인지 알 수 없으므로
+ * 그대로 남긴다 — 판정 기준은 "등록된 어느 카테고리와도 이름이 같지 않다"는 것이다.
  */
-export async function getInquiryCategoryFilterOptions(): Promise<readonly string[]> {
+export async function getInquiryCategoryFilterOptions(
+  kind: InquiryKind | null = null,
+): Promise<readonly string[]> {
   const supabase = await createClient()
   const [{ data }, usage] = await Promise.all([
-    supabase.from('inquiry_categories').select('label').order('sort_order', { ascending: true }),
+    supabase
+      .from('inquiry_categories')
+      .select('label, kind')
+      .order('sort_order', { ascending: true }),
     getInquiryCategoryUsage(),
   ])
 
-  const registered = (data ?? []).map((row) => row.label)
-  const legacy = [...usage.keys()].filter((label) => !registered.includes(label)).sort()
+  const rows = data ?? []
+  const registered = rows
+    .filter((row) => kind === null || row.kind === kind)
+    .map((row) => row.label)
+  const known = rows.map((row) => row.label)
+  const legacy = [...usage.keys()].filter((label) => !known.includes(label)).sort()
 
   return [...registered, ...legacy]
 }
@@ -148,17 +182,19 @@ export async function getInquiryCategoryFilterOptions(): Promise<readonly string
  */
 export async function getInquiryTypeFilterOptions(
   category: string | null,
+  /** 종류 필터. 카테고리를 고르지 않아도 그 창구의 세부 유형만 남긴다. */
+  kind: InquiryKind | null = null,
 ): Promise<readonly string[]> {
   const supabase = await createClient()
   const [{ data }, usage] = await Promise.all([
     supabase
       .from('inquiry_categories')
-      .select('label, subtypes')
+      .select('label, subtypes, kind')
       .order('sort_order', { ascending: true }),
     getInquiryTypeUsage(),
   ])
 
-  const rows = data ?? []
+  const rows = (data ?? []).filter((row) => kind === null || row.kind === kind)
   const scoped = category === null ? rows : rows.filter((row) => row.label === category)
   const registered = [...new Set(scoped.flatMap((row) => row.subtypes))]
   const legacy = [...usage.keys()].filter((type) => !registered.includes(type)).sort()

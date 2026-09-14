@@ -18,6 +18,7 @@ const VALID = {
   description: '로그인·접속 불가',
   prefill: '글자월드 캐릭터 닉네임:\n상세 내용:',
   subtypes: ['로그인/접속 불가', '강제 종료'],
+  kind: 'bug',
   isActive: true,
 }
 
@@ -143,6 +144,32 @@ describe('inquiryCategorySchema 의 세부 문의 유형', () => {
   })
 })
 
+describe('inquiryCategorySchema 의 종류', () => {
+  it('should accept every kind the database accepts', () => {
+    // Arrange & Act & Assert — CHECK(`inquiry_categories_kind_check`)와 같은 세 값.
+    for (const kind of ['inquiry', 'bug', 'report']) {
+      expect(inquiryCategorySchema.safeParse({ ...VALID, kind }).success).toBe(true)
+    }
+  })
+
+  it('should keep the kind narrowed on the parsed value', () => {
+    // Arrange & Act
+    const parsed = inquiryCategorySchema.safeParse({ ...VALID, kind: 'report' })
+
+    // Assert — 화면 아래로는 InquiryKind 로만 다닌다(RPC 가 문자열을 22023 으로 떨군다).
+    expect(parsed.data?.kind).toBe('report')
+  })
+
+  it('should reject a kind the database would reject', () => {
+    // Arrange & Act
+    const parsed = inquiryCategorySchema.safeParse({ ...VALID, kind: 'mystery' })
+
+    // Assert
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toContain('종류')
+  })
+})
+
 describe('toCategoryKey', () => {
   it('should slugify a latin label', () => {
     // Arrange & Act & Assert
@@ -161,13 +188,33 @@ describe('toCategoryKey', () => {
 })
 
 describe('inquiryCategoryReorderSchema', () => {
+  it('should require the kind the section belongs to', () => {
+    /* 순번은 kind 안에서의 순서다(마이그레이션 20260914000100). 종류가 없으면 어느
+       섹션의 저장인지 감사 로그에서 되짚을 수 없다. */
+    const withKind = inquiryCategoryReorderSchema.safeParse({
+      ids: ['11111111-2222-4333-8444-555555555555'],
+      kind: 'report',
+    })
+    const withoutKind = inquiryCategoryReorderSchema.safeParse({
+      ids: ['11111111-2222-4333-8444-555555555555'],
+      kind: '',
+    })
+
+    expect(withKind.success).toBe(true)
+    expect(withoutKind.success).toBe(false)
+  })
+
   it('should require at least one uuid', () => {
     // Arrange & Act & Assert
-    expect(inquiryCategoryReorderSchema.safeParse({ ids: [] }).success).toBe(false)
-    expect(inquiryCategoryReorderSchema.safeParse({ ids: ['nope'] }).success).toBe(false)
+    expect(inquiryCategoryReorderSchema.safeParse({ ids: [], kind: 'inquiry' }).success).toBe(false)
+    expect(inquiryCategoryReorderSchema.safeParse({ ids: ['nope'], kind: 'inquiry' }).success).toBe(
+      false,
+    )
     expect(
-      inquiryCategoryReorderSchema.safeParse({ ids: ['11111111-1111-4111-8111-111111111111'] })
-        .success,
+      inquiryCategoryReorderSchema.safeParse({
+        ids: ['11111111-1111-4111-8111-111111111111'],
+        kind: 'inquiry',
+      }).success,
     ).toBe(true)
   })
 })

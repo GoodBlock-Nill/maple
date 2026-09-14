@@ -83,7 +83,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     children: [
       /* 이메일 문의는 새 라우트가 아니라 목록의 출처 필터 프리셋이다(EMAIL-INQUIRY-PLAN §7).
          부모 링크는 첫 하위와 같아야 하므로 부모도 `?source=web` 을 가리킨다. */
-      { label: '1:1 문의', href: '/inquiries?source=web' },
+      { label: '홈페이지 문의', href: '/inquiries?source=web' },
       { label: '이메일 문의', href: '/inquiries?source=email' },
       /* 카테고리 관리는 문의 목록과 같은 모듈(`inquiries`)이다. 사용자 폼의 분류와
          프리필 양식을 여기서 고친다 — 문의를 처리하는 사람과 분류를 정하는 사람이

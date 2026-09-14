@@ -86,7 +86,7 @@ describe('visibleNavItems', () => {
     ])
   })
 
-  /* 고객지원은 1:1 문의(inquiries)와 FAQ(faqs) 두 모듈을 한 메뉴에 담는다. 첫 하위가
+  /* 고객지원은 홈페이지 문의(inquiries)와 FAQ(faqs) 두 모듈을 한 메뉴에 담는다. 첫 하위가
      닫혔는데 부모 링크를 그대로 두면 눌렀을 때 볼 수 없는 화면으로 간다. */
   it('should move the parent link onto the first visible child', () => {
     const support = visibleNavItems({ faqs: 'write' })[0]
@@ -115,7 +115,7 @@ describe('isPathActive', () => {
   })
 
   /* 고객지원의 두 하위는 같은 라우트를 가리키는 필터 프리셋이다 — 쿼리를 보지 않으면
-     '1:1 문의'와 '이메일 문의'가 언제나 동시에 활성으로 보인다. */
+     '홈페이지 문의'와 '이메일 문의'가 언제나 동시에 활성으로 보인다. */
   it('should require every query param of a preset href to match', () => {
     expect(isPathActive('/inquiries?source=email', '/inquiries', 'source=email')).toBe(true)
     expect(isPathActive('/inquiries?source=email', '/inquiries', 'source=web')).toBe(false)
@@ -191,7 +191,7 @@ describe('navBreadcrumb', () => {
 
   it('should name the source preset when the query says so', () => {
     expect(navBreadcrumb('/inquiries', 'source=email')).toEqual(['고객지원', '이메일 문의'])
-    expect(navBreadcrumb('/inquiries', 'source=web')).toEqual(['고객지원', '1:1 문의'])
+    expect(navBreadcrumb('/inquiries', 'source=web')).toEqual(['고객지원', '홈페이지 문의'])
   })
 
   it('should fall back to the parent label when no preset matches', () => {

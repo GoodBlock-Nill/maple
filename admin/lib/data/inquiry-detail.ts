@@ -1,11 +1,13 @@
 import 'server-only'
 
+import { DEFAULT_INQUIRY_KIND, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import { signInquiryAttachments, toAttachments } from '@/lib/data/inquiry-attachments'
 import { parseEmailAuth } from '@/lib/data/inquiry-email'
 import { toAdminRef, toEditingRef } from '@/lib/data/inquiry-refs'
 import { createClient } from '@/lib/supabase/server'
 import { toInquirySource } from '@/lib/validation/inquiries'
 
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
 import type { InquiryAttachment } from '@/lib/data/inquiry-attachments'
 import type { InquiryEmailAuth } from '@/lib/data/inquiry-email'
 import type { InquiryAdminRef, InquiryEditingRef } from '@/lib/data/inquiry-refs'
@@ -21,7 +23,7 @@ import type { InquirySource, InquiryStatus } from '@/lib/validation/inquiries'
 
 /* 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 /* prettier-ignore */
-const DETAIL_COLUMNS = 'id, inquiry_no, title, content, account_id, category, type, status, contact_email, attachments, answered_at, cancelled_at, created_at, updated_at, user_id, source, email_from, email_from_name, email_message_id, email_auth, email_thread_key, assigned_to, assigned_at, editing_by, editing_at, author:profiles!inquiries_user_id_fkey(nickname, email), assignee:profiles!inquiries_assigned_to_fkey(id, nickname), editor:profiles!inquiries_editing_by_fkey(id, nickname)'
+const DETAIL_COLUMNS = 'id, inquiry_no, title, content, account_id, category, type, kind, status, contact_email, attachments, answered_at, cancelled_at, created_at, updated_at, user_id, source, email_from, email_from_name, email_message_id, email_auth, email_thread_key, assigned_to, assigned_at, editing_by, editing_at, author:profiles!inquiries_user_id_fkey(nickname, email), assignee:profiles!inquiries_assigned_to_fkey(id, nickname), editor:profiles!inquiries_editing_by_fkey(id, nickname)'
 
 export type InquiryDetail = {
   id: string
@@ -31,6 +33,8 @@ export type InquiryDetail = {
   accountId: string | null
   category: string
   type: string
+  /** 접수 창구. 상세 메타의 '종류' 줄이 이 값을 보여 준다. */
+  kind: InquiryKind
   status: InquiryStatus
   contactEmail: string | null
   answeredAt: string | null
@@ -80,6 +84,8 @@ export async function getInquiryDetail(id: string): Promise<InquiryDetail | null
     accountId: data.account_id,
     category: data.category,
     type: data.type,
+    // CHECK 제약은 생성된 타입에 없다(`kind: string`). 경계에서 한 번 좁힌다.
+    kind: isInquiryKind(data.kind) ? data.kind : DEFAULT_INQUIRY_KIND,
     status: data.status,
     contactEmail: data.contact_email,
     answeredAt: data.answered_at,

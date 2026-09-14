@@ -13,7 +13,7 @@ import { makeTestVideo } from './video-fixture'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
- * 1:1 문의 인수 검증.
+ * 홈페이지 문의 인수 검증.
  *
  * 픽스처(일회용 사용자 · 첨부 · 문의 2건)는 서비스 롤로 만들고 끝나면 지운다.
  * 접수 → 답변 → 사용자 화면 반영이 한 줄기라 serial 로 묶는다.

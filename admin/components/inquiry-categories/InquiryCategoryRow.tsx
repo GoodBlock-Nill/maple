@@ -6,7 +6,7 @@ import { InquiryCategoryDeleteButton } from '@/components/inquiry-categories/Inq
 import { InquiryCategoryFormDialog } from '@/components/inquiry-categories/InquiryCategoryFormDialog'
 import { Badge, Button, useToast } from '@/components/ui'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
-import { toggleInquiryCategoryAction } from '@/lib/actions/inquiry-category-actions'
+import { toggleInquiryCategoryAction } from '@/lib/actions/inquiry-category-order-actions'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { AdminInquiryCategory } from '@/lib/data/inquiry-categories'

@@ -2,7 +2,9 @@ import Link from 'next/link'
 
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { FormBanner } from '@/components/ui/FormField'
+import { Badge } from '@/components/ui/Badge'
 import { Table, type Column } from '@/components/ui/Table'
+import { INQUIRY_KIND_MAP } from '@/lib/constants/inquiry-kind'
 import { LIST_LOAD_ERROR } from '@/lib/constants/messages'
 import { formatDateTime } from '@/lib/utils/format-date'
 import { formatInquiryNo } from '@/lib/utils/inquiry-no'
@@ -11,7 +13,7 @@ import { inquiryCategoryLabel, inquiryTypeLabel } from '@/lib/validation/inquiri
 import type { MemberInquirySummary } from '@/lib/data/member-inquiries'
 
 /**
- * 회원 상세의 "1:1 문의" 탭.
+ * 회원 상세의 "홈페이지 문의" 탭.
  *
  * `MemberActivityPanel` 에서 떼어 낸 것은 문의 목록 컬럼(6개) · 권한 안내 ·
  * "전체 보기" 링크까지 들어오면서 그 파일이 300줄 상한에 닿기 때문이다
@@ -47,7 +49,7 @@ export function MemberInquiriesTab({
         columns={INQUIRY_COLUMNS}
         rows={rows}
         getRowKey={(row) => row.id}
-        caption="회원의 1:1 문의"
+        caption="회원의 홈페이지 문의"
         emptyMessage="접수한 문의가 없습니다."
       />
       {moreHref !== null && (
@@ -75,6 +77,13 @@ const INQUIRY_COLUMNS: readonly Column<MemberInquirySummary>[] = [
         {formatInquiryNo(row.inquiryNo)}
       </span>
     ),
+  },
+  {
+    // 문의 목록과 같은 자리에 같은 뱃지를 둔다(두 화면이 같은 순서로 읽혀야 한다).
+    key: 'kind',
+    header: '종류',
+    className: 'w-24',
+    cell: (row) => <Badge tone="neutral">{INQUIRY_KIND_MAP[row.kind].label}</Badge>,
   },
   {
     key: 'title',

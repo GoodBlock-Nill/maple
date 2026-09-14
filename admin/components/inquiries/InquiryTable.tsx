@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { InquiryAssigneeCell } from '@/components/inquiries/InquiryAssigneeCell'
 import { InquiryStatusBadge } from '@/components/inquiries/InquiryStatusBadge'
 import { Badge, Card, Pagination, Table, type Column } from '@/components/ui'
+import { INQUIRY_KIND_MAP } from '@/lib/constants/inquiry-kind'
 import { formatDateTime, formatRelativeDay } from '@/lib/utils/format-date'
 import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import {
@@ -25,7 +26,7 @@ const LIST_PATH = '/inquiries'
  * 페이지에서 떼어 낸 것은 컬럼 정의만으로 화면 파일이 200줄을 넘기 때문이다.
  * 상태를 갖지 않는 서버 컴포넌트라 정렬·페이지는 그대로 링크로 움직인다.
  *
- * **출처(웹 · 이메일) 칸은 두지 않는다**(2026-09-11 오너 결정). 사이드바가 '1:1 문의'와
+ * **출처(웹 · 이메일) 칸은 두지 않는다**(2026-09-11 오너 결정). 사이드바가 '홈페이지 문의'와
  * '이메일 문의'를 이미 갈라 두었으므로, 같은 값을 칸으로 한 번 더 적으면 모든 행에
  * 같은 뱃지가 반복될 뿐이다. `source` 필터 자체는 그 두 메뉴가 쓰므로 그대로 둔다.
  */
@@ -58,6 +59,14 @@ export function InquiryTable({
           {formatInquiryNo(row.inquiryNo)}
         </span>
       ),
+    },
+    {
+      /* 종류는 접수번호 바로 옆이다 — 세 창구(1:1 문의 · 버그제보 · 불법이용제보)가
+         한 표에 섞여 오므로, 제목을 읽기 전에 무엇으로 들어온 건인지 보여야 한다. */
+      key: 'kind',
+      header: '종류',
+      className: 'w-28 min-w-[88px]',
+      cell: (row) => <Badge tone="neutral">{INQUIRY_KIND_MAP[row.kind].label}</Badge>,
     },
     {
       key: 'title',

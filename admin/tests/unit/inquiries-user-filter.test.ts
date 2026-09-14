@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * 문의 목록의 `user` 필터(`/inquiries?user=<id>`).
+ * 문의 목록의 `user` · `kind` 필터(`/inquiries?user=<id>&kind=bug`).
  *
  * 회원 상세의 "전체 보기" 링크가 기대하는 것은 단 하나 — 그 회원의 `user_id` 로만
  * 좁혀지는 것이다. 목록·탭 건수가 같은 헬퍼(`applyCommonFilters`)를 거치므로
@@ -78,6 +78,40 @@ describe('getInquiries — 회원 필터', () => {
     })
 
     expect(state.filters.some((entry) => entry.column === 'user_id')).toBe(false)
+  })
+})
+
+describe('getInquiries — 종류 필터', () => {
+  it('kind 파라미터가 있으면 그 창구로 좁힌다', async () => {
+    // Arrange
+    const filters = parseInquiryFilters({ kind: 'report' })
+
+    // Act
+    await getInquiries(filters, {
+      page: 1,
+      sortKey: 'created_at',
+      ascending: false,
+      viewerId: null,
+    })
+
+    // Assert
+    expect(state.filters).toContainEqual({ column: 'kind', value: 'report' })
+  })
+
+  it('kind 파라미터가 없으면 세 창구를 함께 본다', async () => {
+    // Arrange
+    const filters = parseInquiryFilters({})
+
+    // Act
+    await getInquiries(filters, {
+      page: 1,
+      sortKey: 'created_at',
+      ascending: false,
+      viewerId: null,
+    })
+
+    // Assert
+    expect(state.filters.some((entry) => entry.column === 'kind')).toBe(false)
   })
 })
 

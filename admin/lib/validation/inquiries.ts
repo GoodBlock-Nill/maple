@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { isInquiryKind, type InquiryKind } from '@/lib/constants/inquiry-kind'
 import { firstValue, type QueryParams } from '@/lib/utils/table-query'
 import { parseInquiryAssigneeParams } from '@/lib/validation/inquiry-assignment'
 import { parseInquiryNoSearch } from '@/lib/validation/inquiry-no-search'
@@ -11,7 +12,7 @@ import type { InquiryAssigneeFilter } from '@/lib/validation/inquiry-assignment'
 import type { InquirySource } from '@/lib/validation/inquiry-source'
 
 /**
- * 1:1 문의 화면의 입력 계약 — 상태 전이 · 목록 필터 · 답변 폼.
+ * 홈페이지 문의 화면의 입력 계약 — 상태 전이 · 목록 필터 · 답변 폼.
  *
  * 서버 액션은 클라이언트 검증을 신뢰하지 않고 여기서 다시 파싱한다. 상태 전이는
  * 화면(select 옵션)과 액션이 **같은 표**를 보고 판단해야 "화면에는 없는데 직접
@@ -222,8 +223,10 @@ export type InquiryFilters = {
   category: string | null
   /** 세부 문의 유형. 옵션은 카테고리의 subtypes + 데이터에 남은 옛 값이다. */
   type: string | null
-  /** 출처 프리셋(사이드바의 '1:1 문의' · '이메일 문의'). null 이면 전체. */
+  /** 출처 프리셋(사이드바의 '홈페이지 문의' · '이메일 문의'). null 이면 전체. */
   source: InquirySource | null
+  /** 접수 종류(`?kind=`). null 이면 세 창구를 함께 본다. */
+  kind: InquiryKind | null
   search: string | null
   /** 검색어가 접수번호(`1024` · `#1024`)일 때의 숫자. 번호 정확 일치를 함께 건다. */
   searchNo: number | null
@@ -241,6 +244,7 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
   const category = firstValue(params.category)
   const type = firstValue(params.type)
   const source = firstValue(params.source)
+  const kind = firstValue(params.kind)
 
   return {
     tab,
@@ -253,6 +257,8 @@ export function parseInquiryFilters(params: QueryParams): InquiryFilters {
     type: sanitizeInquiryType(type),
     // 모르는 출처는 필터를 걸지 않는다(= 전체). 임의 문자열이 질의로 흘러가지 않게 한다.
     source: isInquirySource(source) ? source : null,
+    // 종류도 같은 규칙이다 — 세 값 밖이면 전체(1:1 문의 · 버그제보 · 불법이용제보).
+    kind: isInquiryKind(kind) ? kind : null,
     search: sanitizeInquirySearch(params.q),
     // 접수번호로도 찾을 수 있어야 한다 — 사용자가 불러 주는 값이 그것뿐이다.
     searchNo: parseInquiryNoSearch(params.q),

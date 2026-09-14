@@ -1,7 +1,17 @@
 import 'server-only'
 
+import {
+  DEFAULT_INQUIRY_KIND,
+  INQUIRY_KIND_VALUES,
+  isInquiryKind,
+} from '@/lib/constants/inquiry-kind'
 import { createClient } from '@/lib/supabase/server'
-import { COMMON_CATEGORY_LABEL } from '@/lib/validation/inquiry-reply-templates'
+import {
+  COMMON_CATEGORY_LABEL,
+  templateCategoryLabel,
+} from '@/lib/validation/inquiry-reply-templates'
+
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
 
 /**
  * 답변 템플릿 조회 계층 (`inquiry_reply_templates`, 마이그레이션 20260911000200).
@@ -46,14 +56,23 @@ export type InquiryReplyTemplateListResult = {
 export type InquiryReplyTemplateCategory = {
   id: string
   label: string
+  /** 어느 창구의 분류인가. 화면은 `종류 · 라벨` 로 적는다. */
+  kind: InquiryKind
   isActive: boolean
 }
 
+/**
+ * 셀렉트·묶음의 순서는 **종류 → 그 안의 sort_order** 다.
+ *
+ * SQL 로 kind 를 정렬하면 알파벳순(bug · inquiry · report)이 되어 화면의 순서가
+ * 고객지원 메뉴(1:1 문의 · 버그제보 · 불법이용제보)와 어긋난다. 그래서 순번은
+ * `INQUIRY_KIND_VALUES` 의 자리로 매긴다.
+ */
 async function getTemplateCategories(): Promise<readonly InquiryReplyTemplateCategory[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('inquiry_categories')
-    .select('id, label, is_active')
+    .select('id, label, kind, is_active')
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
 
@@ -63,7 +82,18 @@ async function getTemplateCategories(): Promise<readonly InquiryReplyTemplateCat
     return []
   }
 
-  return data.map((row) => ({ id: row.id, label: row.label, isActive: row.is_active }))
+  return data
+    .map((row) => ({
+      id: row.id,
+      label: row.label,
+      // CHECK 제약은 생성된 타입에 없다(`kind: string`). 경계에서 한 번 좁힌다.
+      kind: isInquiryKind(row.kind) ? row.kind : DEFAULT_INQUIRY_KIND,
+      isActive: row.is_active,
+    }))
+    .sort(
+      (left, right) =>
+        INQUIRY_KIND_VALUES.indexOf(left.kind) - INQUIRY_KIND_VALUES.indexOf(right.kind),
+    )
 }
 
 function toTemplate(row: {
@@ -115,7 +145,9 @@ export async function getInquiryReplyTemplates(): Promise<InquiryReplyTemplateLi
     },
     ...categories.map((category) => ({
       categoryId: category.id,
-      label: category.label,
+      /* 머리글도 `종류 · 라벨` 이다 — 세 창구의 분류가 한 화면에 줄지어 나오므로,
+         라벨만으로는 이 문안이 어디에서 보이는지 알 수 없다. */
+      label: templateCategoryLabel(category.kind, category.label),
       isCategoryActive: category.isActive,
       templates: templates.filter((template) => template.categoryId === category.id),
     })),

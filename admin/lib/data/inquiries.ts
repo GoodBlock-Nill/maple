@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { DEFAULT_INQUIRY_KIND, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import { hasEmailAuthFailure } from '@/lib/data/inquiry-email'
 import { applyInquiryFilters } from '@/lib/data/inquiry-filters'
 import { toAdminRef, toEditingRef } from '@/lib/data/inquiry-refs'
@@ -7,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_PAGE_SIZE, pageRange } from '@/lib/utils/table-query'
 import { INQUIRY_STATUS_TABS, statusesForTab, toInquirySource } from '@/lib/validation/inquiries'
 
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
 import type { InquiryAttachment } from '@/lib/data/inquiry-attachments'
 import type { InquiryEmailAuth } from '@/lib/data/inquiry-email'
 import type { InquiryAdminRef, InquiryEditingRef } from '@/lib/data/inquiry-refs'
@@ -18,7 +20,7 @@ import type {
 } from '@/lib/validation/inquiries'
 
 /**
- * 1:1 문의 조회 계층.
+ * 홈페이지 문의 조회 계층.
  *
  * 전부 **세션 클라이언트**로 읽는다. `inquiries_select_admin` · `inquiry_replies_admin_all`
  * 정책이 관리자에게만 전체 조회를 열어 두므로, 권한이 사라지면 화면도 함께 비는 것이
@@ -29,7 +31,7 @@ import type {
    응답만 키운다. 검색은 서버 쪽 ilike 로 하므로 본문이 없어도 된다. */
 /* 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 /* prettier-ignore */
-const LIST_COLUMNS = 'id, inquiry_no, title, account_id, category, type, status, cancelled_at, created_at, updated_at, user_id, source, email_from, email_auth, assigned_to, editing_by, editing_at, author:profiles!inquiries_user_id_fkey(nickname), assignee:profiles!inquiries_assigned_to_fkey(id, nickname), editor:profiles!inquiries_editing_by_fkey(id, nickname), inquiry_replies(count)'
+const LIST_COLUMNS = 'id, inquiry_no, title, account_id, category, type, kind, status, cancelled_at, created_at, updated_at, user_id, source, email_from, email_auth, assigned_to, editing_by, editing_at, author:profiles!inquiries_user_id_fkey(nickname), assignee:profiles!inquiries_assigned_to_fkey(id, nickname), editor:profiles!inquiries_editing_by_fkey(id, nickname), inquiry_replies(count)'
 
 export type InquiryListItem = {
   id: string
@@ -41,6 +43,8 @@ export type InquiryListItem = {
   userId: string | null
   category: string
   type: string
+  /** 접수 창구(1:1 문의 · 버그제보 · 불법이용제보). 목록의 접수번호 옆 뱃지다. */
+  kind: InquiryKind
   status: InquiryStatus
   /** 사용자가 접수를 취소한 시각. 상태가 closed 이면서 이 값이 있으면 '접수 취소'다. */
   cancelledAt: string | null
@@ -127,6 +131,9 @@ export async function getInquiries(
     userId: row.user_id,
     category: row.category,
     type: row.type,
+    /* 생성된 타입은 `kind: string` 이다(CHECK 는 타입에 없다). 경계에서 한 번
+       좁히고, 모르는 값은 기본 창구로 떨어뜨린다 — 빈칸을 그리는 것보다 낫다. */
+    kind: isInquiryKind(row.kind) ? row.kind : DEFAULT_INQUIRY_KIND,
     status: row.status,
     cancelledAt: row.cancelled_at,
     source: toInquirySource(row.source),

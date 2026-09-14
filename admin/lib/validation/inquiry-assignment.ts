@@ -6,7 +6,7 @@ import { plainTextField } from '@/lib/validation/plain-text'
 import type { QueryParams } from '@/lib/utils/table-query'
 
 /**
- * 1:1 문의 협업의 입력 계약 — 담당자 배정 · 작성 중 잠금 · 충돌 감지 · 내부 메모.
+ * 홈페이지 문의 협업의 입력 계약 — 담당자 배정 · 작성 중 잠금 · 충돌 감지 · 내부 메모.
  *
  * 문의 본문 쪽 계약(`validation/inquiries.ts`)과 파일을 나눈 이유는 두 가지다.
  *   * 그 파일이 이미 300줄 상한에 닿아 있다.

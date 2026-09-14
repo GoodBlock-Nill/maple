@@ -4,7 +4,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * 회원 상세 "1:1 문의" 탭 배선.
+ * 회원 상세 "홈페이지 문의" 탭 배선.
  *
  * 렌더 테스트는 탭이 사라졌을 때가 아니라 **권한 검사가 빠졌을 때** 통과해
  * 버린다(줄줄이 통과하는 빈 화면). 소스를 읽어 확인하는 이유는
@@ -17,7 +17,7 @@ function read(relative: string): string {
   return readFileSync(path.join(adminRoot, relative), 'utf8')
 }
 
-describe('회원 상세 — 1:1 문의 탭', () => {
+describe('회원 상세 — 홈페이지 문의 탭', () => {
   it('members:read 와 별개로 inquiries:read 를 확인한다', () => {
     const source = read('app/(admin)/members/[id]/page.tsx')
 
@@ -46,7 +46,7 @@ describe('회원 상세 — 1:1 문의 탭', () => {
     const source = read('components/members/MemberActivityPanel.tsx')
 
     expect(source).toContain("'inquiries',")
-    expect(source).toContain("inquiries: '1:1 문의'")
+    expect(source).toContain("inquiries: '홈페이지 문의'")
     expect(source).toContain('<MemberInquiriesTab')
   })
 

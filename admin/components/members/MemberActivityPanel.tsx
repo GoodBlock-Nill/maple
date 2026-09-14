@@ -35,7 +35,7 @@ const TAB_LABEL: Record<ActivityTab, string> = {
   comments: '댓글',
   'reports-made': '신고함',
   'reports-received': '신고받음',
-  inquiries: '1:1 문의',
+  inquiries: '홈페이지 문의',
 }
 
 const STATUS_TONE: Record<ContentStatus, BadgeTone> = {

@@ -1,3 +1,5 @@
+import { auditFieldLabel } from '@/components/audit/audit-labels'
+
 import type { Json } from '@/types/database.types'
 
 /**
@@ -122,15 +124,18 @@ export function summarizeAuditDiff(before: Json | null, after: Json | null): str
   }
 
   const shown = changes.slice(0, MAX_SUMMARY_KEYS).map((change) => {
+    // 필드 이름은 표기로 옮긴다(표에 없으면 원문 그대로). 값은 그대로 둔다.
+    const field = auditFieldLabel(change.key)
+
     if (change.before === null) {
-      return `${change.key}: ${change.after}`
+      return `${field}: ${change.after}`
     }
 
     if (change.after === null) {
-      return `${change.key}: ${change.before} → (없음)`
+      return `${field}: ${change.before} → (없음)`
     }
 
-    return `${change.key}: ${change.before} → ${change.after}`
+    return `${field}: ${change.before} → ${change.after}`
   })
 
   const rest = changes.length - shown.length

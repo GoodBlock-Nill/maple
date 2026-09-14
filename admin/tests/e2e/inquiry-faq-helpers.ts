@@ -5,7 +5,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { expect, type Page } from '@playwright/test'
 
 /**
- * 고객지원(1:1 문의 · FAQ) E2E 공용 도구.
+ * 고객지원(홈페이지 문의 · FAQ) E2E 공용 도구.
  *
  * 자격 증명은 저장소에 두지 않는다 — 스크래치패드의 env 파일을 **테스트 실행 중에만**
  * 읽는다(경로는 ADMIN_E2E_SECRETS 로 덮어쓸 수 있다).

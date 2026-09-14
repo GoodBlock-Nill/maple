@@ -73,6 +73,12 @@ export function applyInquiryFilters<TQuery extends FilterableQuery<TQuery>>(
     next = next.eq('source', filters.source)
   }
 
+  /* 접수 종류(1:1 문의 · 버그제보 · 불법이용제보). 목록과 탭 건수가 이 함수를 함께
+     쓰므로, 종류를 좁히면 탭의 숫자도 그 창구의 것만 센다. */
+  if (filters.kind !== null) {
+    next = next.eq('kind', filters.kind)
+  }
+
   if (filters.search !== null) {
     // 검색어는 parseInquiryFilters 가 이미 or() 문법·LIKE 와일드카드를 걷어냈다.
     const clauses = [

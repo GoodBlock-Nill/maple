@@ -35,7 +35,7 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
   const [{ id }, searchParams] = await Promise.all([props.params, props.searchParams])
   const [actor, member] = await Promise.all([requirePermission('members', 'read'), getMember(id)])
   const canWrite = hasPermission(actor.permissions, 'members', 'write')
-  /* 문의는 별도 모듈이다 — 회원 읽기 권한만으로 다른 모듈(1:1 문의)의 내용을
+  /* 문의는 별도 모듈이다 — 회원 읽기 권한만으로 다른 모듈(홈페이지 문의)의 내용을
      보여 주지 않는다. 아래 쿠폰 건수와 같은 이유. */
   const canReadInquiries = hasPermission(actor.permissions, 'inquiries', 'read')
 
@@ -110,7 +110,7 @@ export default async function MemberDetailPage(props: PageProps<'/members/[id]'>
           value={activity.reportedCount.toLocaleString('ko-KR')}
           tone={activity.reportedCount > 0 ? 'danger' : 'default'}
         />
-        <StatCard label="1:1 문의" value={activity.inquiryCount.toLocaleString('ko-KR')} />
+        <StatCard label="홈페이지 문의" value={activity.inquiryCount.toLocaleString('ko-KR')} />
       </div>
 
       <MemberActivityPanel

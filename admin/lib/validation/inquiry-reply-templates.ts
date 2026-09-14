@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { inquiryKindLabel } from '@/lib/constants/inquiry-kind'
 import { INQUIRY_REPLY_MAX_LENGTH } from '@/lib/validation/inquiries'
 
 /**
@@ -20,6 +21,20 @@ export const COMMON_CATEGORY_VALUE = ''
 
 /** 화면·문구에서 '공통'을 부르는 이름. 목록 머리글과 셀렉트가 같은 말을 쓰게 한다. */
 export const COMMON_CATEGORY_LABEL = '공통(모든 카테고리)'
+
+/**
+ * 템플릿 화면의 카테고리 표기 — `종류 · 라벨`(예: `버그제보 · 접속·서버`).
+ *
+ * 카테고리 이름만 적으면 어느 창구의 분류인지 알 수 없다. 세 창구가 한 목록에 섞여
+ * 나오는 화면(셀렉트 · 묶음 머리글)에서는 종류가 앞에 붙어야 운영자가 "이 문안이
+ * 어디에서 보이는가"를 한 줄로 읽는다.
+ *
+ * 문의 맥락 안(상세 머리글 · 답변의 템플릿 선택)은 이미 그 문의의 종류가 화면에
+ * 있으므로 라벨만 쓴다 — 같은 말을 두 번 적지 않는다.
+ */
+export function templateCategoryLabel(kind: string, label: string): string {
+  return `${inquiryKindLabel(kind)} · ${label}`
+}
 
 /** CRLF 정규화 + 앞뒤 공백 제거. 답변 스키마와 같은 규칙이다(줄바꿈만 살아남는다). */
 function trimmedText(max: number, requiredMessage: string, tooLongMessage: string) {

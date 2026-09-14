@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 /**
  * 문의 카테고리 쓰기 액션의 가드.
  *
- * 확인하는 것은 넷이다.
+ * 확인하는 것은 다섯이다.
  *   1. 모든 액션이 스스로 `requirePermission('inquiries', 'write')` 를 부른다 —
  *      서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출된다.
  *   2. 이름을 바꾸면 과거 문의도 함께 옮긴다(RPC 한 번 = 한 트랜잭션).
- *   3. 접수된 문의가 있는 카테고리는 삭제되지 않는다. 다이얼로그는 편의이지 인가가 아니다.
- *   4. 저장 뒤 사용자 사이트의 `inquiry-categories` 태그를 태운다 — 그러지 않으면
+ *   3. 종류(창구)를 바꿔도 같은 RPC 가 과거 문의를 데리고 간다(마이그레이션 20260914000100).
+ *   4. 접수된 문의가 있는 카테고리는 삭제되지 않는다. 다이얼로그는 편의이지 인가가 아니다.
+ *   5. 저장 뒤 사용자 사이트의 `inquiry-categories` 태그를 태운다 — 그러지 않으면
  *      새 프리필이 최대 5분간 반영되지 않는다.
  */
 
@@ -137,13 +138,12 @@ vi.mock('@/lib/supabase/server', () => {
   }
 })
 
-const {
-  createInquiryCategoryAction,
-  deleteInquiryCategoryAction,
-  reorderInquiryCategoriesAction,
-  toggleInquiryCategoryAction,
-  updateInquiryCategoryAction,
-} = await import('@/lib/actions/inquiry-category-actions')
+const { createInquiryCategoryAction, deleteInquiryCategoryAction, updateInquiryCategoryAction } =
+  await import('@/lib/actions/inquiry-category-actions')
+/* 활성 토글·정렬 저장은 형제 파일이 갖는다(등록·수정·삭제 파일의 300줄 상한).
+   가드·감사·무효화 규약은 같으므로 한 자리에서 함께 검사한다. */
+const { reorderInquiryCategoriesAction, toggleInquiryCategoryAction } =
+  await import('@/lib/actions/inquiry-category-order-actions')
 
 function formData(fields: Record<string, string>, subtypes: readonly string[] = []): FormData {
   const data = new FormData()
@@ -166,6 +166,8 @@ const EDIT_FIELDS = {
   label: '접속·서버',
   description: '로그인 불가',
   prefill: '닉네임:',
+  // 폼의 종류 셀렉트. 저장된 값과 같으면 과거 문의는 움직이지 않는다.
+  kind: 'inquiry',
   isActive: 'on',
 }
 
@@ -188,6 +190,7 @@ beforeEach(() => {
     subtypes: [],
     sort_order: 0,
     is_active: true,
+    kind: 'inquiry',
   }
   db.inquiryCount = 0
   db.writeError = null
@@ -204,12 +207,12 @@ describe('권한 가드', () => {
     // Arrange & Act
     await createInquiryCategoryAction(
       {},
-      formData({ label: '새 분류', description: '', prefill: '' }),
+      formData({ label: '새 분류', description: '', prefill: '', kind: 'inquiry' }),
     )
     await updateInquiryCategoryAction({}, formData(EDIT_FIELDS))
     await toggleInquiryCategoryAction({}, formData({ categoryId: CATEGORY_ID, isActive: 'false' }))
     await deleteInquiryCategoryAction({}, formData({ categoryId: CATEGORY_ID }))
-    await reorderInquiryCategoriesAction({}, formData({ ids: CATEGORY_ID }))
+    await reorderInquiryCategoriesAction({}, formData({ ids: CATEGORY_ID, kind: 'inquiry' }))
 
     // Assert
     expect(guardCalls).toEqual([
@@ -238,12 +241,23 @@ describe('createInquiryCategoryAction', () => {
     // Arrange & Act
     const result = await createInquiryCategoryAction(
       {},
-      formData({ label: 'Save Data', description: '', prefill: '닉네임:', isActive: 'on' }),
+      formData({
+        label: 'Save Data',
+        description: '',
+        prefill: '닉네임:',
+        kind: 'bug',
+        isActive: 'on',
+      }),
     )
 
     // Assert
     expect(result.message).toBe('카테고리를 등록했습니다.')
-    expect(inserts[0]).toMatchObject({ key: 'save-data', label: 'Save Data', is_active: true })
+    expect(inserts[0]).toMatchObject({
+      key: 'save-data',
+      label: 'Save Data',
+      kind: 'bug',
+      is_active: true,
+    })
     /* 설명을 비우면 null 로 저장한다 — "설명 없음"이 null · '' 두 벌이 되지 않게. */
     expect(inserts[0]?.description).toBeNull()
     expect(audits[0]?.action).toBe('inquiry_category.create')
@@ -257,7 +271,7 @@ describe('createInquiryCategoryAction', () => {
     // Act
     const result = await createInquiryCategoryAction(
       {},
-      formData({ label: '접속·서버', description: '', prefill: '' }),
+      formData({ label: '접속·서버', description: '', prefill: '', kind: 'bug' }),
     )
 
     // Assert
@@ -268,7 +282,7 @@ describe('createInquiryCategoryAction', () => {
     // Arrange & Act
     const result = await createInquiryCategoryAction(
       {},
-      formData({ label: '  ', description: '', prefill: '' }),
+      formData({ label: '  ', description: '', prefill: '', kind: 'inquiry' }),
     )
 
     // Assert
@@ -293,10 +307,52 @@ describe('updateInquiryCategoryAction', () => {
       p_key: 'connection',
       p_label: '접속·서버',
       p_is_active: true,
+      // 9인자다. 빼먹으면 함수를 찾지 못하고(PGRST202), null 은 22023 으로 떨어진다.
+      p_kind: 'inquiry',
     })
     expect(result.message).toContain('3건')
     expect(audits[0]?.action).toBe('inquiry_category.update')
-    expect(audits[0]?.after).toMatchObject({ relabelled_inquiries: 3 })
+    expect(audits[0]?.after).toMatchObject({ relabelled_inquiries: 3, kind: 'inquiry' })
+  })
+
+  it('should carry the inquiries along when the kind moves to another desk', async () => {
+    // Arrange — 이 분류로 접수된 문의 2건이 버그제보 창구로 함께 옮겨졌다고 가정한다.
+    db.rpcResult = 2
+
+    // Act
+    const result = await updateInquiryCategoryAction({}, formData({ ...EDIT_FIELDS, kind: 'bug' }))
+
+    // Assert — 같은 RPC 한 번이 카테고리와 과거 문의를 함께 옮긴다.
+    expect(rpcCalls[0]?.args).toMatchObject({ p_kind: 'bug' })
+    expect(result.message).toContain('종류도 함께')
+    expect(result.message).toContain('2건')
+    expect(audits[0]?.after).toMatchObject({ kind: 'bug' })
+  })
+
+  it('should say what moved when the label and the kind change together', async () => {
+    // Arrange
+    db.rpcResult = 5
+
+    // Act
+    const result = await updateInquiryCategoryAction(
+      {},
+      formData({ ...EDIT_FIELDS, label: '접속 장애', kind: 'bug' }),
+    )
+
+    // Assert — 운영자는 "이름만 바꿨는데 왜 5건이 움직였나"를 알 수 있어야 한다.
+    expect(result.message).toContain('분류와 종류')
+  })
+
+  it('should refuse a kind the database would reject', async () => {
+    // Arrange & Act — RPC 의 22023 은 운영자가 읽을 수 있는 말이 아니다.
+    const result = await updateInquiryCategoryAction(
+      {},
+      formData({ ...EDIT_FIELDS, kind: 'mystery' }),
+    )
+
+    // Assert
+    expect(result.fieldErrors?.kind).toBeDefined()
+    expect(rpcCalls).toHaveLength(0)
   })
 
   it('should not leak the raw Postgres message', async () => {
@@ -373,7 +429,7 @@ describe('reorderInquiryCategoriesAction', () => {
     // Act
     const result = await reorderInquiryCategoriesAction(
       {},
-      formData({ ids: `${CATEGORY_ID},${second}` }),
+      formData({ ids: `${CATEGORY_ID},${second}`, kind: 'bug' }),
     )
 
     // Assert
@@ -383,11 +439,22 @@ describe('reorderInquiryCategoriesAction', () => {
     ])
     expect(result.message).toBe('순서를 저장했습니다.')
     expect(audits[0]?.action).toBe('inquiry_category.reorder')
+    /* 순번은 kind 안에서만 뜻이 있다. 어느 창구의 순서였는지는 감사 로그에만 남는다. */
+    expect(audits[0]?.after).toMatchObject({ kind: 'bug' })
+  })
+
+  it('should refuse a payload without a kind', async () => {
+    // Arrange & Act — 세 섹션을 한 번에 다시 매기면 서로의 순번을 덮어쓴다.
+    const result = await reorderInquiryCategoriesAction({}, formData({ ids: CATEGORY_ID }))
+
+    // Assert
+    expect(result.formError).toBe('정렬 정보를 읽지 못했습니다.')
+    expect(updates).toHaveLength(0)
   })
 
   it('should refuse a malformed payload', async () => {
     // Arrange & Act
-    const result = await reorderInquiryCategoriesAction({}, formData({ ids: 'nope' }))
+    const result = await reorderInquiryCategoriesAction({}, formData({ ids: 'nope', kind: 'bug' }))
 
     // Assert
     expect(result.formError).toBe('정렬 정보를 읽지 못했습니다.')
@@ -400,7 +467,7 @@ describe('세부 문의 유형', () => {
     // Arrange & Act — 순서가 곧 사용자 폼 셀렉트의 순서다.
     await createInquiryCategoryAction(
       {},
-      formData({ label: 'Save Data', description: '', prefill: '', isActive: 'on' }, [
+      formData({ label: 'Save Data', description: '', prefill: '', kind: 'bug', isActive: 'on' }, [
         '데이터 롤백',
         '저장되지 않음',
       ]),
@@ -414,7 +481,7 @@ describe('세부 문의 유형', () => {
     // Arrange & Act — 편집기에서 비운 칸은 "지운 항목"이다.
     await createInquiryCategoryAction(
       {},
-      formData({ label: 'Save Data', description: '', prefill: '', isActive: 'on' }, [
+      formData({ label: 'Save Data', description: '', prefill: '', kind: 'bug', isActive: 'on' }, [
         '데이터 롤백',
         '   ',
       ]),

@@ -1,3 +1,4 @@
+import { groupInquiryCategoriesByKind } from '@/components/inquiry-categories/category-sections'
 import { InquiryCategoryFormDialog } from '@/components/inquiry-categories/InquiryCategoryFormDialog'
 import { InquiryCategoryList } from '@/components/inquiry-categories/InquiryCategoryList'
 import { Button, FormBanner, PageHeader } from '@/components/ui'
@@ -20,12 +21,15 @@ export default async function InquiryCategoriesPage() {
   const { permissions } = await requirePermission('inquiries', 'read')
   const canWrite = hasPermission(permissions, 'inquiries', 'write')
   const { rows, hasError } = await getInquiryCategories()
+  /* 조회는 한 번이고 나누는 일은 화면이 한다 — 창구마다 질의를 던지면 사용 건수
+     집계가 세 번 돌고, 세 섹션이 서로 다른 시점을 보게 된다. */
+  const sections = groupInquiryCategoriesByKind(rows)
 
   return (
     <>
       <PageHeader
         title="문의 카테고리"
-        description="사용자 사이트 1:1 문의 폼의 카테고리와 프리필(문의 내용 양식)입니다. ▲▼ 로 순서를 바꾸고 '순서 저장'을 눌러 확정합니다. 숨긴 카테고리는 사용자 폼에서 사라집니다."
+        description="사용자 사이트 고객지원 폼(1:1 문의 · 버그제보 · 불법이용제보)의 카테고리와 프리필(문의 내용 양식)입니다. 순서는 종류 안에서만 매겨집니다 — ▲▼ 로 옮기고 그 종류의 '순서 저장'을 눌러 확정합니다. 숨긴 카테고리는 사용자 폼에서 사라집니다."
         /* 답변 템플릿은 같은 모듈의 형제 화면이다. 카테고리를 고치러 온 운영자가
            "이 분류의 상용구도 손보자"는 순간에 여기서 바로 건너갈 수 있어야 한다. */
         action={
@@ -44,13 +48,19 @@ export default async function InquiryCategoriesPage() {
         </div>
       )}
 
-      {/* key 에 항목 id 나열을 넣어, 서버 데이터가 바뀌면 목록이 새 순서로 다시
-          마운트되게 한다(클라이언트 정렬 상태 동기화). */}
-      <InquiryCategoryList
-        key={rows.map((row) => row.id).join(',')}
-        categories={rows}
-        canWrite={canWrite}
-      />
+      <div className="flex flex-col gap-4">
+        {sections.map((section) => (
+          /* key 에 항목 id 나열을 넣어, 서버 데이터가 바뀌면 그 섹션이 새 순서로 다시
+             마운트되게 한다(클라이언트 정렬 상태 동기화). */
+          <InquiryCategoryList
+            key={`${section.kind}:${section.categories.map((category) => category.id).join(',')}`}
+            kind={section.kind}
+            title={section.label}
+            categories={section.categories}
+            canWrite={canWrite}
+          />
+        ))}
+      </div>
     </>
   )
 }

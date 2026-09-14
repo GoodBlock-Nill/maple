@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic'
 /**
  * 출처 프리셋별 제목·설명.
  *
- * 사이드바의 '1:1 문의'·'이메일 문의'는 새 라우트가 아니라 이 화면의 필터 프리셋이다
+ * 사이드바의 '홈페이지 문의'·'이메일 문의'는 새 라우트가 아니라 이 화면의 필터 프리셋이다
  * (EMAIL-INQUIRY-PLAN §7). 주소만 다르고 제목이 같으면 운영자가 어느 화면인지 모른다.
  *
  * 그래서 목록에는 **출처 칸도 선택 상자도 두지 않는다**(2026-09-11 오너 결정) — 메뉴가
@@ -34,8 +34,9 @@ export const dynamic = 'force-dynamic'
  */
 const PRESETS: Record<InquirySource | 'all', { title: string; description: string }> = {
   web: {
-    title: '1:1 문의',
-    description: '접수된 문의를 확인하고 답변합니다. 기본 화면은 아직 처리하지 않은 문의입니다.',
+    title: '홈페이지 문의',
+    description:
+      '홈페이지(1:1 문의 · 버그제보 · 불법이용제보)로 접수된 문의를 확인하고 답변합니다. 기본 화면은 아직 처리하지 않은 문의입니다.',
   },
   email: {
     title: '이메일 문의',
@@ -76,10 +77,14 @@ export default async function InquiriesPage(props: PageProps<'/inquiries'>) {
         viewerId: admin.id,
       }),
       getInquiryTabCounts(filters, admin.id),
-      getInquiryCategoryFilterOptions(),
-      /* 유형 옵션은 고른 카테고리에 매달려 있다. 카테고리를 바꾸고 '검색'을 누르면
-         다음 화면에서 그 카테고리의 세부 유형만 남는다(GET 폼이라 왕복이 곧 갱신이다). */
-      getInquiryTypeFilterOptions(filters.category),
+      /* 종류를 고르면 그 창구의 카테고리만 고를 수 있다 — 버그제보 목록에서 '쿠폰'을
+         고를 수 있으면 결과는 언제나 0건이다. 옛 라벨은 어느 창구의 것인지 알 수
+         없으므로 그대로 남는다(그 값으로 접수된 과거 문의를 찾을 유일한 길이다). */
+      getInquiryCategoryFilterOptions(filters.kind),
+      /* 유형 옵션은 고른 카테고리(와 종류)에 매달려 있다. 카테고리를 바꾸고 '검색'을
+         누르면 다음 화면에서 그 카테고리의 세부 유형만 남는다(GET 폼이라 왕복이 곧
+         갱신이다). */
+      getInquiryTypeFilterOptions(filters.category, filters.kind),
       // 회원 상세의 "전체 보기"(`?user=<id>`)로 들어왔을 때만 닉네임을 한 번 더 읽는다.
       filters.userId === null ? Promise.resolve(null) : getMember(filters.userId),
       // 담당자 필터의 선택지. 관리자 수는 많아야 수십 명이라 매번 읽어도 된다.

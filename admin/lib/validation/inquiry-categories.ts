@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { isInquiryKind, type InquiryKind } from '@/lib/constants/inquiry-kind'
+
 /**
  * 문의 카테고리 입력 계약 (`inquiry_categories`, 마이그레이션 20260910000400).
  *
@@ -9,6 +11,9 @@ import { z } from 'zod'
  * 라벨이 곧 `inquiries.category` 에 저장되는 값이라 사실상 식별자처럼 쓰인다. 그래서
  * 라벨 변경은 과거 문의의 재라벨링을 동반하고(`public.update_inquiry_category()`),
  * 코드가 행을 가리킬 때는 라벨이 아니라 `key` 를 쓴다.
+ *
+ * 종류(`kind`)도 같은 무게를 갖는다 — 카테고리가 곧 문의의 창구이므로, 종류를 바꾸면
+ * 그 카테고리로 접수된 과거 문의의 종류까지 함께 옮겨 간다(같은 RPC 한 트랜잭션).
  */
 
 export const INQUIRY_CATEGORY_LABEL_MAX = 20
@@ -25,6 +30,17 @@ export const INQUIRY_CATEGORY_KEY_MAX = 40
  */
 export const INQUIRY_SUBTYPE_MAX = 30
 export const INQUIRY_SUBTYPE_COUNT_MAX = 20
+
+/**
+ * 접수 종류.
+ *
+ * DB CHECK(`inquiry_categories_kind_check`)와 같은 세 값이다. 셀렉트는 문자열을
+ * 실어 보내므로 여기서 좁혀 두면 화면 아래로는 `InquiryKind` 로만 다닌다 — RPC 가
+ * 모르는 값을 받으면 22023 으로 떨어진다(운영자는 이유를 알 수 없는 실패를 본다).
+ */
+const kindSchema = z
+  .string()
+  .refine((value): value is InquiryKind => isInquiryKind(value), '문의 종류를 다시 골라 주세요.')
 
 /** DB CHECK(`inquiry_categories_key_shape`)와 같은 모양. */
 const KEY_PATTERN = /^[a-z0-9][a-z0-9-]{0,39}$/
@@ -117,14 +133,22 @@ export const inquiryCategorySchema = z.object({
     `프리필은 ${INQUIRY_CATEGORY_PREFILL_MAX}자를 넘을 수 없습니다.`,
   ),
   subtypes: subtypesSchema,
+  kind: kindSchema,
   isActive: z.boolean(),
 })
 
 export type InquiryCategoryInput = z.infer<typeof inquiryCategorySchema>
 
-/** 정렬 저장 요청의 본문. 화면이 보여 준 순서를 그대로 0..n-1 로 다시 쓴다. */
+/**
+ * 정렬 저장 요청의 본문. 화면이 보여 준 순서를 그대로 0..n-1 로 다시 쓴다.
+ *
+ * `sort_order` 는 kind 안에서의 순서이므로 **한 섹션의 id 만** 온다. 종류를 함께
+ * 싣는 이유는 감사 로그다 — 나중에 "어느 창구의 순서가 바뀌었나"를 id 나열만으로는
+ * 되짚을 수 없다.
+ */
 export const inquiryCategoryReorderSchema = z.object({
   ids: z.array(z.uuid()).min(1, '정렬할 항목이 없습니다.'),
+  kind: kindSchema,
 })
 
 /** 빈 설명은 null 로 저장한다 — "설명 없음"을 빈 문자열과 null 두 벌로 두지 않는다. */

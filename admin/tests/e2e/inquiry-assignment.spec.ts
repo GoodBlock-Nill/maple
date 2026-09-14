@@ -7,7 +7,7 @@ import { createServiceClient, signInAsAdmin, signInAs } from './inquiry-faq-help
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
- * 1:1 문의 협업 인수 검증 — 담당자 배정 · 작성 중 잠금 · 저장 충돌 · 내부 메모.
+ * 홈페이지 문의 협업 인수 검증 — 담당자 배정 · 작성 중 잠금 · 저장 충돌 · 내부 메모.
  *
  * **두 개의 브라우저 컨텍스트**를 쓴다. 이 기능이 막으려는 사고("두 운영자가 같은
  * 문의에 동시에 답한다")는 한 세션으로는 재현되지 않는다.

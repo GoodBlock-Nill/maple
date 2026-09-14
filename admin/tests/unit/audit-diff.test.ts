@@ -7,7 +7,7 @@ import {
   REDACTED,
   summarizeAuditDiff,
 } from '@/components/audit/audit-diff'
-import { auditActionLabel, auditTableLabel } from '@/components/audit/audit-labels'
+import { auditActionLabel, auditFieldLabel, auditTableLabel } from '@/components/audit/audit-labels'
 
 describe('redactSensitive', () => {
   it('should mask fields whose name mentions a password or token', () => {
@@ -109,6 +109,27 @@ describe('summarizeAuditDiff', () => {
   it('should render a dash when nothing changed', () => {
     expect(summarizeAuditDiff({ a: 1 }, { a: 1 })).toBe('-')
   })
+
+  it('should name the fields the way the admin screens do', () => {
+    /* `kind: inquiry → bug` 는 운영자가 읽는 말이 아니다. '종류'는 관리자 화면 어디에도
+       kind 로 적혀 있지 않다(문의 카테고리, 마이그레이션 20260914000100). */
+    expect(summarizeAuditDiff({ kind: 'inquiry' }, { kind: 'bug' })).toBe('종류: inquiry → bug')
+  })
+})
+
+describe('auditFieldLabel', () => {
+  it('should translate the fields the inquiry category audit writes', () => {
+    // Arrange & Act & Assert
+    expect(auditFieldLabel('kind')).toBe('종류')
+    expect(auditFieldLabel('label')).toBe('이름')
+    expect(auditFieldLabel('subtypes')).toBe('세부 유형')
+    expect(auditFieldLabel('relabelled_inquiries')).toBe('함께 옮긴 문의 수')
+  })
+
+  it('should keep an unknown field as it is', () => {
+    // 모든 모듈의 필드를 미리 적어 둘 수는 없다. 잘못 번역하는 것보다 원문이 낫다.
+    expect(auditFieldLabel('mystery_column')).toBe('mystery_column')
+  })
 })
 
 describe('audit labels', () => {
@@ -140,8 +161,8 @@ describe('audit labels', () => {
   })
 
   it('should translate inquiry email actions with translated middle segment', () => {
-    expect(auditActionLabel('inquiry.email.reply')).toBe('1:1 문의 이메일 답변')
-    expect(auditActionLabel('inquiry.email.resend')).toBe('1:1 문의 이메일 재발송')
+    expect(auditActionLabel('inquiry.email.reply')).toBe('홈페이지 문의 이메일 답변')
+    expect(auditActionLabel('inquiry.email.resend')).toBe('홈페이지 문의 이메일 재발송')
   })
 
   it('should translate target tables', () => {

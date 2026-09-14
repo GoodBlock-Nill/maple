@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { InquiryAssigneeFilter } from '@/components/inquiries/InquiryAssigneeFilter'
 import { CONTROL_CLASS } from '@/components/inquiries/inquiry-filter-controls'
 import { Button, Input } from '@/components/ui'
+import { INQUIRY_KINDS } from '@/lib/constants/inquiry-kind'
 import { SEARCH_MAX_LENGTH } from '@/lib/constants/field-limits'
 import { cn } from '@/lib/utils/cn'
 import { buildHref, firstValue, type QueryParams } from '@/lib/utils/table-query'
@@ -52,7 +53,7 @@ export function InquiryFilters({
   const resetHref = buildHref(
     LIST_PATH,
     {},
-    { status: filters.tab, source: filters.source, user: filters.userId },
+    { status: filters.tab, source: filters.source, user: filters.userId, kind: filters.kind },
   )
 
   return (
@@ -93,9 +94,30 @@ export function InquiryFilters({
             선택 상자는 없애되, 조건을 바꿀 때 프리셋을 잃지 않도록 숨은 값으로 나른다. */}
         {filters.source !== null && <input type="hidden" name="source" value={filters.source} />}
         {sort !== null && <input type="hidden" name="sort" value={sort} />}
+        {/* 이메일 문의는 전부 1:1 문의 창구다(수신 함수가 카테고리를 'email' 로 고정한다).
+            셀렉트를 그리지 않는 대신, 주소에 실려 온 종류는 숨은 값으로 나른다 —
+            화면에 없는 조건이 검색 한 번에 조용히 사라지지 않게. */}
+        {isEmail && filters.kind !== null && (
+          <input type="hidden" name="kind" value={filters.kind} />
+        )}
         {filters.userId !== null && <input type="hidden" name="user" value={filters.userId} />}
 
         <InquiryAssigneeFilter value={filters.assignee} admins={admins} />
+
+        {/* 종류를 고르면 카테고리·유형 선택지도 그 창구의 것만 남는다(다음 왕복에서). */}
+        {!isEmail && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-ink text-[13px] font-semibold">종류</span>
+            <select name="kind" defaultValue={filters.kind ?? ''} className={CONTROL_CLASS}>
+              <option value="">전체</option>
+              {INQUIRY_KINDS.map((kind) => (
+                <option key={kind.value} value={kind.value}>
+                  {kind.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {/* 이메일 문의의 카테고리는 수신 함수가 'email' 로 고정한다. 고를 것이 없다. */}
         {!isEmail && (

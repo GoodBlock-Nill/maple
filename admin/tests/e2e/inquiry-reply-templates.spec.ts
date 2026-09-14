@@ -21,6 +21,10 @@ const TEMPLATE_NAME = `E2E템플릿${STAMP}`
 /** 문의 카테고리 시드의 라벨. 이 분류의 문의에서만 보이는 템플릿을 만든다. */
 const CATEGORY_LABEL = '재화·아이템'
 
+/* 셀렉트는 `종류 · 라벨` 로 적는다 — 세 창구의 카테고리가 한 목록에 섞여 나오므로,
+   라벨만으로는 이 문안이 어느 폼의 문의에서 보일지 알 수 없다. */
+const CATEGORY_OPTION_LABEL = `1:1 문의 · ${CATEGORY_LABEL}`
+
 const TEMPLATE_BODY = [
   '안녕하세요, {{닉네임}}님.',
   '접수번호 {{문의번호}} · {{카테고리}} · {{제목}} 건을 확인했습니다.',
@@ -105,7 +109,7 @@ test('카테고리 화면에서 답변 템플릿을 등록한다', async ({ page
   await page.getByRole('button', { name: '템플릿 등록' }).click()
 
   const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('카테고리').selectOption({ label: CATEGORY_LABEL })
+  await dialog.getByLabel('카테고리').selectOption({ label: CATEGORY_OPTION_LABEL })
   await dialog.getByLabel('템플릿 이름').fill(TEMPLATE_NAME)
   await dialog.getByLabel('템플릿 내용').fill(TEMPLATE_BODY)
 

@@ -208,6 +208,24 @@ describe('parseInquiryFilters', () => {
     expect(parseInquiryFilters({ source: '' }).source).toBeNull()
   })
 
+  it('종류는 세 창구만 받는다', () => {
+    expect(parseInquiryFilters({ kind: 'inquiry' }).kind).toBe('inquiry')
+    expect(parseInquiryFilters({ kind: 'bug' }).kind).toBe('bug')
+    expect(parseInquiryFilters({ kind: 'report' }).kind).toBe('report')
+  })
+
+  it('종류가 없거나 모르는 값이면 전체(null)다', () => {
+    // 종류 필터는 URL 에서 온다. 무엇이든 들어올 수 있고, 모르는 값은 걸지 않는다.
+    expect(parseInquiryFilters({}).kind).toBeNull()
+    expect(parseInquiryFilters({ kind: '' }).kind).toBeNull()
+    expect(parseInquiryFilters({ kind: 'all' }).kind).toBeNull()
+    expect(parseInquiryFilters({ kind: 'BUG' }).kind).toBeNull()
+  })
+
+  it('종류도 같은 키가 반복되면 첫 값만 쓴다', () => {
+    expect(parseInquiryFilters({ kind: ['bug', 'report'] }).kind).toBe('bug')
+  })
+
   it('같은 키가 반복되면 첫 값만 쓴다', () => {
     expect(parseInquiryFilters({ source: ['email', 'web'] }).source).toBe('email')
   })

@@ -7,6 +7,7 @@ import {
   INQUIRY_REPLY_TEMPLATE_NAME_MAX,
   inquiryReplyTemplateReorderSchema,
   inquiryReplyTemplateSchema,
+  templateCategoryLabel,
   toCategoryId,
 } from '@/lib/validation/inquiry-reply-templates'
 
@@ -123,5 +124,19 @@ describe('inquiryReplyTemplateReorderSchema', () => {
 
     // Assert
     expect(result.success).toBe(false)
+  })
+})
+
+describe('templateCategoryLabel', () => {
+  it('should put the kind in front of the label', () => {
+    // Arrange & Act & Assert — 세 창구의 분류가 한 셀렉트에 섞여 나온다.
+    expect(templateCategoryLabel('bug', '접속·서버')).toBe('버그제보 · 접속·서버')
+    expect(templateCategoryLabel('inquiry', '재화·아이템')).toBe('1:1 문의 · 재화·아이템')
+    expect(templateCategoryLabel('report', '불법 프로그램')).toBe('불법이용제보 · 불법 프로그램')
+  })
+
+  it('should fall back to the default kind for an unknown value', () => {
+    // 생성된 타입은 `kind: string` 이다(CHECK 는 타입에 없다). 빈칸을 그리지 않는다.
+    expect(templateCategoryLabel('mystery', '기타·건의')).toBe('1:1 문의 · 기타·건의')
   })
 })

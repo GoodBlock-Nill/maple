@@ -1,13 +1,15 @@
 import 'server-only'
 
+import { DEFAULT_INQUIRY_KIND, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import { ACTIVITY_LIMIT } from '@/lib/data/members'
 import { createClient } from '@/lib/supabase/server'
 import { toInquirySource } from '@/lib/validation/inquiries'
 
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
 import type { InquiryStatus, InquirySource } from '@/lib/validation/inquiries'
 
 /**
- * 회원 상세의 "1:1 문의" 탭 데이터.
+ * 회원 상세의 "홈페이지 문의" 탭 데이터.
  *
  * 총 건수는 회원 상세가 이미 `getMemberActivity()`(`inquiries` 를 `user_id` 로
  * `head: true` 집계)로 세어 둔 값을 그대로 쓴다 — 여기서 따로 세면 같은 질의를
@@ -17,7 +19,7 @@ import type { InquiryStatus, InquirySource } from '@/lib/validation/inquiries'
  */
 
 /* prettier-ignore */
-const MEMBER_INQUIRY_COLUMNS = 'id, inquiry_no, title, category, type, status, cancelled_at, source, created_at, inquiry_replies(count)'
+const MEMBER_INQUIRY_COLUMNS = 'id, inquiry_no, title, category, type, kind, status, cancelled_at, source, created_at, inquiry_replies(count)'
 
 export type MemberInquirySummary = {
   id: string
@@ -25,6 +27,8 @@ export type MemberInquirySummary = {
   title: string
   category: string
   type: string
+  /** 접수 창구. 회원이 어느 창구로 냈는지가 한 줄에 보여야 한다. */
+  kind: InquiryKind
   status: InquiryStatus
   cancelledAt: string | null
   source: InquirySource
@@ -67,6 +71,8 @@ export async function getMemberInquiries(memberId: string): Promise<MemberInquir
       title: row.title,
       category: row.category,
       type: row.type,
+      // CHECK 제약은 생성된 타입에 없다(`kind: string`). 경계에서 한 번 좁힌다.
+      kind: isInquiryKind(row.kind) ? row.kind : DEFAULT_INQUIRY_KIND,
       status: row.status,
       cancelledAt: row.cancelled_at,
       source: toInquirySource(row.source),

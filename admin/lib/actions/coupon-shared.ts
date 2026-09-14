@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache'
  *
  * **사용자 사이트 캐시는 태우지 않는다.** 쿠폰 목록은 RLS 에 일반 사용자 select 정책이
  * 없어 사용자 사이트가 읽지 못하고, 마이페이지의 등록 폼·내 등록 내역은 세션마다 직접
- * 읽는다. 부를 태그가 없으므로 `revalidateClient()` 도 없다 — 1:1 문의와 같은 이유다.
+ * 읽는다. 부를 태그가 없으므로 `revalidateClient()` 도 없다 — 홈페이지 문의와 같은 이유다.
  */
 
 export const COUPONS_PATH = '/coupons'

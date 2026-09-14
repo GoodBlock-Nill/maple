@@ -13,6 +13,7 @@ import {
   COMMON_CATEGORY_LABEL,
   COMMON_CATEGORY_VALUE,
   INQUIRY_REPLY_TEMPLATE_NAME_MAX,
+  templateCategoryLabel,
 } from '@/lib/validation/inquiry-reply-templates'
 
 import type { FormState } from '@/lib/actions/form-state'
@@ -29,6 +30,10 @@ import type {
  *
  * 비활성 카테고리도 고를 수 있게 남겨 둔다 — 이미 그 카테고리에 붙어 있는 템플릿을
  * 고치려면 셀렉트에 그 항목이 있어야 하고, 없으면 저장할 때 엉뚱한 곳으로 옮겨진다.
+ *
+ * 선택지는 `종류 · 라벨`(예: `버그제보 · 접속·서버`)로 적고 종류 순서대로 늘어놓는다.
+ * 세 창구의 카테고리가 한 셀렉트에 섞여 있어서, 라벨만으로는 이 문안이 어느 폼의
+ * 문의에서 보일지 알 수 없다.
  */
 export function InquiryReplyTemplateFormDialog({
   template,
@@ -76,10 +81,11 @@ export function InquiryReplyTemplateFormDialog({
 
   const options = [
     { value: COMMON_CATEGORY_VALUE, label: COMMON_CATEGORY_LABEL },
-    ...categories.map((category) => ({
-      value: category.id,
-      label: category.isActive ? category.label : `${category.label} (숨김)`,
-    })),
+    ...categories.map((category) => {
+      const label = templateCategoryLabel(category.kind, category.label)
+
+      return { value: category.id, label: category.isActive ? label : `${label} (숨김)` }
+    }),
   ]
 
   const selectedCategory =

@@ -533,6 +533,7 @@ export type Database = {
           email_thread_key: string | null
           id: string
           inquiry_no: number
+          kind: string
           privacy_consent: boolean
           source: string
           status: Database["public"]["Enums"]["inquiry_status"]
@@ -561,6 +562,7 @@ export type Database = {
           email_thread_key?: string | null
           id?: string
           inquiry_no?: never
+          kind?: string
           privacy_consent?: boolean
           source?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
@@ -589,6 +591,7 @@ export type Database = {
           email_thread_key?: string | null
           id?: string
           inquiry_no?: never
+          kind?: string
           privacy_consent?: boolean
           source?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
@@ -628,6 +631,7 @@ export type Database = {
           id: string
           is_active: boolean
           key: string
+          kind: string
           label: string
           prefill: string
           sort_order: number
@@ -640,6 +644,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           key: string
+          kind?: string
           label: string
           prefill?: string
           sort_order?: number
@@ -652,6 +657,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           key?: string
+          kind?: string
           label?: string
           prefill?: string
           sort_order?: number
@@ -1412,6 +1418,7 @@ export type Database = {
           p_id: string
           p_is_active: boolean
           p_key: string
+          p_kind: string
           p_label: string
           p_prefill: string
           p_sort_order: number

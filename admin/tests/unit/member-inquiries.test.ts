@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * 회원 상세 "1:1 문의" 탭 데이터 매퍼.
+ * 회원 상세 "홈페이지 문의" 탭 데이터 매퍼.
  *
  * 총 건수는 상세 화면의 지표 카드(`getMemberActivity` 의 `inquiryCount`)와 같은
  * 조건(`user_id`)으로 세므로 별도로 테스트하지 않는다 — 여기서는 행 매핑과
@@ -86,13 +86,14 @@ describe('getMemberInquiries', () => {
     expect(state.filters).toContainEqual({ column: 'cancelled_at', value: null })
   })
 
-  it('목록 컬럼(카테고리 · 유형 · 상태 · 출처 · 답변 수)을 그대로 매핑한다', async () => {
+  it('목록 컬럼(카테고리 · 유형 · 종류 · 상태 · 출처 · 답변 수)을 그대로 매핑한다', async () => {
     rows = [
       {
         id: 'inq-1',
         title: '결제가 안 돼요',
         category: '결제',
         type: '오류',
+        kind: 'inquiry',
         status: 'in_progress',
         cancelled_at: null,
         source: 'web',
@@ -110,6 +111,7 @@ describe('getMemberInquiries', () => {
         title: '결제가 안 돼요',
         category: '결제',
         type: '오류',
+        kind: 'inquiry',
         status: 'in_progress',
         cancelledAt: null,
         source: 'web',
@@ -119,13 +121,15 @@ describe('getMemberInquiries', () => {
     ])
   })
 
-  it('답변이 없으면 0으로, 출처를 모르면 웹으로 떨어뜨린다', async () => {
+  it('답변이 없으면 0으로, 출처·종류를 모르면 기본값으로 떨어뜨린다', async () => {
     rows = [
       {
         id: 'inq-2',
         title: '문의',
         category: '기타',
         type: '일반',
+        // CHECK 제약은 생성된 타입에 없다 — 경계에서 기본 창구로 떨어져야 한다.
+        kind: 'mystery',
         status: 'pending',
         cancelled_at: null,
         source: 'kakao',
@@ -138,6 +142,7 @@ describe('getMemberInquiries', () => {
 
     expect(result.rows[0]?.replyCount).toBe(0)
     expect(result.rows[0]?.source).toBe('web')
+    expect(result.rows[0]?.kind).toBe('inquiry')
   })
 
   it('조회가 깨지면 hasError 를 세우고 빈 표를 돌려준다(오독 방지)', async () => {

@@ -6,7 +6,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { APIRequestContext, Page } from '@playwright/test'
 
 /**
- * 문의 카테고리 인수 검증 — 등록 → 사용자 폼 노출 → 프리필 수정 반영 → 삭제.
+ * 문의 카테고리 인수 검증 — 등록 → 사용자 폼 노출 → 프리필 수정 반영 → 삭제,
+ * 그리고 접수 종류(1:1 문의 · 버그제보 · 불법이용제보) 섹션과 종류 이동.
  *
  * 사용자 사이트의 카테고리 목록은 `unstable_cache`(태그 'inquiry-categories', 300초)로
  * 감싸여 있다. 관리자 앱은 **다른 프로세스**라 `revalidateTag()` 가 닿지 않으므로,
@@ -83,6 +84,18 @@ function categoryRow(page: Page, label: string) {
   return page.locator('li').filter({ hasText: label })
 }
 
+/**
+ * 종류 섹션 한 칸(`Card` = `<section>`).
+ *
+ * 카테고리 화면은 창구마다 카드를 하나씩 그린다. 순서 이동·저장·추가가 그 안에서만
+ * 일어나므로(`sort_order` 가 kind 안의 순서다), "어느 섹션에 들어갔는가"가 곧 검증이다.
+ */
+function kindSection(page: Page, label: string) {
+  return page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: new RegExp(`^${label} \\(`) }) })
+}
+
 test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따라 바뀐다', async ({ page, request }) => {
   test.setTimeout(CLIENT_CACHE_BUDGET_MS + 180_000)
 
@@ -92,12 +105,23 @@ test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따�
   await page.goto('/inquiries?source=web')
   await page.getByRole('link', { name: '카테고리 관리' }).click()
   await expect(page.getByRole('heading', { name: '문의 카테고리' })).toBeVisible()
+
+  // Assert — 창구가 셋이면 섹션도 셋이다(비어 있어도 자리를 남긴다).
+  for (const kind of ['1:1 문의', '버그제보', '불법이용제보']) {
+    await expect(kindSection(page, kind)).toHaveCount(1)
+  }
+
   await page.screenshot({ path: `${SHOT_DIR}/admin-categories-list.png`, fullPage: true })
 
   // Act — 추가 다이얼로그
   await page.getByRole('button', { name: '카테고리 등록' }).click()
 
   const createDialog = page.getByRole('dialog')
+
+  /* 목록 헤더의 '카테고리 등록' 은 기본 창구(1:1 문의)로 연다. 이 시나리오는 사용자
+     사이트의 1:1 문의 폼까지 따라가므로 그대로 둔다. */
+  await expect(createDialog.getByLabel('종류')).toHaveValue('inquiry')
+
   await createDialog.getByLabel('이름').fill(LABEL)
   await createDialog.getByLabel('설명').fill(DESCRIPTION)
   await createDialog.getByLabel('프리필(문의 내용 양식)').fill(PREFILL)
@@ -117,6 +141,14 @@ test('카테고리를 등록·수정·삭제하면 사용자 문의 폼이 따�
 
   // Assert — 목록 한 줄이 세부 유형 개수와 항목을 함께 보여 준다
   await expect(categoryRow(page, LABEL)).toContainText(`세부 유형 ${SUBTYPES.length}개`)
+
+  // Assert — 고른 종류의 섹션에 들어간다(다른 창구에는 보이지 않는다)
+  await expect(kindSection(page, '1:1 문의').locator('li').filter({ hasText: LABEL })).toHaveCount(
+    1,
+  )
+  await expect(kindSection(page, '버그제보').locator('li').filter({ hasText: LABEL })).toHaveCount(
+    0,
+  )
 
   // Assert — 사용자 폼에 라벨 · 설명이 아니라 옵션으로 들어간다(프리필은 옵션 데이터)
   const html = await waitForClientSupportHtml(request, LABEL)
@@ -262,6 +294,33 @@ test('접수된 문의가 있는 카테고리는 삭제 대신 비활성화를 �
       .single()
 
     expect(moved.data?.category, '과거 문의의 분류가 새 이름으로 옮겨지지 않았습니다').toBe(renamed)
+
+    /* Act — 종류(창구)를 옮긴다. 라벨 변경과 같은 무게의 조작이라 저장 앞에 확인이
+       한 걸음 선다(접수된 문의가 있을 때만). */
+    await categoryRow(page, renamed).getByRole('button', { name: '수정' }).click()
+
+    const kindDialog = page.getByRole('dialog')
+    await kindDialog.getByLabel('종류').selectOption('bug')
+    await kindDialog.getByRole('button', { name: '수정', exact: true }).click()
+
+    // Assert — 몇 건이 함께 움직이는지 그 자리에 적혀 있다
+    await expect(kindDialog).toContainText('이 카테고리로 접수된 문의 1건의 종류도 함께 바뀝니다')
+    await page.screenshot({ path: `${SHOT_DIR}/admin-category-kind-confirm.png` })
+
+    await kindDialog.getByRole('button', { name: '종류 바꾸고 저장' }).click()
+
+    // Assert — 카드가 바뀐다(1:1 문의 → 버그제보)와 과거 문의의 종류도 따라간다
+    await expect(
+      kindSection(page, '버그제보').locator('li').filter({ hasText: renamed }),
+    ).toHaveCount(1)
+
+    const movedKind = await service
+      .from('inquiries')
+      .select('kind')
+      .eq('id', inquiry.data?.id ?? '')
+      .single()
+
+    expect(movedKind.data?.kind, '과거 문의의 종류가 함께 옮겨지지 않았습니다').toBe('bug')
   } finally {
     await service
       .from('inquiries')

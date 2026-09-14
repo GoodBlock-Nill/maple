@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabase/server'
 import { inquiryAssignSchema, inquiryUnassignSchema } from '@/lib/validation/inquiry-assignment'
 
 /**
- * 1:1 문의 담당자 배정.
+ * 홈페이지 문의 담당자 배정.
  *
  * 두 액션 모두 스스로 `requirePermission('inquiries', 'write')` 을 부른다. 서버 액션은
  * UI 를 거치지 않는 직접 POST 로도 호출되므로, 화면의 버튼 유무는 인가가 아니다.

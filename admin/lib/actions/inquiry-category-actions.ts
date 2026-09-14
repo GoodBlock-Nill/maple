@@ -1,24 +1,24 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-
 import { actionFailure } from '@/lib/actions/action-failure'
 import { readField, toFieldErrors, type FormState } from '@/lib/actions/form-state'
+import { CATEGORY_NOT_FOUND, revalidateCategories } from '@/lib/actions/inquiry-category-shared'
 import { nullableArg } from '@/lib/actions/rpc-args'
 import { writeAuditLog } from '@/lib/audit'
 import { requirePermission } from '@/lib/auth/require-admin'
 import { getNextInquiryCategorySortOrder } from '@/lib/data/inquiry-categories'
-import { CLIENT_CACHE_TAGS, revalidateClient } from '@/lib/revalidate'
 import { createClient } from '@/lib/supabase/server'
 import {
-  inquiryCategoryReorderSchema,
   inquiryCategorySchema,
   toCategoryKey,
   toNullableText,
 } from '@/lib/validation/inquiry-categories'
 
 /**
- * 문의 카테고리 CRUD · 활성 토글 · 정렬 저장.
+ * 문의 카테고리 등록 · 수정 · 삭제.
+ *
+ * 활성 토글과 정렬 저장은 `inquiry-category-order-actions.ts` 가 갖는다(이 파일의
+ * 300줄 상한). 가드·감사·무효화 규약은 두 파일이 똑같이 따른다.
  *
  * 모든 액션이 스스로 `requirePermission('inquiries', 'write')` 을 부르고(직접 POST 방어),
  * 상태를 바꾼 뒤 감사 로그를 남긴다. 쓰기는 세션 클라이언트로만 한다 —
@@ -28,21 +28,10 @@ import {
  * 이름만 바꾸면 그 라벨로 접수된 문의가 목록 필터에서 사라진다. 그래서 수정은
  * `public.update_inquiry_category()` RPC 한 번으로 끝낸다 — 카테고리 행과 과거 문의의
  * 재라벨링이 한 트랜잭션에서 함께 성공하거나 함께 실패한다(마이그레이션 20260910000500).
+ *
+ * **종류 변경도 과거 문의를 데리고 간다.** 카테고리가 곧 문의의 창구이므로, 같은 RPC
+ * 가 같은 트랜잭션에서 `inquiries.kind` 까지 옮긴다(마이그레이션 20260914000100).
  */
-
-const CATEGORIES_PATH = '/inquiries/categories'
-
-const NOT_FOUND = '카테고리를 찾을 수 없습니다.'
-
-/**
- * 사용자 사이트의 문의 폼은 카테고리를 `unstable_cache`(300초)로 읽는다. 저장 뒤
- * 태그를 태우지 않으면 새 프리필이 최대 5분간 반영되지 않는다.
- */
-async function revalidateCategories(): Promise<void> {
-  revalidatePath(CATEGORIES_PATH)
-  revalidatePath('/inquiries')
-  await revalidateClient([CLIENT_CACHE_TAGS.inquiryCategories])
-}
 
 /**
  * 폼 → 스키마 입력. 체크박스는 값이 없으면 아예 오지 않는다.
@@ -56,8 +45,33 @@ function readCategoryInput(formData: FormData) {
     description: readField(formData, 'description'),
     prefill: readField(formData, 'prefill'),
     subtypes: formData.getAll('subtypes').map((value) => (typeof value === 'string' ? value : '')),
+    /* 종류는 셀렉트 값 그대로다. 세 값 밖이면 스키마가 막는다 — RPC 는 모르는 값을
+       22023 으로 떨어뜨리고, 그 메시지는 운영자가 읽을 수 있는 말이 아니다. */
+    kind: readField(formData, 'kind'),
     isActive: formData.get('isActive') !== null,
   }
+}
+
+/**
+ * 수정 완료 안내.
+ *
+ * RPC 는 라벨·종류 중 하나라도 바뀌면 옮긴 문의 수를 돌려준다. 무엇 때문에 옮겨졌는지
+ * 말해 주지 않으면 운영자는 "이름만 바꿨는데 왜 N건이 움직였나"를 알 수 없다.
+ */
+function updateMessage(moved: number, labelChanged: boolean, kindChanged: boolean): string {
+  if (moved === 0) {
+    return '카테고리를 수정했습니다.'
+  }
+
+  if (labelChanged && kindChanged) {
+    return `카테고리를 수정했습니다. 기존 문의 ${moved}건의 분류와 종류도 함께 바꿨습니다.`
+  }
+
+  if (kindChanged) {
+    return `카테고리를 수정했습니다. 이 카테고리로 접수된 문의 ${moved}건의 종류도 함께 바꿨습니다.`
+  }
+
+  return `카테고리를 수정했습니다. 기존 문의 ${moved}건의 분류도 새 이름으로 바꿨습니다.`
 }
 
 export async function createInquiryCategoryAction(
@@ -71,10 +85,11 @@ export async function createInquiryCategoryAction(
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
-  const { label, description, prefill, subtypes, isActive } = parsed.data
+  const { label, description, prefill, subtypes, kind, isActive } = parsed.data
   const supabase = await createClient()
-  // 새 카테고리는 맨 뒤에 붙인다. 중간에 끼우면 기존 순서가 통째로 밀린다.
-  const sortOrder = await getNextInquiryCategorySortOrder()
+  /* 새 카테고리는 **그 창구의** 맨 뒤에 붙인다. 순번은 kind 안에서만 뜻이 있고,
+     중간에 끼우면 기존 순서가 통째로 밀린다. */
+  const sortOrder = await getNextInquiryCategorySortOrder(kind)
   const key = toCategoryKey(label)
 
   const { data, error } = await supabase
@@ -85,6 +100,7 @@ export async function createInquiryCategoryAction(
       description: toNullableText(description),
       prefill,
       subtypes,
+      kind,
       sort_order: sortOrder,
       is_active: isActive,
     })
@@ -109,7 +125,7 @@ export async function createInquiryCategoryAction(
     action: 'inquiry_category.create',
     targetTable: 'inquiry_categories',
     targetId: data.id,
-    after: { key, label, description, subtypes, is_active: isActive, sort_order: sortOrder },
+    after: { key, label, description, subtypes, kind, is_active: isActive, sort_order: sortOrder },
   })
 
   await revalidateCategories()
@@ -126,27 +142,30 @@ export async function updateInquiryCategoryAction(
   const parsed = inquiryCategorySchema.safeParse(readCategoryInput(formData))
 
   if (categoryId === '') {
-    return { formError: NOT_FOUND }
+    return { formError: CATEGORY_NOT_FOUND }
   }
 
   if (!parsed.success) {
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
-  const { label, description, prefill, subtypes, isActive } = parsed.data
+  const { label, description, prefill, subtypes, kind, isActive } = parsed.data
   const supabase = await createClient()
   const { data: before } = await supabase
     .from('inquiry_categories')
-    .select('key, label, description, prefill, subtypes, sort_order, is_active')
+    .select('key, label, description, prefill, subtypes, sort_order, is_active, kind')
     .eq('id', categoryId)
     .maybeSingle()
 
   if (before === null) {
-    return { formError: NOT_FOUND }
+    return { formError: CATEGORY_NOT_FOUND }
   }
 
   /* key 는 라벨이 바뀌어도 유지한다 — 코드·시드가 가리키는 안정 식별자이기 때문이다.
-     자동 생성은 등록할 때 한 번뿐이다. */
+     자동 생성은 등록할 때 한 번뿐이다.
+
+     RPC 는 9인자다. 인자를 빼먹으면 함수를 찾지 못하고(PGRST202), kind 에 null 을
+     넣으면 22023 으로 떨어진다 — 스키마가 세 값만 통과시키는 이유다. */
   const { data: moved, error } = await supabase.rpc('update_inquiry_category', {
     p_id: categoryId,
     p_key: before.key,
@@ -156,6 +175,7 @@ export async function updateInquiryCategoryAction(
     p_sort_order: before.sort_order,
     p_is_active: isActive,
     p_subtypes: subtypes,
+    p_kind: kind,
   })
 
   if (error !== null) {
@@ -183,8 +203,9 @@ export async function updateInquiryCategoryAction(
       description,
       prefill,
       subtypes,
+      kind,
       is_active: isActive,
-      /* 이름이 바뀌면서 함께 옮겨 간 과거 문의 수. 나중에 "왜 이 문의의 분류가
+      /* 이름·종류가 바뀌면서 함께 옮겨 간 과거 문의 수. 나중에 "왜 이 문의의 분류가
          달라졌나"를 되짚는 유일한 근거다. */
       relabelled_inquiries: relabelled,
     },
@@ -192,12 +213,7 @@ export async function updateInquiryCategoryAction(
 
   await revalidateCategories()
 
-  return {
-    message:
-      relabelled > 0
-        ? `카테고리를 수정했습니다. 기존 문의 ${relabelled}건의 분류도 새 이름으로 바꿨습니다.`
-        : '카테고리를 수정했습니다.',
-  }
+  return { message: updateMessage(relabelled, before.label !== label, before.kind !== kind) }
 }
 
 /**
@@ -215,18 +231,18 @@ export async function deleteInquiryCategoryAction(
   const categoryId = readField(formData, 'categoryId')
 
   if (categoryId === '') {
-    return { formError: NOT_FOUND }
+    return { formError: CATEGORY_NOT_FOUND }
   }
 
   const supabase = await createClient()
   const { data: before } = await supabase
     .from('inquiry_categories')
-    .select('key, label, description, prefill, subtypes, sort_order, is_active')
+    .select('key, label, description, prefill, subtypes, kind, sort_order, is_active')
     .eq('id', categoryId)
     .maybeSingle()
 
   if (before === null) {
-    return { formError: NOT_FOUND }
+    return { formError: CATEGORY_NOT_FOUND }
   }
 
   const { count, error: countError } = await supabase
@@ -268,95 +284,4 @@ export async function deleteInquiryCategoryAction(
   await revalidateCategories()
 
   return { message: '카테고리를 삭제했습니다.' }
-}
-
-/** 활성/비활성 토글. 비활성 카테고리는 사용자 폼에서 즉시 사라진다. */
-export async function toggleInquiryCategoryAction(
-  _prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const actor = await requirePermission('inquiries', 'write')
-  const categoryId = readField(formData, 'categoryId')
-  const nextActive = readField(formData, 'isActive') === 'true'
-
-  if (categoryId === '') {
-    return { formError: NOT_FOUND }
-  }
-
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('inquiry_categories')
-    .update({ is_active: nextActive })
-    .eq('id', categoryId)
-
-  if (error !== null) {
-    return actionFailure(
-      'inquiry-categories',
-      '카테고리 상태를 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.',
-      error,
-    )
-  }
-
-  await writeAuditLog(actor.id, {
-    action: 'inquiry_category.update',
-    targetTable: 'inquiry_categories',
-    targetId: categoryId,
-    before: { is_active: !nextActive },
-    after: { is_active: nextActive },
-  })
-
-  await revalidateCategories()
-
-  return { message: nextActive ? '카테고리를 활성화했습니다.' : '카테고리를 비활성화했습니다.' }
-}
-
-/**
- * 순서 저장.
- *
- * 화면이 보여 준 순서를 그대로 0..n-1 로 다시 쓴다. 두 행의 값만 맞바꾸면 기존
- * 데이터에 중복·구멍이 있을 때 결과가 화면과 달라진다(FAQ 와 같은 규칙).
- */
-export async function reorderInquiryCategoriesAction(
-  _prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const actor = await requirePermission('inquiries', 'write')
-  const parsed = inquiryCategoryReorderSchema.safeParse({
-    ids: readField(formData, 'ids').split(',').filter(Boolean),
-  })
-
-  if (!parsed.success) {
-    return { formError: '정렬 정보를 읽지 못했습니다.' }
-  }
-
-  const { ids } = parsed.data
-  const supabase = await createClient()
-
-  const results = await Promise.all(
-    ids.map((id, index) =>
-      supabase.from('inquiry_categories').update({ sort_order: index }).eq('id', id),
-    ),
-  )
-
-  const failed = results.find((result) => result.error !== null)
-
-  if (failed?.error != null) {
-    /* 행마다 UPDATE 를 던지므로 앞쪽 몇 건은 이미 저장됐을 수 있다. */
-    return actionFailure(
-      'inquiry-categories',
-      '순서를 저장하지 못했습니다. 일부만 반영됐을 수 있으니 새로고침해 순서를 확인해 주세요.',
-      failed.error,
-    )
-  }
-
-  await writeAuditLog(actor.id, {
-    action: 'inquiry_category.reorder',
-    targetTable: 'inquiry_categories',
-    // 대상이 여러 행이라 targetId 는 비운다. 무엇이 어떤 순서가 됐는지는 after 에 남는다.
-    after: { ids: [...ids] },
-  })
-
-  await revalidateCategories()
-
-  return { message: '순서를 저장했습니다.' }
 }

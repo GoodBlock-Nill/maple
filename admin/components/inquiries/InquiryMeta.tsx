@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { InquiryEmailMeta } from '@/components/inquiries/InquiryEmailMeta'
 import { MetaList, MetaRow } from '@/components/inquiries/InquiryMetaRow'
+import { INQUIRY_KIND_MAP } from '@/lib/constants/inquiry-kind'
 import { formatDateTime } from '@/lib/utils/format-date'
 import { formatInquiryNo } from '@/lib/utils/inquiry-no'
 import { inquiryCategoryLabel, inquiryTypeLabel, maskAccountId } from '@/lib/validation/inquiries'
@@ -39,6 +40,9 @@ export function InquiryMeta({ inquiry }: { inquiry: InquiryDetail }) {
           </Link>
         )}
       </MetaRow>
+      {/* 어느 창구로 들어온 건인지. 카테고리보다 먼저 읽혀야 한다 — 같은 카테고리
+          이름은 한 창구에만 있지만, 답변 문체와 처리 흐름은 창구마다 다르다. */}
+      <MetaRow label="종류">{INQUIRY_KIND_MAP[inquiry.kind].label}</MetaRow>
       <MetaRow label="계정 ID">{maskAccountId(inquiry.accountId)}</MetaRow>
       <MetaRow label="연락 이메일">{inquiry.contactEmail ?? inquiry.email ?? '-'}</MetaRow>
       <MetaRow label="카테고리 · 유형">

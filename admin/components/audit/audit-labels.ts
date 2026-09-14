@@ -21,7 +21,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   news_template: '뉴스 카테고리 템플릿',
   post: '게시글',
   comment: '댓글',
-  inquiry: '1:1 문의',
+  inquiry: '홈페이지 문의',
   inquiry_note: '문의 내부 메모',
   inquiry_category: '문의 카테고리',
   inquiry_reply_template: '답변 템플릿',
@@ -125,7 +125,7 @@ const TABLE_LABELS: Record<string, string> = {
   profiles: '회원',
   posts: '게시글',
   comments: '댓글',
-  inquiries: '1:1 문의',
+  inquiries: '홈페이지 문의',
   inquiry_replies: '문의 답변',
   inquiry_notes: '문의 내부 메모',
   inquiry_reply_templates: '답변 템플릿',
@@ -144,4 +144,32 @@ export function auditTableLabel(table: string | null): string {
   }
 
   return TABLE_LABELS[table] ?? table
+}
+
+/**
+ * before/after 의 필드 이름 → 표기.
+ *
+ * 변경 요약 칸은 `kind: inquiry → bug` 처럼 **DB 컬럼 이름**을 그대로 적는다. 운영자가
+ * 읽는 화면에서 그 말은 뜻이 없다(무엇보다 '종류'는 관리자 화면 어디에도 `kind` 로
+ * 적혀 있지 않다). 표에 없는 키는 원문을 그대로 둔다 — 모든 모듈의 필드를 미리 적어
+ * 둘 수는 없고, 잘못 번역하는 것보다 원문이 낫다(행동명과 같은 규칙).
+ */
+const FIELD_LABELS: Record<string, string> = {
+  /* 문의 카테고리(마이그레이션 20260914000100). 종류가 바뀌면 그 분류로 접수된
+     과거 문의까지 다른 창구로 옮겨 가므로, 감사 로그에서 가장 먼저 읽혀야 한다. */
+  kind: '종류',
+  key: '식별자',
+  label: '이름',
+  name: '이름',
+  description: '설명',
+  prefill: '프리필',
+  subtypes: '세부 유형',
+  sort_order: '순서',
+  is_active: '노출',
+  ids: '순서(id)',
+  relabelled_inquiries: '함께 옮긴 문의 수',
+}
+
+export function auditFieldLabel(field: string): string {
+  return FIELD_LABELS[field] ?? field
 }
