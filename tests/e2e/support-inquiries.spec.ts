@@ -81,16 +81,43 @@ async function stubLogin(page: Page, nextPath: string): Promise<void> {
   await page.waitForURL(`**${nextPath}`)
 }
 
-/** 시드 카테고리(마이그레이션 20260910000400). 고르면 내용에 양식이 채워진다. */
-const CATEGORY_LABEL = '접속·서버'
+/**
+ * 1:1 문의 창구(`/support`)의 시드 카테고리.
+ *
+ * 접속·서버 등 네 종은 2026-09-14 부터 **버그제보** 창구로 옮겨졌다(마이그레이션
+ * 20260914000100) — 이 화면의 셀렉트에는 더 이상 없다. 그래서 1:1 에 남은 분류로
+ * 고른다. 고르면 내용에 그 카테고리의 양식이 채워진다.
+ */
+const CATEGORY_LABEL = '재화·아이템'
+
+/** 셀렉트 아래 한 줄 안내(그 카테고리의 설명). 프리필과 함께 바뀐다. */
+const CATEGORY_DESCRIPTION = '아이템 미지급·소실, 재화 증감 오류, 비정상 획득, 거래 오류.'
 
 /** 세부 유형이 없는 시드 카테고리 — 폼이 유형 셀렉트를 잠그고 '기타' 로 접수한다. */
 const OTHER_CATEGORY_LABEL = '기타·건의'
 
 /** 그 카테고리의 세부 문의 유형(마이그레이션 20260910000700 시드). */
-const SUBTYPES = ['로그인/접속 불가', '강제 종료', '지연/서버 장애'] as const
+const SUBTYPES = ['아이템 미지급/소실', '재화 증가/감소 오류', '거래 오류'] as const
 
 const [SUBTYPE_LABEL, OTHER_SUBTYPE_LABEL] = SUBTYPES
+
+/* 버그제보 · 불법이용제보 창구. 라우트만 다르고 폼·규칙은 1:1 문의와 같다. */
+const BUG_PATH = '/support/bug'
+const REPORT_PATH = '/support/report'
+
+const BUG_CATEGORY_LABEL = '접속·서버'
+const BUG_SUBTYPE_LABEL = '로그인/접속 불가'
+
+const REPORT_CATEGORY_LABEL = '불법 프로그램'
+const REPORT_SUBTYPE_LABEL = '핵/치트 프로그램'
+
+/** 목록·상세가 그리는 종류 라벨(`lib/constants/inquiry-kind.ts`). */
+const BUG_KIND_LABEL = '버그제보'
+const REPORT_KIND_LABEL = '불법이용제보'
+
+/** 제출 버튼 문구도 창구를 따라간다 — 제보는 "문의하기"가 아니다. */
+const SUBMIT_LABEL = '문의하기'
+const REPORT_SUBMIT_LABEL = '제보하기'
 
 /**
  * 필수 항목을 모두 채운다(2026-09-11 제품 결정 — 첨부만 선택).
@@ -98,18 +125,28 @@ const [SUBTYPE_LABEL, OTHER_SUBTYPE_LABEL] = SUBTYPES
  * 하나라도 비면 제출 버튼이 잠기므로, 첨부·영상 시나리오도 이 함수를 먼저 부른 뒤에야
  * "첨부 때문에 잠겼는가"를 물어볼 수 있다.
  */
-async function fillRequiredFields(page: Page, title: string): Promise<void> {
+async function fillRequiredFields(
+  page: Page,
+  title: string,
+  category: string = CATEGORY_LABEL,
+  subtype: string = SUBTYPE_LABEL,
+): Promise<void> {
   await page.locator('input[name="accountId"]').fill(randomDigits(17))
-  await page.locator('select[name="category"]').selectOption(CATEGORY_LABEL)
-  await page.locator('select[name="type"]').selectOption(SUBTYPE_LABEL)
+  await page.locator('select[name="category"]').selectOption(category)
+  await page.locator('select[name="type"]').selectOption(subtype)
   await page.locator('input[name="title"]').fill(title)
   await page.locator('textarea[name="content"]').fill('E2E 로 접수한 문의입니다.\n두 번째 줄.')
   await page.locator('input[name="consent"]').check()
 }
 
+/** 접수 버튼. 창구마다 문구가 다르다(1:1 문의 "문의하기" · 제보 "제보하기"). */
+function submitControl(page: Page, label: string = SUBMIT_LABEL) {
+  return page.getByRole('button', { name: label })
+}
+
 async function submitInquiry(page: Page, title: string): Promise<string> {
   await fillRequiredFields(page, title)
-  await page.getByRole('button', { name: '문의 등록하기' }).click()
+  await submitControl(page).click()
 
   await page.waitForURL(/\/support\/inquiries\/[0-9a-f-]{36}/)
 
@@ -149,7 +186,7 @@ test('should prefill the content from the selected category and confirm before r
   /* 세부 유형 목록은 이제 셀렉트가 갖는다 — 양식에 다시 적지 않는다(같은 것을
      두 번 고르게 되고, 둘이 어긋난 문의가 들어온다). */
   await expect(content).not.toHaveValue(/세부 문의 유형/)
-  await expect(page.getByText('로그인·접속 불가')).toBeVisible()
+  await expect(page.getByText(CATEGORY_DESCRIPTION)).toBeVisible()
 
   // Assert — 유형 셀렉트가 그 카테고리의 세부 유형으로 채워진다
   await expect(type).toBeEnabled()
@@ -234,7 +271,7 @@ test('should keep the submit locked until every required field is filled', async
 
   await stubLogin(page, SUPPORT_PATH)
 
-  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+  const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
   // Assert — 빈 폼에서는 잠겨 있고 이유가 버튼 아래에 적혀 있다
   await expect(submitButton).toBeDisabled()
@@ -575,7 +612,7 @@ test('should refuse an oversized attachment before submitting and accept a real 
   await fillRequiredFields(page, `E2E 첨부 잠금 ${Date.now()}`)
 
   const fileInput = page.locator('input[name="attachments"]')
-  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+  const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
   // Act — 상한을 넘는 파일(6MB)
   await fileInput.setInputFiles({
@@ -643,7 +680,7 @@ test('should upload a video straight to storage and play it on the detail page',
 
   const fileInput = page.locator('input[name="attachments"]')
   const hiddenField = page.locator('input[name="videoAttachments"]')
-  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+  const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
   // Act — 고르는 즉시 업로드가 시작된다
   await fileInput.setInputFiles(source as string)
@@ -715,7 +752,7 @@ test('should refuse a fourth image and accept three images with two videos toget
   await fillRequiredFields(page, title)
 
   const fileInput = page.locator('input[name="attachments"]')
-  const submitButton = page.getByRole('button', { name: '문의 등록하기' })
+  const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
   // Act — 이미지 4장을 한 번에 고른다(이미지·PDF 상한은 3개, 영상과 별도 자리다)
   await fileInput.setInputFiles([
@@ -777,5 +814,105 @@ test('should refuse a fourth image and accept three images with two videos toget
     }
 
     await service.from('inquiries').delete().eq('id', inquiryId)
+  }
+})
+
+/**
+ * 버그제보 · 불법이용제보 창구(2026-09-14).
+ *
+ * 세 창구는 같은 폼·같은 목록을 쓰고 **분류 하나(kind)** 만 다르다. 그래서 확인할
+ * 것도 그 하나다 —
+ *
+ *   1) 각 라우트의 카테고리 셀렉트가 그 창구의 카테고리만 들고 있다
+ *   2) 제출 문구·완료 모달이 "문의"가 아니라 "제보"로 말한다
+ *   3) 접수된 두 건이 **한** 내 문의 내역에 종류 라벨과 함께 선다
+ *
+ * 두 건을 같은 계정으로 내야 (3)을 볼 수 있어서 접수 사이에 도배 방지 창
+ * (`WRITE_COOLDOWN_SECONDS` = 30초)을 그대로 기다린다 — 창을 우회하는 길을 테스트
+ * 전용으로 뚫으면 그 길이 운영에도 남는다.
+ */
+test('should accept a bug report and an illegal-use report and list both by kind', async ({
+  page,
+}, testInfo) => {
+  // Arrange
+  test.setTimeout(180_000)
+
+  const isDesktop = testInfo.project.name === 'chromium'
+
+  if (isDesktop) {
+    await page.setViewportSize({ width: 1440, height: 1200 })
+  }
+
+  await stubLogin(page, BUG_PATH)
+
+  // Assert — 버그제보 창구의 카테고리만 고를 수 있다(1:1 문의 카테고리는 없다)
+  const categoryOptions = await page.locator('select[name="category"] option').allTextContents()
+
+  expect(categoryOptions).toContain(BUG_CATEGORY_LABEL)
+  expect(categoryOptions).not.toContain(CATEGORY_LABEL)
+
+  // Act — 접수(버튼 문구는 "제보하기")
+  const bugTitle = `E2E 버그제보 ${Date.now()}`
+
+  await fillRequiredFields(page, bugTitle, BUG_CATEGORY_LABEL, BUG_SUBTYPE_LABEL)
+  await submitControl(page, REPORT_SUBMIT_LABEL).click()
+  await page.waitForURL(/\/support\/inquiries\/[0-9a-f-]{36}/)
+
+  // Assert — 완료 모달이 "제보"로 말한다
+  const dialog = page.getByRole('dialog', { name: '제보가 접수되었습니다' })
+
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '확인' }).click()
+
+  /* Assert — 상세 메타에 종류가 있다. 메타는 PC·폰 두 벌이 DOM 에 있고 한 벌만
+     보이므로(시안 v2) 보이는 것으로 좁힌다. 좌측 메뉴·모바일 탭에도 같은 이름이
+     있어서 상세 카드(article) 안으로도 한 번 더 좁힌다. */
+  await expect(
+    page.locator('article').getByText(BUG_KIND_LABEL).locator('visible=true').first(),
+  ).toBeVisible()
+
+  if (isDesktop) {
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/inquiry-bug-detail-1440.png`, fullPage: true })
+  }
+
+  /* Act — 도배 방지 창이 지나야 두 번째 접수가 들어간다. 30초 + 여유 1초. */
+  await page.waitForTimeout(31_000)
+
+  await page.goto(REPORT_PATH)
+
+  // Assert — 불법이용제보 창구의 카테고리
+  const reportOptions = await page.locator('select[name="category"] option').allTextContents()
+
+  expect(reportOptions).toContain(REPORT_CATEGORY_LABEL)
+  expect(reportOptions).not.toContain(BUG_CATEGORY_LABEL)
+
+  // Act
+  const reportTitle = `E2E 불법이용제보 ${Date.now()}`
+
+  await fillRequiredFields(page, reportTitle, REPORT_CATEGORY_LABEL, REPORT_SUBTYPE_LABEL)
+  await submitControl(page, REPORT_SUBMIT_LABEL).click()
+  await page.waitForURL(/\/support\/inquiries\/[0-9a-f-]{36}/)
+
+  await page
+    .getByRole('dialog', { name: '제보가 접수되었습니다' })
+    .getByRole('button', { name: '확인' })
+    .click()
+
+  // Act — 내 문의 내역은 세 창구를 함께 보여 준다(필터 없음, 최신순)
+  await page.goto(LIST_PATH)
+
+  const reportRow = page.getByRole('link', { name: new RegExp(reportTitle) })
+  const bugRow = page.getByRole('link', { name: new RegExp(bugTitle) })
+
+  // Assert — 두 건 모두 자기 종류 라벨을 달고 선다
+  await expect(reportRow).toBeVisible()
+  await expect(reportRow).toContainText(REPORT_KIND_LABEL)
+  await expect(reportRow).toContainText(REPORT_CATEGORY_LABEL)
+  await expect(bugRow).toBeVisible()
+  await expect(bugRow).toContainText(BUG_KIND_LABEL)
+  await expect(bugRow).toContainText(BUG_CATEGORY_LABEL)
+
+  if (isDesktop) {
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/inquiries-kinds-1440.png`, fullPage: true })
   }
 })

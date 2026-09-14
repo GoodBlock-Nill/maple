@@ -17,7 +17,9 @@ beforeEach(() => {
 describe('InquirySubmittedDialog', () => {
   it('should open as a labelled modal with the next steps', () => {
     // Arrange & Act
-    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} />)
+    render(
+      <InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="inquiry" />,
+    )
 
     // Assert
     const dialog = screen.getByRole('dialog')
@@ -26,9 +28,28 @@ describe('InquirySubmittedDialog', () => {
     expect(screen.getByText(/운영자가 확인 후 답변을 등록하면/)).toBeInTheDocument()
   })
 
+  it('should call a bug report 제보 instead of 문의', () => {
+    // Arrange & Act — 방금 누른 버튼이 "제보하기"였는데 모달만 "문의"라고 하면 안 된다.
+    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="bug" />)
+
+    // Assert
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('제보가 접수되었습니다')
+    expect(screen.getByText(/운영자가 제보를 확인한 뒤/)).toBeInTheDocument()
+  })
+
+  it('should use the same copy for an illegal-use report', () => {
+    // Arrange & Act — 두 제보 창구는 처리 흐름이 같아 문구도 같다.
+    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="report" />)
+
+    // Assert
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('제보가 접수되었습니다')
+  })
+
   it('should show the receipt number so the user can write it down', () => {
     // Arrange & Act
-    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} />)
+    render(
+      <InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="inquiry" />,
+    )
 
     /* Assert — 접수번호는 이 모달을 닫고 나면 상세·목록에서만 볼 수 있다. 고객센터에
        전화하는 사용자는 그 전에 적어 둔다. */
@@ -39,7 +60,9 @@ describe('InquirySubmittedDialog', () => {
 
   it('should offer a link to the inquiry list', () => {
     // Arrange & Act
-    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} />)
+    render(
+      <InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="inquiry" />,
+    )
 
     // Assert
     expect(screen.getByRole('link', { name: '내 문의 내역 보기' })).toHaveAttribute(
@@ -51,7 +74,9 @@ describe('InquirySubmittedDialog', () => {
   it('should close on 확인 and strip the one-off query parameter', async () => {
     // Arrange
     const user = userEvent.setup()
-    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} />)
+    render(
+      <InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="inquiry" />,
+    )
 
     // Act
     await user.click(screen.getByRole('button', { name: '확인' }))
@@ -64,7 +89,9 @@ describe('InquirySubmittedDialog', () => {
   it('should close on Escape', async () => {
     // Arrange
     const user = userEvent.setup()
-    render(<InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} />)
+    render(
+      <InquirySubmittedDialog detailPath={DETAIL_PATH} inquiryNo={INQUIRY_NO} kind="inquiry" />,
+    )
 
     // Act
     await user.keyboard('{Escape}')

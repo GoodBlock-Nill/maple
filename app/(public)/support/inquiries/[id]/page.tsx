@@ -91,6 +91,7 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
             <InquirySubmittedDialog
               detailPath={`${MY_INQUIRIES_PATH}/${inquiry.id}`}
               inquiryNo={inquiry.inquiryNo}
+              kind={inquiry.kind}
             />
           ) : null}
 

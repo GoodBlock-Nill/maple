@@ -22,6 +22,7 @@ import {
   REPORT_COOLDOWN_SECONDS,
 } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { DEFAULT_INQUIRY_KIND, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import {
   INQUIRY_CANCELLED_PARAM,
   INQUIRY_EDIT_LOCKED_NOTICE,
@@ -43,7 +44,7 @@ import { isVideoAttachment } from '@/lib/validation/inquiry-video'
 import type { FormState } from '@/lib/actions/form-state'
 import type { CurrentUser } from '@/lib/auth/current-user'
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
-import type { InquiryAttachment, InquiryStatus } from '@/types/domain'
+import type { InquiryAttachment, InquiryKind, InquiryStatus } from '@/types/domain'
 
 /**
  * 소유자 본인의 문의 수정 · 접수 취소.
@@ -67,12 +68,15 @@ const CANCEL_FAILURE_MESSAGE = '문의 접수를 취소하지 못했습니다. �
 const EDIT_COOLDOWN_SECONDS = REPORT_COOLDOWN_SECONDS
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
-const OWNED_COLUMNS = 'status, cancelled_at, attachments, category, type, created_at, updated_at'
+const OWNED_COLUMNS =
+  'status, cancelled_at, attachments, kind, category, type, created_at, updated_at'
 
 type OwnedInquiry = {
   status: InquiryStatus
   cancelledAt: string | null
   attachments: readonly InquiryAttachment[]
+  /** 접수 당시의 창구. 수정 화면이 고를 수 있는 카테고리를 이 값이 정한다. */
+  kind: InquiryKind
   /** 접수 당시의 카테고리 라벨. 지금은 없어진 옛 값일 수 있다. */
   category: string
   /** 접수 당시의 세부 문의 유형. 옛 3종('문의' 등)이거나 지금은 없어진 항목일 수 있다. */
@@ -122,6 +126,8 @@ async function requireOwnInquiry(id: string): Promise<Guard> {
       status: data.status,
       cancelledAt: data.cancelled_at,
       attachments: toAttachments(data.attachments),
+      /* 컬럼이 text 라 생성된 타입은 `string` 이다. 모르는 값은 기본 창구로 둔다. */
+      kind: isInquiryKind(data.kind) ? data.kind : DEFAULT_INQUIRY_KIND,
       category: data.category,
       type: data.type,
       createdAt: data.created_at,
@@ -174,8 +180,12 @@ export async function updateInquiry(
 
      유형도 같은 이유로 **접수 당시의 값**을 함께 허용한다. 세부 유형 목록은 카테고리
      마다 다르고 운영자가 항목을 지울 수도 있어서, 저장된 값을 막으면 제목만 고치려던
-     사용자가 유형부터 다시 정해야 한다. */
-  const categories = withLegacyCategory(await getInquiryCategories(), guard.inquiry.category)
+     사용자가 유형부터 다시 정해야 한다.
+
+     목록은 **접수된 창구**(kind)의 것이다 — 다른 창구로 읽으면 버그제보를 고치려던
+     사용자가 자기 카테고리를 "없는 값"으로 거절당한다. */
+  const { kind, category } = guard.inquiry
+  const categories = withLegacyCategory(await getInquiryCategories(kind), category, kind)
   const parsed = updateInquirySchema(categories, [guard.inquiry.type]).safeParse({
     accountId: readField(formData, 'accountId'),
     category: readField(formData, 'category'),

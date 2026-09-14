@@ -17,9 +17,17 @@ const CATEGORIES: readonly InquiryCategoryOption[] = [
     description: '접속이 안 될 때',
     prefill: CONNECTION_PREFILL,
     subtypes: ['로그인/접속 불가', '강제 종료'],
+    kind: 'bug',
   },
-  { key: 'etc', label: '기타·건의', description: null, prefill: '건의 주제:', subtypes: [] },
-  { key: 'empty', label: '양식없음', description: null, prefill: '', subtypes: [] },
+  {
+    key: 'etc',
+    label: '기타·건의',
+    description: null,
+    prefill: '건의 주제:',
+    subtypes: [],
+    kind: 'bug',
+  },
+  { key: 'empty', label: '양식없음', description: null, prefill: '', subtypes: [], kind: 'bug' },
 ]
 
 describe('isDiscardableContent', () => {
@@ -69,7 +77,7 @@ describe('findInquiryCategory', () => {
 describe('withLegacyCategory', () => {
   it('should append a category that is no longer on the list', () => {
     // Arrange & Act — 비활성화된 옛 분류로 접수된 문의도 수정할 수 있어야 한다.
-    const result = withLegacyCategory(CATEGORIES, '결제')
+    const result = withLegacyCategory(CATEGORIES, '결제', 'bug')
 
     // Assert
     expect(result).toHaveLength(CATEGORIES.length + 1)
@@ -78,6 +86,7 @@ describe('withLegacyCategory', () => {
     expect(result.at(-1)).toEqual({
       key: 'legacy:결제',
       label: '결제',
+      kind: 'bug',
       description: null,
       prefill: '',
       subtypes: [],
@@ -86,7 +95,7 @@ describe('withLegacyCategory', () => {
 
   it('should leave the list untouched for an active or empty label', () => {
     // Arrange & Act & Assert
-    expect(withLegacyCategory(CATEGORIES, '접속·서버')).toBe(CATEGORIES)
-    expect(withLegacyCategory(CATEGORIES, '')).toBe(CATEGORIES)
+    expect(withLegacyCategory(CATEGORIES, '접속·서버', 'bug')).toBe(CATEGORIES)
+    expect(withLegacyCategory(CATEGORIES, '', 'bug')).toBe(CATEGORIES)
   })
 })

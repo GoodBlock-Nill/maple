@@ -3,10 +3,10 @@ import Link from 'next/link'
 
 import { SupportTabs } from '@/components/support/SupportTabs'
 import { SUPPORT_CARD_CLASS } from '@/components/support/support-styles'
-import { SUPPORT_MENU } from '@/lib/constants/support'
+import { SUPPORT_MENU } from '@/lib/constants/support-menu'
 import { cn } from '@/lib/utils/cn'
 
-import type { SupportMenuItem } from '@/lib/constants/support'
+import type { SupportMenuItem } from '@/lib/constants/support-menu'
 import type { ReactNode } from 'react'
 
 type SupportCardProps = {
@@ -19,8 +19,8 @@ type SupportCardProps = {
  * 고객지원 공통 카드(시안 v2).
  *
  * PC 는 좌측 메뉴 374 · 세로 구분선 · 우측 콘텐츠 698 이고, 폰에서는 메뉴가
- * **세그먼트 탭 3개**로 바뀐다 — 374 짜리 메뉴를 세로로 쌓으면 카드 첫 화면이
- * 전부 내비게이션이 되어 정작 문의 폼이 접히기 때문이다.
+ * **가로 스크롤 세그먼트 탭**으로 바뀐다 — 374 짜리 메뉴 다섯 행을 세로로 쌓으면
+ * 카드 첫 화면이 전부 내비게이션이 되어 정작 접수 폼이 접히기 때문이다.
  *
  * 좌 열 위의 제목·설명 문단은 시안 v2 에서 없어졌다(카드가 바로 메뉴부터 선다).
  */

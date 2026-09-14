@@ -47,6 +47,8 @@ export type SupabaseStub = {
   orders: [string, unknown][]
   /** `is()` 에 넘어온 `[column, value]` 호출 순서. `cancelled_at is null` 필터 검증용. */
   isFilters: [string, unknown][]
+  /** `eq()` 에 넘어온 `[column, value]` 호출 순서. 창구(kind) 같은 조회 조건 검증용. */
+  eqFilters: [string, unknown][]
   /** `range()` 에 넘어온 `[from, to]` 호출 순서. 페이지네이션 경계 검증용. */
   ranges: [number, number][]
 }
@@ -60,6 +62,7 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
   const deletes: Record<string, unknown>[] = []
   const orders: [string, unknown][] = []
   const isFilters: [string, unknown][] = []
+  const eqFilters: [string, unknown][] = []
   const ranges: [number, number][] = []
   const rpcCalls: { name: string; args: unknown }[] = []
   const uploads: StorageUpload[] = []
@@ -97,6 +100,8 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     }
 
     builder.eq = (column: string, value: unknown) => {
+      eqFilters.push([column, value])
+
       if (deleteFilter !== null) {
         deleteFilter[column] = value
       }
@@ -179,6 +184,7 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
     deletes,
     orders,
     isFilters,
+    eqFilters,
     ranges,
     rpcCalls,
     uploads,

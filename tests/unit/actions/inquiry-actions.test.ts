@@ -55,17 +55,35 @@ vi.mock('@/lib/supabase/server', () => ({
 
 /* 카테고리(와 그 카테고리의 세부 문의 유형)는 DB 에서 온다. 액션이 무엇을 허용
    목록으로 쓰는지만 보면 되므로 데이터 계층은 고정 목록으로 세운다(`server-only` 를
-   끌고 오지 않는 부수 효과도 있다). */
-const CATEGORIES = [
-  { key: 'k0', label: '접속·서버', subtypes: ['로그인/접속 불가', '강제 종료'] },
-  { key: 'k1', label: '캐릭터·게임 진행', subtypes: ['보상 획득 오류'] },
-  /* 세부 유형이 없는 카테고리 — 폼이 hidden 으로 싣는 '기타' 만 받는다. */
-  { key: 'k2', label: '기타·건의', subtypes: [] },
-]
+   끌고 오지 않는 부수 효과도 있다).
+
+   목록은 **창구(kind)별**이다 — 버그제보 카테고리로 1:1 문의를 접수하는 요청이
+   서버에서 거절되는지 보려면 스텁도 같은 축으로 갈라져 있어야 한다. */
+const CATEGORIES = {
+  inquiry: [
+    { key: 'k0', label: '재화·아이템', subtypes: ['아이템 미지급/소실', '거래 오류'] },
+    /* 세부 유형이 없는 카테고리 — 폼이 hidden 으로 싣는 '기타' 만 받는다. */
+    { key: 'k1', label: '기타·건의', subtypes: [] },
+  ],
+  bug: [
+    { key: 'k2', label: '접속·서버', subtypes: ['로그인/접속 불가', '강제 종료'] },
+    { key: 'k3', label: '캐릭터·게임 진행', subtypes: ['보상 획득 오류'] },
+  ],
+  report: [{ key: 'k4', label: '불법 프로그램', subtypes: ['핵/치트 프로그램'] }],
+} as const
+
+const categoryKinds: string[] = []
 vi.mock('@/lib/data/inquiry-categories', () => ({
-  getInquiryCategories: async () =>
-    CATEGORIES.map((category) => ({ ...category, description: null, prefill: '' })),
-  getInquiryCategoryLabels: async () => CATEGORIES.map((category) => category.label),
+  getInquiryCategories: async (kind: 'inquiry' | 'bug' | 'report') => {
+    categoryKinds.push(kind)
+
+    return CATEGORIES[kind].map((category) => ({
+      ...category,
+      description: null,
+      prefill: '',
+      kind,
+    }))
+  },
 }))
 
 const { createInquiry } = await import('@/lib/actions/inquiry-actions')
@@ -78,8 +96,8 @@ function inquiryForm(overrides: Record<string, string> = {}): FormData {
   const formData = new FormData()
   const values = {
     accountId: '20123456789000000',
-    category: '접속·서버',
-    type: '로그인/접속 불가',
+    category: '재화·아이템',
+    type: '아이템 미지급/소실',
     title: '로그인이 되지 않습니다',
     content: '어제부터 로그인 화면에서 멈춥니다.',
     consent: 'on',
@@ -95,6 +113,7 @@ function inquiryForm(overrides: Record<string, string> = {}): FormData {
 
 beforeEach(() => {
   getCurrentUser.mockReset()
+  categoryKinds.length = 0
   uploads = []
   removed = []
   uploadError = null
@@ -111,7 +130,11 @@ describe('createInquiry', () => {
     getCurrentUser.mockResolvedValue(USER)
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, inquiryForm({ type: '보상 획득 오류' }))
+    const result = await createInquiry(
+      'inquiry',
+      EMPTY_FORM_STATE,
+      inquiryForm({ type: '보상 획득 오류' }),
+    )
 
     // Assert — DB 까지 가지 않고 필드 오류로 돌려준다.
     expect(result.fieldErrors?.type).toContain('세부 문의 유형')
@@ -124,6 +147,7 @@ describe('createInquiry', () => {
 
     // Act
     await createInquiry(
+      'inquiry',
       EMPTY_FORM_STATE,
       inquiryForm({ category: '기타·건의', type: '기타' }),
     ).catch(() => undefined)
@@ -137,7 +161,7 @@ describe('createInquiry', () => {
     getCurrentUser.mockResolvedValue(USER)
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, inquiryForm({ accountId: '' }))
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, inquiryForm({ accountId: '' }))
 
     // Assert
     expect(result.fieldErrors?.accountId).toContain('계정 ID')
@@ -149,7 +173,7 @@ describe('createInquiry', () => {
     getCurrentUser.mockResolvedValue(null)
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, inquiryForm())
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, inquiryForm())
 
     // Assert
     expect(result.formError).toContain('로그인')
@@ -163,7 +187,7 @@ describe('createInquiry', () => {
     formData.delete('consent')
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, formData)
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
     expect(result.fieldErrors?.consent).toContain('동의')
@@ -175,7 +199,7 @@ describe('createInquiry', () => {
     getCurrentUser.mockResolvedValue(USER)
 
     // Act
-    const error = await createInquiry(EMPTY_FORM_STATE, inquiryForm()).catch(
+    const error = await createInquiry('inquiry', EMPTY_FORM_STATE, inquiryForm()).catch(
       (thrown: Error) => thrown,
     )
 
@@ -183,8 +207,9 @@ describe('createInquiry', () => {
     expect(stub.inserts[0]).toMatchObject({
       user_id: USER.id,
       account_id: '20123456789000000',
-      category: '접속·서버',
-      type: '로그인/접속 불가',
+      kind: 'inquiry',
+      category: '재화·아이템',
+      type: '아이템 미지급/소실',
       privacy_consent: true,
       status: 'pending',
       attachments: [],
@@ -200,7 +225,7 @@ describe('createInquiry', () => {
     stub = createSupabaseStub([{ data: { created_at: new Date().toISOString() }, error: null }])
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, inquiryForm())
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, inquiryForm())
 
     // Assert
     expect(result.formError).toContain('초 후에')
@@ -214,7 +239,7 @@ describe('createInquiry', () => {
     formData.append('attachments', new File(['png-bytes'], 'shot.png', { type: 'image/png' }))
 
     // Act
-    await createInquiry(EMPTY_FORM_STATE, formData).catch(() => undefined)
+    await createInquiry('inquiry', EMPTY_FORM_STATE, formData).catch(() => undefined)
 
     // Assert — 정책(`inquiry_attachments_insert_own`)이 요구하는 `{uid}/` 접두사.
     expect(uploads[0]?.path.startsWith(`${USER.id}/`)).toBe(true)
@@ -231,7 +256,7 @@ describe('createInquiry', () => {
     formData.append('attachments', new File(['zip'], 'a.zip', { type: 'application/zip' }))
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, formData)
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
     expect(result.fieldErrors?.attachments).toBeDefined()
@@ -246,7 +271,7 @@ describe('createInquiry', () => {
     formData.append('attachments', new File(['png'], 'shot.png', { type: 'image/png' }))
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, formData)
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
     expect(result.formError).toContain('첨부파일')
@@ -264,10 +289,60 @@ describe('createInquiry', () => {
     formData.append('attachments', new File(['png'], 'shot.png', { type: 'image/png' }))
 
     // Act
-    const result = await createInquiry(EMPTY_FORM_STATE, formData)
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
-    expect(result.formError).toContain('문의를 접수하지 못했습니다')
+    expect(result.formError).toContain('접수하지 못했습니다')
     expect(removed[0]).toHaveLength(1)
+  })
+})
+
+describe('createInquiry 창구(kind)', () => {
+  it('should validate against the categories of the bound kind', async () => {
+    // Arrange
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act — 버그제보 창구로 그 창구의 카테고리를 접수한다.
+    await createInquiry(
+      'bug',
+      EMPTY_FORM_STATE,
+      inquiryForm({ category: '접속·서버', type: '로그인/접속 불가' }),
+    ).catch(() => undefined)
+
+    // Assert — 허용 목록을 그 창구에서 읽고, 행에도 같은 창구를 적는다.
+    expect(categoryKinds).toEqual(['bug'])
+    expect(stub.inserts[0]).toMatchObject({ kind: 'bug', category: '접속·서버' })
+  })
+
+  it('should reject a category that belongs to another kind', async () => {
+    /* Arrange — 화면에서는 만들 수 없는 조합이다(창구마다 셀렉트가 다르다). 직접
+       POST 로 섞어 보내면 트리거가 kind 를 되돌려 버그제보가 1:1 문의로 남는다. */
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    const result = await createInquiry(
+      'inquiry',
+      EMPTY_FORM_STATE,
+      inquiryForm({ category: '접속·서버', type: '로그인/접속 불가' }),
+    )
+
+    // Assert — DB 까지 가지 않고 필드 오류로 돌려준다.
+    expect(result.fieldErrors?.category).toContain('카테고리')
+    expect(stub.inserts).toHaveLength(0)
+  })
+
+  it('should fall back to the default kind when the bound value is unknown', async () => {
+    /* Arrange — bind 인자는 Next 가 서명하지만 값의 모양까지 보장하지는 않는다.
+       모르는 창구에 접수를 막기보다 사람이 보는 1:1 문의로 떨어뜨린다. */
+    getCurrentUser.mockResolvedValue(USER)
+
+    // Act
+    await createInquiry('spam' as unknown as 'inquiry', EMPTY_FORM_STATE, inquiryForm()).catch(
+      () => undefined,
+    )
+
+    // Assert
+    expect(categoryKinds).toEqual(['inquiry'])
+    expect(stub.inserts[0]).toMatchObject({ kind: 'inquiry' })
   })
 })

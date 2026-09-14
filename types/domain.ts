@@ -1,3 +1,5 @@
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
+
 /**
  * 게시판 도메인 타입.
  *
@@ -257,6 +259,15 @@ export type SiteSettings = {
 export type InquiryStatus = 'pending' | 'in_progress' | 'answered' | 'closed'
 
 /**
+ * 접수 종류(`inquiries.kind` · `inquiry_categories.kind`).
+ *
+ * 원본은 상수 파일(`lib/constants/inquiry-kind.ts`)에 있다 — 라벨·경로·버튼 문구와
+ * 같은 자리에 두어야 값과 표기가 함께 움직인다. 여기서는 다른 도메인 타입과 같은
+ * 곳에서 꺼내 쓸 수 있도록 다시 내보내기만 한다.
+ */
+export type { InquiryKind } from '@/lib/constants/inquiry-kind'
+
+/**
  * `inquiries.attachments` 의 원소.
  * 파일 실체는 비공개 버킷에 있고 DB 에는 이 메타만 남는다(마이그레이션 20260908000400).
  */
@@ -286,6 +297,11 @@ export type InquirySummary = {
    */
   inquiryNo: number
   title: string
+  /**
+   * 접수 창구(`inquiries.kind`). 목록·상세가 종류 라벨을 그리고, 수정 화면이 이
+   * 값으로 카테고리 목록을 읽는다. DB 는 text 라 경계에서 한 번 좁혀 담는다.
+   */
+  kind: InquiryKind
   /** 자유 문자열. DB 가 text 라 화면도 값을 그대로 쓴다. */
   category: string
   type: string
@@ -327,6 +343,11 @@ export type InquiryCategoryOption = {
    * 비어 있으면 폼이 유형 셀렉트를 감추고 폴백(`INQUIRY_SUBTYPE_FALLBACK`)으로 접수한다.
    */
   subtypes: readonly string[]
+  /**
+   * 이 카테고리가 속한 접수 창구. `inquiries.kind` 의 단일 출처다(트리거가 라벨로
+   * 다시 계산한다 — 마이그레이션 20260914000100).
+   */
+  kind: InquiryKind
 }
 
 export type InquiryReply = {

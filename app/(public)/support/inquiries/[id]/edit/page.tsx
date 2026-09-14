@@ -53,9 +53,15 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
     redirect(`${detailPath}?${INQUIRY_EDIT_LOCKED_PARAM}=1`)
   }
 
-  /* 저장된 카테고리가 그 사이 비활성화됐거나 이름이 바뀌었을 수 있다. 목록에
+  /* 카테고리는 **접수된 창구**의 것만 읽는다 — 버그제보를 고치는 화면에 1:1 문의
+     카테고리를 섞으면 저장하는 순간 트리거가 창구를 바꿔 버린다.
+     저장된 카테고리가 그 사이 비활성화됐거나 이름이 바뀌었을 수 있으므로, 목록에
      없으면 뒤에 붙여 셀렉트가 저장된 값을 그대로 고를 수 있게 한다. */
-  const categories = withLegacyCategory(await getInquiryCategories(), inquiry.category)
+  const categories = withLegacyCategory(
+    await getInquiryCategories(inquiry.kind),
+    inquiry.category,
+    inquiry.kind,
+  )
 
   return (
     <PageShell variant="support" title={SUPPORT_TITLE}>
@@ -67,6 +73,7 @@ export default async function InquiryEditPage(props: PageProps<'/support/inquiri
         </div>
 
         <InquiryForm
+          kind={inquiry.kind}
           isAuthenticated
           categories={categories}
           inquiryId={inquiry.id}

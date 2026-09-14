@@ -55,10 +55,15 @@ const CATEGORIES = [
   /* 세부 유형이 없는 카테고리 — 폼이 hidden 으로 싣는 '기타' 만 받는다. */
   { key: 'k2', label: '기타·건의', subtypes: [] },
 ]
+/* 수정 화면이 **어느 창구의** 목록을 읽었는지 기록한다 — 다른 창구의 카테고리로
+   검사하면 버그제보를 고치려던 사용자가 자기 카테고리를 거절당한다. */
+const categoryKinds: string[] = []
 vi.mock('@/lib/data/inquiry-categories', () => ({
-  getInquiryCategories: async () =>
-    CATEGORIES.map((category) => ({ ...category, description: null, prefill: '' })),
-  getInquiryCategoryLabels: async () => CATEGORIES.map((category) => category.label),
+  getInquiryCategories: async (kind: string) => {
+    categoryKinds.push(kind)
+
+    return CATEGORIES.map((category) => ({ ...category, description: null, prefill: '', kind }))
+  },
 }))
 
 const { cancelInquiry, updateInquiry } = await import('@/lib/actions/inquiry-edit-actions')
@@ -82,6 +87,8 @@ function ownedRow(overrides: Record<string, unknown> = {}) {
     status: 'pending',
     cancelled_at: null,
     attachments: [ATTACHMENT],
+    /* 접수된 창구. 수정 화면이 고를 수 있는 카테고리를 이 값이 정한다. */
+    kind: 'bug',
     /* 접수 당시의 분류·유형. 지금 목록에 없어도 수정은 통과해야 한다. */
     category: '접속·서버',
     type: '로그인/접속 불가',
@@ -119,6 +126,7 @@ async function runAndCatch(promise: Promise<unknown>): Promise<string> {
 beforeEach(() => {
   getCurrentUser.mockReset()
   getCurrentUser.mockResolvedValue(USER)
+  categoryKinds.length = 0
   uploads = []
   removed = []
   /* 1) 소유 문의 조회 2) update 결과 */
@@ -129,6 +137,14 @@ beforeEach(() => {
 })
 
 describe('updateInquiry', () => {
+  it('should read the categories of the kind the inquiry was filed under', async () => {
+    // Arrange & Act — 접수된 창구(버그제보)의 목록으로 검사해야 한다.
+    await runAndCatch(updateInquiry(INQUIRY_ID, EMPTY_FORM_STATE, editForm()))
+
+    // Assert
+    expect(categoryKinds).toEqual(['bug'])
+  })
+
   it('should save the edited fields and send the owner back to the detail page', async () => {
     // Arrange & Act
     const message = await runAndCatch(updateInquiry(INQUIRY_ID, EMPTY_FORM_STATE, editForm()))

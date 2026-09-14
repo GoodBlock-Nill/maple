@@ -1,6 +1,6 @@
 import { normalizeCRLF } from '@/lib/validation/inquiry'
 
-import type { InquiryCategoryOption } from '@/types/domain'
+import type { InquiryCategoryOption, InquiryKind } from '@/types/domain'
 
 /**
  * 카테고리 프리필 판정 (`docs/1on1.md`).
@@ -56,6 +56,8 @@ export function isDiscardableContent(
 export function withLegacyCategory(
   categories: readonly InquiryCategoryOption[],
   label: string,
+  /** 이 문의가 접수된 창구. 붙이는 옛 카테고리도 같은 창구에 속한 것으로 본다. */
+  kind: InquiryKind,
 ): readonly InquiryCategoryOption[] {
   if (label === '' || findInquiryCategory(categories, label) !== undefined) {
     return categories
@@ -66,6 +68,6 @@ export function withLegacyCategory(
      서버는 `updateInquirySchema` 의 legacyTypes 로 따로 허용한다. */
   return [
     ...categories,
-    { key: `legacy:${label}`, label, description: null, prefill: '', subtypes: [] },
+    { key: `legacy:${label}`, label, description: null, prefill: '', subtypes: [], kind },
   ]
 }

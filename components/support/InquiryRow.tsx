@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { ChevronRightSmallIcon } from '@/components/support/support-icons'
 import { InquiryStatusBadge } from '@/components/support/InquiryStatusBadge'
+import { inquiryKindLabel } from '@/lib/constants/inquiry-kind'
 import { MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { formatDateIso } from '@/lib/utils/format-date'
 import { formatInquiryNoLabel } from '@/lib/utils/inquiry-no'
@@ -21,6 +22,18 @@ const ROW_CLASS =
 
 const META_CLASS =
   'text-[13px] leading-[18px] font-medium text-[#727272] lg:text-[14px] lg:leading-[20px]'
+
+/**
+ * 종류 알약(1:1 문의 · 버그제보 · 불법이용제보).
+ *
+ * 목록이 세 창구를 함께 보여 주므로(필터 없음) 행마다 어느 창구로 낸 글인지가
+ * 먼저 읽혀야 한다. 상태 뱃지와 같은 중립 회색을 쓰되 글자만 본문색으로 낮춰,
+ * 오른쪽 끝의 상태(처리 단계)와 왼쪽의 종류(분류)가 서로를 가리지 않게 한다.
+ * 크기는 13px 고정이다 — PC 에서 카테고리 글줄과 같이 커지면 알약이 줄을 밀어낸다.
+ */
+const KIND_PILL_CLASS =
+  'text-ink-muted shrink-0 rounded-full bg-[#f1f1f5] px-1.5 text-[13px] leading-[18px] ' +
+  'font-medium lg:px-2'
 
 /**
  * 내 문의 한 줄.
@@ -44,11 +57,19 @@ export function InquiryRow({ inquiry }: InquiryRowProps) {
 
       {/* 줄 높이를 글줄에 고정한다 — 상태 알약(26)이 줄을 밀면 행이 시안보다
           9px 높아진다(시안은 알약이 20 줄 위아래로 3씩 넘치는 모양이다). */}
-      <div className={`${META_CLASS} flex h-[18px] items-center gap-3 lg:h-5`}>
+      <div className={`${META_CLASS} flex h-[18px] items-center gap-1.5 lg:h-5 lg:gap-3`}>
+        <span className={KIND_PILL_CLASS}>
+          <span className="sr-only">종류 </span>
+          {inquiryKindLabel(inquiry.kind)}
+        </span>
+        {/* 종류 알약이 앞에 서면서 폰에서 쓸 수 있는 폭이 줄었다. 세부 유형까지
+            한 줄에 밀어 넣으면 카테고리가 "접.." 처럼 두 글자로 잘려 무엇에 대한
+            문의인지 알아볼 수 없다 — 그래서 폰에서는 **카테고리까지만** 보여 주고
+            세부 유형은 상세에서 읽게 한다(PC 는 시안 그대로 둘 다 그린다). */}
         <span className="flex min-w-0 items-center gap-1">
           <span className="truncate">{inquiry.category}</span>
-          <ChevronRightSmallIcon className="text-line-soft size-3.5 shrink-0 lg:size-4" />
-          <span className="truncate">{inquiry.type}</span>
+          <ChevronRightSmallIcon className="text-line-soft hidden size-3.5 shrink-0 lg:block lg:size-4" />
+          <span className="hidden truncate lg:block">{inquiry.type}</span>
         </span>
         <span className="shrink-0">
           <span className="sr-only">등록일 </span>

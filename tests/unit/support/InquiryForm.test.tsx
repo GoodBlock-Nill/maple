@@ -24,11 +24,12 @@ const CATEGORIES: readonly InquiryCategoryOption[] = [
     description: null,
     prefill: '',
     subtypes: [],
+    kind: 'inquiry',
   },
 ]
 
 function submitButton(): HTMLButtonElement {
-  return screen.getByRole('button', { name: '문의 등록하기' })
+  return screen.getByRole('button', { name: '문의하기' })
 }
 
 /** 동의를 뺀 나머지 필수 항목. 이것만으로는 제출이 열리지 않아야 한다. */
@@ -45,7 +46,7 @@ async function fillRequiredExceptConsent(user: ReturnType<typeof userEvent.setup
 describe('InquiryForm 동의 체크박스', () => {
   it('should render a visible consent checkbox on the create form', () => {
     // Arrange & Act
-    render(<InquiryForm isAuthenticated categories={CATEGORIES} />)
+    render(<InquiryForm kind="inquiry" isAuthenticated categories={CATEGORIES} />)
 
     // Assert
     const consent = screen.getByRole('checkbox', { name: PRIVACY_CONSENT_LABEL })
@@ -58,7 +59,7 @@ describe('InquiryForm 동의 체크박스', () => {
     // Arrange
     const user = userEvent.setup()
 
-    render(<InquiryForm isAuthenticated categories={CATEGORIES} />)
+    render(<InquiryForm kind="inquiry" isAuthenticated categories={CATEGORIES} />)
 
     // Act — 동의만 빼고 모두 채운다.
     await fillRequiredExceptConsent(user)
@@ -79,6 +80,7 @@ describe('InquiryForm 동의 체크박스', () => {
     // Arrange & Act
     render(
       <InquiryForm
+        kind="inquiry"
         isAuthenticated
         categories={CATEGORIES}
         inquiryId="11111111-1111-4111-8111-111111111111"
@@ -94,5 +96,38 @@ describe('InquiryForm 동의 체크박스', () => {
 
     // Assert — 동의는 접수 시점에 이미 받았다.
     expect(screen.queryByRole('checkbox', { name: PRIVACY_CONSENT_LABEL })).not.toBeInTheDocument()
+  })
+})
+
+describe('InquiryForm 제출 문구', () => {
+  it('should call submission 제보하기 on the bug route', () => {
+    // Arrange & Act — 창구 상수(`INQUIRY_KIND_MAP`)가 버튼 문구의 단일 출처다.
+    render(<InquiryForm kind="bug" isAuthenticated categories={CATEGORIES} />)
+
+    // Assert
+    expect(screen.getByRole('button', { name: '제보하기' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '문의하기' })).not.toBeInTheDocument()
+  })
+
+  it('should keep 수정 완료 on the edit form of a report', () => {
+    // Arrange & Act — 수정은 창구와 무관하게 같은 동작이다.
+    render(
+      <InquiryForm
+        kind="report"
+        isAuthenticated
+        categories={CATEGORIES}
+        inquiryId="11111111-1111-4111-8111-111111111111"
+        defaultValues={{
+          accountId: 'gjstory01',
+          category: '기타·건의',
+          type: '기타',
+          title: '제보 제목',
+          content: '제보 내용입니다.',
+        }}
+      />,
+    )
+
+    // Assert
+    expect(screen.getByRole('button', { name: '수정 완료' })).toBeInTheDocument()
   })
 })

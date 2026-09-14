@@ -7,7 +7,9 @@ import {
   INQUIRY_STATUS_VALUES,
   resolveInquiryStatus,
 } from '@/lib/constants/inquiry-status'
-import { INQUIRY_PAGE_SIZE, MY_INQUIRIES_PATH, SUPPORT_MENU } from '@/lib/constants/support'
+import { INQUIRY_KINDS } from '@/lib/constants/inquiry-kind'
+import { INQUIRY_PAGE_SIZE, MY_INQUIRIES_PATH } from '@/lib/constants/support'
+import { SUPPORT_MENU } from '@/lib/constants/support-menu'
 import {
   INQUIRY_ATTACHMENT_MAX_MB,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
@@ -96,13 +98,45 @@ describe('resolveInquiryStatus', () => {
 })
 
 describe('SUPPORT_MENU', () => {
-  it('should list 내 문의 내역 as the third item', () => {
+  it('should list the five support entries in the agreed order', () => {
+    // Arrange & Act — 오너 지정 순서(2026-09-14): 접수 창구 셋 → FAQ → 내 문의 내역.
+    const labels = SUPPORT_MENU.map((item) => item.label)
+
+    // Assert
+    expect(labels).toEqual([
+      '1:1 문의하기',
+      '버그제보',
+      '불법이용제보',
+      '자주 묻는 질문',
+      '내 문의 내역',
+    ])
+  })
+
+  it('should take the first three entries from the kind constants', () => {
+    /* Arrange & Act & Assert — 메뉴에 이름·경로를 다시 적어 두면 창구가 늘 때
+       한쪽만 고쳐져 메뉴만 옛 이름으로 남는다. */
+    expect(SUPPORT_MENU.slice(0, INQUIRY_KINDS.length)).toMatchObject(
+      INQUIRY_KINDS.map((kind) => ({ href: kind.path, label: kind.menuLabel })),
+    )
+  })
+
+  it('should list 내 문의 내역 last and point it at the list route', () => {
     // Arrange & Act
-    const item = SUPPORT_MENU[2]
+    const item = SUPPORT_MENU.at(-1)
 
     // Assert
     expect(item?.label).toBe('내 문의 내역')
     expect(item?.href).toBe(MY_INQUIRIES_PATH)
+  })
+
+  it('should give the two new report entries their own icons', () => {
+    // Arrange & Act — 같은 자산을 돌려 쓰면 메뉴에서 두 창구가 구분되지 않는다.
+    const icons = SUPPORT_MENU.map((item) => item.icon)
+
+    // Assert
+    expect(icons).toContain('/images/support/icon-bug.svg')
+    expect(icons).toContain('/images/support/icon-report.svg')
+    expect(new Set(icons).size).toBe(SUPPORT_MENU.length)
   })
 
   it('should give every menu item an icon and intrinsic size', () => {

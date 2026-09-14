@@ -1,81 +1,11 @@
-import type { BoardOption } from '@/lib/constants/board'
-import type { FaqCategory, InquiryCategoryOption } from '@/types/domain'
+import { INQUIRY_KIND_MAP } from '@/lib/constants/inquiry-kind'
 
-export type SupportMenuItem = {
-  href: string
-  label: string
-  icon: string
-  /** SVG 가 48×48 흰 박스와 그림자를 직접 그리는지 여부. */
-  hasOwnPlate: boolean
-  /** SVG 원본 크기. 박스를 직접 그리는 자산은 62×62(박스 offset 7,5)다. */
-  width: number
-  height: number
-}
+import type { BoardOption } from '@/lib/constants/board'
+import type { InquiryKind } from '@/lib/constants/inquiry-kind'
+import type { FaqCategory } from '@/types/domain'
 
 /** 내 문의 내역 목록 경로. 상세는 이 경로 아래의 `[id]` 다. */
 export const MY_INQUIRIES_PATH = '/support/inquiries'
-
-export const SUPPORT_MENU: readonly SupportMenuItem[] = [
-  {
-    href: '/support',
-    label: '1:1 문의하기',
-    icon: '/images/support/icon-inquiry.svg',
-    hasOwnPlate: true,
-    width: 62,
-    height: 62,
-  },
-  {
-    href: '/support/faq',
-    label: '자주 묻는 질문',
-    icon: '/images/support/icon-faq.svg',
-    hasOwnPlate: false,
-    width: 27,
-    height: 26,
-  },
-  {
-    href: MY_INQUIRIES_PATH,
-    label: '내 문의 내역',
-    icon: '/images/support/icon-my-inquiries.svg',
-    hasOwnPlate: false,
-    width: 24,
-    height: 26,
-  },
-]
-
-/**
- * 카테고리 폴백.
- *
- * 실제 목록은 DB(`inquiry_categories`)가 소유하고 서버 컴포넌트가 읽어 폼에 넘긴다
- * (`lib/data/inquiry-categories.ts`). 여기 있는 배열은 **조회가 실패했을 때만** 쓰인다 —
- * 카테고리를 못 읽었다고 문의 접수 자체를 막으면 "장애를 알리려는 문의"가 막힌다.
- * 프리필 양식은 담지 않는다(원문은 DB 한 곳에만 둔다). 라벨은 마이그레이션
- * 20260910000400 의 시드와 같은 순서·문구다.
- */
-export const INQUIRY_CATEGORY_FALLBACK_LABELS: readonly string[] = [
-  '접속·서버',
-  '캐릭터·게임 진행',
-  '저장·데이터',
-  '재화·아이템',
-  '콘텐츠·밸런스',
-  '계정·이용환경',
-  '기능·UI',
-  '기타·건의',
-]
-
-/**
- * 폴백 라벨을 폼이 쓰는 옵션 모양으로 올린다(설명·프리필·세부 유형 없음).
- *
- * 세부 유형이 비어 있으므로 폼은 유형 셀렉트를 감추고 `INQUIRY_SUBTYPE_FALLBACK`
- * 으로 접수한다 — 조회가 깨진 상황에서 유형까지 고르라고 막아 세울 이유가 없다.
- */
-export const INQUIRY_CATEGORY_FALLBACK: readonly InquiryCategoryOption[] =
-  INQUIRY_CATEGORY_FALLBACK_LABELS.map((label, index) => ({
-    key: `fallback-${index}`,
-    label,
-    description: null,
-    prefill: '',
-    subtypes: [],
-  }))
 
 export const INQUIRY_CATEGORY_PLACEHOLDER = '카테고리를 선택해주세요'
 
@@ -159,15 +89,44 @@ export const MY_INQUIRIES_EMPTY_TITLE = '아직 남긴 문의가 없습니다'
 
 export const MY_INQUIRIES_EMPTY_DESCRIPTION = '이용 중 궁금한 점이 생기면 1:1 문의를 남겨 주세요.'
 
-export const INQUIRY_SUBMIT_LABEL = '문의하기'
+/**
+ * 빈 목록의 행동 버튼 문구.
+ *
+ * 세 창구 중 1:1 문의로 보낸다 — 남길 것이 없어 비어 있는 화면에서 "무엇을
+ * 제보할지"부터 고르게 하면 한 단계가 더 늘어난다. 문구는 그 창구의 제출 문구와
+ * 같은 자리에서 가져와 버튼과 폼이 다른 말을 하지 않게 한다.
+ */
+export const INQUIRY_SUBMIT_LABEL = INQUIRY_KIND_MAP.inquiry.submitLabel
 
 /** 접수 직후 상세로 리다이렉트될 때 한 번만 뜨는 완료 모달(`?submitted=1`). */
 export const INQUIRY_SUBMITTED_PARAM = 'submitted'
 
-export const INQUIRY_SUBMITTED_TITLE = '문의가 접수되었습니다'
+export type InquirySubmittedCopy = {
+  title: string
+  description: string
+}
 
-export const INQUIRY_SUBMITTED_DESCRIPTION =
-  '운영자가 확인 후 답변을 등록하면 이 페이지와 내 문의 내역에서 확인할 수 있습니다.'
+/**
+ * 접수 완료 모달 문구 — 창구(kind)별.
+ *
+ * 버그제보·불법이용제보는 "문의"가 아니라 "제보"다. 접수 직후 화면이 사용자가 방금
+ * 누른 버튼("제보하기")과 다른 말을 하면, 제대로 접수된 것인지부터 의심하게 된다.
+ * 두 제보 창구는 같은 문구를 쓴다 — 처리 흐름(운영자 확인 → 답변)이 같다.
+ */
+const SUBMITTED_REPORT_COPY: InquirySubmittedCopy = {
+  title: '제보가 접수되었습니다',
+  description: '운영자가 제보를 확인한 뒤 이 페이지와 내 문의 내역에 결과를 남깁니다.',
+}
+
+export const INQUIRY_SUBMITTED_COPY: Record<InquiryKind, InquirySubmittedCopy> = {
+  inquiry: {
+    title: '문의가 접수되었습니다',
+    description:
+      '운영자가 확인 후 답변을 등록하면 이 페이지와 내 문의 내역에서 확인할 수 있습니다.',
+  },
+  bug: SUBMITTED_REPORT_COPY,
+  report: SUBMITTED_REPORT_COPY,
+}
 
 /**
  * 접수 완료 모달의 접수번호 줄.

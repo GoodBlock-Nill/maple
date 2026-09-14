@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { DEFAULT_INQUIRY_KIND, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import { INQUIRY_PAGE_SIZE } from '@/lib/constants/support'
 import { pageRange, toPagedListResult } from '@/lib/data/query'
 import { createClient } from '@/lib/supabase/server'
@@ -9,6 +10,7 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type {
   InquiryAttachment,
   InquiryDetail,
+  InquiryKind,
   InquiryReply,
   InquiryStatus,
   InquirySummary,
@@ -30,10 +32,10 @@ import type {
 
 /* prettier-ignore — 한 줄 리터럴이어야 supabase-js 가 select 결과 타입을 추론한다. */
 const INQUIRY_LIST_COLUMNS =
-  'id, inquiry_no, title, category, type, status, cancelled_at, created_at, inquiry_replies(count)'
+  'id, inquiry_no, title, kind, category, type, status, cancelled_at, created_at, inquiry_replies(count)'
 
 /* prettier-ignore */
-const INQUIRY_DETAIL_COLUMNS = 'id, inquiry_no, title, category, type, status, cancelled_at, created_at, account_id, content, attachments'
+const INQUIRY_DETAIL_COLUMNS = 'id, inquiry_no, title, kind, category, type, status, cancelled_at, created_at, account_id, content, attachments'
 
 const REPLY_COLUMNS = 'id, author_name, content, created_at'
 
@@ -49,6 +51,7 @@ type InquiryListRow = {
   id: string
   inquiry_no: number
   title: string
+  kind: string
   category: string
   type: string
   status: InquiryStatus
@@ -94,6 +97,17 @@ export function toAttachments(value: unknown): readonly InquiryAttachment[] {
     .filter((attachment): attachment is InquiryAttachment => attachment !== null)
 }
 
+/**
+ * 접수 창구(`inquiries.kind`).
+ *
+ * 컬럼이 text 라 생성된 타입도 `string` 이다(CHECK 제약은 타입에 나타나지 않는다).
+ * 화면은 종류 라벨을 그리고 수정 화면은 이 값으로 카테고리를 읽으므로, 모르는
+ * 값은 기본 창구로 떨어뜨린다 — 분류를 잃은 문의도 1:1 문의로 보여 사람이 본다.
+ */
+function toKind(value: string): InquiryKind {
+  return isInquiryKind(value) ? value : DEFAULT_INQUIRY_KIND
+}
+
 /** 임베드 집계(`inquiry_replies(count)`)는 항상 배열 한 건으로 온다. */
 function toReplyCount(rows: readonly ReplyCountRow[]): number {
   return rows[0]?.count ?? 0
@@ -104,6 +118,7 @@ function toSummary(row: InquiryListRow): InquirySummary {
     id: row.id,
     inquiryNo: row.inquiry_no,
     title: row.title,
+    kind: toKind(row.kind),
     category: row.category,
     type: row.type,
     status: row.status,
@@ -167,6 +182,7 @@ export async function getMyInquiry(id: string, userId: string): Promise<InquiryD
     id: data.id,
     inquiryNo: data.inquiry_no,
     title: data.title,
+    kind: toKind(data.kind),
     category: data.category,
     type: data.type,
     status: data.status,

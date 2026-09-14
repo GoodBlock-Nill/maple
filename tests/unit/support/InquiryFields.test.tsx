@@ -18,9 +18,17 @@ const CATEGORIES: readonly InquiryCategoryOption[] = [
     description: '로그인·접속 불가, 강제 종료.',
     prefill: CONNECTION_PREFILL,
     subtypes: CONNECTION_SUBTYPES,
+    kind: 'bug',
   },
   /* 세부 유형이 없는 카테고리. 폼은 유형 셀렉트를 잠그고 '기타' 로 접수한다. */
-  { key: 'etc', label: '기타·건의', description: null, prefill: ETC_PREFILL, subtypes: [] },
+  {
+    key: 'etc',
+    label: '기타·건의',
+    description: null,
+    prefill: ETC_PREFILL,
+    subtypes: [],
+    kind: 'inquiry',
+  },
 ]
 
 function renderFields(values?: Parameters<typeof InquiryFields>[0]['values']) {

@@ -8,8 +8,12 @@ type InquirySubmitButtonProps = {
   /** 비로그인 상태에서는 눌러도 실패하므로 아예 잠근다. */
   disabled: boolean
   describedBy: string | undefined
-  /** 수정 화면에서 갈아 끼우는 라벨. 기본값은 접수 문구다. */
-  label?: string
+  /**
+   * 버튼 문구. 접수는 창구의 제출 문구(`INQUIRY_KIND_MAP[kind].submitLabel`),
+   * 수정은 "수정 완료"다 — 기본값을 두지 않는 이유는 제보 창구에서 "문의"라는
+   * 말이 새어 나오는 것을 타입으로 막기 위해서다.
+   */
+  label: string
   pendingLabel?: string
 }
 
@@ -30,7 +34,7 @@ const SUBMIT_CLASS =
 export function InquirySubmitButton({
   disabled,
   describedBy,
-  label = '문의 등록하기',
+  label,
   pendingLabel = '접수 중…',
 }: InquirySubmitButtonProps) {
   const { pending } = useFormStatus()

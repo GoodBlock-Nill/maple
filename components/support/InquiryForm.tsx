@@ -11,6 +11,7 @@ import { InquirySubmitButton } from '@/components/support/InquirySubmitButton'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
 import { createInquiry } from '@/lib/actions/inquiry-actions'
 import { updateInquiry } from '@/lib/actions/inquiry-edit-actions'
+import { INQUIRY_KIND_MAP } from '@/lib/constants/inquiry-kind'
 import {
   INQUIRY_EDIT_SUBMIT_LABEL,
   INQUIRY_REQUIRED_NOTICE,
@@ -21,13 +22,17 @@ import {
 import { isInquiryFormFilled } from '@/lib/validation/inquiry'
 
 import type { InquiryFormValues } from '@/components/support/InquiryFields'
-import type { InquiryAttachment, InquiryCategoryOption } from '@/types/domain'
+import type { InquiryAttachment, InquiryCategoryOption, InquiryKind } from '@/types/domain'
 
 const SUBMIT_NOTICE_ID = 'inquiry-submit-notice'
 const REQUIRED_NOTICE_ID = 'inquiry-required-notice'
-const LOGIN_HREF = `/login?next=${encodeURIComponent('/support')}`
 
 type InquiryFormProps = {
+  /**
+   * 접수 창구. 접수 모드에서는 서버 액션에 bind 로 실리고(폼 필드로 두면 직접
+   * POST 하나로 창구를 갈아 끼울 수 있다), 수정 모드에서는 제출 문구만 정한다.
+   */
+  kind: InquiryKind
   /** 서버에서 판정한 로그인 여부. 폼 잠금과 "내 문의 내역" 링크 노출에 쓴다. */
   isAuthenticated: boolean
   /** 서버가 DB 에서 읽어 넘긴 카테고리(라벨 · 안내 · 프리필 양식). */
@@ -51,7 +56,7 @@ function requiredDescribedBy(isAuthenticated: boolean, isIncomplete: boolean): s
 }
 
 /**
- * 1:1 문의 접수 · 수정 폼.
+ * 접수 · 수정 폼 — 1:1 문의 · 버그제보 · 불법이용제보가 함께 쓴다.
  *
  * 접수와 수정은 같은 규칙(`updateInquirySchema` = `createInquirySchema` − 동의)을
  * 쓰므로 폼을 나누지 않는다. 나누면 상한이 갈려서 "접수는 됐는데 수정은 막히는"
@@ -61,6 +66,7 @@ function requiredDescribedBy(isAuthenticated: boolean, isIncomplete: boolean): s
  * (필드 오류·안내)만 그린다.
  */
 export function InquiryForm({
+  kind,
   isAuthenticated,
   categories,
   inquiryId,
@@ -70,9 +76,13 @@ export function InquiryForm({
 }: InquiryFormProps) {
   const isEditMode = inquiryId !== undefined
   const action = useMemo(
-    () => (inquiryId === undefined ? createInquiry : updateInquiry.bind(null, inquiryId)),
-    [inquiryId],
+    () =>
+      inquiryId === undefined
+        ? createInquiry.bind(null, kind)
+        : updateInquiry.bind(null, inquiryId),
+    [inquiryId, kind],
   )
+  const loginHref = `/login?next=${encodeURIComponent(INQUIRY_KIND_MAP[kind].path)}`
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE)
   /* 첨부가 준비 중이거나 규칙에 어긋나 있으면 제출을 잠근다. 열어 두면 (1) 축소 전
      원본이 실려 나가 본문 상한을 넘기거나 (2) 첨부가 조용히 빠진 문의가 접수된다. */
@@ -139,12 +149,12 @@ export function InquiryForm({
         <InquirySubmitButton
           disabled={!isAuthenticated || isAttachmentBlocked || isIncomplete}
           describedBy={requiredDescribedBy(isAuthenticated, isIncomplete)}
-          label={isEditMode ? INQUIRY_EDIT_SUBMIT_LABEL : undefined}
+          label={isEditMode ? INQUIRY_EDIT_SUBMIT_LABEL : INQUIRY_KIND_MAP[kind].submitLabel}
           pendingLabel={isEditMode ? '저장 중…' : undefined}
         />
         {isAuthenticated ? null : (
           <p id={SUBMIT_NOTICE_ID} className="text-ink-muted text-[15px]">
-            <Link href={LOGIN_HREF} className="tap-area underline underline-offset-4">
+            <Link href={loginHref} className="tap-area underline underline-offset-4">
               {LOGIN_REQUIRED_INQUIRY_NOTICE}
             </Link>
           </p>
