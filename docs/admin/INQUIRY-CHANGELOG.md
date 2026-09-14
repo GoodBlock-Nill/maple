@@ -1,16 +1,69 @@
 # 고객지원(1:1 문의 · 버그제보 · 불법이용제보) — 2026-09-10 · 09-11 · 09-14 변경 사항 정리
 
-기준 커밋 `d4eccf8`(2026-09-14) · 대상 기간 **2026-09-10 ~ 2026-09-11 · 2026-09-14** · 현재 상태 문서 `docs/admin/INQUIRY-GUIDE.md`
+기준 커밋 `6edbcf9`(2026-09-14) · 대상 기간 **2026-09-10 ~ 2026-09-11 · 2026-09-14** · 현재 상태 문서 `docs/admin/INQUIRY-GUIDE.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-CHANGELOG.html` (다이어그램 포함)
 >
-> 이 문서는 **무엇이 어떻게 바뀌었는지**만 다룹니다. "지금 어떻게 동작하는가"는 `docs/admin/INQUIRY-GUIDE.md`, 템플릿 세 갈래 비교는 `docs/admin/TEMPLATES-GUIDE.md`, 이메일 유입은 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `EMAIL-INQUIRY-ACTIVATION.md`, 접수 종류(kind) 설계는 `docs/reference/inquiry-kinds-spec.md` 입니다.
+> 이 문서는 **무엇이 어떻게 바뀌었는지**만 다룹니다. "지금 어떻게 동작하는가"는 `docs/admin/INQUIRY-GUIDE.md`, 템플릿 세 갈래 비교는 `docs/admin/TEMPLATES-GUIDE.md`, 이메일 유입은 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `EMAIL-INQUIRY-ACTIVATION.md`, 접수 종류(kind) 설계는 `docs/reference/inquiry-kinds-spec.md`, 대화 스레드(회원 답장) 설계는 `docs/reference/inquiry-thread-spec.md` 입니다.
 
-이틀 동안(09-10 · 09-11) 1:1 문의는 **폼 하나에서 운영 도구로** 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 **여러 운영자가 겹치지 않게 처리**하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 **고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다**. 사흘 뒤 09-14 에는 **1:1 문의 하나였던 창구가 셋으로 늘었습니다** — 버그제보·불법이용제보가 같은 폼·같은 목록·같은 권한 위에 **종류(kind)** 축 하나로 추가됐습니다(§0).
+이틀 동안(09-10 · 09-11) 1:1 문의는 **폼 하나에서 운영 도구로** 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 **여러 운영자가 겹치지 않게 처리**하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 **고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다**. 사흘 뒤 09-14 에는 **1:1 문의 하나였던 창구가 셋으로 늘었습니다** — 버그제보·불법이용제보가 같은 폼·같은 목록·같은 권한 위에 **종류(kind)** 축 하나로 추가됐습니다(§1). 같은 날 오후에는 **처리 중인 문의에 한해 사용자가 답장할 수 있는 대화 스레드**가 열리고, 쿠폰 관리자 화면이 걷혔습니다(§0).
 
 ---
 
-## 0. 2026-09-14 — 접수 종류(1:1 문의·버그제보·불법이용제보) 도입 + 관리자 메뉴 "홈페이지 문의"
+## 0. 2026-09-14 (2) — 회원 답장 스레드 · 답변 기본 상태 처리 중 · 답변 템플릿 문구 정정 · 쿠폰 관리자 화면 제거
+
+운영팀 요청으로 **처리 중인 문의에 한해** 사용자가 같은 접수번호 안에서 운영자 답변에 이어 쓸 수 있게 됐습니다(새 문의를 만들지 않습니다) — 텍스트·이미지·영상 첨부 가능, 접수 폼과 같은 한도. 오너 확정 규칙은 **처리 중에서만 답장할 수 있고, 답변 완료는 재개 불가**입니다. 자세한 설계·동작은 `docs/admin/INQUIRY-GUIDE.md` §2.8 · §5.10 을 보세요 — 이 절은 **무엇이 바뀌었는지**만 요약합니다.
+
+| 날짜 · 시각 | 커밋 | 영역 | 변경 요약 | 마이그레이션 |
+| ----------- | ---- | ---- | --------- | ------------- |
+| 09-14 | `5bbacf4` | DB | 답변 템플릿을 접수 종류(버그제보·불법이용제보)에 맞게 보강 시드 — 공통 2종 · 버그제보 2종 · 불법이용제보 5종 | `20260914000200` |
+| 09-14 | `b7a4057` | DB | 답변 템플릿의 "이 문의에 이어서 남겨 주세요" 안내를 "새 문의로 접수해 주세요"로 정정(사용자는 접수한 문의에 답글을 달 수 없다는 그때의 전제) | `20260914000300` |
+| 09-14 | `c7c624a` | DB · 관리자 | **쿠폰 관리자 화면 제거**(테이블은 보존, 데이터는 유지) · **문의 대화 스레드 DB** — `inquiry_replies.attachments` · `inquiries.user_replied_at` · 트리거 `touch_inquiry_on_reply()` · RPC `add_inquiry_user_reply()`(처리 중 · 운영자 답변 후 · 연속 3건) · 템플릿 문구를 다시 "답장으로" 되돌림(§0 아래) | `20260914000400` |
+| 09-14 | `df57060` | 관리자 | 상세 스레드에 회원 답장 구분 표시 + 첨부(일괄 서명) · 목록·회원 상세 "회원 답장" 뱃지 · `?awaiting=1` 필터 · 답변 폼 "등록 후 상태" 기본값 **처리 중** | — |
+| 09-14 | `6edbcf9` | 클라 | 상세 답변 영역을 운영자/내 답변 시간순 스레드로 · 답장 폼(첨부 포함) · 서버 액션 `replyToInquiry` → RPC · 상태별 안내 문구 · `?replied=1` 1회성 안내 | — |
+
+### 무엇이 바뀌었나
+
+- **데이터 모델** — `inquiry_replies.attachments`(jsonb, 접수 폼과 같은 상한 — 이미지·PDF 3 + 영상 2, 합계 5) · `inquiries.user_replied_at`(회원 답장이 오면 트리거가 찍고, 운영자가 다시 답하면 null 로 되돌립니다) 가 새로 생겼습니다. 회원 답장은 `inquiry_replies` 행에 `direction='inbound'` · `author_id=auth.uid()` 로 남습니다 — 이메일 인바운드도 `direction='inbound'`지만 `author_id` 가 없어 화면에서 갈립니다.
+- **쓰기 경로가 RPC 하나뿐입니다** — `add_inquiry_user_reply()`. `inquiry_replies` 에는 사용자 INSERT 정책을 **만들지 않았습니다**(소유·상태·횟수 검사를 RLS 정책 하나로 표현할 수 없어서). 검사 순서: 본인 소유 → 취소 아님 → `in_progress` → 운영자 답변 1건 이상 → 마지막 답변 이후 답장 3건 미만 → 내용·첨부 상한.
+- **대화의 개폐는 운영자 답변 폼의 "다음 상태" 선택**입니다 — 처리 중이면 회원이 답장할 수 있고, 답변 완료면 대화가 닫혀 다시 열리지 않습니다(`answered → in_progress` 전이가 없으므로). 그래서 답변 폼 "등록 후 상태" **기본값을 처리 중으로 바꿨습니다**(오너 지시, 휴먼 에러 방지 — 습관대로 "답변 완료"를 고르면 대화가 조용히 닫힙니다) + 안내 문구 한 줄.
+- **사용자 화면** — 상세 답변 영역이 운영자 답변·내 답장을 시간순으로 섞어 그리는 **스레드**가 됐습니다. 운영자 답변은 옅은 파란 상자, 내 답장은 흰 상자 + 테두리. 답장 폼은 허용 조건을 만족할 때만 뜨고, 아니면 상태별 안내 한 줄(파선 상자 톤)이 대신 섭니다.
+- **관리자 화면** — 상세 스레드가 웹 회원 답장을 "회원 답장" 뱃지 + 왼쪽 굵은 선으로 구분합니다(답변 건수는 운영자 답변만 셉니다). 목록·회원 상세에 "회원 답장" 뱃지(`user_replied_at` 존재 여부)가 붙고, `?awaiting=1`(회원 답장 도착만) 필터가 새로 생겼습니다.
+- **답변 템플릿 문구가 한 번 더 바뀌었습니다** — `20260914000300`(`b7a4057`)이 "이 문의에 이어서" → "새 문의로 접수해 주세요"로 돌렸던 것을, 이번 마이그레이션(`20260914000400` §8)이 추가 정보 요청 계열(추가 정보 요청 · 제보 증거 자료 요청 · 오류 재현 정보 요청 · 서버 점검 안내)만 다시 "이 문의에 답장으로 남겨 주세요"로 뒤집었습니다. **완료 계열**(처리 완료 안내 · 아이템 지급 처리 완료 · 데이터 복구 안내)은 그대로 "새 문의로" 입니다 — 그 답변은 상태를 답변 완료로 닫으면서 나가 답장 창이 없습니다.
+- **쿠폰 관리자 화면 제거** — 메뉴·화면·액션·데이터·검증·테스트를 삭제하고 권한 모듈·대시보드 카드·회원 상세 쿠폰 항목·감사 라벨도 뺐습니다. **DB 테이블은 유지합니다**(오너 결정 — 기능은 폐기하되 데이터는 보존). 과거 권한 키·감사 행은 무해하게 무시되거나 원문 그대로 표시됩니다.
+
+### 영향 범위
+
+- **클라이언트** — `lib/constants/inquiry-thread.ts` · `lib/utils/inquiry-thread.ts` · `lib/actions/inquiry-reply-actions.ts`(전부 신규) · `components/support/{InquiryReplyThread,InquiryThreadMessage,InquiryReplySection}.tsx`(스레드를 시간순으로 다시 그림) · `components/support/InquiryUserReplyForm.tsx`(신규) · `app/(public)/support/inquiries/[id]/page.tsx`(`?replied=1`).
+- **관리자** — `admin/lib/data/inquiry-replies.ts`(`isMemberReply` · 일괄 서명) · `admin/components/inquiries/{InquiryReplyThread,InquiryReplyFooter,InquiryReplyForm,InquiryAwaitingFilter,InquiryMemberReplyBadge,InquiryTable}.tsx` · `admin/lib/validation/{inquiries,inquiry-filter-values}.ts` · `admin/lib/data/inquiry-filters.ts`.
+- **DB — 마이그레이션 있음**: `supabase/migrations/20260914000200_inquiry_reply_templates_kinds.sql` · `20260914000300_inquiry_reply_templates_followup_wording.sql` · `20260914000400_inquiry_thread.sql`. RLS · 스토리지 정책은 새로 만들지 않았습니다 — 첨부는 기존 버킷·경로·서명 방식을 그대로 씁니다.
+
+### 마이그레이션 노트 (`20260914000400_inquiry_thread.sql`)
+
+1. **RPC 하나로 좁힌 이유** — `inquiry_replies` 에 사용자 INSERT 정책을 열면 "누구의 문의에 · 어떤 direction 으로 · 몇 건까지"를 정책 하나로 표현해야 합니다. RLS 는 그중 마지막(직전 운영자 답변 이후 3건)을 깔끔히 쓰지 못해 함수로 모았습니다.
+2. **트리거 `touch_inquiry_on_reply()`**는 `SECURITY DEFINER` 입니다 — 관리자 INSERT · 서비스 롤 INSERT · 사용자 RPC 세 경로에서 모두 돌아야 하고, 사용자 경로에서 `inquiries` UPDATE 는 RLS 로 막혀 있기 때문입니다. 함수가 보는 것은 자기 인자(`new`)뿐이라 우회할 여지가 없습니다.
+3. **`set_inquiry_updated_at()` 에 분기 하나가 늘었습니다** — 신뢰 롤(트리거 · 서비스 롤 · 마이그레이션)이 `updated_at` 을 **명시적으로** 지정한 UPDATE 는 그 값을 존중합니다. 그러지 않으면 "상태는 그대로 두고 답변만 한 번 더 단" 경우 문의 행에 달라지는 값이 없어 '업데이트' 칸이 어제에 멈춥니다.
+4. **소유자 UPDATE 가드**에 `new.user_replied_at := old.user_replied_at` 한 줄이 늘었습니다 — 사용자가 '접수 대기' 문의를 PATCH 할 수 있으므로, 막지 않으면 답장 없이 "회원 답장 도착" 뱃지를 켤 수 있습니다.
+5. **첨부 개수 판정은 재사용**합니다(`inquiry_attachment_kind_count()`, `20260911000600`) — 답장 칸만 관대하면 "접수할 때는 막히고 답장할 때는 되는" 경계가 생깁니다.
+6. **없는 문의를 `not_found` 로 구분하지 않습니다** — 구분하면 이 함수가 "그 uuid 의 문의가 존재하는가"를 알려 주는 조회기가 됩니다. 남의 문의든 없는 문의든 `not_owner` 하나로 답합니다.
+
+### 테스트
+
+| 영역 | 결과 |
+| ---- | ---- |
+| 클라이언트 단위 | **1393건 전체 통과**(같은 날 kind 적용 직후는 1362건) |
+| 클라이언트 E2E `tests/e2e/support-inquiries.spec.ts` | **12건 전체 통과**(chromium) — 운영자 답변 → 회원 답장(텍스트+이미지) → 스레드 표시 → 답변 완료 후 폼 사라짐 시나리오 추가 |
+| 관리자 단위 | **847건 전체 통과**(같은 날 kind 적용 직후는 887건 — 쿠폰 테스트 삭제로 순감소) |
+
+### 운영자 확인 사항
+
+- **답변 완료는 신중히 고르세요** — 그 순간 대화가 닫히고 `answered → in_progress` 전이가 없어 되돌릴 수 없습니다. 확인이 더 필요하면 **처리 중**으로 두고 회원의 답장을 기다리거나 내부 메모를 남기세요.
+- **"회원 답장 도착만" 필터(`?awaiting=1`)를 활용하세요** — 회원이 답장했다는 것은 공이 운영자에게 넘어왔다는 뜻입니다. 목록·탭 건수가 같은 조건을 공유하므로 체크 한 번으로 큐가 좁혀집니다.
+- 회원 답장은 **연속 3건**까지만 받습니다. 그 이상은 "운영자 답변을 기다려 주세요" 안내가 뜨고, 운영자가 한 번 더 답하면 창이 다시 열립니다.
+
+---
+
+## 1. 2026-09-14 — 접수 종류(1:1 문의·버그제보·불법이용제보) 도입 + 관리자 메뉴 "홈페이지 문의"
 
 오너 요청으로 1:1 문의하기와 **동일한 레이아웃·로직**의 버그제보·불법이용제보 접수 창구를 추가했습니다. 세 창구는 같은 테이블(`inquiries`)·같은 폼·같은 첨부 규칙·같은 상태 전이·같은 답변 템플릿·같은 감사 로그를 공유하고 **분류(`kind`) 하나만** 다릅니다. 관리자 사이드바의 '1:1 문의' 메뉴도 세 창구를 모두 가리키는 뜻에 맞춰 **'홈페이지 문의'**로 이름을 바꿨습니다. 자세한 설계·동작은 `docs/admin/INQUIRY-GUIDE.md` §1.4 를 보세요 — 이 절은 **무엇이 바뀌었는지**만 요약합니다.
 
@@ -67,7 +120,7 @@
 
 ---
 
-## 1. 2026-09-11 오후 — 고객지원 v2 디자인 적용
+## 2. 2026-09-11 오후 — 고객지원 v2 디자인 적용
 
 새 시안(메이플 글자월드, `docs/reference/figma/support-v2-spec.md`)을 사용자 사이트 고객지원 화면에 반영했습니다. **로직·데이터 흐름은 바뀌지 않았습니다** — 카테고리·세부 유형·계정 ID·첨부 3+2·동의·프리필·접수번호·수정/취소 권한은 이전 그대로이고, 카드 골격·목록·상세·폼의 마크업만 다시 그렸습니다. 자세한 화면 설명은 `docs/admin/INQUIRY-GUIDE.md` §2.7 로 옮겼습니다 — 이 절은 **무엇이 바뀌었는지**만 요약합니다.
 
@@ -102,7 +155,7 @@
 
 ---
 
-## 2. 한눈에 보기
+## 3. 한눈에 보기
 
 | 구성 요소                                       | 상태                 | 메모                                                                         |
 | ----------------------------------------------- | -------------------- | ---------------------------------------------------------------------------- |
@@ -111,7 +164,7 @@
 | 관리자 고객지원 모듈                            | 배포됨               | 목록·상세·카테고리 관리·답변 템플릿·담당자·내부 메모                         |
 | `purge-withdrawn`                               | 재배포됨(2026-09-10) | pending 첨부 청소 포함(version 4) · **첫 야간 실행 결과는 아직 미확인**      |
 | `email-inbound` · `email-outbound`              | 재배포됨(2026-09-11) | 제목 규칙 `[글자월드 문의 #1024]` 반영. **제공자 계정·DNS·secret 은 미연동** |
-| 플래그 `NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS` | **OFF**              | 꺼져 있으면 계정 ID 프리필이 사실상 비어 있습니다(§8)                        |
+| 플래그 `NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS` | **OFF**              | 꺼져 있으면 계정 ID 프리필이 사실상 비어 있습니다(§9)                        |
 
 | 날짜 · 시각    | 커밋      | 영역                      | 변경 요약                                                                                                                                                                                                                     | 마이그레이션                           |
 | -------------- | --------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
@@ -131,7 +184,7 @@
 
 ---
 
-## 3. 사용자 화면 변경(이전 → 이후)
+## 4. 사용자 화면 변경(이전 → 이후)
 
 ### 2.1 접수 폼 — 필드와 필수 규칙
 
@@ -222,7 +275,7 @@ flowchart TD
 
 ---
 
-## 4. 관리자 화면 변경(이전 → 이후)
+## 5. 관리자 화면 변경(이전 → 이후)
 
 ### 3.1 목록 `/inquiries`
 
@@ -310,7 +363,7 @@ sequenceDiagram
 
 ---
 
-## 5. 데이터 · 인프라 변경
+## 6. 데이터 · 인프라 변경
 
 ### 4.1 마이그레이션 8개
 
@@ -359,7 +412,7 @@ sequenceDiagram
 
 ---
 
-## 6. 운영 절차 변화
+## 7. 운영 절차 변화
 
 ### 5.1 권장 처리 흐름
 
@@ -404,7 +457,7 @@ sequenceDiagram
 
 ---
 
-## 7. 테스트 결과
+## 8. 테스트 결과
 
 ### 6.1 지금 다시 돌린 결과(2026-09-11)
 
@@ -437,7 +490,7 @@ sequenceDiagram
 
 ---
 
-## 8. 미검증 · 후속 과제
+## 9. 미검증 · 후속 과제
 
 | 항목                         | 지금 상태                                                                                                                         |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -454,7 +507,7 @@ sequenceDiagram
 
 ---
 
-## 9. 파일 인덱스 (2026-09-10 ~ 09-14 새로 생겼거나 크게 바뀐 것)
+## 10. 파일 인덱스 (2026-09-10 ~ 09-14 새로 생겼거나 크게 바뀐 것)
 
 ### DB · 함수
 
@@ -470,6 +523,9 @@ sequenceDiagram
 | `supabase/migrations/20260911000300_inquiry_assignment.sql`            | `fb448aa` |
 | `supabase/migrations/20260911000400_inquiry_no.sql`                    | `fb448aa` |
 | `supabase/migrations/20260914000100_inquiry_kind.sql`                  | `2ab1806` |
+| `supabase/migrations/20260914000200_inquiry_reply_templates_kinds.sql` | `5bbacf4` |
+| `supabase/migrations/20260914000300_inquiry_reply_templates_followup_wording.sql` | `b7a4057` |
+| `supabase/migrations/20260914000400_inquiry_thread.sql`                | `c7c624a` |
 | `supabase/functions/_shared/email/subject.ts`                          | `fb448aa` |
 | `supabase/functions/email-inbound/ack.ts` · `received.ts`              | `fb448aa` |
 | `supabase/functions/email-outbound/index.ts`                           | `fb448aa` |
@@ -497,6 +553,8 @@ sequenceDiagram
 | `lib/constants/inquiry-kind.ts`(신규) · `support-menu.ts`(신규) · `inquiry-category-fallback.ts`(신규) · `support.ts`(창구별 접수 완료 문구) | `d4eccf8` |
 | `lib/data/inquiry-categories.ts`(창구별 캐시로 재작성) · `lib/actions/inquiry-actions.ts`(`kind` bind) · `inquiry-edit-actions.ts`(접수된 kind 로 조회) | `d4eccf8` |
 | `components/support/InquiryRow.tsx` · `InquiryDetailMeta.tsx`(종류 알약·항목 추가) · `SupportTabs.tsx`(5탭 가로 스크롤) | `d4eccf8` |
+| `lib/constants/inquiry-thread.ts` · `lib/utils/inquiry-thread.ts` · `lib/actions/inquiry-reply-actions.ts`(전부 신규) | `6edbcf9` |
+| `components/support/InquiryReplyThread.tsx` · `InquiryThreadMessage.tsx`(신규) · `InquiryReplySection.tsx`(신규) · `InquiryUserReplyForm.tsx`(신규) | `6edbcf9` |
 
 ### 관리자 콘솔
 
@@ -518,6 +576,9 @@ sequenceDiagram
 | `admin/lib/constants/inquiry-kind.ts`(신규) · `admin/components/inquiry-categories/category-sections.ts`(신규) · `category-kind-move.ts`(신규)    | `2ab1806`                         |
 | `admin/components/inquiries/InquiryFilters.tsx`(종류 셀렉트) · `InquiryTable.tsx`(종류 뱃지) · `InquiryMeta.tsx`(종류 항목)                        | `2ab1806`                         |
 | `admin/lib/validation/inquiry-reply-templates.ts`(`templateCategoryLabel()`)                                                                       | `2ab1806`                         |
+| `admin/lib/data/inquiry-replies.ts`(`isMemberReply` · 일괄 서명) · `admin/components/inquiries/InquiryReplyThread.tsx`(회원 답장 구분)                | `df57060`                         |
+| `admin/components/inquiries/InquiryReplyFooter.tsx`(신규) · `InquiryAwaitingFilter.tsx`(신규) · `InquiryMemberReplyBadge.tsx`(신규)                    | `df57060`                         |
+| `admin/lib/validation/inquiries.ts` · `inquiry-filter-values.ts`(신규) · `admin/lib/data/inquiry-filters.ts`                                            | `df57060`                         |
 
 ### 테스트 · 문서
 
@@ -530,6 +591,9 @@ sequenceDiagram
 | `docs/admin/INQUIRY-GUIDE.md` · `.html`                                                                                              | `ddd2cc1` · `700b22a` · `fb448aa` · (§1.4 접수 종류) |
 | `docs/admin/TEMPLATES-GUIDE.md` · `.html`                                                                                            | `700b22a`                                     |
 | `docs/1on1.md`                                                                                                                       | `b78dfd7`                                     |
-| `docs/admin/INQUIRY-CHANGELOG.md` · `.html`                                                                                          | (이 문서, §0 접수 종류)                       |
+| `docs/admin/INQUIRY-CHANGELOG.md` · `.html`                                                                                          | (이 문서, §1 접수 종류)                       |
 | `docs/reference/inquiry-kinds-spec.md`(신규)                                                                                         | 접수 종류(kind) 설계 원안                     |
 | `admin/tests/unit/inquiry-kind.test.ts` · `inquiry-category-sections.test.ts` · `tests/unit/constants/inquiry-kind.test.ts`(신규)    | `2ab1806` · `d4eccf8`                         |
+| `tests/unit/utils/inquiry-thread.test.ts`(신규) · `tests/unit/support/InquiryReplyThread.test.tsx` · `InquiryReplySection.test.tsx`(신규)          | `6edbcf9`                                     |
+| `admin/tests/unit/inquiry-replies-thread.test.ts`(신규) · `inquiry-awaiting-filter.test.ts`(신규)                                                    | `df57060`                                     |
+| `docs/reference/inquiry-thread-spec.md`(신규)                                                                                                        | 문의 대화 스레드(회원 답장) 설계 원안         |
