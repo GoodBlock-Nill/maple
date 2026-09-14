@@ -122,6 +122,16 @@ export const REPORT_TARGET_LABEL: Record<'post' | 'comment', string> = {
   comment: '댓글',
 }
 
+/**
+ * `?type=post|comment` 파싱.
+ *
+ * 모르는 값(옛 링크 공유, 오타)이나 빈 값은 "전체"(필터 없음)로 떨어진다 —
+ * 상태 탭처럼 잘못된 쿼리로 빈 목록을 보여주는 대신 안전한 기본값으로 되돌아간다.
+ */
+export function parseReportTargetType(raw: string | null): 'post' | 'comment' | undefined {
+  return raw === 'post' || raw === 'comment' ? raw : undefined
+}
+
 /** 신고 "처리" 시 함께 취할 조치. */
 export const REPORT_ACTIONS = ['hide', 'delete', 'suspend', 'none'] as const
 

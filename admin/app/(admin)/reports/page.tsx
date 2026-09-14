@@ -1,6 +1,8 @@
 import { CellLink } from '@/components/community/ContentFilters'
+import { CommentIcon, DocumentIcon } from '@/components/reports/report-icons'
 import { ReportDetailDialog } from '@/components/reports/ReportDetailDialog'
 import { ReportTabs } from '@/components/reports/ReportTabs'
+import { ReportTypeFilter } from '@/components/reports/ReportTypeFilter'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { FormBanner } from '@/components/ui/FormField'
@@ -21,6 +23,7 @@ import {
   totalPages,
 } from '@/lib/utils/table-query'
 import {
+  parseReportTargetType,
   REPORT_REASON_LABEL,
   REPORT_STATUSES,
   REPORT_TARGET_LABEL,
@@ -57,20 +60,40 @@ export default async function ReportsPage(props: PageProps<'/reports'>) {
     ? (requested as ReportStatus)
     : 'open'
   const page = parsePage(searchParams.page)
+  const type = parseReportTargetType(firstValue(searchParams.type))
 
-  const [counts, list] = await Promise.all([getReportCounts(), getReports(status, page)])
+  const [counts, list] = await Promise.all([getReportCounts(type), getReports(status, page, type)])
 
   const columns: readonly Column<ReportItem>[] = [
+    {
+      key: 'type',
+      header: '유형',
+      className: 'w-20',
+      cell: (row) => {
+        /* 게시글 = accent(핑크) · 댓글 = neutral(회색). 종전엔 둘 다 accent 뱃지에
+           "게시글"/"댓글" 글자만 달라, 목록을 훑을 때 유형이 구분되지 않는다는
+           운영 피드백(2026-09-14)이 있었다 — 톤과 아이콘을 함께 바꿔 눈으로도
+           바로 갈린다. */
+        const isPost = row.targetType === 'post'
+        const Icon = isPost ? DocumentIcon : CommentIcon
+
+        return (
+          <span className="flex flex-wrap items-center gap-1">
+            <Badge tone={isPost ? 'accent' : 'neutral'} className="gap-1">
+              <Icon />
+              {REPORT_TARGET_LABEL[row.targetType]}
+            </Badge>
+            {row.target?.isHidden === true && <Badge tone="warn">숨김</Badge>}
+            {row.target?.deletedAt != null && <Badge tone="danger">삭제</Badge>}
+          </span>
+        )
+      },
+    },
     {
       key: 'target',
       header: '대상',
       cell: (row) => (
         <span className="flex flex-col gap-0.5">
-          <span className="flex items-center gap-1.5">
-            <Badge tone="accent">{REPORT_TARGET_LABEL[row.targetType]}</Badge>
-            {row.target?.isHidden === true && <Badge tone="warn">숨김</Badge>}
-            {row.target?.deletedAt != null && <Badge tone="danger">삭제</Badge>}
-          </span>
           {/* 제목을 누르면 사용자 사이트의 원문으로 간다(새 탭). 다이얼로그를 열지
               않고도 맥락을 확인할 수 있어야 한다는 운영 피드백(2026-09-14).
               삭제된 대상은 원문이 없으므로 텍스트로 남긴다. */}
@@ -83,6 +106,13 @@ export default async function ReportsPage(props: PageProps<'/reports'>) {
               </CellLink>
             )}
           </span>
+          {/* 댓글만 원 게시글 제목을 한 줄 더 보여준다 — 댓글 발췌만으로는 어느
+              글에 달렸는지 알 수 없어 운영자가 매번 원문을 눌러 확인해야 했다. */}
+          {row.targetType === 'comment' && (
+            <span className="text-muted line-clamp-1 text-[12px]">
+              ↳ 게시글: {row.target?.postTitle ?? '(삭제됨)'}
+            </span>
+          )}
         </span>
       ),
     },
@@ -156,6 +186,11 @@ export default async function ReportsPage(props: PageProps<'/reports'>) {
         active={status}
         counts={counts}
         buildHref={(next) => buildHref(PATH, searchParams, { status: next, page: null })}
+      />
+
+      <ReportTypeFilter
+        active={type}
+        buildHref={(next) => buildHref(PATH, searchParams, { type: next ?? null, page: null })}
       />
 
       {list.hasError && (

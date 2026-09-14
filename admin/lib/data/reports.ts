@@ -23,6 +23,9 @@ export type ReportTarget = {
   content: string
   /** 댓글일 때 원 게시글 id — 미리보기 링크에 필요하다. */
   postId: string | null
+  /** 게시글이면 자기 제목, 댓글이면 달린 게시글의 제목. 원 게시글이 이미 완전히
+      지워졌으면 `null`(목록·다이얼로그가 "게시글이 없다"를 구분해 보여준다). */
+  postTitle: string | null
   authorId: string | null
   authorName: string
   isHidden: boolean
@@ -132,6 +135,34 @@ async function loadTargets(
           .in('id', commentIds),
   ])
 
+  /* 댓글이 달린 원 게시글의 제목. 댓글 신고만 보면 "이게 어느 글 댓글인지" 알 수
+     없어 운영자가 매번 원문 링크를 눌러야 했다 — 목록에 바로 보이게 제목만 따로
+     읽는다. 이미 위에서 읽은 게시글(자기 자신이 신고 대상인 경우)은 다시 읽지
+     않아, 한 페이지의 질의 수가 댓글 수와 무관하게 고정된다. */
+  const loadedPostIds = new Set(postIds)
+  const parentPostIds = [
+    ...new Set(
+      (comments?.data ?? [])
+        .map((row) => row.post_id)
+        .filter((id): id is string => id !== null && !loadedPostIds.has(id)),
+    ),
+  ]
+
+  const parentPosts =
+    parentPostIds.length === 0
+      ? null
+      : await supabase.from('posts').select('id, title').in('id', parentPostIds)
+
+  const postTitleById = new Map<string, string>()
+
+  for (const row of posts?.data ?? []) {
+    postTitleById.set(row.id, row.title)
+  }
+
+  for (const row of parentPosts?.data ?? []) {
+    postTitleById.set(row.id, row.title)
+  }
+
   const targets = new Map<string, ReportTarget>()
 
   for (const row of posts?.data ?? []) {
@@ -141,6 +172,7 @@ async function loadTargets(
       excerpt: excerpt(row.title),
       content: row.content,
       postId: row.id,
+      postTitle: row.title,
       authorId: row.author_id,
       authorName: row.author_name,
       isHidden: row.is_hidden,
@@ -155,6 +187,7 @@ async function loadTargets(
       excerpt: excerpt(row.content),
       content: row.content,
       postId: row.post_id,
+      postTitle: row.post_id === null ? null : (postTitleById.get(row.post_id) ?? null),
       authorId: row.author_id,
       authorName: row.author_name,
       isHidden: row.is_hidden,
@@ -226,13 +259,24 @@ function toReportItem(
   }
 }
 
-export async function getReportCounts(): Promise<ReportCounts> {
+/** 상태 탭 건수. `type` 을 주면 유형 필터가 걸린 채 세는 건수로 좁힌다(전체 탭에서
+    "게시글" 필터를 켰을 때 탭 옆 숫자가 필터와 어긋나지 않게 한다). */
+export async function getReportCounts(type?: ReportTargetType): Promise<ReportCounts> {
   const supabase = await createClient()
 
   const [open, resolved, dismissed] = await Promise.all(
-    REPORT_STATUSES.map((status) =>
-      supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', status),
-    ),
+    REPORT_STATUSES.map((status) => {
+      let query = supabase
+        .from('reports')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', status)
+
+      if (type !== undefined) {
+        query = query.eq('target_type', type)
+      }
+
+      return query
+    }),
   )
 
   return {
@@ -242,14 +286,24 @@ export async function getReportCounts(): Promise<ReportCounts> {
   }
 }
 
-export async function getReports(status: ReportStatus, page: number): Promise<ReportListResult> {
+export async function getReports(
+  status: ReportStatus,
+  page: number,
+  type?: ReportTargetType,
+): Promise<ReportListResult> {
   const supabase = await createClient()
   const [from, to] = pageRange(page, DEFAULT_PAGE_SIZE)
 
-  const { data, count, error } = await supabase
+  let query = supabase
     .from('reports')
     .select(REPORT_COLUMNS, { count: 'exact' })
     .eq('status', status)
+
+  if (type !== undefined) {
+    query = query.eq('target_type', type)
+  }
+
+  const { data, count, error } = await query
     .order('created_at', { ascending: false })
     .range(from, to)
 

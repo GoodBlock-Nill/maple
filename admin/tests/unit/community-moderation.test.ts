@@ -9,6 +9,7 @@ import {
   dismissReportSchema,
   kstDayBoundary,
   MODERATION_NOTE_MAX,
+  parseReportTargetType,
   REPORT_REASON_LABEL,
   resolveReportSchema,
   toggleContentSchema,
@@ -146,9 +147,9 @@ describe('resolveReportSchema', () => {
 
 describe('dismissReportSchema', () => {
   it('should require a note', () => {
-    expect(dismissReportSchema.safeParse({ reportId: ID, note: '  ', applyToTarget: '0' }).success).toBe(
-      false,
-    )
+    expect(
+      dismissReportSchema.safeParse({ reportId: ID, note: '  ', applyToTarget: '0' }).success,
+    ).toBe(false)
   })
 
   it('should accept a dismissal with a reason', () => {
@@ -160,6 +161,18 @@ describe('dismissReportSchema', () => {
 
     expect(parsed.success).toBe(true)
     expect(parsed.data?.note).toBe('정상 게시물')
+  })
+})
+
+describe('parseReportTargetType', () => {
+  it('should accept the two known target types', () => {
+    expect(parseReportTargetType('post')).toBe('post')
+    expect(parseReportTargetType('comment')).toBe('comment')
+  })
+
+  it('should treat null or an unknown value as "no filter"', () => {
+    expect(parseReportTargetType(null)).toBeUndefined()
+    expect(parseReportTargetType('article')).toBeUndefined()
   })
 })
 

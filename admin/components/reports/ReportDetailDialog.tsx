@@ -73,6 +73,14 @@ export function ReportDetailDialog({
               <p className="text-ink text-[14px] font-bold">{target.excerpt}</p>
             )}
 
+            {/* 댓글은 어느 글에 달렸는지가 목록만큼 다이얼로그에서도 보여야 한다 —
+                댓글 본문만으로는 맥락을 판단할 수 없다는 운영 피드백(2026-09-14). */}
+            {report.targetType === 'comment' && target !== null && (
+              <p className="text-ink text-[14px] font-bold">
+                게시글: {target.postTitle ?? '(삭제됨)'}
+              </p>
+            )}
+
             <p className="text-ink max-h-40 overflow-y-auto text-[13px] leading-relaxed whitespace-pre-wrap">
               {target?.content ?? '대상을 찾을 수 없습니다(이미 완전히 삭제되었을 수 있습니다).'}
             </p>
