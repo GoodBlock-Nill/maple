@@ -22,20 +22,25 @@
 | 요소 | 내용 |
 |---|---|
 | 제목 | `초대 링크를 확인할 수 없습니다` |
-| 설명 | "링크가 만료되었거나 이미 사용되었습니다. 슈퍼어드민에게 초대 재발송을 요청해 주세요." |
+| 설명 | 안내 문구(아래 상세) |
 | 링크 | `이미 비밀번호를 정했다면 로그인` → `/login` |
 
 폼은 렌더하지 않는다.
+
+- **설명 문구** "링크가 만료되었거나 이미 사용되었습니다. 슈퍼어드민에게 초대 재발송을 요청해 주세요."
 
 ## 1.3 초대 전체 흐름
 
 | 단계 | 일어나는 일 | 코드 |
 |---|---|---|
-| 1 | 슈퍼어드민이 이메일 + 역할로 초대 → `admin_invites` 에 `pending` 행(7일 수명) 먼저 만들고 메일 발송 | `inviteAdminAction`(→ `12-admins/02-invite-form.md`) |
-| 2 | `inviteUserByEmail()` 이 메일을 보내는 **순간** `auth.users` 행이 생기고 `handle_new_user()` 트리거가 돈다 → 초대가 `pending` 且 만료 전이면 `profiles.role='admin'` + `admin_role_id` 부여, 같은 트랜잭션에서 초대를 `accepted` 로 닫는다 | DB 트리거 |
+| 1 | 슈퍼어드민이 이메일 + 역할로 초대(아래 상세) | `inviteAdminAction`(→ `12-admins/02-invite-form.md`) |
+| 2 | 메일 발송 순간 트리거가 관리자로 승격(아래 상세) | DB 트리거 |
 | 3 | 받은 사람이 메일 링크 클릭 → `{NEXT_PUBLIC_ADMIN_URL}/auth/callback?next=%2Finvite%2Faccept` | `inviteRedirectTo()` |
 | 4 | 콜백이 세션을 확립하고 `profiles.role === 'admin'` 을 확인한 뒤 `/invite/accept` 로 보낸다 | [05-callback.md](05-callback.md) |
 | 5 | 이 화면에서 비밀번호를 정하면 `updateUser({ password })` → 대시보드 | `setPasswordAction` |
+
+- **단계 1** `admin_invites` 에 `pending` 행(7일 수명)을 먼저 만들고 메일을 발송한다.
+- **단계 2** `inviteUserByEmail()` 이 메일을 보내는 **순간** `auth.users` 행이 생기고 `handle_new_user()` 트리거가 돈다 → 초대가 `pending` 且 만료 전이면 `profiles.role='admin'` + `admin_role_id` 부여, 같은 트랜잭션에서 초대를 `accepted` 로 닫는다.
 
 **클라이언트와의 상호작용**
 

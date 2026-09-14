@@ -10,9 +10,14 @@
 |---|---|---|---|---|
 | 오류 배너 | `FormBanner` | — | 없음 | `state.formError`(현재 액션이 반환하는 경로는 없다) |
 | 성공 배너 | `FormBanner tone="success"` | — | 없음 | `state.message` — 발송 시도 후 항상 표시된다 |
-| 이메일 | `type="email"`, `autoComplete="username"`, `autoFocus`, `required`, `maxLength=254` | `forgotPasswordSchema.email`: trim → 1자 이상("이메일을 입력해 주세요.") → ≤254자("이메일은 254자를 넘을 수 없습니다.") → `z.email('이메일 형식이 올바르지 않습니다.')` | 빈 값 | 힌트 "가입에 쓴 주소로만 재설정 메일이 갑니다. 길이 상한은 메일 규격(RFC 5321)의 값입니다." |
+| 이메일 | `type="email"`, `autoComplete="username"`, `autoFocus`, `required`, `maxLength=254` | `forgotPasswordSchema.email`: trim → 1자 이상 → ≤254자 → `z.email()`(아래 상세) | 빈 값 | 힌트(아래 상세) |
 | 재설정 메일 보내기 | 제출 버튼(전체 폭) | — | — | `requestPasswordResetAction`. 진행 중 `보내는 중…` + 비활성 |
 | 로그인으로 돌아가기 | 링크(가운데) | — | — | `/login` |
+
+**동작 상세**
+
+- **이메일 검증** `forgotPasswordSchema.email`: trim → 1자 이상("이메일을 입력해 주세요.") → ≤254자("이메일은 254자를 넘을 수 없습니다.") → `z.email('이메일 형식이 올바르지 않습니다.')`.
+- **이메일 힌트** "가입에 쓴 주소로만 재설정 메일이 갑니다. 길이 상한은 메일 규격(RFC 5321)의 값입니다."
 
 ## 1.2 서버 동작 (`requestPasswordResetAction`)
 
@@ -20,12 +25,14 @@
 |---|---|
 | 검증 | `forgotPasswordSchema` → 실패 시 이메일 필드 오류 |
 | 발송 | `supabase.auth.resetPasswordForEmail(email, { redirectTo: adminSiteUrl() + '/auth/callback?next=/reset-password' })` |
-| 결과 | **성공·실패와 무관하게 같은 문구**를 돌려준다 — `입력하신 주소로 재설정 메일을 보냈습니다. 메일함을 확인해 주세요.` "가입되지 않은 이메일입니다"는 그대로 계정 열거 창구다 |
+| 결과 | **성공·실패와 무관하게 같은 문구**를 돌려준다(아래 상세) |
 | 실패 로그 | `console.error('[auth] 비밀번호 재설정 메일 발송 실패', message)` — 서버 로그에만 |
 | 리다이렉트 | 없다(같은 화면에 성공 배너만 뜬다) |
 | 감사 | 남기지 않는다 |
 
 `adminSiteUrl()` = `NEXT_PUBLIC_ADMIN_URL`(끝 슬래시 제거), 미설정 시 `http://localhost:3100`.
+
+- **결과 문구** `입력하신 주소로 재설정 메일을 보냈습니다. 메일함을 확인해 주세요.` — "가입되지 않은 이메일입니다"는 그대로 계정 열거 창구이므로 성공·실패를 구분하지 않는다.
 
 **클라이언트와의 상호작용**
 

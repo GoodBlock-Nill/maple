@@ -11,11 +11,17 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | next | hidden | `sanitizeNextPath()` 를 통과한 내부 경로 | `/` 또는 `?next=` 값 | 로그인 성공 시 이 경로로 `redirect()`. 서버 액션이 한 번 더 `sanitizeNextPath()` 한다 |
-| 안내 배너 | `FormBanner` | — | `?error=` 문구 | **액션 결과가 우선**이다 — 새로 시도해 실패했다면 그 문구가 더 정확하므로 `state.formError ?? initialError` 순서로 고른다 |
-| 이메일 | `type="email"`, `autoComplete="username"`, `required` | `loginSchema.email`: trim → 1자 이상("이메일을 입력해 주세요.") → ≤254자 → `z.email('이메일 형식이 올바르지 않습니다.')` | `ADMIN_LOGIN_PREFILL_EMAIL`(없으면 빈 값) | `signInWithPassword({ email, password })` |
-| 비밀번호 | `type="password"`, `autoComplete="current-password"`, `required` | `z.string().min(1, '비밀번호를 입력해 주세요.')` — **로그인에서는 길이 상한을 검사하지 않는다**(기존 계정을 막지 않기 위해. 10~72자 규칙은 설정할 때만 적용) | `ADMIN_LOGIN_PREFILL_PASSWORD`(없으면 빈 값) | 글자수 표시 없음 |
+| 안내 배너 | `FormBanner` | — | `?error=` 문구 | **액션 결과가 우선**이다(`state.formError ?? initialError`, 아래 상세) |
+| 이메일 | `type="email"`, `autoComplete="username"`, `required` | `loginSchema.email`: trim → 1자 이상 → ≤254자 → `z.email()`(아래 상세) | `ADMIN_LOGIN_PREFILL_EMAIL`(없으면 빈 값) | `signInWithPassword({ email, password })` |
+| 비밀번호 | `type="password"`, `autoComplete="current-password"`, `required` | `z.string().min(1, '비밀번호를 입력해 주세요.')` — 길이 상한 검사 없음(아래 상세) | `ADMIN_LOGIN_PREFILL_PASSWORD`(없으면 빈 값) | 글자수 표시 없음 |
 | 로그인 | 제출 버튼(전체 폭) | — | — | `signInAction`. 진행 중 `로그인 중…` + 비활성 |
 | 비밀번호 재설정 | 링크(가운데) | — | — | `/forgot-password` |
+
+**동작 상세**
+
+- **안내 배너** 새로 시도해 실패했다면 그 문구가 더 정확하므로 `state.formError ?? initialError` 순서로 고른다.
+- **이메일 검증** `loginSchema.email`: trim → 1자 이상("이메일을 입력해 주세요.") → ≤254자 → `z.email('이메일 형식이 올바르지 않습니다.')`.
+- **비밀번호 검증** `z.string().min(1, '비밀번호를 입력해 주세요.')` — **로그인에서는 길이 상한을 검사하지 않는다**(기존 계정을 막지 않기 위해. 10~72자 규칙은 설정할 때만 적용).
 
 **로컬 개발 전용 미리 채움** `ADMIN_LOGIN_PREFILL_EMAIL`·`ADMIN_LOGIN_PREFILL_PASSWORD` 환경 변수. **운영(Vercel)에는 설정 금지** — 공개 URL 의 HTML 에 관리자 비밀번호가 그대로 실린다(`defaultValue` 로 렌더된다).
 
@@ -25,12 +31,15 @@
 |---|---|
 | 검증 | `loginSchema` → 실패 시 필드 오류 |
 | 인증 | `supabase.auth.signInWithPassword()` |
-| 실패 | **어느 쪽이 틀렸는지 구분하지 않는다** → `이메일 또는 비밀번호가 올바르지 않습니다.`(계정 열거 차단). 잠금·시도 횟수 제한은 앱에 없다(Supabase 쪽 정책에 맡긴다) |
-| 관리자 확인 | `profiles.role` 조회 → `'admin'` 이 아니면 **`signOut()` 후** `NOT_ADMIN_MESSAGE`("관리자 권한이 없는 계정입니다. 슈퍼어드민에게 관리자 초대를 요청해 주세요.") |
+| 실패 | **어느 쪽이 틀렸는지 구분하지 않는다**(아래 상세) |
+| 관리자 확인 | `profiles.role` 조회 → `'admin'` 이 아니면 `signOut()` 후 `NOT_ADMIN_MESSAGE`(아래 상세) |
 | 성공 | `redirect(sanitizeNextPath(next))` — 기본 대시보드(`/`) |
 | 감사 | **남기지 않는다** |
 
 `redirect()` 는 예외를 던져 흐름을 끊으므로 항상 마지막 문장이며 `try/catch` 안에서 부르지 않는다.
+
+- **실패 문구** `이메일 또는 비밀번호가 올바르지 않습니다.`(계정 열거 차단). 잠금·시도 횟수 제한은 앱에 없다(Supabase 쪽 정책에 맡긴다).
+- **관리자 확인 문구** `NOT_ADMIN_MESSAGE` = "관리자 권한이 없는 계정입니다. 슈퍼어드민에게 관리자 초대를 요청해 주세요."
 
 **상태·문구 의미**
 
