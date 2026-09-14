@@ -14,7 +14,7 @@ HTML 한 벌(`docs/admin/SCREENS-GUIDE.html`)은 이 파일들을 메뉴 탭으�
 | 03 | 커뮤니티 | [03-community/](03-community/README.md) | `/community/posts`, `/community/comments` | 숨김·삭제 → `community-list` → `/community` |
 | 04 | 신고 | [04-reports/](04-reports/README.md) | `/reports` | 클라이언트 신고 접수 → 처리/기각 → 숨김·삭제·정지 연계 |
 | 05 | 회원 | [05-members/](05-members/README.md) | `/members`, `/members/[id]` | 정지·탈퇴 처리 → 로그인/복구 화면, 활동 탭(게시글·댓글·신고·문의) |
-| 07 | 고객지원 — 문의·카테고리·템플릿·FAQ | [07-support/](07-support/README.md) | `/inquiries`(홈페이지·이메일), `/inquiries/[id]`, `/inquiries/categories`, `/inquiries/reply-templates`, `/faqs` | 세 창구 접수 → 배정·잠금·답변·회원 답장 → `/support/inquiries/[id]`; 카테고리·FAQ 는 캐시 태그로 반영 |
+| 07 | 고객지원 — 문의·카테고리·템플릿·FAQ | [07-support/](07-support/README.md) | `/inquiries`(홈페이지·이메일), `/inquiries/[id]`, `/inquiries/categories`, `/inquiries/reply-templates`, `/faqs` | 세 창구 접수 → 배정·답변·회원 답장(`/support/inquiries/[id]`); 카테고리·FAQ 는 캐시 태그 |
 | 08 | 가이드(확률형 아이템) | [08-gacha/](08-gacha/README.md) | `/gacha`, `/gacha/new`, `/gacha/[id]` | `gacha` 재검증 → `/guide` (준비중 플래그 우선) |
 | 09 | 랭킹 | [09-rankings/](09-rankings/README.md) | `/rankings` | 스냅샷 되돌리기 → `rankings` → `/ranking` (준비중 플래그 우선). 적재 화면은 없다 |
 | 10 | 사이트 설정 | [10-settings/](10-settings/README.md) | `/settings` | 연락처·저작권·IP 고지·히어로 배너 → `site` → 푸터·정책 하단·메타데이터·`/about` |
