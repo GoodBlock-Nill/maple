@@ -10,16 +10,16 @@ export const MY_INQUIRIES_PATH = '/support/inquiries'
 export const INQUIRY_CATEGORY_PLACEHOLDER = '카테고리를 선택해주세요'
 
 /* -------------------------------------------------------------------------
- * 글자월드 계정 ID (2026-09-11 부터 필수)
+ * 메이플월드 계정 ID (2026-09-11 부터 필수)
  * ---------------------------------------------------------------------- */
 
-export const INQUIRY_ACCOUNT_LABEL = '글자월드 계정 ID'
+export const INQUIRY_ACCOUNT_LABEL = '메이플월드 계정 ID'
 
 export const INQUIRY_ACCOUNT_PLACEHOLDER = '예: 20123456789000000'
 
 /** 쿠폰 등록·마이페이지와 같은 문장을 쓴다 — 같은 값을 두 화면이 다르게 부르지 않는다. */
 export const INQUIRY_ACCOUNT_HELP =
-  '계정 ID는 “글자월드 - 설정 - 계정 정보” 를 통해서 확인할 수 있습니다.'
+  '계정 ID는 “메이플월드 - 설정 - 계정 정보” 를 통해서 확인할 수 있습니다.'
 
 /**
  * 필수 항목이 덜 채워졌을 때 제출 버튼 아래에 서는 안내.

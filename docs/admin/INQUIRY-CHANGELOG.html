@@ -302,7 +302,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
   <div class="tbl"><table>
     <thead><tr><th>필드</th><th>09-09까지</th><th>지금(<code>af1a886</code> 이후)</th><th>근거</th></tr></thead>
     <tbody>
-      <tr><td>글자월드 계정 ID</td><td>칸 자체가 없음</td><td><strong>필수</strong> · <code>/^[A-Za-z0-9_-]{2,40}$/</code> · <code>profiles.msw_uid</code> 가 있으면 프리필</td><td><code>af1a886</code> · <code>20260910000900</code></td></tr>
+      <tr><td>메이플월드 계정 ID</td><td>칸 자체가 없음</td><td><strong>필수</strong> · <code>/^[A-Za-z0-9_-]{2,40}$/</code> · <code>profiles.msw_uid</code> 가 있으면 프리필</td><td><code>af1a886</code> · <code>20260910000900</code></td></tr>
       <tr><td>카테고리</td><td>코드 상수 4종</td><td><strong>DB 8종</strong>(<code>inquiry_categories</code>) · 설명 한 줄 · 선택 시 <strong>프리필 교체</strong></td><td><code>b78dfd7</code> · <code>20260910000400</code></td></tr>
       <tr><td>세부 문의 유형</td><td>고정 3종(문의 · 신고 · 제안)</td><td><strong>고른 카테고리의 <code>subtypes</code> 만</strong> · 없으면 셀렉트 잠금 + hidden <code>기타</code></td><td><code>af1a886</code> · <code>20260910000700</code></td></tr>
       <tr><td>제목 · 내용</td><td>필수</td><td>그대로(2~100자 · 5~4000자). 내용 칸은 프리필이 채웁니다</td><td>—</td></tr>
@@ -366,7 +366,7 @@ flowchart TD
     CD -->|"카테고리 변경"| PF
     CD -->|"취소"| C
     PF --> T["② 세부 문의 유형<br/>subtypes 없으면 잠금 + hidden 기타"]
-    T --> ID["③ 글자월드 계정 ID"]
+    T --> ID["③ 메이플월드 계정 ID"]
     ID --> TI["④ 제목"] --> CT["⑤ 문의 내용"]
     CT --> AT["⑥ 첨부 · 선택"]
     AT --> VID["영상은 서명 URL 로<br/>uid/pending/ 에 직접 업로드"]

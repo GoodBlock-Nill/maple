@@ -34,7 +34,7 @@ function submitButton(): HTMLButtonElement {
 
 /** 동의를 뺀 나머지 필수 항목. 이것만으로는 제출이 열리지 않아야 한다. */
 async function fillRequiredExceptConsent(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByRole('textbox', { name: /글자월드 계정 ID/u }), 'gjstory01')
+  await user.type(screen.getByRole('textbox', { name: /메이플월드 계정 ID/u }), 'gjstory01')
   await user.selectOptions(
     screen.getByRole('combobox', { name: /카테고리 및 유형 선택/u }),
     '기타·건의',

@@ -40,7 +40,7 @@ export const INQUIRY_PREFILL_MAX = 2_000
 export const INQUIRY_CONTENT_MAX = INQUIRY_PREFILL_MAX * 2
 
 /**
- * 글자월드 계정 ID.
+ * 메이플월드 계정 ID.
  *
  * 2026-09-11 제품 결정으로 **필수 항목**이 됐다(운영자가 본인 확인 없이 답변할 수
  * 있는 문의가 없다). 그런데 서식까지 숫자 10~20자리로 굳히면, 클라이언트 화면에
@@ -143,7 +143,7 @@ function inquiryFields(allowedCategories: readonly string[]) {
     accountId: z
       .string()
       .trim()
-      .min(1, { message: '글자월드 계정 ID를 입력해 주세요.' })
+      .min(1, { message: '메이플월드 계정 ID를 입력해 주세요.' })
       .regex(ACCOUNT_ID_PATTERN, { message: ACCOUNT_ID_MESSAGE }),
     category: optionOf(allowedCategories, '카테고리를 선택해 주세요.'),
     type: z.string().trim().min(1, { message: SUBTYPE_MESSAGE }),

@@ -156,7 +156,7 @@ describe('createInquiry', () => {
     expect(stub.inserts[0]).toMatchObject({ category: '기타·건의', type: '기타' })
   })
 
-  it('should require the 글자월드 계정 ID', async () => {
+  it('should require the 메이플월드 계정 ID', async () => {
     // Arrange — 2026-09-11 부터 필수다. 첨부만 선택 항목이다.
     getCurrentUser.mockResolvedValue(USER)
 
