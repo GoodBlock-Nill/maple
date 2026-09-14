@@ -18,28 +18,25 @@ vi.mock('next/cache', () => ({
   revalidateTag: vi.fn(),
 }))
 
-/** 영상 확정 경로가 서비스 롤 클라이언트(`server-only`)를 끌고 온다. 테스트에서는 비운다. */
+/** 첨부 확정 경로가 서비스 롤 클라이언트(`server-only`)를 끌고 온다. 테스트에서는 비운다. */
 vi.mock('server-only', () => ({}))
 
 const getCurrentUser = vi.fn()
 vi.mock('@/lib/auth/current-user', () => ({ getCurrentUser: () => getCurrentUser() }))
 
-type StorageCall = { path: string; contentType: string }
+type StoredObject = { name: string; metadata: { size: number; mimetype: string } }
 
 let stub: SupabaseStub
-let uploads: StorageCall[]
+/** 서비스 롤이 옮긴 오브젝트(from → to). 확정 단계가 실제로 돌았는지 본다. */
+let moves: { from: string; to: string }[]
 let removed: string[][]
-let uploadError: { message: string } | null
+let pendingObjects: StoredObject[]
+let listError: { message: string } | null
 
-/** 스토리지는 스텁에 없으므로 여기서 최소 계약(upload/remove)만 붙인다. */
+/** 사용자 세션 클라이언트의 스토리지 — 남은 일은 "안 쓰는 첨부 지우기"뿐이다. */
 function storageStub() {
   return {
     from: () => ({
-      upload: async (path: string, _file: unknown, options: { contentType: string }) => {
-        uploads.push({ path, contentType: options.contentType })
-
-        return { error: uploadError }
-      },
       remove: async (paths: string[]) => {
         removed.push(paths)
 
@@ -51,6 +48,33 @@ function storageStub() {
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ ...stub.client, storage: storageStub() }),
+}))
+
+/**
+ * 첨부 확정은 서비스 롤로 돈다(`move` 는 사용자 정책이 열어 주지 않는다).
+ * 여기서는 pending 폴더의 실제 오브젝트와 이동만 흉내 낸다.
+ */
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    storage: {
+      from: () => ({
+        list: async () =>
+          listError === null
+            ? { data: [...pendingObjects], error: null }
+            : { data: null, error: listError },
+        move: async (from: string, to: string) => {
+          moves.push({ from, to })
+
+          return { data: { message: 'ok' }, error: null }
+        },
+        remove: async (paths: string[]) => {
+          removed.push(paths)
+
+          return { error: null }
+        },
+      }),
+    },
+  }),
 }))
 
 /* 카테고리(와 그 카테고리의 세부 문의 유형)는 DB 에서 온다. 액션이 무엇을 허용
@@ -114,9 +138,10 @@ function inquiryForm(overrides: Record<string, string> = {}): FormData {
 beforeEach(() => {
   getCurrentUser.mockReset()
   categoryKinds.length = 0
-  uploads = []
+  moves = []
   removed = []
-  uploadError = null
+  pendingObjects = []
+  listError = null
   /* 1) 마지막 접수 시각 조회(도배 판정) 2) insert().select().single() */
   stub = createSupabaseStub([
     { data: null, error: null },
@@ -232,68 +257,118 @@ describe('createInquiry', () => {
     expect(stub.inserts).toHaveLength(0)
   })
 
-  it('should upload attachments under the user folder and record their metadata', async () => {
-    // Arrange
+  it('should claim pending uploads and record what storage knows', async () => {
+    /* Arrange — 파일은 폼과 함께 오지 않는다. 브라우저가 이미 `<uid>/pending/…` 에
+       올렸고 폼에는 경로만 실린다. 크기·형식은 신고 값이 아니라 스토리지 값을 쓴다. */
     getCurrentUser.mockResolvedValue(USER)
+    pendingObjects = [{ name: 'a.png', metadata: { size: 2048, mimetype: 'image/png' } }]
     const formData = inquiryForm()
-    formData.append('attachments', new File(['png-bytes'], 'shot.png', { type: 'image/png' }))
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify([
+        { path: `${USER.id}/pending/a.png`, name: 'shot.png', size: 1, mimeType: 'image/png' },
+      ]),
+    )
 
     // Act
     await createInquiry('inquiry', EMPTY_FORM_STATE, formData).catch(() => undefined)
 
-    // Assert — 정책(`inquiry_attachments_insert_own`)이 요구하는 `{uid}/` 접두사.
-    expect(uploads[0]?.path.startsWith(`${USER.id}/`)).toBe(true)
-    expect(uploads[0]?.contentType).toBe('image/png')
+    // Assert — 정책(`inquiry_attachments_insert_own`)이 요구하는 `{uid}/` 접두사로 옮긴다.
+    expect(moves[0]?.from).toBe(`${USER.id}/pending/a.png`)
+    expect(moves[0]?.to.startsWith(`${USER.id}/`)).toBe(true)
+    expect(moves[0]?.to.includes('/pending/')).toBe(false)
     expect(stub.inserts[0]).toMatchObject({
-      attachments: [expect.objectContaining({ name: 'shot.png', mimeType: 'image/png' })],
+      attachments: [
+        expect.objectContaining({ name: 'shot.png', mimeType: 'image/png', size: 2048 }),
+      ],
     })
   })
 
-  it('should reject attachments the bucket would refuse', async () => {
+  it('should reject uploads the bucket would refuse before touching storage', async () => {
     // Arrange
     getCurrentUser.mockResolvedValue(USER)
     const formData = inquiryForm()
-    formData.append('attachments', new File(['zip'], 'a.zip', { type: 'application/zip' }))
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify([
+        { path: `${USER.id}/pending/a.zip`, name: 'a.zip', size: 10, mimeType: 'application/zip' },
+      ]),
+    )
 
     // Act
     const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
     expect(result.fieldErrors?.attachments).toBeDefined()
-    expect(uploads).toHaveLength(0)
+    expect(moves).toHaveLength(0)
   })
 
-  it('should not insert a row when an attachment upload fails', async () => {
-    // Arrange
+  it('should refuse more than five attachments', async () => {
+    // Arrange — 직접 POST 로 목록만 늘리는 시도(2026-09-14: 형식 불문 5개).
     getCurrentUser.mockResolvedValue(USER)
-    uploadError = { message: 'storage down' }
     const formData = inquiryForm()
-    formData.append('attachments', new File(['png'], 'shot.png', { type: 'image/png' }))
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify(
+        [1, 2, 3, 4, 5, 6].map((index) => ({
+          path: `${USER.id}/pending/${index}.png`,
+          name: `${index}.png`,
+          size: 10,
+          mimeType: 'image/png',
+        })),
+      ),
+    )
+
+    // Act
+    const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
+
+    // Assert — 목록 스키마(최대 5)가 먼저 걸러도 사용자는 한국어 문구를 받아야 한다.
+    expect(result.fieldErrors?.attachments).toBeDefined()
+    expect(stub.inserts).toHaveLength(0)
+  })
+
+  it('should not insert a row when the claim fails', async () => {
+    // Arrange — 존재 확인 자체가 깨졌는데 접수하면 첨부가 빠진 문의가 남는다.
+    getCurrentUser.mockResolvedValue(USER)
+    listError = { message: 'storage down' }
+    const formData = inquiryForm()
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify([
+        { path: `${USER.id}/pending/a.png`, name: 'shot.png', size: 10, mimeType: 'image/png' },
+      ]),
+    )
 
     // Act
     const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
-    expect(result.formError).toContain('첨부파일')
+    expect(result.fieldErrors?.attachments).toContain('첨부파일')
     expect(stub.inserts).toHaveLength(0)
   })
 
-  it('should clean up uploaded files when the insert fails', async () => {
+  it('should clean up claimed files when the insert fails', async () => {
     // Arrange — 고아 오브젝트가 비공개 버킷에 쌓이지 않아야 한다.
     getCurrentUser.mockResolvedValue(USER)
     stub = createSupabaseStub([
       { data: null, error: null },
       { data: null, error: { message: 'insert failed' } },
     ])
+    pendingObjects = [{ name: 'a.png', metadata: { size: 10, mimetype: 'image/png' } }]
     const formData = inquiryForm()
-    formData.append('attachments', new File(['png'], 'shot.png', { type: 'image/png' }))
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify([
+        { path: `${USER.id}/pending/a.png`, name: 'shot.png', size: 10, mimeType: 'image/png' },
+      ]),
+    )
 
     // Act
     const result = await createInquiry('inquiry', EMPTY_FORM_STATE, formData)
 
     // Assert
     expect(result.formError).toContain('접수하지 못했습니다')
-    expect(removed[0]).toHaveLength(1)
+    expect(removed[0]).toEqual([moves[0]?.to])
   })
 })
 

@@ -1,4 +1,6 @@
 import { execFileSync } from 'node:child_process'
+import { existsSync, mkdirSync, rmSync } from 'node:fs'
+import { dirname } from 'node:path'
 
 import { expect, test } from '@playwright/test'
 
@@ -49,6 +51,45 @@ const THREAD_CLOSED_NOTICE = '답변이 완료된 문의입니다. 추가 문의
 /** 영상 픽스처를 만들 자리. 저장소에 바이너리를 넣지 않는다. */
 const VIDEO_FIXTURE_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-video'
+
+/**
+ * 크기만 큰 희소 파일.
+ *
+ * 상한을 넘는 선택이 **올라가기 전에** 거절되는지 보려면 200MB 짜리 파일이 필요하다.
+ * 내용은 아무 상관이 없고(거절돼서 전송 자체가 없다) 희소 파일은 디스크를 실제로
+ * 차지하지 않는다 — 저장소에 200MB 바이너리를 넣을 이유는 더더욱 없다.
+ */
+function makeSparseFile(target: string, megabytes: number): string | null {
+  try {
+    mkdirSync(dirname(target), { recursive: true })
+    rmSync(target, { force: true })
+    execFileSync('dd', ['if=/dev/zero', `of=${target}`, 'bs=1m', 'count=0', `seek=${megabytes}`], {
+      stdio: 'pipe',
+    })
+
+    return existsSync(target) ? target : null
+  } catch {
+    return null
+  }
+}
+
+/** 접수된 문의와 그 첨부를 지운다. 남겨 두면 실행할 때마다 비공개 버킷에 쌓인다. */
+async function cleanUpInquiry(inquiryId: string): Promise<void> {
+  const service = createServiceClient()
+
+  if (service === null || inquiryId === '') {
+    return
+  }
+
+  const stored = await service.from('inquiries').select('attachments').eq('id', inquiryId).single()
+  const attachments = (stored.data?.attachments ?? []) as { path: string }[]
+
+  if (attachments.length > 0) {
+    await service.storage.from('inquiry-attachments').remove(attachments.map((item) => item.path))
+  }
+
+  await service.from('inquiries').delete().eq('id', inquiryId)
+}
 
 /** 실행마다 새 계정이 생기므로 유니크 제약에 걸리지 않게 매번 다른 값을 만든다. */
 function randomDigits(length: number): string {
@@ -634,49 +675,47 @@ test('should let the owner edit a pending inquiry and then cancel it', async ({
 })
 
 /**
- * 첨부 접수.
+ * 첨부 접수 — 개수 상한과 실제 접수.
  *
- * 파일은 폼과 함께 서버 액션 본문으로 간다. 본문 상한(`next.config.ts`)을 넘긴
- * 요청은 액션에 닿기도 전에 500 으로 끊겨 사용자가 입력을 통째로 잃으므로, 상한을
- * 넘는 선택은 **보내기 전에** 막혀야 한다. 상한 안쪽의 사진은 그대로 접수되고
- * 상세에서 다시 보여야 한다 — 두 가지를 한 흐름에서 확인한다.
+ * 2026-09-14 부터 규칙은 하나다: 형식에 관계없이 **5개 · 합계 200MB**. 파일은 폼과
+ * 함께 가지 않는다 — 고르는 즉시 브라우저가 버킷으로 올리고 폼에는 경로만 실린다.
+ * 그래서 여기서 확인할 것은 셋이다.
+ *
+ *   1) 여섯 번째는 보내기 전에 거절되고 제출이 잠긴다(첨부가 조용히 빠지지 않게)
+ *   2) 칩의 X 로 하나 내리면 다시 열린다
+ *   3) 접수된 첨부가 상세에서 서명 URL 링크로 다시 보인다
  */
-test('should refuse an oversized attachment before submitting and accept a real image', async ({
-  page,
-}) => {
+test('should refuse a sixth attachment before submitting and accept the rest', async ({ page }) => {
   // Arrange
   await stubLogin(page, SUPPORT_PATH)
 
-  /* 제출 잠금은 이제 두 가지 이유로 걸린다(첨부 · 필수 항목). 첨부만 남기려면
-     나머지를 먼저 채워야 "첨부 때문에 잠겼는가"를 물어볼 수 있다. */
-  await fillRequiredFields(page, `E2E 첨부 잠금 ${Date.now()}`)
+  const title = `E2E 첨부 상한 ${Date.now()}`
 
-  const fileInput = page.locator('input[name="attachments"]')
+  /* 제출 잠금은 두 가지 이유로 걸린다(첨부 · 필수 항목). 첨부만 남기려면 나머지를
+     먼저 채워야 "첨부 때문에 잠겼는가"를 물어볼 수 있다. */
+  await fillRequiredFields(page, title)
+
+  const fileInput = page.locator('input[type="file"]')
   const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
-  // Act — 상한을 넘는 파일(6MB)
-  await fileInput.setInputFiles({
-    name: 'oversize.pdf',
-    mimeType: 'application/pdf',
-    buffer: Buffer.alloc(6 * 1024 * 1024),
-  })
+  // Act — 한 번에 여섯 장
+  await fileInput.setInputFiles(Array.from({ length: 6 }, () => 'tests/fixtures/pixel.png'))
 
-  // Assert — 무엇이 문제인지 한국어로 알려 주고 제출을 잠근다(첨부가 조용히 빠지지 않게).
-  await expect(page.getByText(/oversize\.pdf .*MB/)).toBeVisible()
+  // Assert — 종류를 가리지 않는 한 문장으로 거절하고 제출을 잠근다
+  await expect(page.getByText('첨부파일은 최대 5개까지 올릴 수 있습니다.')).toBeVisible()
   await expect(submitButton).toBeDisabled()
 
-  // Act — 칩의 X 로 첨부를 포기하면 다시 열린다(시안 v2: "첨부 지우기" 대신 칩 X)
-  await page.getByRole('button', { name: 'oversize.pdf 첨부 해제' }).click()
+  /* 다섯 장은 이미 버킷으로 올라간다 — 진행 표시가 끝나야 나머지 판정이 안정된다. */
+  await expect(page.getByText('첨부 완료')).toHaveCount(5, { timeout: 60_000 })
 
-  // Assert
+  // Act — 칩의 X 로 하나 내리면 다시 열린다(잠긴 폼에서 빠져나오는 길)
+  await page.getByRole('button', { name: 'pixel.png 첨부 해제' }).first().click()
+
+  // Assert — 파일은 input 에 남지 않는다(= 서버 액션 본문으로 나가지 않는다)
   await expect(submitButton).toBeEnabled()
   expect(await fileInput.evaluate((input: HTMLInputElement) => input.files?.length ?? -1)).toBe(0)
 
-  // Act — 상한 안쪽의 이미지는 그대로 접수된다
-  const title = `E2E 첨부 문의 ${Date.now()}`
-  await fileInput.setInputFiles('tests/fixtures/pixel.png')
-  await expect(page.getByText('pixel.png')).toBeVisible()
-
+  // Act — 접수
   const inquiryId = await submitInquiry(page, title)
 
   await page
@@ -684,22 +723,60 @@ test('should refuse an oversized attachment before submitting and accept a real 
     .getByRole('button', { name: '확인' })
     .click()
 
-  // Assert — 상세의 첨부 목록에 서명 URL 링크로 뜬다(비공개 버킷이라 링크가 곧 접근 경로다).
-  const attachmentLink = page.getByRole('link', { name: /pixel\.png/ })
-  await expect(attachmentLink).toBeVisible()
-  await expect(attachmentLink).toHaveAttribute('href', /inquiry-attachments/)
-  expect(inquiryId).not.toBe('')
+  // Assert — 상세의 첨부 목록에 서명 URL 링크로 뜬다(비공개 버킷이라 링크가 곧 접근 경로다)
+  const attachmentLinks = page.getByRole('link', { name: /pixel\.png/u })
+  await expect(attachmentLinks).toHaveCount(4)
+  await expect(attachmentLinks.first()).toHaveAttribute('href', /inquiry-attachments/u)
+
+  // 뒷정리 — 남겨 두면 실행할 때마다 비공개 버킷에 파일이 쌓인다.
+  await cleanUpInquiry(inquiryId)
+})
+
+/**
+ * 한 파일이 합계 상한을 넘는 경우.
+ *
+ * 200MB 를 넘는 파일은 **올리기 전에** 거절돼야 한다 — 올리기 시작하면 사용자는
+ * 몇 분을 기다린 끝에 스토리지의 영문 오류를 본다. 빈 공간을 차지하지 않는 희소
+ * 파일로 만든다(내용은 아무 상관이 없다 — 크기만 보고 거절된다).
+ */
+test('should refuse a file bigger than the shared budget without uploading it', async ({
+  page,
+}) => {
+  // Arrange
+  const oversize = makeSparseFile(`${VIDEO_FIXTURE_DIR}/inquiry-e2e-oversize.mp4`, 201)
+
+  test.skip(oversize === null, '희소 파일을 만들 수 없습니다.')
+
+  await stubLogin(page, SUPPORT_PATH)
+  await fillRequiredFields(page, `E2E 용량 초과 ${Date.now()}`)
+
+  const fileInput = page.locator('input[type="file"]')
+  const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
+
+  // Act
+  await fileInput.setInputFiles(oversize as string)
+
+  // Assert — 어느 파일이 문제인지 이름과 함께 알려 주고 제출을 잠근다
+  await expect(page.getByText(/inquiry-e2e-oversize\.mp4 .*200MB/u)).toBeVisible()
+  await expect(submitButton).toBeDisabled()
+  await expect(page.getByText('올리는 중 0%')).toHaveCount(0)
+
+  // Act — 문제가 된 선택을 비우면 다시 열린다
+  await fileInput.setInputFiles('tests/fixtures/pixel.png')
+
+  // Assert
+  await expect(page.getByText('첨부 완료')).toBeVisible({ timeout: 60_000 })
+  await expect(submitButton).toBeEnabled()
 })
 
 /**
  * 영상 첨부.
  *
- * 영상은 폼과 함께 가지 **않는다**. 100MB 짜리 파일이 서버 액션 본문에 실리면
- * 상한(14MB)에 걸려 액션이 실행되기도 전에 요청이 끊긴다. 그래서 브라우저가 파일을
- * 버킷에 직접 올리고, 폼에는 올라간 오브젝트의 경로만 숨은 필드로 싣는다.
- * 이 테스트가 확인하는 것은 그 분리다 —
+ * 첨부는 폼과 함께 가지 **않는다**(2026-09-14 부터 형식 불문). 200MB 짜리 파일이
+ * 서버 액션 본문에 실릴 수는 없으므로 브라우저가 파일을 버킷에 직접 올리고, 폼에는
+ * 올라간 오브젝트의 경로만 숨은 필드로 싣는다. 이 테스트가 확인하는 것은 그 분리다 —
  *
- *   1) 고른 영상이 input 의 FileList 에 남지 않는다(= 본문에 실리지 않는다)
+ *   1) 고른 파일이 input 의 FileList 에 남지 않는다(= 본문에 실리지 않는다)
  *   2) 업로드가 끝나야 제출이 열린다(첨부가 조용히 빠진 접수 방지)
  *   3) 접수 후 상세에서 서명 URL 로 **재생**된다(링크가 아니라 재생기)
  */
@@ -718,8 +795,8 @@ test('should upload a video straight to storage and play it on the detail page',
   // 필수 항목을 먼저 채운다 — 영상 업로드가 끝나도 나머지가 비면 제출은 잠긴 채다.
   await fillRequiredFields(page, title)
 
-  const fileInput = page.locator('input[name="attachments"]')
-  const hiddenField = page.locator('input[name="videoAttachments"]')
+  const fileInput = page.locator('input[type="file"]')
+  const hiddenField = page.locator('input[name="pendingAttachments"]')
   const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
   // Act — 고르는 즉시 업로드가 시작된다
@@ -771,56 +848,39 @@ test('should upload a video straight to storage and play it on the detail page',
 })
 
 /**
- * 첨부 상한 — 이미지·PDF 3개 + 영상 2개, 합쳐서 최대 5개(오너 지시, 2026-09-11).
+ * 다섯 개를 **섞어서** 채우기 — 이미지 4장 + 영상 1편(오너 지시, 2026-09-14).
  *
- * 종류별 상한과 합계 상한을 한 흐름에서 함께 본다 — 이미지 4번째는 이미지·PDF 자리가
- * 이미 찬 시점에 거절되고, 이미지 3개 + 영상 2개(정확히 5개)는 그대로 접수돼야 한다.
+ * 예전 규칙(이미지·PDF 3 + 영상 2)이면 네 번째 이미지에서 막혔을 조합이다. 지금은
+ * 자리가 하나뿐이므로 무엇으로 채우든 다섯 개까지 그대로 접수돼야 한다.
  */
-test('should refuse a fourth image and accept three images with two videos together', async ({
-  page,
-}) => {
+test('should accept four images together with one video', async ({ page }) => {
   // Arrange
-  const videoA = makeTestVideo(`${VIDEO_FIXTURE_DIR}/inquiry-e2e-max-a.mp4`)
-  const videoB = makeTestVideo(`${VIDEO_FIXTURE_DIR}/inquiry-e2e-max-b.mp4`)
+  const video = makeTestVideo(`${VIDEO_FIXTURE_DIR}/inquiry-e2e-mix.mp4`)
 
-  test.skip(videoA === null || videoB === null, 'ffmpeg 이 없어 테스트용 mp4 를 만들 수 없습니다.')
+  test.skip(video === null, 'ffmpeg 이 없어 테스트용 mp4 를 만들 수 없습니다.')
 
   await stubLogin(page, SUPPORT_PATH)
 
-  const title = `E2E 첨부 상한 ${Date.now()}`
+  const title = `E2E 첨부 조합 ${Date.now()}`
 
   await fillRequiredFields(page, title)
 
-  const fileInput = page.locator('input[name="attachments"]')
+  const fileInput = page.locator('input[type="file"]')
   const submitButton = page.getByRole('button', { name: SUBMIT_LABEL })
 
-  // Act — 이미지 4장을 한 번에 고른다(이미지·PDF 상한은 3개, 영상과 별도 자리다)
+  // Act — 이미지 4장 + 영상 1편을 한 번에 고른다
   await fileInput.setInputFiles([
     'tests/fixtures/pixel.png',
     'tests/fixtures/pixel.png',
     'tests/fixtures/pixel.png',
     'tests/fixtures/pixel.png',
+    video as string,
   ])
 
-  // Assert — 종류별 오류 문구로 거절되고 제출이 잠긴다
-  await expect(page.getByText('이미지·PDF는 최대 3개까지 첨부할 수 있습니다.')).toBeVisible()
-  await expect(submitButton).toBeDisabled()
-
-  // Act — 칩 하나를 내려 이미지 자리를 맞추고, 이미지 3장 + 영상 2편을 한 번에 고른다
-  await page.getByRole('button', { name: 'pixel.png 첨부 해제' }).first().click()
-  await expect(submitButton).toBeEnabled()
-  await fileInput.setInputFiles([
-    'tests/fixtures/pixel.png',
-    'tests/fixtures/pixel.png',
-    'tests/fixtures/pixel.png',
-    videoA as string,
-    videoB as string,
-  ])
-
-  // Assert — 영상 두 편 모두 업로드가 끝나야 제출이 열린다
-  await expect(page.getByTitle('inquiry-e2e-max-a.mp4')).toBeVisible()
-  await expect(page.getByTitle('inquiry-e2e-max-b.mp4')).toBeVisible()
-  await expect(page.getByText('첨부 완료')).toHaveCount(2, { timeout: 60_000 })
+  // Assert — 다섯 개 모두 올라가야 제출이 열린다(어떤 상한 문구도 뜨지 않는다)
+  await expect(page.getByTitle('inquiry-e2e-mix.mp4')).toBeVisible()
+  await expect(page.getByText('첨부 완료')).toHaveCount(5, { timeout: 60_000 })
+  await expect(page.getByText(/최대 5개까지/u)).toHaveCount(0)
   await expect(submitButton).toBeEnabled()
 
   // Act — 접수
@@ -831,9 +891,9 @@ test('should refuse a fourth image and accept three images with two videos toget
     .getByRole('button', { name: '확인' })
     .click()
 
-  // Assert — 상세에 이미지 3장 + 영상 2편, 정확히 5개가 뜬다
-  await expect(page.getByRole('link', { name: /pixel\.png/ })).toHaveCount(3)
-  await expect(page.locator('video')).toHaveCount(2)
+  // Assert — 상세에 이미지 4장 + 영상 1편, 정확히 5개가 뜬다
+  await expect(page.getByRole('link', { name: /pixel\.png/u })).toHaveCount(4)
+  await expect(page.locator('video')).toHaveCount(1)
   expect(inquiryId).not.toBe('')
 
   // Assert · 뒷정리 — 저장된 첨부가 정확히 5개인지 서비스 롤로 확인하고 지운다.
@@ -848,13 +908,9 @@ test('should refuse a fourth image and accept three images with two videos toget
     const attachments = (stored.data?.attachments ?? []) as { path: string }[]
 
     expect(attachments).toHaveLength(5)
-
-    if (attachments.length > 0) {
-      await service.storage.from('inquiry-attachments').remove(attachments.map((a) => a.path))
-    }
-
-    await service.from('inquiries').delete().eq('id', inquiryId)
   }
+
+  await cleanUpInquiry(inquiryId)
 })
 
 /**
@@ -999,7 +1055,7 @@ test('should let the member reply while in progress and close the thread once an
 
   // Act — 텍스트 + 이미지 한 장으로 답장한다
   await page.getByRole('textbox', { name: /답장 내용/u }).fill(USER_REPLY_CONTENT)
-  await page.locator('input[name="attachments"]').setInputFiles('tests/fixtures/pixel.png')
+  await page.locator('input[type="file"]').setInputFiles('tests/fixtures/pixel.png')
   await expect(page.getByText('pixel.png')).toBeVisible()
   await expect(submit).toBeEnabled()
   await submit.click()

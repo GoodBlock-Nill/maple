@@ -22,17 +22,13 @@ const getCurrentUser = vi.fn()
 vi.mock('@/lib/auth/current-user', () => ({ getCurrentUser: () => getCurrentUser() }))
 
 let stub: SupabaseStub
-let uploads: string[]
+/** 서비스 롤이 옮긴 오브젝트. 첨부 확정이 실제로 돌았는지 본다. */
+let moves: { from: string; to: string }[]
 let removed: string[][]
 
 function storageStub() {
   return {
     from: () => ({
-      upload: async (path: string) => {
-        uploads.push(path)
-
-        return { error: null }
-      },
       remove: async (paths: string[]) => {
         removed.push(paths)
 
@@ -44,6 +40,30 @@ function storageStub() {
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ ...stub.client, storage: storageStub() }),
+}))
+
+/** 첨부 확정(`<uid>/pending/…` → 접수된 자리)은 서비스 롤로 돈다. */
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    storage: {
+      from: () => ({
+        list: async () => ({
+          data: [{ name: 'more.png', metadata: { size: 1024, mimetype: 'image/png' } }],
+          error: null,
+        }),
+        move: async (from: string, to: string) => {
+          moves.push({ from, to })
+
+          return { data: { message: 'ok' }, error: null }
+        },
+        remove: async (paths: string[]) => {
+          removed.push(paths)
+
+          return { error: null }
+        },
+      }),
+    },
+  }),
 }))
 
 /* 카테고리(와 그 카테고리의 세부 문의 유형)는 DB 에서 온다. 액션이 무엇을 허용
@@ -127,7 +147,7 @@ beforeEach(() => {
   getCurrentUser.mockReset()
   getCurrentUser.mockResolvedValue(USER)
   categoryKinds.length = 0
-  uploads = []
+  moves = []
   removed = []
   /* 1) 소유 문의 조회 2) update 결과 */
   stub = createSupabaseStub([
@@ -233,20 +253,57 @@ describe('updateInquiry', () => {
     expect(removed[0]).toEqual([ATTACHMENT.path])
   })
 
-  it('should keep the three file limit across kept and newly added attachments', async () => {
-    // Arrange — 기존 3개를 그대로 두고 한 개 더 올리려는 시도.
+  it('should count kept attachments against the shared five-file limit', async () => {
+    // Arrange — 기존 5개를 그대로 두고 한 개 더 올리려는 시도(형식은 가리지 않는다).
     stub = createSupabaseStub([
-      { data: ownedRow({ attachments: [ATTACHMENT, ATTACHMENT, ATTACHMENT] }), error: null },
+      {
+        data: ownedRow({ attachments: [1, 2, 3, 4, 5].map(() => ATTACHMENT) }),
+        error: null,
+      },
     ])
     const formData = editForm()
-    formData.append('attachments', new File(['png'], 'more.png', { type: 'image/png' }))
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify([
+        { path: `${USER.id}/pending/more.png`, name: 'more.png', size: 10, mimeType: 'image/png' },
+      ]),
+    )
 
     // Act
     const result = await updateInquiry(INQUIRY_ID, EMPTY_FORM_STATE, formData)
 
     // Assert
-    expect(result.fieldErrors?.attachments).toContain('최대 3개')
-    expect(uploads).toHaveLength(0)
+    expect(result.fieldErrors?.attachments).toContain('최대 5개')
+    expect(moves).toHaveLength(0)
+  })
+
+  it('should free a slot when an existing attachment is ticked for removal', async () => {
+    /* Arrange — "하나 빼고 하나 넣기"는 정상 동작이다. 기존 5개 중 하나를 빼면
+       새 첨부 하나가 들어갈 자리가 생긴다. */
+    stub = createSupabaseStub([
+      {
+        data: ownedRow({ attachments: [1, 2, 3, 4, 5].map(() => ATTACHMENT) }),
+        error: null,
+      },
+      { data: null, error: null },
+    ])
+    const formData = editForm()
+    formData.append('removeAttachments', ATTACHMENT.path)
+    formData.set(
+      'pendingAttachments',
+      JSON.stringify([
+        { path: `${USER.id}/pending/more.png`, name: 'more.png', size: 10, mimeType: 'image/png' },
+      ]),
+    )
+
+    // Act
+    await runAndCatch(updateInquiry(INQUIRY_ID, EMPTY_FORM_STATE, formData))
+
+    // Assert — 같은 path 라 5개가 통째로 빠지고, 새 첨부 하나가 확정된다.
+    expect(moves).toHaveLength(1)
+    expect(stub.updates[0]).toMatchObject({
+      attachments: [expect.objectContaining({ name: 'more.png', size: 1024 })],
+    })
   })
 
   it('should explain the lock when the DB guard rejects the update', async () => {

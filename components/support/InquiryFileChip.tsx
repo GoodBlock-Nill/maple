@@ -9,7 +9,7 @@ type InquiryFileChipProps = {
   name: string
   /** 0 이면 크기를 그리지 않는다(알 수 없는 파일). */
   size?: number
-  /** 이름 뒤에 붙는 상태 문구(업로드 진행률 · 첨부 완료 · 실패 사유). */
+  /** 이름 뒤에 붙는 **짧은** 상태(업로드 진행률 · 첨부 완료 · 실패). 긴 문장은 칩 밖에 둔다. */
   status?: ReactNode
   /** 칩 오른쪽 X. 없으면 제거할 수 없는 칩이다. */
   onRemove?: () => void

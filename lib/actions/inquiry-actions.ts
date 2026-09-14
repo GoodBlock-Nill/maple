@@ -4,20 +4,20 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
-import { readFiles, removeAttachments, uploadAttachments } from '@/lib/actions/inquiry-attachments'
 import { getLatestInquiryAt } from '@/lib/actions/inquiry-cooldown'
 import {
-  claimFormVideos,
-  readPendingVideos,
-  VIDEO_FORM_INVALID_MESSAGE,
-} from '@/lib/actions/inquiry-videos'
+  claimFormUploads,
+  readPendingUploads,
+  UPLOAD_FORM_INVALID_MESSAGE,
+} from '@/lib/actions/inquiry-uploads'
 import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { DEFAULT_INQUIRY_KIND, INQUIRY_KIND_MAP, isInquiryKind } from '@/lib/constants/inquiry-kind'
 import { INQUIRY_SUBMITTED_PARAM, MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { getInquiryCategories } from '@/lib/data/inquiry-categories'
 import { createClient } from '@/lib/supabase/server'
-import { createInquirySchema, validateInquiryAttachments } from '@/lib/validation/inquiry'
+import { createInquirySchema } from '@/lib/validation/inquiry'
+import { toUploadCandidates, validateInquiryAttachments } from '@/lib/validation/inquiry-upload'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { InquiryKind } from '@/lib/constants/inquiry-kind'
@@ -73,17 +73,17 @@ export async function createInquiry(
     return { fieldErrors: toFieldErrors(parsed.error) }
   }
 
-  const files = readFiles(formData, 'attachments')
-  /* 영상은 본문에 실려 오지 않는다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
-     싣는다(`lib/supabase/upload-inquiry-video.ts`). 여기서는 개수만 함께 세고,
-     경로의 진위는 아래 `claimFormVideos` 가 스토리지에 다시 물어본다. */
-  const videos = readPendingVideos(formData)
+  /* 첨부는 본문에 실려 오지 않는다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
+     싣는다(`lib/supabase/upload-inquiry-file.ts`). 여기서는 개수·용량·형식을
+     신고된 값으로 먼저 보고, 경로와 실제 크기는 아래 `claimFormUploads` 가
+     스토리지에 다시 물어본다. */
+  const uploads = readPendingUploads(formData)
 
-  if (videos === null) {
-    return { fieldErrors: { attachments: VIDEO_FORM_INVALID_MESSAGE } }
+  if (uploads === null) {
+    return { fieldErrors: { attachments: UPLOAD_FORM_INVALID_MESSAGE } }
   }
 
-  const attachmentCheck = validateInquiryAttachments(files, 0, videos.length)
+  const attachmentCheck = validateInquiryAttachments([], toUploadCandidates(uploads))
 
   if (!attachmentCheck.ok) {
     return { fieldErrors: { attachments: attachmentCheck.message } }
@@ -96,17 +96,9 @@ export async function createInquiry(
     return { formError: cooldownMessage(waitSeconds) }
   }
 
-  const uploaded = await uploadAttachments(supabase, user.id, files)
-
-  if (!uploaded.ok) {
-    return { formError: uploaded.message }
-  }
-
-  const claimed = await claimFormVideos(user.id, videos)
+  const claimed = await claimFormUploads(user.id, uploads)
 
   if (!claimed.ok) {
-    await removeAttachments(supabase, uploaded.attachments)
-
     return { fieldErrors: { attachments: claimed.message } }
   }
 
@@ -122,7 +114,7 @@ export async function createInquiry(
       type: parsed.data.type,
       title: parsed.data.title,
       content: parsed.data.content,
-      attachments: [...uploaded.attachments, ...claimed.claim.attachments],
+      attachments: [...claimed.claim.attachments],
       privacy_consent: true,
       /* `inquiries_insert_own` 정책이 pending 만 허용한다. 명시해 두면 기본값이
          바뀌어도 정책과 어긋나지 않는다. */
@@ -132,7 +124,6 @@ export async function createInquiry(
     .single()
 
   if (error !== null || data === null) {
-    await removeAttachments(supabase, uploaded.attachments)
     await claimed.claim.rollback()
 
     return { formError: FAILURE_MESSAGE }

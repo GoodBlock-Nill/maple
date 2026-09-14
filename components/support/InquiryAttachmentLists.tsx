@@ -8,10 +8,11 @@ import {
 import type { InquiryAttachment } from '@/types/domain'
 
 /**
- * 첨부 입력이 그리는 두 목록 — 이미 올라가 있는 첨부와 지금 고른 파일.
+ * 이미 올라가 있는 첨부(수정 화면)의 칩 목록.
  *
- * `InquiryAttachmentField` 에서 떼어 낸 표시 전용 조각이다. 검사·축소 로직과 섞여
- * 있으면 한 파일이 길어져 "무엇을 검사하는가"가 마크업에 묻힌다.
+ * `InquiryAttachmentField` 에서 떼어 낸 표시 전용 조각이다. 검사·업로드 로직과 섞여
+ * 있으면 한 파일이 길어져 "무엇을 검사하는가"가 마크업에 묻힌다. 지금 올라가는
+ * 중인 첨부는 `InquiryUploadList` 가 같은 칩 모양(`CHIP_LIST_CLASS`)으로 그린다.
  */
 
 /** 칩 줄(시안 v2): 폰은 세로 gap 8, PC 는 wrap gap 12. */
@@ -63,42 +64,5 @@ export function ExistingAttachmentList({
         <input key={path} type="hidden" name={INQUIRY_ATTACHMENT_REMOVE_FIELD} value={path} />
       ))}
     </fieldset>
-  )
-}
-
-type SelectedFileListProps = {
-  files: readonly File[]
-  isPreparing: boolean
-  onRemove: (index: number) => void
-}
-
-/** 지금 고른 파일. 이름이 전혀 안 보이면 첨부됐는지 알 수 없다. */
-export function SelectedFileList({ files, isPreparing, onRemove }: SelectedFileListProps) {
-  if (isPreparing) {
-    return (
-      <p aria-live="polite" className="text-ink-muted text-[15px]">
-        첨부파일을 준비하는 중입니다…
-      </p>
-    )
-  }
-
-  if (files.length === 0) {
-    return null
-  }
-
-  return (
-    /* 칩의 X 가 어긋난 선택에서 빠져나오는 길이다(잠긴 제출 버튼을 다시 여는 것도 이것이다). */
-    <ul aria-live="polite" className={CHIP_LIST_CLASS}>
-      {files.map((file, index) => (
-        <li key={`${file.name}-${index}`}>
-          <InquiryFileChip
-            name={file.name}
-            size={file.size}
-            removeLabel="첨부 해제"
-            onRemove={() => onRemove(index)}
-          />
-        </li>
-      ))}
-    </ul>
   )
 }

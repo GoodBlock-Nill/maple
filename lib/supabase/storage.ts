@@ -18,64 +18,52 @@ export const STORAGE_BUCKETS = {
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS]
 
 /**
- * 1:1 문의 첨부 제한.
+ * 1:1 문의 첨부 제한 — **형식에 관계없이** 총 5개 · 합계 200MB(오너 지시, 2026-09-14).
  *
- * 버킷(`file_size_limit` 200MiB)이 아니라 **서버 액션의 본문 상한**이 실질적인
- * 천장이다. 첨부는 폼과 함께 `multipart/form-data` 로 서버 액션에 실려 오는데,
- * 본문이 상한을 넘으면 액션이 실행되기도 전에 요청이 500 으로 끊긴다 — 사용자는
- * 필드 오류가 아니라 "A server error occurred" 화면을 보고 입력을 통째로 잃는다.
- * 그래서 코드 쪽 상한을 본문 상한 안쪽으로 잡고, 버킷 값은 그 바깥의 보루로 둔다
- * (버킷은 이메일 수신 첨부도 함께 받으므로 좁히지 않는다).
+ * 종류별 상한(이미지·PDF 3 / 영상 2)과 이미지 개당 5MB · 합계 12MB 는 없앴다. 그
+ * 규칙은 첨부가 지나가는 길이 둘이었기 때문에 생긴 것이다 — 이미지는 서버 액션 본문
+ * (`multipart/form-data`)에, 영상만 버킷으로 직접 갔다. 본문 상한이 곧 이미지 상한이
+ * 어서 "사진은 3장 5MB, 영상은 2편 100MB" 같은 설명하기 어려운 표가 나왔다.
  *
- * 개수 상한은 **이미지·PDF 만** 잰다(오너 지시, 2026-09-11) — 영상은 아래
- * `INQUIRY_VIDEO_MAX_COUNT` 가 따로 갖는다. 둘을 더한 값이 전체 상한
- * `INQUIRY_ATTACHMENT_MAX_TOTAL` 이다.
+ * 이제 **모든 첨부가 같은 길**로 간다. 브라우저가 `<uid>/pending/…` 으로 직접 올리고
+ * 폼에는 경로만 실린다(`lib/supabase/upload-inquiry-file.ts`). 그래서 천장은 본문
+ * 상한이 아니라 버킷의 `file_size_limit`(200MiB)이고, 규칙은 개수 하나와 합계 하나로
+ * 줄었다.
+ *
+ * DB 도 같은 두 숫자만 검사한다 — `inquiries_attachments_max_5` ·
+ * `inquiries_attachments_total_bytes_max_200mb`(마이그레이션 20260914000500).
  */
-export const INQUIRY_FILE_MAX_COUNT = 3
-export const INQUIRY_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024
-export const INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES = 12 * 1024 * 1024
+export const INQUIRY_ATTACHMENT_MAX_COUNT = 5
+
+const MEGABYTE = 1024 * 1024
+
+export const INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES = 200 * MEGABYTE
 
 /**
- * 영상 첨부.
+ * 한 파일의 상한.
  *
- * 위의 합계 상한이 적용되지 않는다 — 영상은 서버 액션 본문을 **거치지 않기**
- * 때문이다. 브라우저가 세션 클라이언트로 버킷에 직접 올리고, 폼은 올라간 오브젝트의
- * 경로만 실어 보낸다(`lib/supabase/upload-inquiry-video.ts`). 그래서 천장은 본문
- * 상한이 아니라 버킷의 `file_size_limit`(200MiB)과 "운영자가 실제로 열어 볼 만한
- * 길이"다. 100MB 는 폰으로 찍은 1~2분짜리 화면 녹화가 들어가는 크기다.
- *
- * 개수는 이미지·PDF 와 **완전히 별도**의 자리를 갖는다(2026-09-11 변경 전에는
- * 전체 상한을 함께 나눠 썼다). 이미지를 3개 다 채운 뒤에도 영상 2개를 더 붙일 수 있다.
+ * 합계와 같은 값이다 — 파일 하나가 합계를 넘을 수는 없으니 이 숫자보다 좁힐 이유가
+ * 없고, 버킷의 `file_size_limit` 과도 같은 천장을 본다. 별도 상수로 두는 이유는
+ * 오류 문구가 "이 파일이 문제다"와 "합쳐서 넘었다"를 다르게 말해야 하기 때문이다.
  */
-export const INQUIRY_VIDEO_MAX_BYTES = 100 * 1024 * 1024
-export const INQUIRY_VIDEO_MAX_COUNT = 2
-
-/**
- * 전체 첨부 상한(이미지·PDF + 영상).
- *
- * `inquiries_attachments_max_5`(마이그레이션 `20260911000600`)와 같은 숫자여야
- * 한다 — DB 는 이 합계와 함께 종류별 상한도 따로 검사한다
- * (`inquiries_attachments_file_kind_max_3` · `inquiries_attachments_video_kind_max_2`).
- */
-export const INQUIRY_ATTACHMENT_MAX_TOTAL = INQUIRY_FILE_MAX_COUNT + INQUIRY_VIDEO_MAX_COUNT
+export const INQUIRY_ATTACHMENT_FILE_MAX_BYTES = INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES
 
 /**
  * `next.config.ts` 의 `experimental.serverActions.bodySizeLimit` 값.
  *
- * 첨부 합계(12MB) + 본문 필드 + multipart 경계 문자열이 들어갈 여유를 둔다.
- * 두 값을 한곳에 적어 두어야 한쪽만 올라가 "검증은 통과하는데 요청이 끊기는"
- * 조합이 생기지 않는다.
+ * 첨부가 더는 본문에 실리지 않으므로(경로 몇 줄의 JSON 만 간다) 기본값 1MB 를 조금
+ * 넘는 선에서 좁게 둔다. 넓게 열어 두면 파일이 다시 본문으로 흘러도 아무도 눈치채지
+ * 못한 채 서버가 한 요청에 그만큼의 메모리를 받아 내게 된다.
  */
-export const SERVER_ACTION_BODY_SIZE_LIMIT = '14mb'
-
-const MEGABYTE = 1024 * 1024
+export const SERVER_ACTION_BODY_SIZE_LIMIT = '2mb'
 
 /* 안내 문구·오류 메시지가 쓰는 MB 표기. 바이트 값과 같은 곳에 두어야 둘이 갈리지 않는다. */
-export const INQUIRY_ATTACHMENT_MAX_MB = Math.floor(INQUIRY_ATTACHMENT_MAX_BYTES / MEGABYTE)
 export const INQUIRY_ATTACHMENT_TOTAL_MAX_MB = Math.floor(
   INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES / MEGABYTE,
 )
-export const INQUIRY_VIDEO_MAX_MB = Math.floor(INQUIRY_VIDEO_MAX_BYTES / MEGABYTE)
+export const INQUIRY_ATTACHMENT_FILE_MAX_MB = Math.floor(
+  INQUIRY_ATTACHMENT_FILE_MAX_BYTES / MEGABYTE,
+)
 
 export const POST_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
@@ -207,11 +195,11 @@ export function isUserScopedPath(path: string, userId: string): boolean {
 }
 
 /* ---------------------------------------------------------------------------
- * inquiry-attachments — 접수 전에 브라우저가 직접 올리는 영상
+ * inquiry-attachments — 접수 전에 브라우저가 직접 올리는 첨부(이미지·PDF·영상)
  * ------------------------------------------------------------------------ */
 
 /**
- * 접수 전 영상이 머무는 폴더 이름.
+ * 접수 전 첨부가 머무는 폴더 이름.
  *
  * 접수된 첨부(`<uid>/<파일명>`)와 **깊이로** 구분된다. 이 한 세그먼트 차이가
  * 두 가지를 결정한다.

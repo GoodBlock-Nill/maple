@@ -41,10 +41,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       /**
-       * 서버 액션 본문 상한. 기본값 1MB 는 휴대폰 사진 한 장에도 못 미쳐서,
-       * 1:1 문의 첨부(`multipart/form-data`)가 액션에 닿기도 전에 500 으로
-       * 끊겼다. 값은 첨부 제한과 함께 `lib/supabase/storage.ts` 가 갖는다 —
-       * 검증 상한과 본문 상한이 갈리면 한쪽만 통과하는 조합이 생긴다.
+       * 서버 액션 본문 상한. 첨부는 더 이상 본문에 실리지 않는다(2026-09-14) —
+       * 이미지·PDF·영상 모두 브라우저가 버킷에 직접 올리고 폼에는 경로 몇 줄의
+       * JSON 만 간다. 그래서 기본값 1MB 를 조금 넘는 선으로 좁혀 둔다. 값은 첨부
+       * 제한과 함께 `lib/supabase/storage.ts` 가 갖는다 — 두 숫자가 한곳에 있어야
+       * 파일이 다시 본문으로 흘렀을 때 눈에 띈다.
        */
       bodySizeLimit: SERVER_ACTION_BODY_SIZE_LIMIT,
     },

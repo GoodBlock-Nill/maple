@@ -1,23 +1,43 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { InquiryAttachmentField } from '@/components/support/InquiryAttachmentField'
 import { INQUIRY_ATTACHMENT_REMOVE_FIELD } from '@/lib/constants/support'
 import {
-  INQUIRY_ATTACHMENT_MAX_BYTES,
-  INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_MAX_COUNT,
+  INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
-  INQUIRY_FILE_MAX_COUNT,
 } from '@/lib/supabase/storage'
 
+import type { InquiryUploadResult } from '@/lib/supabase/upload-inquiry-file'
+
 /**
- * 첨부 입력의 **보내기 전** 검사.
+ * 첨부 입력의 **고르는 순간** 검사.
  *
- * 서버 액션 본문 상한을 넘긴 요청은 액션에 닿지 않아 아무 문구도 돌려줄 수 없다
- * (사용자는 "A server error occurred" 화면을 보고 입력을 통째로 잃는다).
- * 그래서 이 검사는 UX 편의가 아니라 실패를 막는 유일한 지점이다.
+ * 2026-09-14 부터 이미지·PDF·영상이 모두 같은 길(브라우저 → 버킷 직접 업로드)로 가고
+ * 규칙도 하나다 — 형식 불문 5개 · 합계 200MB. 여기서 보는 것은 그 규칙이 화면에서
+ * 그대로 읽히는가, 그리고 어긋난 선택이 제출을 잠그는가다.
+ *
+ * 업로드 자체는 절대 진짜로 돌지 않는다(네트워크·세션이 없다). 진행률·취소·실패
+ * 시나리오는 `InquiryAttachmentUpload.test.tsx` 가 같은 목으로 따로 본다.
  */
+
+const started: { file: File; resolve: (result: InquiryUploadResult) => void }[] = []
+
+vi.mock('@/lib/supabase/upload-inquiry-file', () => ({
+  uploadInquiryFile: (file: File) => {
+    let resolve: (result: InquiryUploadResult) => void = () => undefined
+    const result = new Promise<InquiryUploadResult>((settle) => {
+      resolve = settle
+    })
+
+    started.push({ file, resolve })
+
+    return { result, abort: vi.fn() }
+  },
+  deleteInquiryPendingFile: vi.fn(),
+}))
 
 /** 크기만 다른 가짜 파일. jsdom 은 실제 바이트를 들고 있지 않아도 size 를 흉내 낼 수 있다. */
 function fileOf(name: string, type: string, size: number): File {
@@ -32,18 +52,29 @@ function fileInput(): HTMLInputElement {
   return screen.getByLabelText('파일 선택')
 }
 
+function existingImages(count: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    name: `old${index}.png`,
+    path: `uid/old${index}.png`,
+    size: 1024,
+    mimeType: 'image/png',
+  }))
+}
+
+beforeEach(() => {
+  started.length = 0
+})
+
 describe('InquiryAttachmentField', () => {
-  it('should state the real limits next to the button', () => {
+  it('should state one rule for every format next to the button', () => {
     // Arrange & Act — 안내와 실제 제한이 갈리면 사용자는 "된다고 적힌 파일"을 고르고 실패한다.
     render(<InquiryAttachmentField attachments={[]} error={undefined} />)
 
     // Assert
     expect(
       screen.getByText(
-        new RegExp(
-          `이미지·PDF ${INQUIRY_ATTACHMENT_MAX_MB}MB/개 · 최대 ${INQUIRY_FILE_MAX_COUNT}개 · ` +
-            `총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`,
-        ),
+        `이미지·PDF·영상 형식에 관계없이 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개 · ` +
+          `총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`,
       ),
     ).toBeInTheDocument()
   })
@@ -68,70 +99,52 @@ describe('InquiryAttachmentField', () => {
     expect(await screen.findByText('shot.png')).toBeInTheDocument()
   })
 
-  it('should reject a file over the per-file limit and lock submission', async () => {
+  it('should show how much of the shared budget is used', async () => {
+    // Arrange — 상한이 하나뿐이라 "몇 개 · 얼마"를 한 줄로 읽을 수 있어야 한다.
+    const user = userEvent.setup()
+    render(<InquiryAttachmentField attachments={existingImages(1)} error={undefined} />)
+
+    // Act
+    await user.upload(fileInput(), fileOf('clip.mp4', 'video/mp4', 3 * 1024 * 1024))
+
+    // Assert — 기존 1개(1KB) + 새 1개(3.0MB).
+    expect(
+      await screen.findByText(`2/${INQUIRY_ATTACHMENT_MAX_COUNT} · 3.0MB/200MB`),
+    ).toBeInTheDocument()
+  })
+
+  it('should accept a mix of five files of any format', async () => {
+    // Arrange — 예전 규칙(이미지 3 + 영상 2)이면 이 조합이 거절됐다.
+    const user = userEvent.setup()
+    render(<InquiryAttachmentField attachments={[]} error={undefined} />)
+
+    // Act
+    await user.upload(fileInput(), [
+      fileOf('a.mp4', 'video/mp4', 1024),
+      fileOf('b.mp4', 'video/mp4', 1024),
+      fileOf('c.mp4', 'video/mp4', 1024),
+      fileOf('d.png', 'image/png', 1024),
+      fileOf('e.pdf', 'application/pdf', 1024),
+    ])
+
+    // Assert
+    await waitFor(() => {
+      expect(started).toHaveLength(5)
+    })
+    expect(screen.queryByText(/최대.*개까지/u)).not.toBeInTheDocument()
+  })
+
+  it('should reject the sixth file and lock submission', async () => {
     // Arrange
     const user = userEvent.setup()
     const onBlockedChange = vi.fn()
     render(
       <InquiryAttachmentField
-        attachments={[]}
+        attachments={existingImages(5)}
         error={undefined}
         onBlockedChange={onBlockedChange}
       />,
     )
-
-    // Act
-    await user.upload(
-      fileInput(),
-      fileOf('photo.jpg', 'image/jpeg', INQUIRY_ATTACHMENT_MAX_BYTES + 1),
-    )
-
-    // Assert — 어느 파일이 문제인지 한국어로 알려 주고, 첨부가 조용히 빠진 접수를 막는다.
-    expect(
-      await screen.findByText(new RegExp(`photo.jpg .*${INQUIRY_ATTACHMENT_MAX_MB}MB`)),
-    ).toBeInTheDocument()
-    await waitFor(() => {
-      expect(onBlockedChange).toHaveBeenLastCalledWith(true)
-    })
-  })
-
-  it('should unlock submission when the bad chip is removed', async () => {
-    // Arrange — 첨부를 포기하는 길이 없으면 잠긴 폼에서 빠져나올 수 없다.
-    const user = userEvent.setup()
-    const onBlockedChange = vi.fn()
-    render(
-      <InquiryAttachmentField
-        attachments={[]}
-        error={undefined}
-        onBlockedChange={onBlockedChange}
-      />,
-    )
-    await user.upload(
-      fileInput(),
-      fileOf('photo.jpg', 'image/jpeg', INQUIRY_ATTACHMENT_MAX_BYTES + 1),
-    )
-
-    // Act — 칩의 X 가 어긋난 선택에서 빠져나오는 길이다.
-    await user.click(await screen.findByRole('button', { name: 'photo.jpg 첨부 해제' }))
-
-    /* Assert — 파일 목록 자체가 비는지는 브라우저 동작이라 e2e
-       (`tests/e2e/support-inquiries.spec.ts`)가 본다. 여기서는 화면과 잠금을 본다. */
-    expect(screen.queryByText(/photo.jpg/u)).not.toBeInTheDocument()
-    await waitFor(() => {
-      expect(onBlockedChange).toHaveBeenLastCalledWith(false)
-    })
-  })
-
-  it('should reject a fourth file when three are already attached', async () => {
-    // Arrange — 개수 제한은 DB CHECK(`inquiries_attachments_file_kind_max_3`)와 같아야 한다.
-    const user = userEvent.setup()
-    const existing = [1, 2, 3].map((index) => ({
-      name: `old${index}.png`,
-      path: `uid/old${index}.png`,
-      size: 1024,
-      mimeType: 'image/png',
-    }))
-    render(<InquiryAttachmentField attachments={existing} error={undefined} />)
 
     // Act
     await user.upload(fileInput(), fileOf('new.png', 'image/png', 1024))
@@ -139,53 +152,43 @@ describe('InquiryAttachmentField', () => {
     // Assert
     expect(
       await screen.findByText(
-        `이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`,
+        `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개까지 올릴 수 있습니다.`,
       ),
     ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(onBlockedChange).toHaveBeenLastCalledWith(true)
+    })
   })
 
   it('should count an existing attachment marked for removal as freed up', async () => {
     // Arrange — "하나 빼고 하나 넣기"는 정상 동작이라 막지 않는다.
     const user = userEvent.setup()
-    const existing = [1, 2, 3].map((index) => ({
-      name: `old${index}.png`,
-      path: `uid/old${index}.png`,
-      size: 1024,
-      mimeType: 'image/png',
-    }))
-    render(<InquiryAttachmentField attachments={existing} error={undefined} />)
+    render(<InquiryAttachmentField attachments={existingImages(5)} error={undefined} />)
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'old1.png 삭제' }))
+    await user.click(screen.getByRole('button', { name: 'old0.png 삭제' }))
     await user.upload(fileInput(), fileOf('new.png', 'image/png', 1024))
 
     // Assert
     expect(await screen.findByText('new.png')).toBeInTheDocument()
-    expect(
-      screen.queryByText(`이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/최대.*개까지/u)).not.toBeInTheDocument()
   })
 
-  it('should lock submission while it prepares the files', async () => {
-    // Arrange
+  it('should reject a selection over the total budget and name the limit', async () => {
+    // Arrange — 파일 하나가 합계를 통째로 넘긴다.
     const user = userEvent.setup()
-    const onBlockedChange = vi.fn()
-    render(
-      <InquiryAttachmentField
-        attachments={[]}
-        error={undefined}
-        onBlockedChange={onBlockedChange}
-      />,
-    )
+    render(<InquiryAttachmentField attachments={[]} error={undefined} />)
 
     // Act
-    await user.upload(fileInput(), fileOf('shot.png', 'image/png', 2048))
+    await user.upload(
+      fileInput(),
+      fileOf('huge.mp4', 'video/mp4', INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES + 1),
+    )
 
-    // Assert — 준비가 끝나면 다시 열린다(잠금이 남으면 접수 자체가 막힌다).
-    await waitFor(() => {
-      expect(onBlockedChange).toHaveBeenLastCalledWith(false)
-    })
-    expect(onBlockedChange).toHaveBeenCalledWith(true)
+    // Assert
+    expect(
+      await screen.findByText(new RegExp(`huge.mp4 .*${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`, 'u')),
+    ).toBeInTheDocument()
   })
 
   it('should keep showing the server-side error until a new pick', () => {
@@ -222,5 +225,19 @@ describe('InquiryAttachmentField', () => {
     expect(screen.queryByText('old.png')).not.toBeInTheDocument()
     expect(removedInputs()).toHaveLength(1)
     expect((removedInputs()[0] as HTMLInputElement).value).toBe('uid/old.png')
+  })
+
+  it('should not send the picked files in the form body', async () => {
+    /* Arrange — 파일이 input 에 남으면 서버 액션 본문(2mb)에 실려 나가 요청이
+       액션에 닿기도 전에 끊긴다. 파일은 이미 버킷에 있다. */
+    const user = userEvent.setup()
+    render(<InquiryAttachmentField attachments={[]} error={undefined} />)
+
+    // Act
+    await user.upload(fileInput(), fileOf('shot.png', 'image/png', 2048))
+
+    // Assert
+    expect(fileInput().name).toBe('')
+    expect(fileInput().files?.length ?? -1).toBe(0)
   })
 })

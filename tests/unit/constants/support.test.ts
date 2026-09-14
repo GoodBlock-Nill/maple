@@ -11,11 +11,8 @@ import { INQUIRY_KINDS } from '@/lib/constants/inquiry-kind'
 import { INQUIRY_PAGE_SIZE, MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { SUPPORT_MENU } from '@/lib/constants/support-menu'
 import {
-  INQUIRY_ATTACHMENT_MAX_MB,
+  INQUIRY_ATTACHMENT_MAX_COUNT,
   INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
-  INQUIRY_FILE_MAX_COUNT,
-  INQUIRY_VIDEO_MAX_COUNT,
-  INQUIRY_VIDEO_MAX_MB,
 } from '@/lib/supabase/storage'
 import { getTotalPages } from '@/lib/utils/pagination'
 
@@ -159,22 +156,25 @@ describe('INQUIRY_PAGE_SIZE', () => {
 })
 
 describe('ATTACHMENT_NOTICE_LINES', () => {
-  it('should compose the limits from the storage constants', () => {
-    /* Arrange & Act & Assert — 안내와 실제 제한이 갈리면 사용자는 "된다고 적힌
-       파일"을 고르고 오류를 본다. 숫자는 전부 검증 상수에서 나온다. */
+  it('should state one rule for every format', () => {
+    /* Arrange & Act & Assert — 2026-09-14 부터 종류별 표가 없다. 안내가 옛 문구로
+       돌아가면 사용자는 "사진은 3장"을 믿고 네 번째에서 막힌다. 숫자는 전부 검증
+       상수에서 나온다. */
     const [limits] = ATTACHMENT_NOTICE_LINES
 
-    expect(limits).toContain(`이미지·PDF ${INQUIRY_ATTACHMENT_MAX_MB}MB/개`)
-    expect(limits).toContain(`최대 ${INQUIRY_FILE_MAX_COUNT}개`)
-    expect(limits).toContain(`총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`)
-    expect(limits).toContain(`영상 ${INQUIRY_VIDEO_MAX_MB}MB/개`)
-    expect(limits).toContain(`최대 ${INQUIRY_VIDEO_MAX_COUNT}개`)
-    expect(limits).toContain(`총 ${INQUIRY_VIDEO_MAX_MB * INQUIRY_VIDEO_MAX_COUNT}MB`)
+    expect(limits).toBe(
+      `이미지·PDF·영상 형식에 관계없이 최대 ${INQUIRY_ATTACHMENT_MAX_COUNT}개 · ` +
+        `총 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`,
+    )
+    /* 옛 문구의 흔적(종류별 개수·용량)이 남아 있으면 안 된다. */
+    expect(limits).not.toContain('MB/개')
+    expect(limits).not.toContain('최대 3개')
+    expect(limits).not.toContain('최대 2개')
   })
 
   it('should list the accepted formats on a second line', () => {
     // Arrange & Act & Assert — 확장자 목록도 검증 상수(MIME)에서 뽑는다.
     expect(ATTACHMENT_NOTICE_LINES).toHaveLength(2)
-    expect(ATTACHMENT_NOTICE_LINES[1]).toBe('(PNG, JPG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)')
+    expect(ATTACHMENT_NOTICE_LINES[1]).toBe('(JPG, PNG, GIF, WEBP, PDF · MP4, MOV, WEBM, M4V)')
   })
 })

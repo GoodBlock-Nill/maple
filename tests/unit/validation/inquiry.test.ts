@@ -1,36 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  INQUIRY_ATTACHMENT_MAX_BYTES,
-  INQUIRY_ATTACHMENT_MAX_MB,
-  INQUIRY_ATTACHMENT_MAX_TOTAL,
-  INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
-  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
-  INQUIRY_FILE_MAX_COUNT,
-  SERVER_ACTION_BODY_SIZE_LIMIT,
-} from '@/lib/supabase/storage'
-import {
   ACCOUNT_ID_MAX,
   createInquirySchema,
-  INQUIRY_ATTACHMENT_ACCEPT,
   INQUIRY_CONTENT_MAX,
   inquiryIdSchema,
   isInquiryFormFilled,
   normalizeCRLF,
   updateInquirySchema,
-  validateInquiryAttachments,
 } from '@/lib/validation/inquiry'
 
 import { INQUIRY_SUBTYPE_FALLBACK } from '@/lib/utils/inquiry-subtypes'
 
 import type { InquiryCategoryChoice } from '@/lib/utils/inquiry-subtypes'
-
-/** `next.config.ts` 가 넘기는 문자열(`'14mb'`)을 바이트로 되돌린다. */
-function bodyLimitBytes(): number {
-  const match = /^(\d+)mb$/u.exec(SERVER_ACTION_BODY_SIZE_LIMIT)
-
-  return Number(match?.[1] ?? 0) * 1024 * 1024
-}
 
 /**
  * 활성 카테고리는 DB 가 소유한다. 스키마는 호출 시점에 이 목록(라벨 + 그 카테고리의
@@ -256,104 +238,6 @@ describe('createInquirySchema CRLF normalization', () => {
   })
 })
 
-describe('validateInquiryAttachments', () => {
-  const png = { name: 'shot.png', type: 'image/png', size: 1024 }
-
-  it('should accept up to three allowed files', () => {
-    // Arrange & Act
-    const result = validateInquiryAttachments([png, png, png])
-
-    // Assert
-    expect(result.ok).toBe(true)
-  })
-
-  it('should reject a fourth file', () => {
-    // Arrange & Act
-    const result = validateInquiryAttachments([png, png, png, png])
-
-    // Assert — 버킷 제한과 같은 규칙을 앞단에서 한국어로 돌려준다.
-    expect(result).toEqual({
-      ok: false,
-      message: `이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`,
-    })
-  })
-
-  it('should reject unsupported types', () => {
-    // Arrange & Act — 버킷은 이메일 첨부 때문에 zip 을 받지만 웹 폼은 받지 않는다.
-    const result = validateInquiryAttachments([
-      { name: 'a.zip', type: 'application/zip', size: 10 },
-    ])
-
-    // Assert
-    expect(result.ok).toBe(false)
-  })
-
-  it('should accept webp because the bucket allows it', () => {
-    // Arrange & Act — 캡처 도구·모바일이 만드는 형식이라 "이 사진만 안 되는" 일이 없게 한다.
-    const result = validateInquiryAttachments([
-      { name: 'shot.webp', type: 'image/webp', size: 2048 },
-    ])
-
-    // Assert
-    expect(result.ok).toBe(true)
-  })
-
-  it('should reject empty files', () => {
-    // Arrange & Act — 0바이트 오브젝트가 스토리지에 남으면 답변자가 열 수 없다.
-    const result = validateInquiryAttachments([{ ...png, size: 0 }])
-
-    // Assert
-    expect(result.ok).toBe(false)
-  })
-
-  it('should reject a file over the per-file limit and name it', () => {
-    // Arrange & Act
-    const result = validateInquiryAttachments([
-      { ...png, name: 'photo.jpg', type: 'image/jpeg', size: INQUIRY_ATTACHMENT_MAX_BYTES + 1 },
-    ])
-
-    // Assert — 어느 파일이 문제인지 알려 줘야 사용자가 다시 고를 수 있다.
-    expect(result.ok).toBe(false)
-    expect(result.ok === false && result.message).toContain('photo.jpg')
-    expect(result.ok === false && result.message).toContain(`${INQUIRY_ATTACHMENT_MAX_MB}MB`)
-  })
-
-  it('should reject a selection whose total exceeds the server action body limit', () => {
-    // Arrange — 개별 파일은 상한 이내지만 합치면 본문 상한을 넘긴다. 여기서 막지 않으면
-    // 요청이 액션에 닿기도 전에 끊겨 사용자는 필드 오류 대신 오류 화면을 본다.
-    const big = { ...png, type: 'image/jpeg', size: INQUIRY_ATTACHMENT_MAX_BYTES }
-
-    // Act
-    const result = validateInquiryAttachments([big, big, big])
-
-    // Assert
-    expect(result.ok).toBe(false)
-    expect(result.ok === false && result.message).toContain(`${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB`)
-  })
-
-  it('should keep every per-file limit inside the server action body limit', () => {
-    // Arrange & Act — 규칙이 서로 어긋나면 "검증은 통과하는데 요청이 끊기는" 조합이 생긴다.
-    const budget = INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES
-
-    // Assert
-    expect(INQUIRY_ATTACHMENT_MAX_BYTES).toBeLessThanOrEqual(budget)
-    expect(budget).toBeLessThan(bodyLimitBytes())
-  })
-})
-
-describe('INQUIRY_ATTACHMENT_ACCEPT', () => {
-  it('should list MIME types as well as extensions', () => {
-    // Arrange & Act — 확장자만 주면 일부 모바일 브라우저가 사진 선택을 잠근다.
-    const accept = INQUIRY_ATTACHMENT_ACCEPT.split(',')
-
-    // Assert
-    expect(accept).toContain('image/jpeg')
-    expect(accept).toContain('image/webp')
-    expect(accept).toContain('.jpg')
-    expect(accept).toContain('.pdf')
-  })
-})
-
 describe('updateInquirySchema', () => {
   it('should accept the same values as 접수 without asking for consent again', () => {
     // Arrange — 동의는 접수 시점에 이미 받아 privacy_consent 로 저장돼 있다.
@@ -464,61 +348,5 @@ describe('inquiryIdSchema', () => {
     // Arrange & Act & Assert — uuid 가 아닌 id 로 조회하면 postgres 가 22P02 를 던진다.
     expect(inquiryIdSchema.safeParse('33333333-0000-4000-8000-000000000001').success).toBe(true)
     expect(inquiryIdSchema.safeParse('not-a-uuid').success).toBe(false)
-  })
-})
-
-describe('validateInquiryAttachments with kept files', () => {
-  const file = { name: 'shot.png', type: 'image/png', size: 1024 }
-
-  it('should count the attachments kept in the edit form against the limit', () => {
-    // Arrange & Act — DB CHECK(inquiries_attachments_file_kind_max_3)와 같은 한도를 앞단에서 잰다.
-    const withinLimit = validateInquiryAttachments([file], 2)
-    const overLimit = validateInquiryAttachments([file, file], 2)
-
-    // Assert
-    expect(withinLimit.ok).toBe(true)
-    expect(overLimit.ok).toBe(false)
-  })
-
-  it('should default to counting only the new files', () => {
-    // Arrange & Act & Assert — 접수 화면은 남길 첨부가 없다.
-    expect(validateInquiryAttachments([file, file, file]).ok).toBe(true)
-  })
-})
-
-/**
- * 이미지·PDF 개수(3)와 영상 개수(2)는 각자 자리를 쓴다(2026-09-11 오너 지시).
- * 둘을 합친 전체 상한(5)도 DB CHECK 셋(`inquiries_attachments_max_5` ·
- * `inquiries_attachments_file_kind_max_3` · `inquiries_attachments_video_kind_max_2`)과
- * 같은 숫자여야 한다.
- */
-describe('validateInquiryAttachments count matrix', () => {
-  const file = { name: 'shot.png', type: 'image/png', size: 1024 }
-
-  it('should accept three images alone', () => {
-    // Arrange & Act & Assert
-    expect(validateInquiryAttachments([file, file, file]).ok).toBe(true)
-  })
-
-  it('should reject a fourth image', () => {
-    // Arrange & Act & Assert
-    expect(validateInquiryAttachments([file, file, file, file]).ok).toBe(false)
-  })
-
-  it('should accept three images together with two already-attached videos', () => {
-    // Arrange & Act — 이미지 3개(새로 고름) + 영상 2개(기존 첨부 또는 업로드 완료).
-    const result = validateInquiryAttachments([file, file, file], 0, 2)
-
-    // Assert — 3 + 2 = 5, 전체 상한과 같다.
-    expect(result.ok).toBe(true)
-  })
-
-  it('should reject a selection whose combined count exceeds the overall total', () => {
-    // Arrange & Act — 이미지 3개(파일 상한 이내) + 영상 3개(전체 상한을 넘긴다).
-    const result = validateInquiryAttachments([file, file, file], 0, 3)
-
-    // Assert — 종류별 상한과 별개로 합계 상한(5)도 지킨다.
-    expect(result.ok).toBe(false)
-    expect(result.ok === false && result.message).toContain(`${INQUIRY_ATTACHMENT_MAX_TOTAL}`)
   })
 })

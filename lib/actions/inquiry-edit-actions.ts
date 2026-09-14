@@ -4,17 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
+import { removeAttachments, splitAttachments } from '@/lib/actions/inquiry-attachments'
 import {
-  readFiles,
-  removeAttachments,
-  splitAttachments,
-  uploadAttachments,
-} from '@/lib/actions/inquiry-attachments'
-import {
-  claimFormVideos,
-  readPendingVideos,
-  VIDEO_FORM_INVALID_MESSAGE,
-} from '@/lib/actions/inquiry-videos'
+  claimFormUploads,
+  readPendingUploads,
+  UPLOAD_FORM_INVALID_MESSAGE,
+} from '@/lib/actions/inquiry-uploads'
 import { isRlsViolation } from '@/lib/actions/pg-error'
 import {
   cooldownMessage,
@@ -34,12 +29,8 @@ import { getInquiryCategories } from '@/lib/data/inquiry-categories'
 import { createClient } from '@/lib/supabase/server'
 import { canCancelInquiry, canEditInquiry } from '@/lib/utils/inquiry-permissions'
 import { withLegacyCategory } from '@/lib/utils/inquiry-prefill'
-import {
-  inquiryIdSchema,
-  updateInquirySchema,
-  validateInquiryAttachments,
-} from '@/lib/validation/inquiry'
-import { isVideoAttachment } from '@/lib/validation/inquiry-video'
+import { inquiryIdSchema, updateInquirySchema } from '@/lib/validation/inquiry'
+import { toUploadCandidates, validateInquiryAttachments } from '@/lib/validation/inquiry-upload'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { CurrentUser } from '@/lib/auth/current-user'
@@ -203,23 +194,15 @@ export async function updateInquiry(
   }
 
   const { kept, removed } = splitAttachments(guard.inquiry.attachments, formData)
-  const files = readFiles(formData, 'attachments')
-  /* 영상은 접수와 같은 길로 들어온다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
-     싣는다. 개수 제한은 남길 기존 첨부까지 합쳐서 센다. 이미지·PDF 와 영상은 각자
-     자리를 쓰므로(2026-09-11) 남기는 것도 종류별로 나눠 센다. */
-  const keptFileCount = kept.filter((attachment) => !isVideoAttachment(attachment.mimeType)).length
-  const keptVideoCount = kept.length - keptFileCount
-  const videos = readPendingVideos(formData)
+  /* 첨부는 접수와 같은 길로 들어온다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
+     싣는다. 개수도 합계도 **남길 기존 첨부까지 합쳐서** 센다(형식은 가리지 않는다). */
+  const uploads = readPendingUploads(formData)
 
-  if (videos === null) {
-    return { fieldErrors: { attachments: VIDEO_FORM_INVALID_MESSAGE } }
+  if (uploads === null) {
+    return { fieldErrors: { attachments: UPLOAD_FORM_INVALID_MESSAGE } }
   }
 
-  const attachmentCheck = validateInquiryAttachments(
-    files,
-    keptFileCount,
-    keptVideoCount + videos.length,
-  )
+  const attachmentCheck = validateInquiryAttachments(kept, toUploadCandidates(uploads))
 
   if (!attachmentCheck.ok) {
     return { fieldErrors: { attachments: attachmentCheck.message } }
@@ -235,17 +218,9 @@ export async function updateInquiry(
     return { formError: cooldownMessage(waitSeconds) }
   }
 
-  const uploaded = await uploadAttachments(guard.supabase, guard.user.id, files)
-
-  if (!uploaded.ok) {
-    return { formError: uploaded.message }
-  }
-
-  const claimed = await claimFormVideos(guard.user.id, videos)
+  const claimed = await claimFormUploads(guard.user.id, uploads, kept)
 
   if (!claimed.ok) {
-    await removeAttachments(guard.supabase, uploaded.attachments)
-
     return { fieldErrors: { attachments: claimed.message } }
   }
 
@@ -257,14 +232,13 @@ export async function updateInquiry(
       type: parsed.data.type,
       title: parsed.data.title,
       content: parsed.data.content,
-      attachments: [...kept, ...uploaded.attachments, ...claimed.claim.attachments],
+      attachments: [...kept, ...claimed.claim.attachments],
     })
     .eq('id', id)
     .eq('user_id', guard.user.id)
 
   if (error !== null) {
-    // 방금 올린 파일만 되돌린다. 기존 첨부는 아직 행이 참조하고 있다.
-    await removeAttachments(guard.supabase, uploaded.attachments)
+    // 방금 확정한 파일만 되돌린다. 기존 첨부는 아직 행이 참조하고 있다.
     await claimed.claim.rollback()
 
     /* 42501 은 RLS 거절이자 DB 가드의 거절 코드다. 그 사이에 상태가 올라갔다는

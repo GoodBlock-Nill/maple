@@ -4,13 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField } from '@/lib/actions/form-state'
-import { readFiles, removeAttachments, uploadAttachments } from '@/lib/actions/inquiry-attachments'
 import { getLatestInquiryWriteAt } from '@/lib/actions/inquiry-cooldown'
 import {
-  claimFormVideos,
-  readPendingVideos,
-  VIDEO_FORM_INVALID_MESSAGE,
-} from '@/lib/actions/inquiry-videos'
+  claimFormUploads,
+  readPendingUploads,
+  UPLOAD_FORM_INVALID_MESSAGE,
+} from '@/lib/actions/inquiry-uploads'
 import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
@@ -25,16 +24,13 @@ import {
 import { MY_INQUIRIES_PATH } from '@/lib/constants/support'
 import { createClient } from '@/lib/supabase/server'
 import { parseUserReplyResult, userReplyErrorMessage } from '@/lib/utils/inquiry-thread'
-import {
-  inquiryIdSchema,
-  normalizeCRLF,
-  validateInquiryAttachments,
-} from '@/lib/validation/inquiry'
+import { inquiryIdSchema, normalizeCRLF } from '@/lib/validation/inquiry'
+import { toUploadCandidates, validateInquiryAttachments } from '@/lib/validation/inquiry-upload'
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { TypedSupabaseClient } from '@/lib/supabase/types'
 import type { UserReplyResult } from '@/lib/utils/inquiry-thread'
-import type { PendingInquiryVideo } from '@/lib/validation/inquiry-video'
+import type { PendingInquiryUpload } from '@/lib/validation/inquiry-upload'
 import type { InquiryAttachment } from '@/types/domain'
 
 /**
@@ -51,8 +47,7 @@ import type { InquiryAttachment } from '@/types/domain'
 
 type ReplyInput = {
   content: string
-  files: readonly File[]
-  videos: readonly PendingInquiryVideo[]
+  uploads: readonly PendingInquiryUpload[]
 }
 
 type ReplyInputResult = { ok: true; input: ReplyInput } | { ok: false; state: FormState }
@@ -74,22 +69,21 @@ function readReplyInput(formData: FormData): ReplyInputResult {
     return { ok: false, state: { fieldErrors: { content: INQUIRY_USER_REPLY_TOO_LONG_MESSAGE } } }
   }
 
-  const files = readFiles(formData, 'attachments')
-  /* 영상은 본문에 실려 오지 않는다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
+  /* 첨부는 본문에 실려 오지 않는다 — 브라우저가 버킷에 직접 올리고 폼은 경로만
      싣는다. `null` 은 "모양이 어긋남"이라 빈 목록과 구분해야 한다. */
-  const videos = readPendingVideos(formData)
+  const uploads = readPendingUploads(formData)
 
-  if (videos === null) {
-    return { ok: false, state: { fieldErrors: { attachments: VIDEO_FORM_INVALID_MESSAGE } } }
+  if (uploads === null) {
+    return { ok: false, state: { fieldErrors: { attachments: UPLOAD_FORM_INVALID_MESSAGE } } }
   }
 
-  const check = validateInquiryAttachments(files, 0, videos.length)
+  const check = validateInquiryAttachments([], toUploadCandidates(uploads))
 
   if (!check.ok) {
     return { ok: false, state: { fieldErrors: { attachments: check.message } } }
   }
 
-  return { ok: true, input: { content, files, videos } }
+  return { ok: true, input: { content, uploads } }
 }
 
 /** RPC 실패 코드를 폼 상태로 옮긴다. 고칠 칸이 있는 코드만 필드 오류가 된다. */
@@ -137,7 +131,7 @@ type SendResult = { ok: true } | { ok: false; state: FormState }
 /**
  * 첨부를 확정하고 RPC 를 부른다.
  *
- * 실패하면 **방금 올린 것만** 되돌린다 — 답장이 남지 않았는데 오브젝트만 남으면
+ * 실패하면 **방금 확정한 것만** 되돌린다 — 답장이 남지 않았는데 오브젝트만 남으면
  * 어떤 행도 참조하지 않는 파일이 비공개 버킷에 쌓인다(접수 액션과 같은 패턴).
  */
 async function sendReply(
@@ -146,27 +140,20 @@ async function sendReply(
   inquiryId: string,
   input: ReplyInput,
 ): Promise<SendResult> {
-  const uploaded = await uploadAttachments(supabase, userId, input.files)
-
-  if (!uploaded.ok) {
-    return { ok: false, state: { formError: uploaded.message } }
-  }
-
-  const claimed = await claimFormVideos(userId, input.videos)
+  const claimed = await claimFormUploads(userId, input.uploads)
 
   if (!claimed.ok) {
-    await removeAttachments(supabase, uploaded.attachments)
-
     return { ok: false, state: { fieldErrors: { attachments: claimed.message } } }
   }
 
-  const result = await callUserReplyRpc(supabase, inquiryId, input.content, [
-    ...uploaded.attachments,
-    ...claimed.claim.attachments,
-  ])
+  const result = await callUserReplyRpc(
+    supabase,
+    inquiryId,
+    input.content,
+    claimed.claim.attachments,
+  )
 
   if (!result.ok) {
-    await removeAttachments(supabase, uploaded.attachments)
     await claimed.claim.rollback()
 
     return { ok: false, state: toFailureState(result.code) }

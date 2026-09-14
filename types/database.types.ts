@@ -1362,6 +1362,10 @@ export type Database = {
         Args: { p_attachments: Json; p_is_video: boolean }
         Returns: number
       }
+      inquiry_attachments_total_bytes: {
+        Args: { p_attachments: Json }
+        Returns: number
+      }
       inquiry_category_usage: {
         Args: never
         Returns: {

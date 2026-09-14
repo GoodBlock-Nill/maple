@@ -1,15 +1,6 @@
 import { z } from 'zod'
 
 import { allowedInquiryTypes } from '@/lib/utils/inquiry-subtypes'
-import {
-  INQUIRY_ATTACHMENT_MAX_BYTES,
-  INQUIRY_ATTACHMENT_MAX_MB,
-  INQUIRY_ATTACHMENT_MAX_TOTAL,
-  INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES,
-  INQUIRY_ATTACHMENT_TOTAL_MAX_MB,
-  INQUIRY_FILE_MAX_COUNT,
-} from '@/lib/supabase/storage'
-import { INQUIRY_VIDEO_EXTENSIONS, INQUIRY_VIDEO_MIME_TYPES } from '@/lib/validation/inquiry-video'
 
 import type { InquiryCategoryChoice } from '@/lib/utils/inquiry-subtypes'
 
@@ -56,39 +47,6 @@ export const ACCOUNT_ID_MAX = 40
 export const ACCOUNT_ID_PATTERN = /^[A-Za-z0-9_-]{2,40}$/u
 
 const ACCOUNT_ID_MESSAGE = `계정 ID는 영문·숫자·_·- 로 ${ACCOUNT_ID_MIN}~${ACCOUNT_ID_MAX}자로 입력해 주세요.`
-
-/**
- * 웹 폼이 받는 형식. 버킷(마이그레이션 20260909000300)은 zip · txt 까지 열려 있지만
- * 그쪽은 **이메일로 들어오는 첨부**를 담기 위한 것이라 여기서는 일부러 좁게 둔다.
- * 대신 버킷이 허용하는 이미지 형식(webp 포함)은 모두 받는다 — 휴대폰·캡처 도구가
- * 만드는 파일이라 "왜 이 사진만 안 되지"가 생기지 않게 한다.
- */
-export const INQUIRY_ATTACHMENT_MIME_TYPES: readonly string[] = [
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-]
-
-/**
- * 파일 선택 대화상자에 넘길 `accept`.
- *
- * 확장자만 주면 일부 모바일 브라우저가 사진을 잠그고, MIME 만 주면 확장자로만
- * 판단하는 환경이 파일을 잠근다 — 그래서 둘 다 적는다. 영상 형식도 여기에 들어가야
- * 픽셀/아이폰의 갤러리 선택기가 동영상 탭을 함께 보여 준다.
- */
-export const INQUIRY_ATTACHMENT_ACCEPT = [
-  ...INQUIRY_ATTACHMENT_MIME_TYPES,
-  ...INQUIRY_VIDEO_MIME_TYPES,
-  '.jpg',
-  '.jpeg',
-  '.png',
-  '.gif',
-  '.webp',
-  '.pdf',
-  ...INQUIRY_VIDEO_EXTENSIONS,
-].join(',')
 
 /**
  * 세부 유형 오류 문구.
@@ -251,77 +209,4 @@ export function isInquiryFormFilled(formData: FormData, requireConsent: boolean)
   /* 체크박스는 체크했을 때만 FormData 에 담긴다. 값이 아니라 존재 여부로 판단한다
      (수정 화면에는 아예 없다 — 동의는 접수 시점에 이미 받았다). */
   return filled && (!requireConsent || formData.get('consent') !== null)
-}
-
-export type InquiryAttachmentCheck = { ok: true } | { ok: false; message: string }
-
-/** 파일 객체의 필요한 부분만 본다(File 없이도 단위 테스트할 수 있게). */
-export type UploadCandidate = { name: string; type: string; size: number }
-
-function totalBytes(files: readonly UploadCandidate[]): number {
-  return files.reduce((sum, file) => sum + file.size, 0)
-}
-
-/**
- * 첨부 검증. 버킷에도 개수·용량·MIME 제한이 있지만 거기서 걸리면 사용자는 영문
- * 스토리지 오류만 본다. 같은 규칙을 앞단에서 재서 한국어 안내를 돌려준다.
- *
- * 합계 제한은 버킷이 아니라 서버 액션 본문 상한 때문에 있다. 합계가 상한을 넘으면
- * 액션이 실행되지 않아 **아무 메시지도 돌려줄 수 없으므로**, 폼이 보내기 전에
- * 여기서 먼저 걸러야 한다(`InquiryAttachmentField` 가 같은 함수를 부른다).
- *
- * `files` 는 이미지·PDF 만 받는다(영상은 이 함수에 실리지 않고 `validateInquiryVideo`
- * 가 따로 본다). 개수는 이미지·PDF 와 영상이 **각자 자리**를 쓰므로(2026-09-11
- * 오너 지시) 종류별 상한을 먼저 보고, 그다음 둘을 합친 전체 상한을 한 번 더 본다 —
- * DB CHECK 도 같은 순서로 셋을 나눠 둔다(`inquiries_attachments_file_kind_max_3` ·
- * `inquiries_attachments_video_kind_max_2` · `inquiries_attachments_max_5`).
- */
-export function validateInquiryAttachments(
-  files: readonly UploadCandidate[],
-  /* 수정 화면에서 그대로 두는 기존 "이미지·PDF" 첨부 수(영상은 넣지 않는다). */
-  keptFileCount = 0,
-  /* 이미 확정됐거나(기존 첨부) 지금 올리는 중인 영상 수. 본문에는 실리지 않지만
-     같은 문의의 첨부라 전체 상한에는 함께 들어간다. */
-  videoCount = 0,
-): InquiryAttachmentCheck {
-  if (files.length + keptFileCount > INQUIRY_FILE_MAX_COUNT) {
-    return {
-      ok: false,
-      message: `이미지·PDF는 최대 ${INQUIRY_FILE_MAX_COUNT}개까지 첨부할 수 있습니다.`,
-    }
-  }
-
-  if (files.length + keptFileCount + videoCount > INQUIRY_ATTACHMENT_MAX_TOTAL) {
-    return {
-      ok: false,
-      message: `첨부파일은 최대 ${INQUIRY_ATTACHMENT_MAX_TOTAL}개까지 첨부할 수 있습니다.`,
-    }
-  }
-
-  for (const file of files) {
-    if (file.size <= 0) {
-      return { ok: false, message: '빈 파일은 올릴 수 없습니다.' }
-    }
-
-    if (!INQUIRY_ATTACHMENT_MIME_TYPES.includes(file.type)) {
-      return { ok: false, message: 'jpg · png · gif · webp · pdf 파일만 올릴 수 있습니다.' }
-    }
-
-    if (file.size > INQUIRY_ATTACHMENT_MAX_BYTES) {
-      return {
-        ok: false,
-        message: `${file.name} 은(는) ${INQUIRY_ATTACHMENT_MAX_MB}MB 를 넘습니다. 첨부파일은 각 ${INQUIRY_ATTACHMENT_MAX_MB}MB 이하만 올릴 수 있습니다.`,
-      }
-    }
-  }
-
-  /* 새로 올리는 파일만 센다. 그대로 두는 기존 첨부는 다시 전송되지 않는다. */
-  if (totalBytes(files) > INQUIRY_ATTACHMENT_TOTAL_MAX_BYTES) {
-    return {
-      ok: false,
-      message: `첨부파일은 합쳐서 ${INQUIRY_ATTACHMENT_TOTAL_MAX_MB}MB 이하만 올릴 수 있습니다.`,
-    }
-  }
-
-  return { ok: true }
 }
