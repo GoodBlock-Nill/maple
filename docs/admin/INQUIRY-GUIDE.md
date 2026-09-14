@@ -1,14 +1,16 @@
-# 1:1 문의 — 개발 가이드
+# 고객지원(1:1 문의 · 버그제보 · 불법이용제보) — 개발 가이드
 
-최종 갱신 2026-09-11 · 기준 커밋 `0f186be` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` · 고객지원 v2 시안 `docs/reference/figma/support-v2-spec.md`
+최종 갱신 2026-09-14 · 기준 커밋 `d4eccf8` · 설계 배경 `docs/admin/DEVELOPER-GUIDE.md` §5.3~§5.4 · 카테고리 원안 `docs/1on1.md` · 종류(kind) 설계 `docs/reference/inquiry-kinds-spec.md` · 이메일 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` · 고객지원 v2 시안 `docs/reference/figma/support-v2-spec.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-GUIDE.html` (다이어그램 포함)
 >
 > 템플릿 세 갈래(문의 카테고리 프리필 · 뉴스 카테고리 템플릿 · 답변 템플릿)를 한자리에서 비교한 문서: `docs/admin/TEMPLATES-GUIDE.md` · `TEMPLATES-GUIDE.html`
 >
-> 2026-09-10 ~ 09-11 에 무엇이 바뀌었는지만 훑으려면: `docs/admin/INQUIRY-CHANGELOG.md` · `INQUIRY-CHANGELOG.html`
+> 2026-09-10 ~ 09-11 · 2026-09-14 에 무엇이 바뀌었는지만 훑으려면: `docs/admin/INQUIRY-CHANGELOG.md` · `INQUIRY-CHANGELOG.html`
 
-1:1 문의는 **한 테이블(`inquiries`)에 두 경로**가 들어옵니다 — 사용자 사이트의 웹 폼(`source='web'`)과 메일 수신 함수(`source='email'`). 문의의 **분류·세부 유형·프리필 양식은 코드가 아니라 DB(`inquiry_categories`)가 소유**하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 크기 때문에 **이미지·PDF 와 영상이 서로 다른 길**로 스토리지에 도착합니다.
+고객지원은 **한 테이블(`inquiries`)에 두 경로**가 들어옵니다 — 사용자 사이트의 웹 폼(`source='web'`)과 메일 수신 함수(`source='email'`). 문의의 **분류·세부 유형·프리필 양식은 코드가 아니라 DB(`inquiry_categories`)가 소유**하고, 운영자가 관리자 콘솔에서 고치면 캐시 태그 하나로 사용자 폼이 따라 바뀝니다. 첨부는 크기 때문에 **이미지·PDF 와 영상이 서로 다른 길**로 스토리지에 도착합니다.
+
+2026-09-14 부터는 같은 테이블 위에 **접수 창구(kind)** 축이 하나 더 있습니다 — 1:1 문의 · 버그제보 · 불법이용제보 세 창구가 같은 폼·같은 목록·같은 권한·같은 감사 로그를 공유하고 **분류 하나만** 다릅니다(§1.4).
 
 ---
 
@@ -18,8 +20,9 @@
 
 | 구성 요소                                       | 상태              | 메모                                                                           |
 | ----------------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
-| DB 마이그레이션 11개                            | 적용됨            | `20260908000400` ~ `20260911000400`                                            |
-| 사용자 사이트 접수·수정·취소                    | 배포됨            | `/support` · `/support/inquiries` · 마이페이지 문의내역                        |
+| DB 마이그레이션 12개                            | 적용됨            | `20260908000400` ~ `20260914000100`                                            |
+| 접수 종류(kind) — 1:1 문의 · 버그제보 · 불법이용제보 | 2026-09-14        | 커밋 `2ab1806` · `d4eccf8` · `20260914000100` · §1.4                          |
+| 사용자 사이트 접수·수정·취소                    | 배포됨            | `/support` · `/support/bug` · `/support/report` · `/support/inquiries` · 마이페이지 문의내역 |
 | 고객지원 v2 디자인                              | 2026-09-11        | 커밋 `6acbe50` · `0f186be` · 카드·목록·상세·폼 재구성, §2.7                    |
 | 카테고리 · 프리필                               | 2026-09-10        | 커밋 `b78dfd7` · 시드 8종(`docs/1on1.md`)                                      |
 | 영상 첨부 직접 업로드                           | 2026-09-10        | 커밋 `2e3f6ae` · 각 100MB · 2개                                                |
@@ -46,6 +49,8 @@
 | 2026-09-11 | **접수번호**(`inquiry_no`, 1001부터 · `#1024` 표기)             | `20260911000400_inquiry_no.sql`                                                                         |
 | 2026-09-11 | 헤더 바 1200px 폭 · 핑크 활성 밑줄, 고객지원 푸터 v2 패널        | 커밋 `6acbe50`                                                                                           |
 | 2026-09-11 | **고객지원 v2 디자인** — 카드 골격 · 번호 페이지네이션 · 상세 레이아웃 · 폼 첨부 UI(§2.7) | 커밋 `0f186be`                                                                                           |
+| 2026-09-14 | **접수 종류(kind)** — `inquiry_categories.kind` · `inquiries.kind` · 트리거 · 카테고리 4종 재배치 + 불법이용제보 5종 시드 · `update_inquiry_category()` 9인자(§1.4) | `20260914000100` · 커밋 `2ab1806`                                                                        |
+| 2026-09-14 | **버그제보·불법이용제보 접수 창구** — `/support/bug` · `/support/report` · 관리자 메뉴 "홈페이지 문의" · 카테고리 화면 kind 별 3섹션 · 종류 필터·뱃지        | 커밋 `d4eccf8`                                                                                           |
 
 ### 1.3 용어
 
@@ -60,7 +65,8 @@
 | **답변**      | `public.inquiry_replies`                                | `direction='outbound'` 운영자 답변 · `'inbound'` 사용자가 메일로 보낸 회신(이메일 문의만)                         |
 | **상태**      | `inquiry_status` enum                                   | `pending` 접수 대기 · `in_progress` 처리 중 · `answered` 답변 완료 · `closed` 종료                                |
 | **접수 취소** | `status='closed'` + `cancelled_at`                      | enum 값이 아닙니다. **라벨은 취소가 상태를 이깁니다** — 두 화면이 같은 규칙                                       |
-| **출처**      | `inquiries.source` = `web` \| `email`                   | 관리자 사이드바의 '1:1 문의'·'이메일 문의'는 새 라우트가 아니라 이 값의 **필터 프리셋**                           |
+| **종류(kind)** | `inquiries.kind` · `inquiry_categories.kind` = `inquiry` \| `bug` \| `report` | 접수 창구. 1:1 문의 · 버그제보 · 불법이용제보. 카테고리 라벨로 트리거가 정하고 앱이 직접 쓰지 않습니다(§1.4)         |
+| **출처**      | `inquiries.source` = `web` \| `email`                   | 관리자 사이드바의 '홈페이지 문의'·'이메일 문의'는 새 라우트가 아니라 이 값의 **필터 프리셋**(종류와는 다른 축입니다)  |
 | **접수번호**  | `inquiries.inquiry_no`(bigint · 1001부터)               | 사람이 부르는 번호. 표기는 `#1024` 하나뿐이고 사용자 화면·관리자 목록·답신 메일 제목이 **같은 값**을 씁니다       |
 | **담당자**    | `inquiries.assigned_to` → `profiles(id)`                | 이 문의를 맡은 운영자. null 이면 '미배정'. 배정은 상태와 별개지만, 미배정 + 접수 대기를 맡으면 처리 중으로 갑니다 |
 | **작성 중**   | `inquiries.editing_by` · `editing_at`                   | 답변 폼이 잡는 **소프트 락**(5분 만료 · 60초 하트비트). 강제력이 없어 마지막 방어선은 저장 시 충돌 감지입니다     |
@@ -68,16 +74,65 @@
 
 > **원칙** — 화면 · 서버 액션 · DB 세 겹으로 같은 규칙을 겁니다. 폼의 잠금은 편의, 서버 액션의 재검증은 신뢰 경계, RLS·CHECK·가드 트리거가 최종 방어선입니다. 서버 액션은 UI 를 거치지 않는 직접 POST 로도 호출되기 때문입니다.
 
+### 1.4 접수 종류(kind) — 1:1 문의 · 버그제보 · 불법이용제보 (2026-09-14)
+
+출처: `docs/reference/inquiry-kinds-spec.md`(설계) · 마이그레이션 `20260914000100_inquiry_kind.sql` · `lib/constants/inquiry-kind.ts` · `admin/lib/constants/inquiry-kind.ts`
+
+세 창구는 **폼·첨부·상태·답변·감사 로그가 전부 같고 분류 하나(`kind`)만** 다릅니다. 테이블을 셋으로 쪼개지 않은 이유는 "내 문의 내역"과 관리자 목록이 매번 세 번 조회해 합쳐야 하고, 답변 템플릿·담당자 배정·이메일 인바운드가 세 벌이 되기 때문입니다.
+
+| 값        | 라벨         | 메뉴 이름     | 경로            | 제출 버튼  |
+| --------- | ------------ | ------------- | --------------- | ---------- |
+| `inquiry` | 1:1 문의     | 1:1 문의하기  | `/support`      | 문의하기   |
+| `bug`     | 버그제보     | 버그제보      | `/support/bug`  | 제보하기   |
+| `report`  | 불법이용제보 | 불법이용제보  | `/support/report` | 제보하기 |
+
+`lib/constants/inquiry-kind.ts`(클라이언트) · `admin/lib/constants/inquiry-kind.ts`(관리자) 두 벌이 **글자 그대로 같아야** 합니다 — 별도 pnpm 패키지라 서로 import 할 수 없고, 어긋나면 사용자가 낸 "버그제보"가 관리자 목록에서 다른 이름으로 보입니다. 양쪽 단위 테스트가 일치를 지킵니다.
+
+**kind 의 단일 출처는 카테고리입니다.** `inquiries.kind` 를 앱이 직접 채우게 두면 클라이언트 · 관리자 · 이메일 웹훅 세 경로가 제각기 다른 값을 넣을 수 있고, 카테고리를 다른 창구로 옮긴 뒤 과거 문의만 옛 kind 로 남습니다. 그래서 트리거 `inquiries_set_kind_from_category`(before insert or update of category, `SECURITY DEFINER`)가 카테고리 라벨로 다시 계산합니다 — 매칭되는 카테고리가 없으면(과거 라벨 '계정' · '결제', 이메일 인바운드의 임의 문자열) **값을 건드리지 않고** 기본값 `'inquiry'` 를 존중합니다. 앱이 INSERT 에 넣는 `kind` 는 의도를 드러내는 주석일 뿐, 실제 판정은 트리거입니다.
+
+**카테고리 이동표**(기존 8종 → 4종 유지·4종 이동, `20260914000100` §4):
+
+| key                    | label            | kind    | 비고                                             |
+| ---------------------- | ---------------- | ------- | ------------------------------------------------ |
+| `connection`           | 접속·서버        | `bug`   | sort_order 0 (버그제보 섹션)                     |
+| `character`            | 캐릭터·게임 진행 | `bug`   | sort_order 1                                     |
+| `save-data`            | 저장·데이터      | `bug`   | sort_order 2                                     |
+| `feature-ui`           | 기능·UI          | `bug`   | sort_order 3                                     |
+| `currency`             | 재화·아이템      | `inquiry` | 운영자 복구가 필요한 문의라 1:1 유지(§ 아래)   |
+| `content-balance`      | 콘텐츠·밸런스    | `inquiry` | sort_order 1                                   |
+| `account-environment`  | 계정·이용환경    | `inquiry` | sort_order 2                                   |
+| `etc`                  | 기타·건의        | `inquiry` | sort_order 3                                   |
+
+`재화·아이템`은 겉보기엔 버그 같지만 **운영자 복구가 필요한 문의**라 1:1 문의에 남습니다 — 제보로 보내면 "확인만 하고 답변 없이 닫는" 흐름에 섞여 복구 요청이 묻힙니다. 이 카테고리의 `subtypes` 에서 `'비정상 재화/아이템 획득'` 하나만 빠져 report 의 `bug-abuse`(버그 악용·비정상 획득)로 옮겨졌습니다 — 과거 문의의 `type` 문자열은 그대로 남고, 등록되지 않은 유형도 수정 화면의 legacy 처리로 고를 수 있습니다. `sort_order` 의 의미가 **전역 순서 → kind 안에서의 순서**로 바뀌어 위와 같이 재부여됐습니다(관리자 카테고리 화면이 kind 별 3섹션이라 순서 이동도 섹션 안에서만 일어납니다).
+
+**불법이용제보(report) 카테고리 5종 신규 시드**(`on conflict (key) do nothing`, 프리필은 기존 8종과 같은 문체 — 첫 줄 "글자월드 캐릭터 닉네임:" 뒤 빈 줄, 제보는 대상이 남이라 그다음이 "제보 대상 닉네임:"):
+
+| key                | label              | 세부 유형                                            |
+| ------------------ | ------------------ | ----------------------------------------------------- |
+| `illegal-program`  | 불법 프로그램      | 핵/치트 프로그램, 매크로/오토, 기타 불법 프로그램       |
+| `bug-abuse`        | 버그 악용·비정상 획득 | 버그 악용, 비정상 재화/아이템 획득                   |
+| `account-trade`    | 계정·현금 거래     | 계정 공유/거래, 현금 거래, 사기/먹튀                   |
+| `abuse-chat`       | 욕설·비매너        | 욕설/비방, 성희롱/음란, 도배/광고, 사칭                |
+| `report-etc`       | 기타 제보          | (없음 — 셀렉트 잠금 + 기타)                            |
+
+**RPC `update_inquiry_category()` 는 9인자**입니다(옛 8인자 함수는 `drop`). 마지막 인자 `p_kind` 가 바뀌면 라벨 변경과 **같은 방식**으로 같은 트랜잭션에서 `update inquiries set category = p_label, kind = p_kind where category = old_label` 을 실행합니다. 반환값(옮긴 문의 수)은 **라벨·kind 중 하나라도** 바뀌면 셉니다 — 관리자 화면이 "이 카테고리로 접수된 문의 N건의 종류도 함께 바뀝니다"를 그립니다(`admin/components/inquiry-categories/category-kind-move.ts` `kindMoveNotice()`). 함수는 `p_kind` 가 세 값 밖이면 저장 전에 `22023` 으로 끊습니다(CHECK 위반보다 화면이 원인을 알아내기 쉽게).
+
+`label` 의 전역 유니크는 그대로입니다 — 종류가 달라도 같은 라벨을 허용하면 `inquiries.category` 가 라벨 문자열인 이상 "이 문의가 어느 카테고리인지"가 갈리고 관리자 필터 · 과거 문의 재라벨링이 흔들립니다.
+
+**백필**은 카테고리 이동 · 시드를 먼저 끝낸 뒤 라벨로 조인해 기존 `inquiries.kind` 를 갱신합니다(순서가 반대면 백필이 옛 분류를 굳혀 버립니다). 카테고리 표에 없는 옛 라벨은 트리거와 같은 규칙으로 `'inquiry'` 에 남습니다.
+
 ---
 
 ## 2. 사용자 흐름
 
-출처: `proxy.ts` · `app/(public)/support/**` · `components/support/**` · `lib/actions/inquiry-actions.ts` · `lib/actions/inquiry-edit-actions.ts`
+출처: `proxy.ts` · `app/(public)/support/**` · `components/support/InquiryKindPage.tsx` · `components/support/**` · `lib/constants/inquiry-kind.ts` · `lib/actions/inquiry-actions.ts` · `lib/actions/inquiry-edit-actions.ts`
+
+아래 흐름은 세 창구(`/support` · `/support/bug` · `/support/report`) 모두에 같습니다 — 세 라우트가 `InquiryKindPage`(kind 만 다른 인자) 하나를 그리기 때문입니다. 다이어그램은 대표로 `/support` 만 적습니다.
 
 ```mermaid
 flowchart TD
     A["방문자"] --> B{"proxy.ts 게이트"}
-    B -->|"GET /support — 읽기는 누구나"| F["문의 폼<br/>/support"]
+    B -->|"GET /support · /support/bug · /support/report — 읽기는 누구나"| F["접수 폼<br/>InquiryKindPage(kind)"]
     B -->|"비-GET · 비로그인"| L401["401 unauthorized<br/>loginPath 반환"]
     B -->|"온보딩 미완 · 쓰기"| ONB["/onboarding 으로"]
     B -->|"탈퇴 대기"| RST["/auth/restore 로"]
@@ -109,7 +164,7 @@ flowchart TD
 
 | 경로                                 | GET                                      | 비-GET(서버 액션)                                                 | 막는 곳                                                                                  |
 | ------------------------------------ | ---------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `/support`(문의 폼)                  | **열림** — 비로그인도 폼을 봅니다        | 로그인 필요 → `401 {"error":"unauthorized","loginPath":"/login"}` | `proxy.ts` `PROTECTED_MUTATION_PREFIXES`                                                 |
+| `/support` · `/support/bug` · `/support/report`(접수 폼) | **열림** — 비로그인도 폼을 봅니다 | 로그인 필요 → `401 {"error":"unauthorized","loginPath":"/login"}` | `proxy.ts` `PROTECTED_MUTATION_PREFIXES`(세 경로 모두 같은 접두사 규칙)                  |
 | `/support/inquiries`(목록·상세·수정) | 로그인 필요 → `/login?next=…` 리다이렉트 | 위와 동일                                                         | **페이지가 직접** — `/support` 는 읽기가 열려 있어야 해서 접두사 단위로 잠글 수 없습니다 |
 | 온보딩 미완                          | —                                        | `/support` 쓰기 차단                                              | `ONBOARDING_MUTATION_PREFIXES`                                                           |
 | 탈퇴 대기 계정                       | `/support/inquiries` → 복구 화면         | `/support` 쓰기 차단                                              | `WITHDRAWN_*_PREFIXES` + RLS `inquiries_insert_own`                                      |
@@ -123,7 +178,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 | 필드               | name                               | 필수         | 규칙                                                                | 거절 문구                                                                                  |
 | ------------------ | ---------------------------------- | ------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 글자월드 계정 ID   | `accountId`                        | 필수         | `/^[A-Za-z0-9_-]{2,40}$/` · `maxLength=40` · `inputMode="numeric"`  | `글자월드 계정 ID를 입력해 주세요.` / `계정 ID는 영문·숫자·_·- 로 2~40자로 입력해 주세요.` |
-| 카테고리           | `category`                         | 필수         | DB 의 **활성** 라벨 목록(수정 화면은 접수 당시 라벨도 허용)         | `카테고리를 선택해 주세요.`                                                                |
+| 카테고리           | `category`                         | 필수         | DB 의 **그 창구(kind)** 의 활성 라벨 목록(수정 화면은 접수 당시 라벨도 허용)  | `카테고리를 선택해 주세요.`                                                                |
 | 세부 문의 유형     | `type`                             | 필수         | **고른 카테고리의** `subtypes` 안. 비면 `기타` 하나만               | `세부 문의 유형을 선택해 주세요.`(미선택·엇갈린 조합 모두 같은 문구)                       |
 | 제목               | `title`                            | 필수         | 2~100자 · CRLF → LF 정규화 후 trim                                  | `제목은 2자 이상 입력해 주세요.` / `제목은 100자 이하로 입력해 주세요.`                    |
 | 문의 내용          | `content`                          | 필수         | 5~~4000자(= 프리필 상한 2000 × 2) · 자동 성장 textarea(150~~420px)  | `내용은 5자 이상 입력해 주세요.` / `내용은 4000자 이하로 입력해 주세요.`                   |
@@ -142,27 +197,29 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 4. 유형 셀렉트의 선택지는 `inquirySubtypesOf(categories, label)`. 목록이 비면 셀렉트를 **잠그고** `<input type="hidden" name="type" value="기타">` 를 싣습니다(`INQUIRY_SUBTYPE_FALLBACK`). 플레이스홀더는 세 상태로 갈립니다 — `카테고리를 먼저 선택해주세요` / `세부 문의 유형을 선택해주세요` / `기타`.
 5. 수정 화면에서 저장된 유형이 목록에 없으면(운영자가 지웠거나 옛 '문의') 셀렉트 **뒤에 붙여** 그대로 보여 줍니다. 붙이지 않으면 브라우저가 첫 항목을 대신 보여 주고, 사용자는 건드린 적 없는 유형으로 문의가 바뀐 것을 알아채지 못합니다.
 
-카테고리 조회가 실패하면 폼은 **정적 폴백 라벨 8개**(`INQUIRY_CATEGORY_FALLBACK`)로 떨어집니다. 폴백에는 프리필도 세부 유형도 없으므로 유형은 `기타` 로 접수되고 양식만 빠집니다 — 카테고리를 못 읽었다고 접수를 막으면 하필 장애 때 "접속이 안 된다"는 문의가 들어올 길이 사라집니다.
+카테고리 조회가 실패하면 폼은 **창구별 정적 폴백 라벨**(`INQUIRY_CATEGORY_FALLBACK[kind]` — 1:1 문의 4개 · 버그제보 4개 · 불법이용제보 5개, `lib/constants/inquiry-category-fallback.ts`)로 떨어집니다. 폴백에는 프리필도 세부 유형도 없으므로 유형은 `기타` 로 접수되고 양식만 빠집니다 — 카테고리를 못 읽었다고 접수를 막으면 하필 장애 때 "접속이 안 된다"는 문의가 들어올 길이 사라집니다. 세 창구의 캐시는 `unstable_cache` 를 **창구마다 따로** 감쌉니다(`cachedByKind`) — kind 를 인자로 받는 함수 하나를 캐시하면 먼저 조회한 창구의 목록이 나머지 둘에 새어 나갑니다. 캐시 키는 각각 다르지만 무효화 **태그는 `inquiry-categories` 하나**입니다 — 관리자가 카테고리의 kind 를 옮기면 출발지·도착지 목록이 함께 바뀌어야 하기 때문입니다.
 
 ### 2.4 접수 서버 액션 — 순서가 곧 방어선
 
 `lib/actions/inquiry-actions.ts` `createInquiry`
 
+0. **창구(kind) 고정** — `kind` 는 폼 필드가 아니라 `createInquiry.bind(null, kind)` 로 실어 받습니다(필드로 두면 직접 POST 하나로 창구를 갈아 끼울 수 있습니다). 모르는 값은 `DEFAULT_INQUIRY_KIND`(`'inquiry'`)로 떨어뜨립니다 — 접수를 막기보다 사람이 보는 목록에 남깁니다.
 1. **로그인 재확인** — 프록시의 검사는 낙관적입니다. → `로그인 후 이용할 수 있습니다.`
-2. **스키마 파싱** — 허용 카테고리·세부 유형을 `getInquiryCategories()` 로 **매번 새로** 읽어 스키마를 만듭니다. 상수로 굳히면 운영자가 추가한 카테고리가 서버에서 거절됩니다.
+2. **스키마 파싱** — 그 창구의 허용 카테고리·세부 유형을 `getInquiryCategories(kind)` 로 **매번 새로** 읽어 스키마를 만듭니다. 상수로 굳히면 운영자가 추가한 카테고리가 서버에서 거절됩니다.
 3. **영상 목록 파싱** — `videoAttachments` 숨은 필드의 JSON. 모양이 어긋나면 `null`(빈 목록과 구분) → `영상 첨부 정보가 올바르지 않습니다. 다시 시도해 주세요.`
 4. **첨부 재검증** — 개수·형식·각 5MB·합계 12MB. 이미지·PDF 는 3개, 영상은 별도로 2개까지, 둘을 합친 전체는 5개를 넘지 않게 봅니다.
 5. **도배 판정** — 마지막 접수 시각 기준 **30초**(`WRITE_COOLDOWN_SECONDS`). 메모리 카운터가 아니라 DB 의 `created_at` 을 봅니다.
 6. **이미지 업로드** — `<uid>/<uuid>-<파일명>`. 도중 실패하면 이미 올린 것을 지웁니다.
 7. **영상 확정** — pending 오브젝트를 검증하고 접수 자리로 `move`. 실패하면 이미지 업로드분을 되돌립니다.
-8. **INSERT** — `status:'pending'` 을 명시합니다(`inquiries_insert_own` 정책이 `pending` 만 허용).
-9. **무효화 · 이동** — `revalidatePath('/support/inquiries')` · `revalidatePath('/support')` 뒤 `redirect(상세?submitted=1)`.
+8. **INSERT** — `status:'pending'` 을 명시합니다(`inquiries_insert_own` 정책이 `pending` 만 허용). `kind` 도 명시합니다 — 트리거(`inquiries_set_kind_from_category`)가 카테고리로 다시 정하지만, 이 행이 어느 창구로 들어왔는지 INSERT 문에서도 읽혀야 합니다.
+9. **무효화 · 이동** — `revalidatePath('/support/inquiries')` · `revalidatePath(INQUIRY_KIND_MAP[kind].path)`(그 창구의 접수 폼) 뒤 `redirect(상세?submitted=1)`. 접수 완료 모달 문구도 창구별입니다 — inquiry 는 "문의가 접수되었습니다", bug·report 는 "제보가 접수되었습니다"(`INQUIRY_SUBMITTED_COPY`).
 
 `redirect()` 는 **예외를 던집니다**. 그래서 성공 경로의 마지막에서만 부르고, 그 앞의 롤백은 전부 끝나 있어야 합니다.
 
 ### 2.5 목록 · 상세
 
 - **두 개의 목록** — 고객지원 `/support/inquiries`(시안 v2 부터 **번호 페이지네이션**, 6건/페이지)와 마이페이지 `/account/inquiries`(첫 10건 표). 둘 다 `getMyInquiries()` 하나를 쓰고 상세는 고객지원 쪽으로 보냅니다.
+- **내 문의 내역은 세 창구를 함께 보여 줍니다**(필터 없음, 최신순, 2026-09-14) — 행마다 종류 알약(1:1 문의 · 버그제보 · 불법이용제보, `inquiryKindLabel()`)이 먼저 서고 그다음 카테고리 › 유형입니다(`InquiryRow.tsx`). 상세 메타 줄에도 "종류" 항목이 맨 앞에 옵니다(`InquiryDetailMeta.tsx`) — 목록에서 본 값을 상세에서 같은 자리에 다시 찾도록.
 - **`?page=N` 은 N 페이지 한 장만 그립니다**(2026-09-11 시안 v2 — 누적 "더보기"를 대체). `getMyInquiries()` 는 `accumulatedRange()` 대신 `pageRange()` 로 그 페이지 구간만 읽고, `toListResult()` 대신 `toPagedListResult()` 로 `shown`·`hasMore` 를 **페이지 경계** 기준으로 계산합니다(누적 건수가 아닙니다). 페이지 크기는 `INQUIRY_PAGE_SIZE = 6`. 화면은 현재 페이지를 가운데 두고 최대 5개 번호를 보여 줍니다(`InquiryPagination.tsx` · `getPageRange()`).
 - **접수 취소한 문의는 두 목록 모두에서 사라집니다**(오너 요청, 2026-09-11) — `getMyInquiries()` 가 `cancelled_at is null` 을 겁니다. 상세는 **직접 주소로만** 계속 열립니다(이력, 읽기 전용) — 더 이상 목록에서 링크되지 않을 뿐입니다. 취소 액션도 상세가 아니라 **목록으로** 리다이렉트합니다(`/support/inquiries?cancelled=1`), 안내 문구는 그 화면에서 뜹니다.
 - **소유권** — RLS 위에 `.eq('user_id', …)` 를 **한 번 더** 겁니다. 관리자 세션에는 전체 행이 열려 있어 조건을 빼면 "내 문의 내역"이 남의 문의를 그립니다.
@@ -183,6 +240,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 - **재수정 도배 창은 10초**(`REPORT_COOLDOWN_SECONDS` 재사용). 기준은 `updated_at` 이지만 `updated_at === created_at` 이면 "한 번도 고치지 않음"으로 봅니다 — 접수 직후 오타 수정은 정상 행동입니다.
 - 수정 화면은 **동의 체크박스를 다시 묻지 않습니다.** 다시 물으면 체크를 푸는 순간 "동의 철회"처럼 보입니다.
 - 수정 액션은 **옛 카테고리·옛 유형을 허용**합니다(`withLegacyCategory()` · `updateInquirySchema(…, [현재 type])`).
+- **창구(kind)는 수정 화면에서 바꿀 수 없습니다.** 카테고리 선택지는 그 문의가 **접수된 kind** 의 목록만 읽습니다(`getInquiryCategories(guard.inquiry.kind)`) — 버그제보로 낸 문의를 고치다가 실수로 1:1 문의 카테고리를 고르는 일이 없습니다.
 - 문의 id 는 폼 필드가 아니라 **`bind` 로** 실어 보냅니다.
 - 저장이 `42501` 로 떨어지면 `접수 대기 상태의 문의만 수정할 수 있습니다.` 로 안내합니다 — 그 사이 운영자가 상태를 올렸다는 뜻입니다.
 - 첨부 삭제는 `removeAttachments`(값 = **오브젝트 키**)로 표시하고 **행 저장이 끝난 뒤에** 지웁니다. 화면은 2026-09-11 시안 v2 부터 "삭제" 체크박스가 아니라 **파일 칩의 X 버튼**입니다(§2.7) — 전송 필드 이름과 값은 그대로라 서버 쪽은 손대지 않았습니다.
@@ -193,7 +251,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 
 이번 개편은 **로직·데이터 흐름을 바꾸지 않습니다** — 카테고리·세부 유형·계정 ID·첨부 3+2·동의·프리필·접수번호·수정/취소 권한은 그대로이고, 카드 골격·목록·상세·폼의 **마크업만** 다시 그렸습니다. 픽셀 단위 수치는 시안 문서를 보고, 여기서는 동작이 바뀐 지점만 짚습니다.
 
-- **좌측 메뉴에 제목·설명이 없습니다.** `SupportCard` 의 "1:1 문의하기" 제목·설명 문단 블록이 삭제됐고, 메뉴가 카드 상단부터 섭니다. 모바일에서는 메뉴 자체가 숨고 대신 카드 위에 **세그먼트 탭 3개**(`SupportTabs`)가 섭니다 — PC 의 메뉴와 같은 경로·같은 라벨을 씁니다.
+- **좌측 메뉴에 제목·설명이 없습니다.** `SupportCard` 의 "1:1 문의하기" 제목·설명 문단 블록이 삭제됐고, 메뉴가 카드 상단부터 섭니다. 모바일에서는 메뉴 자체가 숨고 대신 카드 위에 세그먼트 탭(`SupportTabs`)이 섭니다 — PC 의 메뉴와 같은 경로·같은 라벨을 씁니다. **2026-09-14 부터 항목이 5개**(1:1 문의하기 · 버그제보 · 불법이용제보 · 자주 묻는 질문 · 내 문의 내역)로 늘어 343px 폭에 균등 분할로는 들어가지 않습니다 — 균등 분할을 버리고 **가로 스크롤**(`overflow-x-auto` · 탭 `shrink-0`)로 바꿨습니다. 첫 화면에 네 개쯤 보이고 나머지는 밀어서 봅니다.
 - **상태 표기** — 접수 대기 · 처리 중은 그대로 회색 알약(`bg-[#f1f1f5]`), **답변 완료만 알약을 벗고 분홍 글자**(`text-[#e8308a]`)가 됩니다. 모양 판정은 `InquiryStatusOption.variant`(`lib/constants/inquiry-status.ts`)에 있어 목록·상세가 같은 규칙을 봅니다. **상세는 답변 완료 상태에서 제목 옆 알약을 아예 그리지 않습니다**(`InquiryDetailCard.tsx` — `status.variant === 'pill'` 일 때만 뱃지를 렌더) — 바로 아래 답변 블록이 이미 "답변 완료"를 말하고 있어서입니다.
 - **상세 레이아웃이 재구성됐습니다.** 화면 맨 위에 `SupportBackLink`("내 문의 내역으로")가 서고, 화면 하단의 옛 "목록으로" 버튼은 없어졌습니다. 제목 아래 메타 줄(등록일 · 카테고리 · 계정 ID · 접수번호, `InquiryDetailMeta.tsx`)을 지나 구분선, "문의내용" 소제목과 같은 줄에 수정 · 접수 취소가 알약으로 붙습니다(`InquiryOwnerActions`). 답변 블록은 없으면 파선 상자, 있으면 `#f3f6fe` 상자이고 **287px 를 넘으면 내부 스크롤**(`REPLY_BODY_MAX_HEIGHT`, `InquiryReplyThread.tsx`) — 화면 전체를 밀어내지 않습니다.
 - **폼 첨부** — 기존 첨부의 "삭제" 체크박스가 파일 칩의 X 버튼(`InquiryFileChip.tsx`)으로 바뀌었습니다. **전송값은 그대로** `removeAttachments`(오브젝트 키) — 누른다고 바로 지우지 않고 표시만 해 두었다가 저장이 끝난 뒤 지우는 규칙도 그대로입니다. 칩의 파일명은 `truncateFileBase()`(`lib/utils/file-name.ts`)가 **확장자를 남기고 앞부분만** 6자로 줄입니다(CSS `truncate` 는 오른쪽을 잘라 확장자부터 사라져서 씁니다). 첨부 안내 문구는 `lib/constants/inquiry-attachment.ts` 의 `ATTACHMENT_NOTICE_LINES` 가 storage 상수(§3)에서 두 줄을 조합합니다 — 문구를 손으로 고치면 실제 상한과 갈립니다.
@@ -321,6 +379,7 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 | 열                               | 타입                                    | 메모                                                                                                                                                                                                                                                    |
 | -------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`                             | `uuid` PK                               | `gen_random_uuid()`                                                                                                                                                                                                                                     |
+| `kind`                           | `text` NOT NULL `'inquiry'`             | **접수 창구**(§1.4) `inquiry`\|`bug`\|`report`. CHECK `inquiries_kind_check`. **앱이 직접 쓰지 않습니다** — 트리거 `inquiries_set_kind_from_category`(before insert or update of category)가 카테고리 라벨로 다시 정합니다(`20260914000100`)              |
 | `inquiry_no`                     | `bigint` NOT NULL                       | **접수번호**(1001부터 · 유니크 `inquiries_inquiry_no_key`). `generated always as identity` — 접수 폼이 값을 고를 수 없습니다(`by default` 였다면 사용자가 큰 번호를 선점해 시퀀스가 그 자리에 닿는 순간 접수가 실패합니다)                              |
 | `user_id`                        | `uuid` → `profiles(id)`                 | `on delete set null`. **이메일 문의는 항상 null** — 발신자 주소는 위조 가능해서 회원 식별에 쓰지 않습니다                                                                                                                                               |
 | `account_id`                     | `text`                                  | CHECK `inquiries_account_id_length` = null 이거나 1~40자. **NOT NULL 은 걸지 않습니다** — 필수는 웹 폼의 규칙이라 서버 액션 스키마에서 강제합니다                                                                                                       |
@@ -341,7 +400,7 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 | `editing_by` · `editing_at`      | `uuid` → `profiles(id)` · `timestamptz` | 작성 중 소프트 락과 하트비트 시각. 5분보다 오래되면 만료로 봅니다(§5.9)                                                                                                                                                                                 |
 | `created_at` · `updated_at`      | `timestamptz`                           | `set_inquiry_updated_at` 트리거가 UPDATE 마다 `updated_at` 을 밀어 올립니다. **예외는 잠금 하트비트** — `editing_by`·`editing_at` 만 달라진 UPDATE 는 수정 시각을 건드리지 않습니다(그러지 않으면 "누가 보고 있다"는 이유만으로 목록 정렬이 흔들립니다) |
 
-인덱스: `inquiries_user_created_idx(user_id, created_at desc)` · `inquiries_status_created_idx` · `inquiries_source_status_created_idx` · `inquiries_email_from_created_idx` · `inquiries_email_message_id_key` · `inquiries_email_thread_key_key`(둘 다 부분 유니크) · `inquiries_inquiry_no_key`(유니크) · `inquiries_assigned_to_idx`(담당자 있음) · `inquiries_unassigned_idx`(담당자 없음 — 반대쪽은 부분 인덱스가 덮지 못합니다).
+인덱스: `inquiries_user_created_idx(user_id, created_at desc)` · `inquiries_status_created_idx` · `inquiries_source_status_created_idx` · `inquiries_email_from_created_idx` · `inquiries_email_message_id_key` · `inquiries_email_thread_key_key`(둘 다 부분 유니크) · `inquiries_inquiry_no_key`(유니크) · `inquiries_assigned_to_idx`(담당자 있음) · `inquiries_unassigned_idx`(담당자 없음 — 반대쪽은 부분 인덱스가 덮지 못합니다) · `inquiries_user_kind_idx(user_id, kind)` · `inquiries_kind_status_idx(kind, status)`(관리자 목록의 종류 필터·탭 카운트, `20260914000100`).
 
 ### 4.1.1 `inquiry_notes` — 운영자 전용 내부 메모
 
@@ -368,22 +427,23 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 
 ### 4.3 `inquiry_categories`
 
-| 열                         | 제약                                                        | 쓰임                                                               |
-| -------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| `key`                      | 유니크 · `^[a-z0-9][a-z0-9-]{0,39}$`                        | 안정 식별자. **라벨을 바꿔도 유지**되고 화면에는 보이지 않습니다   |
-| `label`                    | 유니크 · 1~20자                                             | 셀렉트 문구이자 `inquiries.category` 에 저장되는 값                |
-| `description`              | ≤ 100자 · nullable                                          | 셀렉트 아래 한 줄 안내(빈 문자열은 `null` 로 저장)                 |
-| `prefill`                  | ≤ 2000자 · NOT NULL `''`                                    | 문의 내용 양식. 줄바꿈은 LF                                        |
-| `subtypes`                 | `text[]` NOT NULL `'{}'` · CHECK `inquiry_subtypes_valid()` | 1차원 · ≤ 20개 · 각 1~30자 · null/공백 금지. 순서가 곧 셀렉트 순서 |
-| `sort_order` · `is_active` | —                                                           | 표시 순서 · 사용자 폼 노출                                         |
+| 열                         | 제약                                                                | 쓰임                                                                          |
+| --------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `key`                      | 유니크 · `^[a-z0-9][a-z0-9-]{0,39}$`                                 | 안정 식별자. **라벨을 바꿔도 유지**되고 화면에는 보이지 않습니다             |
+| `label`                    | 유니크 · 1~20자                                                      | 셀렉트 문구이자 `inquiries.category` 에 저장되는 값. **kind 가 달라도 전역에서 유니크**(§1.4) |
+| `description`              | ≤ 100자 · nullable                                                   | 셀렉트 아래 한 줄 안내(빈 문자열은 `null` 로 저장)                            |
+| `prefill`                  | ≤ 2000자 · NOT NULL `''`                                             | 문의 내용 양식. 줄바꿈은 LF                                                   |
+| `subtypes`                 | `text[]` NOT NULL `'{}'` · CHECK `inquiry_subtypes_valid()`          | 1차원 · ≤ 20개 · 각 1~30자 · null/공백 금지. 순서가 곧 셀렉트 순서            |
+| `kind`                     | `text` NOT NULL `'inquiry'` · CHECK `inquiry_categories_kind_check` | **접수 창구**(§1.4) `inquiry`\|`bug`\|`report`. `inquiries.kind` 의 단일 출처 |
+| `sort_order` · `is_active` | —                                                                    | 표시 순서(**2026-09-14 부터 kind 안에서의 순서**, §1.4) · 사용자 폼 노출      |
 
-시드는 `docs/1on1.md` 의 **8종**(`connection · character · save-data · currency · content-balance · account-environment · feature-ui · etc`)이고 `on conflict (key) do nothing` 입니다. `etc`('기타·건의')만 `subtypes` 가 비어 있어 폼이 셀렉트를 잠그고 `기타` 로 접수합니다.
+시드는 원안 `docs/1on1.md` 의 **8종**(`connection · character · save-data · currency · content-balance · account-environment · feature-ui · etc`, `on conflict (key) do nothing`) + `20260914000100` 의 **불법이용제보 5종**(`illegal-program · bug-abuse · account-trade · abuse-chat · report-etc`, 같은 방식). `etc`·`report-etc` 는 `subtypes` 가 비어 있어 폼이 셀렉트를 잠그고 `기타` 로 접수합니다. 인덱스 `inquiry_categories_kind_sort_idx(kind, sort_order, created_at) where is_active` — 사용자 폼(창구별 카테고리 목록)과 관리자 kind 별 섹션이 그대로 타는 순서입니다.
 
 ### 4.4 RPC 일곱
 
 | 함수                                                                                                                      | 보안                                                 | 하는 일                                                                                                                           |
 | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `update_inquiry_category(p_id, p_key, p_label, p_description, p_prefill, p_sort_order, p_is_active, p_subtypes)`          | `SECURITY INVOKER` + 함수 안에서 `is_admin()` 재확인 | 카테고리 수정 **+ 라벨 변경 시 과거 문의 재라벨링**을 **한 트랜잭션**으로. 반환은 옮긴 문의 수. `p_subtypes` 가 null 이면 빈 배열 |
+| `update_inquiry_category(p_id, p_key, p_label, p_description, p_prefill, p_sort_order, p_is_active, p_subtypes, p_kind)` | `SECURITY INVOKER` + 함수 안에서 `is_admin()` 재확인 | 카테고리 수정(세부 유형 · **종류 포함**) **+ 라벨/종류 변경 시 과거 문의 재라벨링·kind 재배치**를 **한 트랜잭션**으로. 반환은 옮긴 문의 수(**라벨·kind 중 하나라도** 바뀌면 셉니다). `p_subtypes` 가 null 이면 빈 배열. `p_kind` 가 세 값 밖이면 `22023` |
 | `inquiry_category_usage()`                                                                                                | `SECURITY INVOKER` · stable                          | 라벨별 문의 수. 삭제 가능 여부(0건일 때만)와 **목록 필터의 옛 라벨**                                                              |
 | `inquiry_type_usage()`                                                                                                    | 동일                                                 | 유형별 문의 수. 옛 값('문의'·'신고'·'제안'·`general`)을 필터에서 잃지 않기 위해                                                   |
 | `stale_inquiry_pending_attachments(p_cutoff_hours, p_limit)`                                                              | `SECURITY DEFINER` · 실행 `service_role` 만          | 24시간 지난 `<uid>/pending/…` 경로 목록(§3.3)                                                                                     |
@@ -425,6 +485,8 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 6. `answered_at` · `contact_email` · `privacy_consent` · **`assigned_to` · `assigned_at` · `editing_by` · `editing_at` · `inquiry_no`** 는 **조용히 되돌립니다** — 사용자가 보낼 이유가 없는 값이라 정상 흐름을 예외로 끊을 이유가 없습니다. 협업 열은 `20260911000300`, 접수번호는 `20260911000400` 이 더했습니다(접수번호는 `generated always` 라 Postgres 가 먼저 거절하고, 가드의 한 줄은 "사용자가 건드릴 수 없는 열"을 한곳에서 읽히게 하는 몫입니다).
 
 거절을 "조용한 되돌리기"로 하면 사용자에게는 **저장됨**으로 보이고 값만 옛것으로 남습니다. 그래서 사용자 입력 계열은 `42501` 예외로 끊습니다.
+
+`kind` 는 이 가드가 직접 다루지 않습니다 — 사용자가 카테고리를 바꿀 수 있는 것은 5번 규칙(본문 변경, `pending` + 미취소)의 범위 안이고, 그 카테고리도 수정 화면이 **접수 당시 kind 의 목록**만 보여 주므로 결과적으로 kind 가 바뀌지 않습니다(§2.6). `inquiries` 의 트리거는 이름 순으로 실행됩니다 — `guard_inquiry_owner_update` → `inquiries_set_kind_from_category` → `set_updated_at`. 가드가 먼저 "이 수정이 허용되는가"를 판정하고, 그다음 kind 를 다시 계산하고, 마지막에 수정 시각을 찍습니다. 트리거 이름을 바꾸면 이 순서가 깨집니다.
 
 ### 4.7 캐시 태그와 반영 경로
 
@@ -481,22 +543,23 @@ stateDiagram-v2
 
 ### 5.2 목록 · 필터
 
-`/inquiries` 는 `dynamic = 'force-dynamic'` 입니다. 사이드바의 **1:1 문의**(`?source=web`) · **이메일 문의**(`?source=email`)는 같은 화면의 **필터 프리셋**이고 제목·설명이 프리셋마다 다릅니다.
+`/inquiries` 는 `dynamic = 'force-dynamic'` 입니다. 사이드바의 **홈페이지 문의**(`?source=web`) · **이메일 문의**(`?source=email`)는 같은 화면의 **필터 프리셋**이고 제목·설명이 프리셋마다 다릅니다.
 
 | 필터     | 쿼리 키       | 규칙                                                                                                                                                       |
 | -------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 상태 탭  | `status`      | `open`(기본) · `pending` · `in_progress` · `answered` · `closed` · `cancelled` · `all`. 탭 건수는 상태 외 조건을 그대로 적용해 셉니다                      |
 | 출처     | `source`      | `web` · `email`. **선택 상자는 없습니다** — 사이드바의 두 메뉴가 이 값을 정하고, 조건을 바꿔도 잃지 않도록 폼이 숨은 값으로 나릅니다(2026-09-11 오너 결정) |
-| 카테고리 | `category`    | 등록된 라벨(비활성 포함) + **데이터에만 남은 옛 라벨**. 빈 값·20자 초과면 전체                                                                             |
+| 종류     | `kind`        | `inquiry` · `bug` · `report`. **웹 프리셋에만** 셀렉트가 있습니다(2026-09-14) — 이메일 문의는 수신 함수가 늘 `inquiry` 로 고정해 고를 것이 없고, 주소에 실려 온 값은 숨은 필드로만 나릅니다. 종류를 고르면 카테고리·유형 선택지도 그 창구의 것만 남습니다 |
+| 카테고리 | `category`    | 등록된 라벨(비활성 포함) + **데이터에만 남은 옛 라벨**. **종류를 고르면 그 kind 의 카테고리만**(안 고르면 전체 kind). 빈 값·20자 초과면 전체              |
 | 유형     | `type`        | 카테고리를 고르면 **그 카테고리의 세부 유형만**(GET 폼이라 왕복이 곧 갱신). 옛 값은 언제나 뒤에. 상한 30자                                                 |
 | 등록일   | `from` · `to` | `YYYY-MM-DD`(KST) → UTC 경계로 환산, **종료일은 그날 24시까지** 포함                                                                                       |
 | 검색     | `q`           | 제목 · 내용 · 계정 ID · 발신자 주소 `ilike` **+ 접수번호 정확 일치**. 60자. PostgREST `or()` 문법 문자와 LIKE 와일드카드(`, ( ) % _ * \ " '`)를 지웁니다   |
 | 담당자   | `assignee`    | `me`(내 담당) · `none`(미배정) · `<관리자 uuid>`. 모르는 값은 필터를 걸지 않습니다(= 전체)                                                                 |
 
-- **취소분은 '접수 취소' 탭에서만 보입니다**(오너 요청, 2026-09-11) — `applyInquiryFilters()` 가 그 탭이 아니면 `cancelled_at is null` 을 걸어 뺍니다. 전에는 `status='closed'` 라서 '종료'·'전체' 탭에도 함께 잡혔는데, 사용자 목록에서 사라진 문의가 관리자 기본 목록에는 남아 있으면 두 화면의 뜻이 어긋나 지금은 뺍니다. 회원 상세의 지표 카드(`activity.inquiryCount`)·'1:1 문의' 탭도 같은 조건입니다.
-- 이메일 프리셋에서는 **'접수 취소' 탭과 카테고리·유형 필터가 사라집니다**.
-- **출처 칸도 출처 선택 상자도 없습니다**(2026-09-11 오너 결정 — "1:1 문의와 이메일 문의는 메뉴가 이미 분리돼 있어 출처는 필요 없다"). 메뉴가 갈라 놓은 값을 행마다 반복하면 같은 뱃지가 스무 줄 늘어설 뿐이고, 지금 어느 묶음을 보는지는 화면 제목이 말해 줍니다. `source` 파라미터와 조회 조건은 그대로 남습니다 — 두 메뉴가 그것으로 동작합니다. 회원 상세의 '1:1 문의' 탭에서도 같은 이유로 뺐습니다.
-- 목록 열: **접수번호** · 제목 · 계정(마스킹, 이메일이면 발신자 주소) · 카테고리·유형 · **담당자** · 상태 · 답변 수 · 등록일 · 업데이트. 정렬 키 `created_at · updated_at · status · title`, **2차 키 `id`** 로 안정 정렬, 한 페이지 20건.
+- **취소분은 '접수 취소' 탭에서만 보입니다**(오너 요청, 2026-09-11) — `applyInquiryFilters()` 가 그 탭이 아니면 `cancelled_at is null` 을 걸어 뺍니다. 전에는 `status='closed'` 라서 '종료'·'전체' 탭에도 함께 잡혔는데, 사용자 목록에서 사라진 문의가 관리자 기본 목록에는 남아 있으면 두 화면의 뜻이 어긋나 지금은 뺍니다. 회원 상세의 지표 카드(`activity.inquiryCount`)·'홈페이지 문의' 탭도 같은 조건입니다.
+- 이메일 프리셋에서는 **'접수 취소' 탭과 종류·카테고리·유형 필터가 사라집니다**(이메일은 항상 1:1 문의 창구입니다).
+- **출처 칸도 출처 선택 상자도 없습니다**(2026-09-11 오너 결정 — "홈페이지 문의와 이메일 문의는 메뉴가 이미 분리돼 있어 출처는 필요 없다"). 메뉴가 갈라 놓은 값을 행마다 반복하면 같은 뱃지가 스무 줄 늘어설 뿐이고, 지금 어느 묶음을 보는지는 화면 제목이 말해 줍니다. `source` 파라미터와 조회 조건은 그대로 남습니다 — 두 메뉴가 그것으로 동작합니다. 회원 상세의 '홈페이지 문의' 탭에서도 같은 이유로 뺐습니다.
+- 목록 열: **접수번호** · **종류**(뱃지, 2026-09-14) · 제목 · 계정(마스킹, 이메일이면 발신자 주소) · 카테고리·유형 · **담당자** · 상태 · 답변 수 · 등록일 · 업데이트. 종류 칸이 접수번호 바로 옆인 이유는 세 창구가 한 표에 섞여 오므로 제목을 읽기 전에 무엇으로 들어온 건인지 보여야 하기 때문입니다. 정렬 키 `created_at · updated_at · status · title`, **2차 키 `id`** 로 안정 정렬, 한 페이지 20건.
 - **접수번호로 찾기** — 검색어가 `1024` 또는 `#1024` 면 기존 ilike 조건에 `inquiry_no.eq.1024` 를 `or` 로 더합니다(제목에 그 숫자가 든 문의도 함께 나옵니다). 파싱은 `lib/validation/inquiry-no-search.ts`.
 - 칸마다 **최소 폭**을 줍니다. `w-*` 만으로는 표가 좁아질 때 브라우저가 '카테고리 · 유형'을 한 글자씩 세로로 쌓습니다 — 넘치면 표가 가로로 스크롤합니다.
 - 본문(`content`)은 목록에서 읽지 않습니다. 조회가 깨지면 `hasError` 로 배너를 세웁니다.
@@ -505,7 +568,7 @@ stateDiagram-v2
 ### 5.3 상세
 
 - 헤더에 **접수번호**(`#1024`)를 제목 아래 첫 항목으로 적습니다 — 사용자가 전화·메일로 부르는 값입니다. 이메일 문의면 그 뒤에 발신자 주소가 붙습니다(**'이메일' 이라는 출처 라벨은 붙이지 않습니다** — 이미 이메일 문의 메뉴에서 열었습니다).
-- **문의 정보** — 접수번호 · 작성자(회원 상세 링크) · **계정 ID 마스킹** · 연락 이메일 · 카테고리·유형 · 접수일 · 최근 업데이트 · 첫 답변 · 접수 취소.
+- **문의 정보** — 접수번호 · **종류**(2026-09-14, `InquiryMeta.tsx`) · 작성자(회원 상세 링크) · **계정 ID 마스킹** · 연락 이메일 · 카테고리·유형 · 접수일 · 최근 업데이트 · 첫 답변 · 접수 취소.
 - 카드 순서는 **담당자 → 문의 정보 → 문의 내용 → 스레드 → 내부 메모 → 답변 작성**입니다. 담당자를 맨 위에 두는 이유는 §5.9.
 - **이메일이면** 항목 자체가 다릅니다 — From · 원본 Message-ID · 카테고리·유형 · 수신 시각 · **SPF·DKIM·DMARC 뱃지** · 최근 업데이트. **작성자 링크와 계정 ID 는 일부러 없습니다**(발신자를 회원으로 확정해 버리는 것을 막습니다).
 - 문의 내용은 평문 `whitespace-pre-line`. 첨부는 이미지 = 썸네일 → 다이얼로그, 영상 = 인라인 재생, 그 밖 = `download` 링크.
@@ -529,16 +592,20 @@ stateDiagram-v2
 
 `/inquiries/categories` — 목록 헤더의 '카테고리 관리' 버튼 · 사이드바 고객지원 하위
 
+**화면이 kind 별 3섹션**입니다(1:1 문의 · 버그제보 · 불법이용제보, 2026-09-14 · `admin/components/inquiry-categories/category-sections.ts` `groupInquiryCategoriesByKind()`). 조회는 한 번이고 나누는 일만 화면에서 합니다 — 창구마다 질의를 던지면 사용 건수 집계가 세 번 돌고 세 섹션이 서로 다른 시점을 봅니다. 비어 있는 창구도 섹션 자리를 남깁니다. **순서·저장 버튼도 섹션마다 따로**입니다 — `sort_order` 가 kind 안에서의 순서라 한 버튼으로 셋을 저장하면 서로의 순번을 덮어씁니다.
+
 | 동작               | 규칙                                                                                                                                                                   | 감사 로그                  |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| **등록**           | `key` 는 라벨에서 자동 생성(남는 라틴 문자가 없으면 `c-<무작위 8자>`). `sort_order` 는 **맨 뒤**. 중복 라벨은 `23505` → `이미 같은 이름의 카테고리가 있습니다.`        | `inquiry_category.create`  |
-| **수정 · 개명**    | `update_inquiry_category()` RPC 한 번(= 한 트랜잭션). 라벨이 바뀌면 **과거 문의를 함께 옮기고** 건수를 토스트·감사 로그(`relabelled_inquiries`)에 남깁니다. `key` 유지 | `inquiry_category.update`  |
+| **등록**           | `key` 는 라벨에서 자동 생성(남는 라틴 문자가 없으면 `c-<무작위 8자>`). **종류(kind) 셀렉트**로 어느 섹션에 넣을지 고릅니다. `sort_order` 는 **그 kind 섹션의 맨 뒤**. 중복 라벨은 `23505` → `이미 같은 이름의 카테고리가 있습니다.` | `inquiry_category.create`  |
+| **수정 · 개명 · 종류 변경** | `update_inquiry_category()` RPC 한 번(= 한 트랜잭션, 9인자). 라벨이 바뀌면 **과거 문의를 함께 옮기고**, **종류가 바뀌어도 같은 방식으로 함께 옮깁니다**(§1.4) — 건수를 토스트·감사 로그(`relabelled_inquiries`)에 남깁니다. `key` 유지 | `inquiry_category.update`  |
 | **삭제**           | **0건일 때만.** `이 카테고리로 접수된 문의가 N건 있습니다. 삭제 대신 비활성화해 주세요.` 화면·액션이 같은 규칙을 각각 검사                                             | `inquiry_category.delete`  |
 | **활성 토글**      | 끄면 사용자 폼에서 사라지고 접수도 거절됩니다. **과거 문의의 분류 문자열은 그대로**                                                                                    | `inquiry_category.update`  |
-| **순서**           | 화면 순서를 그대로 `0..n-1` 로 **다시 씁니다**. 행마다 UPDATE 라 **일부만 반영될 수 있고** 실패 문구가 그 사실을 적습니다                                              | `inquiry_category.reorder` |
+| **순서**           | 화면 순서를 그대로 **그 섹션 안에서** `0..n-1` 로 **다시 씁니다**. 행마다 UPDATE 라 **일부만 반영될 수 있고** 실패 문구가 그 사실을 적습니다                            | `inquiry_category.reorder` |
 | **세부 유형 편집** | 항목마다 `name="subtypes"` 인 **진짜 입력**. 서버는 `formData.getAll('subtypes')` 로 **화면 순서 그대로** 받습니다. 빈 칸은 걷어내고 **중복만 막습니다**. 20개·각 30자 | 위 update 에 포함          |
 
 개명에 따른 재라벨링은 그 문의들의 `updated_at` 을 밀어 올립니다(`set_updated_at` 트리거). 트리거를 끄면 잠금 범위가 테이블 전체로 커지므로 그대로 뒀습니다 — "수정일"이 밀릴 뿐 내용·상태·이력은 그대로입니다.
+
+**종류 이동 확인 창** — 수정 다이얼로그에서 kind 를 바꾸면, 그 카테고리로 접수된 문의가 **1건 이상**일 때만 확인을 세웁니다(`admin/components/inquiry-categories/category-kind-move.ts` `kindMoveOf()` · `kindMoveNotice()`). 문구는 `<라벨> 카테고리를 <이전 종류> → <이후 종류> 로 옮깁니다. 이 카테고리로 접수된 문의 N건의 종류도 함께 바뀝니다.` — 건수를 문장에 박는 이유는 "종류가 바뀝니다"만으로는 과거 문의까지 다른 창구로 옮겨 간다는 사실이 드러나지 않기 때문입니다. 등록 중이거나(옮길 과거가 없음) 접수 0건이면 묻지 않습니다 — 모든 저장에 확인을 붙이면 운영자가 습관적으로 누르고 확인이 뜻을 잃습니다.
 
 ### 5.6 답변 템플릿
 
@@ -568,13 +635,14 @@ stateDiagram-v2
 아는 이름만 바꿉니다 — `{{점검일}}` 처럼 모르는 표시는 **그대로 둡니다**(운영자가 손으로 채우려고 적어 둔 것일 수 있고, 조용히 지우면 빈칸인 채로 발송됩니다). 등록 화면은 예시 문의로 **치환된 뒤의 문장**을 미리 보여 줍니다.
 
 - **불러오기**는 문의 상세의 답변 폼 위에 있습니다(웹·이메일 공통 · `admin/components/inquiries/InquiryReplyTemplatePicker.tsx`). 선택지는 **공통 + 그 문의의 카테고리**, 사용 중인 것만입니다. 등록된 카테고리가 없는 옛 라벨('계정' 등)이나 이메일 문의면 공통만 남습니다.
+- **카테고리 전용 템플릿의 선택지 표기는 `종류 · 라벨`** 입니다(2026-09-14, 예: `버그제보 · 접속·서버` — `admin/lib/validation/inquiry-reply-templates.ts` `templateCategoryLabel()`). 세 창구에 걸쳐 라벨이 겹칠 일은 없지만(§4.3 전역 유니크), 종류를 먼저 적어야 운영자가 지금 답하는 문의의 창구와 같은 템플릿인지 한눈에 압니다.
 - 답변 칸이 비어 있으면 **묻지 않고** 넣습니다(잃을 것이 없습니다). 쓰던 글이 있으면 확인 창을 세웁니다 — `템플릿으로 바꾸기` / `끝에 추가`(빈 줄 하나를 사이에 둡니다) / `취소`.
 - **답변 액션은 그대로입니다.** 템플릿은 입력칸을 채울 뿐이고 저장·발송 경로(§5.4)는 손대지 않았습니다. 다만 답변 textarea 는 이 기능 때문에 **제어 입력**이 되었습니다 — DOM 으로 값을 밀어 넣으면 React 가 모르고 글자수 표시가 멈춥니다.
 - 시드 6개(공통 2 · 접속·서버 · 저장·데이터 · 재화·아이템 · 기타·건의)는 `where not exists` 로 넣습니다. 문안을 고치거나 지운 뒤 마이그레이션을 다시 돌려도 되살아나지 않습니다.
 
 ### 5.7 권한 · 감사 로그
 
-모듈 키는 `inquiries`(라벨 '1:1 문의') 하나입니다. 문의 목록·상세·답변과 **카테고리 관리 · 답변 템플릿이 같은 모듈**입니다. FAQ 만 하위 메뉴에 있으면서 별도 모듈(`faqs`)입니다.
+모듈 키는 `inquiries`(라벨 '홈페이지 문의') 하나입니다. 문의 목록·상세·답변과 **카테고리 관리 · 답변 템플릿이 같은 모듈**입니다. FAQ 만 하위 메뉴에 있으면서 별도 모듈(`faqs`)입니다.
 
 | 등급    | 되는 것                                                                                                                                                         |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -583,17 +651,19 @@ stateDiagram-v2
 
 | `action`                                                             | 대상                      | 남는 내용                                                               | 목록 표기                                    |
 | -------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------- | -------------------------------------------- |
-| `inquiry.status`                                                     | `inquiries`               | `before {status}` · `after {status}`                                    | 1:1 문의 상태 변경                           |
-| `inquiry.reply`                                                      | `inquiry_replies`         | `after {inquiry_id, author_name, length}`                               | 1:1 문의 답변                                |
-| `inquiry.email.reply`                                                | `inquiry_replies`         | 동일(이메일 문의의 답신)                                                | 1:1 문의 이메일 답변                         |
-| `inquiry.email.resend`                                               | `inquiry_replies`         | `after {result}` = `sent\|queued\|not_configured\|unauthorized\|failed` | 1:1 문의 이메일 재발송                       |
-| `inquiry.assign` · `inquiry.unassign`                                | `inquiries`               | `before {assigned_to}` · `after {assigned_to, assignee_nickname}`       | 1:1 문의 담당자 배정 · 담당자 배정 해제      |
-| `inquiry.edit_lock`                                                  | `inquiries`               | `after {editing_by, forced:true}` — **가로챌 때만** 남깁니다            | 1:1 문의 작성 잠금 가로채기                  |
+| `inquiry.status`                                                     | `inquiries`               | `before {status}` · `after {status}`                                    | 홈페이지 문의 상태 변경                           |
+| `inquiry.reply`                                                      | `inquiry_replies`         | `after {inquiry_id, author_name, length}`                               | 홈페이지 문의 답변                                |
+| `inquiry.email.reply`                                                | `inquiry_replies`         | 동일(이메일 문의의 답신)                                                | 홈페이지 문의 이메일 답변                         |
+| `inquiry.email.resend`                                               | `inquiry_replies`         | `after {result}` = `sent\|queued\|not_configured\|unauthorized\|failed` | 홈페이지 문의 이메일 재발송                       |
+| `inquiry.assign` · `inquiry.unassign`                                | `inquiries`               | `before {assigned_to}` · `after {assigned_to, assignee_nickname}`       | 홈페이지 문의 담당자 배정 · 담당자 배정 해제      |
+| `inquiry.edit_lock`                                                  | `inquiries`               | `after {editing_by, forced:true}` — **가로챌 때만** 남깁니다            | 홈페이지 문의 작성 잠금 가로채기                  |
 | `inquiry_note.create` · `inquiry_note.delete`                        | `inquiry_notes`           | `after {inquiry_id, length}` — **본문은 남기지 않습니다**               | 문의 내부 메모 등록 · 삭제                   |
 | `inquiry_category.create` · `.update` · `.delete` · `.reorder`       | `inquiry_categories`      | 수정은 `before`/`after` 전체 + `relabelled_inquiries`                   | 문의 카테고리 등록 · 수정 · 삭제 · 순서 변경 |
 | `inquiry_reply_template.create` · `.update` · `.delete` · `.reorder` | `inquiry_reply_templates` | 수정·삭제는 `before`/`after` 전체(문안 포함) · 순서는 `after {ids}`     | 답변 템플릿 등록 · 수정 · 삭제 · 순서 변경   |
 
 `admin/components/audit/audit-labels.ts` 는 **영역 + 동작 조합**으로 라벨을 만듭니다. 새 영역을 만들 때는 `DOMAIN_LABELS`(`inquiry_reply_template` → '답변 템플릿')와 `TABLE_LABELS`(`inquiry_reply_templates`)에 한 줄씩 넣으세요 — 빠뜨리면 목록에 **영문 원문**이 그대로 남습니다.
+
+카테고리 수정(`inquiry_category.update`)의 변경 요약에 **`kind: 종류` 필드 라벨**이 추가됐습니다(`FIELD_LABELS`, 2026-09-14) — 카테고리의 창구가 바뀌면 그 분류로 접수된 과거 문의까지 다른 창구로 옮겨 가므로, before/after 칸에서 가장 먼저 읽혀야 하는 값입니다. `DOMAIN_LABELS.inquiry` · `TABLE_LABELS.inquiries` 도 **'홈페이지 문의'**로 바뀌었습니다(§5.2) — 옛 스크린샷·문서에 남은 '1:1 문의'라는 감사 목록 표기는 지금은 보이지 않습니다.
 
 ### 5.8 오류 · 문구 규칙
 
@@ -687,7 +757,7 @@ sequenceDiagram
 2. **전달 중복 제거** — `email_inbound_events(id = svix-id)`. 제공자는 2xx 를 받을 때까지 재시도합니다.
 3. **루프 방지** — `Auto-Submitted` · `Precedence: bulk|junk|list` · `X-Autoreply` · 우리 발신 주소.
 4. **스레드 판정** — 수신 주소가 `reply+<thread_key>@…` 이거나 `In-Reply-To` 가 우리 발송 id 와 맞으면 **기존 문의의 inbound 답글**로 붙이고 `answered → in_progress` 로 되돌립니다.
-5. **저장** — `source='email'` · `category='email'` · `type='general'` · **`user_id` 는 null** · `email_thread_key` 발급 · `email_auth` 에 판정 그대로.
+5. **저장** — `source='email'` · `category='email'` · `type='general'` · **`user_id` 는 null** · `email_thread_key` 발급 · `email_auth` 에 판정 그대로. `category='email'` 은 `inquiry_categories` 에 없는 라벨이라 트리거가 손대지 않고 **기본값 `kind='inquiry'`** 로 남습니다 — 이메일 문의는 항상 1:1 문의 창구입니다(§1.4·§5.2).
 6. **접수 확인 메일** — 기본 on(`EMAIL_INQUIRY_ACK`). **같은 발신자에게 24시간 1통**. 폼 동의가 없으므로 개인정보 처리 고지를 여기서 합니다.
 7. **발신** — 콘솔 답신 → `email-outbound`. 배달 이벤트가 돌아와 `delivery_status` 를 갱신합니다.
 
@@ -714,16 +784,16 @@ sequenceDiagram
 
 ### 7.1 단위 테스트
 
-2026-09-11(고객지원 v2 디자인 적용 뒤) 실행 결과: **사용자 사이트 1292개(127파일) · 관리자 842개(62파일) 전체 통과**. 아래는 문의와 직접 관련된 파일만 추린 것입니다.
+2026-09-14(접수 종류 kind 적용 뒤) 실행 결과: **사용자 사이트 1362건 전체 통과 · 관리자 887건 전체 통과**(2026-09-11 실행 결과는 각각 1292개(127파일) · 842개(62파일)였습니다). 아래는 문의와 직접 관련된 파일만 추린 것입니다.
 
 | 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                          |
 | ---------------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
-| `tests/unit/validation/inquiry.test.ts`                                                  | 39    | 필수 항목 · 계정 ID 서식 · 상한 · CRLF · 세부 유형 대조 · 첨부 검증 · `isInquiryFormFilled`              |
-| `tests/unit/actions/inquiry-edit-actions.test.ts`                                        | 15    | 수정 가능 상태 · 옛 카테고리/유형 허용 · 첨부 분리 · 쿨다운 · 42501 문구 · 취소                          |
+| `tests/unit/validation/inquiry.test.ts`                                                  | 44    | 필수 항목 · 계정 ID 서식 · 상한 · CRLF · 세부 유형 대조 · 첨부 검증 · `isInquiryFormFilled`              |
+| `tests/unit/actions/inquiry-edit-actions.test.ts`                                        | 16    | 수정 가능 상태 · 옛 카테고리/유형 허용 · 첨부 분리 · 쿨다운 · 42501 문구 · 취소                          |
 | `tests/unit/support/InquiryFields.test.tsx`                                              | 13    | 프리필 교체 · 확인 모달 · 유형 셀렉트 잠금과 hidden '기타' · 계정 ID 프리필                              |
 | `tests/unit/validation/inquiry-video.test.ts`                                            | 13    | 영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(`null` vs `[]`)                                           |
 | `tests/unit/constants/support.test.ts`                                                   | 12    | 상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지                                          |
-| `tests/unit/actions/inquiry-actions.test.ts`                                             | 11    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect                                     |
+| `tests/unit/actions/inquiry-actions.test.ts`                                             | 14    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect · **kind bind 검증**(2026-09-14)   |
 | `tests/unit/actions/inquiry-videos.test.ts`                                              | 11    | `claimPendingVideos` 의 세 검사와 롤백 · 서비스 롤 부재                                                  |
 | `tests/unit/data/inquiries.test.ts`                                                      | 10    | jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑                                                         |
 | `tests/unit/supabase/inquiry-pending-path.test.ts`                                       | 9     | pending 경로 조립과 `isInquiryPendingPath`(깊이 · uid · 트래버설)                                        |
@@ -731,10 +801,13 @@ sequenceDiagram
 | `tests/unit/utils/inquiry-prefill.test.ts`                                               | 8     | `isDiscardableContent` · `withLegacyCategory`                                                            |
 | `tests/unit/utils/inquiry-permissions.test.ts`                                           | 5     | `canEditInquiry` · `canCancelInquiry` · 취소 판정                                                        |
 | `tests/unit/support/InquiryConsentField.test.tsx` · `InquiryForm.test.tsx`               | 5 · 3 | 동의 체크박스가 보이는지 · 켜짐 표시(흰 체크) · 라벨 클릭 · 오류 연결 · 동의 없이는 제출 잠김            |
-| `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 4 · 4 | 폴백 · 캐시 태그 · 접수 완료 모달                                                                        |
+| `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 7 · 7 | 창구별 캐시·폴백(kind 별 격리 확인, 2026-09-14) · 접수 완료 모달(창구별 문구)                            |
+| `tests/unit/constants/inquiry-kind.test.ts`                                              | 12    | `INQUIRY_KINDS` 값·라벨·경로·제출 문구 · `isInquiryKind()` · `inquiryKindLabel()` 알 수 없는 값 폴백(2026-09-14) |
 | `admin/tests/unit/inquiries-validation.test.ts`                                          | 33    | 상태 전이표 · 탭 파싱 · 검색어 정제 · 기간 경계(KST) · 마스킹 · 답변 스키마                              |
-| `admin/tests/unit/inquiry-category-actions.test.ts`                                      | 18    | RPC 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화                                   |
-| `admin/tests/unit/inquiry-categories-validation.test.ts`                                 | 16    | 라벨/설명/프리필 상한 · `toCategoryKey` · 세부 유형 중복·개수·길이                                       |
+| `admin/tests/unit/inquiry-category-actions.test.ts`                                      | 22    | RPC 인자 · 23505 문구 · 삭제 0건 가드 · 순서 저장 · 감사 로그 · 무효화                                   |
+| `admin/tests/unit/inquiry-categories-validation.test.ts`                                 | 20    | 라벨/설명/프리필 상한 · `toCategoryKey` · 세부 유형 중복·개수·길이(kind 스키마 검증 추가, 2026-09-14)    |
+| `admin/tests/unit/inquiry-kind.test.ts`                                                  | 10    | 클라이언트 사본과 값·라벨 **글자 그대로 동일**한지 · `isInquiryKind()` · `inquiryKindLabel()`(2026-09-14) |
+| `admin/tests/unit/inquiry-category-sections.test.ts`                                     | 10    | `groupInquiryCategoriesByKind()` 섹션 순서·빈 창구 자리 · `kindMoveOf()`/`kindMoveNotice()` 확인 여부·문구(2026-09-14) |
 | `admin/tests/unit/inquiry-email-actions.test.ts`                                         | 7     | 다시 보내기 — 방향 · 출처 · 이미 보낸 답신 차단 · 감사 로그                                              |
 | `admin/tests/unit/inquiry-email-auth.test.ts`                                            | 6     | `parseEmailAuth` · `hasEmailAuthFailure`(`none`·null 은 실패가 아니다)                                   |
 | `admin/tests/unit/inquiry-reply-template-actions.test.ts`                                | 13    | 권한 가드 5종 · 공통=NULL 저장 · 23505/23503 문구 · 카테고리 이동 시 순서 재배치 · 감사 로그 · 부분 반영 |
@@ -760,13 +833,13 @@ cd admin && pnpm test -- tests/unit/inquir
 
 | 파일                                              | 건수 | 시나리오                                                                                                                                                                                                                             |
 | ------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/e2e/support-inquiries.spec.ts`             | 10   | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** / 이미지 3개·영상 2개 동시 첨부           |
+| `tests/e2e/support-inquiries.spec.ts`             | 11   | 프리필·교체 확인 모달 / 필수 항목 잠금 / **동의 체크박스가 보이고 켜짐 표시가 뜨는지** / 비로그인 리다이렉트 / 메뉴 노출 / 접수→목록→운영자 답변 표시 / 수정 후 취소 / 큰 첨부 거절 후 통과 / **영상 직접 업로드 후 재생** / 이미지 3개·영상 2개 동시 첨부 / **버그제보·불법이용제보 접수 1건씩 + 내 문의 내역 종류 라벨 확인**(2026-09-14)           |
 | `admin/tests/e2e/inquiries.spec.ts`               | 3    | 새 문의가 접수 대기로 보임 / 답변 등록 → 답변 완료 + **사용자 화면 노출** / 취소된 접수는 읽기 전용                                                                                                                                  |
-| `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영** / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                                                                                                     |
+| `admin/tests/e2e/inquiry-categories.spec.ts`      | 2    | 등록·개명·프리필 수정·삭제가 **사용자 폼에 반영**(kind 별 3섹션 확인 · **종류 변경 확인 창 + 과거 문의 kind 재배치**, 2026-09-14) / 접수된 문의가 있으면 삭제 대신 비활성화 안내                                                    |
 | `admin/tests/e2e/inquiry-reply-templates.spec.ts` | 3    | 카테고리 화면 → 템플릿 등록(치환 미리보기) / 답변에 불러오기 — 끝에 추가 · 바꾸기 확인 · **저장된 답변에 치환된 닉네임** / 삭제 후 선택지에서 사라짐                                                                                 |
 | `admin/tests/e2e/inquiry-assignment.spec.ts`      | 3    | 미배정 필터 + 접수번호 검색 → 나에게 배정(상태도 처리 중) / **브라우저 컨텍스트 두 개** — 두 번째 운영자에게 "작성 중" 배너·폼 잠금, 가로채기 뒤 첫 운영자가 먼저 답하면 **저장 거절 + 초안 유지**(답변은 1건) / 내부 메모 작성·삭제 |
 
-`playwright.config.ts` 는 사용자 사이트를 `chromium` · `Pixel 7` **두 프로젝트**로 돌립니다 — `support-inquiries.spec.ts` 10건은 실제로 **20건**(10 × 2) 실행됩니다.
+`playwright.config.ts` 는 사용자 사이트를 `chromium` · `Pixel 7` **두 프로젝트**로 돌립니다 — `support-inquiries.spec.ts` 11건은 실제로 두 프로젝트만큼 곱해 실행됩니다(2026-09-14 기준 chromium 프로젝트에서 **11건 전체 통과** 확인).
 
 1. **스텁 로그인** — 사용자 e2e 는 `/login?next=…` → `button[name="provider"][value="google"]` 클릭. 익명 로그인이 켜져 있으면 매 실행마다 새 계정이 생겨 온보딩(닉네임 · 월드 UID · 약관 3종)을 거치고, 데모 계정 폴백이면 곧장 목적지에 도착합니다.
 2. **관리자 e2e 는 자격 증명을 저장소에 두지 않습니다.** `ADMIN_E2E_SECRETS`(기본값은 스크래치패드의 `admin-bootstrap.env`)를 실행 중에만 읽고, 서비스 롤은 `.env.local` 에서 읽어 픽스처·검증에만 씁니다.
@@ -832,6 +905,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `supabase/migrations/20260911000200_inquiry_reply_templates.sql`       | 답변 템플릿 테이블 · RLS · 시드 6종                                                                                                        |
 | `supabase/migrations/20260911000300_inquiry_assignment.sql`            | 담당자 · 작성 중 잠금 · `inquiry_notes` · `claim/release_inquiry_edit()` · `add_inquiry_reply()` · 잠금은 `updated_at` 을 밀지 않는 트리거 |
 | `supabase/migrations/20260911000400_inquiry_no.sql`                    | **접수번호** `inquiry_no`(백필 → `generated always as identity` · 유니크) · 소유자 가드에 열 고정                                          |
+| `supabase/migrations/20260914000100_inquiry_kind.sql`                  | **접수 종류(kind)** — `inquiry_categories.kind` · `inquiries.kind` · 트리거 `inquiries_set_kind_from_category` · 카테고리 4종 재배치 + 불법이용제보 5종 시드 · `update_inquiry_category()`(9 인자) |
 
 ### 사용자 사이트
 
@@ -839,28 +913,32 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `proxy.ts`                                                                                          | `/support` 쓰기 게이트 · 온보딩 · 탈퇴 게이트                |
 | `next.config.ts`                                                                                    | `experimental.serverActions.bodySizeLimit = '14mb'`          |
-| `app/(public)/support/page.tsx`                                                                     | 문의 폼 화면 — 로그인 여부 · 카테고리 · 계정 ID 프리필       |
+| `app/(public)/support/page.tsx` · `bug/page.tsx` · `report/page.tsx`                                | 세 창구의 라우트 파일(메타데이터 + kind 인자만 다름, 2026-09-14) |
+| `components/support/InquiryKindPage.tsx`                                                            | 접수 화면 본문 — 세 창구가 공유(카테고리 조회 · 로그인 판정 · 폼 렌더, 2026-09-14) |
 | `app/(public)/support/inquiries/page.tsx` · `[id]/page.tsx` · `[id]/edit/page.tsx`                  | 내 문의 내역 목록 · 상세 · 수정                              |
 | `app/(auth)/account/inquiries/page.tsx`                                                             | 마이페이지 문의내역 탭(첫 10건 표)                           |
-| `components/support/SupportCard.tsx` · `SupportTabs.tsx` · `SupportBackLink.tsx`                    | 카드 골격(좌측 메뉴 374 · 구분선 · 콘텐츠 698) · 모바일 세그먼트 탭 3개 · 상세/수정 상단 뒤로 링크(시안 v2) |
+| `components/support/SupportCard.tsx` · `SupportTabs.tsx` · `SupportBackLink.tsx`                    | 카드 골격(좌측 메뉴 374 · 구분선 · 콘텐츠 698) · 모바일 세그먼트 탭(5개 · 가로 스크롤, 2026-09-14) · 상세/수정 상단 뒤로 링크(시안 v2) |
 | `components/support/InquiryForm.tsx`                                                                | 접수·수정 공용 폼 · 필수 항목 잠금 · 동의                    |
 | `components/support/InquiryFields.tsx`                                                              | 계정 ID · 카테고리/유형 · 제목 · 내용 마크업                 |
 | `components/support/InquiryConsentField.tsx` · `SupportCheckbox.tsx`                                | 개인정보 수집·이용 동의 줄 · 보이는 체크박스(켜짐 = 흰 체크) |
 | `components/support/use-inquiry-prefill.ts`                                                         | 프리필 상태 기계 · 확인 모달 · 자동 성장 textarea            |
 | `components/support/InquiryAttachmentField.tsx` · `InquiryAttachmentLists.tsx` · `InquiryFileChip.tsx` | 파일 선택 · 축소 · 잠금 · 파일 칩(이름 말줄임·용량·X, 기존 첨부는 `removeAttachments` 로 표시) |
 | `components/support/use-inquiry-videos.ts` · `InquiryVideoList.tsx`                                 | 영상 업로드 행 상태 · 진행률 · 취소 · 다시 시도              |
-| `components/support/InquiryDetailCard.tsx` · `InquiryDetailMeta.tsx` · `InquiryAttachmentList.tsx` · `InquiryReplyThread.tsx` | 상세 본문 · 메타 줄(등록일·카테고리·계정 ID·접수번호) · 첨부 보기 · 답변 스레드(287px 넘으면 내부 스크롤) |
-| `components/support/InquiryList.tsx` · `InquiryRow.tsx` · `InquiryPagination.tsx` · `InquiryStatusBadge.tsx` | 내 문의 내역 목록 · 행 카드 · 번호 페이지네이션(6건/페이지) · 상태 뱃지(답변 완료만 텍스트) |
+| `components/support/InquiryDetailCard.tsx` · `InquiryDetailMeta.tsx` · `InquiryAttachmentList.tsx` · `InquiryReplyThread.tsx` | 상세 본문 · 메타 줄(**종류**·등록일·카테고리·계정 ID·접수번호, 2026-09-14 부터 종류 추가) · 첨부 보기 · 답변 스레드(287px 넘으면 내부 스크롤) |
+| `components/support/InquiryList.tsx` · `InquiryRow.tsx` · `InquiryPagination.tsx` · `InquiryStatusBadge.tsx` | 내 문의 내역 목록(세 창구 함께, 필터 없음) · 행 카드(**종류 알약** 추가, 2026-09-14) · 번호 페이지네이션(6건/페이지) · 상태 뱃지(답변 완료만 텍스트) |
 | `components/support/InquiryOwnerActions.tsx` · `CancelInquiryButton.tsx`                            | 수정 · 접수 취소 버튼과 확인 모달                            |
 | `components/account/InquiryTable.tsx`                                                               | 마이페이지 문의내역 표                                       |
-| `lib/actions/inquiry-actions.ts`                                                                    | 접수 서버 액션                                               |
-| `lib/actions/inquiry-edit-actions.ts`                                                               | 수정 · 접수 취소 서버 액션                                   |
+| `lib/actions/inquiry-actions.ts`                                                                    | 접수 서버 액션(`kind` 를 `bind` 로 받음, 2026-09-14)          |
+| `lib/actions/inquiry-edit-actions.ts`                                                               | 수정 · 접수 취소 서버 액션(카테고리 목록을 **접수된 kind** 로 조회) |
 | `lib/actions/inquiry-attachments.ts`                                                                | 이미지 업로드 · 삭제 · 수정 폼의 첨부 분리                   |
 | `lib/actions/inquiry-videos.ts`                                                                     | pending 영상 검증 · 확정 이동 · 롤백(서비스 롤)              |
 | `lib/validation/inquiry.ts`                                                                         | 접수·수정 스키마 · 필수 항목 · 첨부 검증 · 문구              |
 | `lib/validation/inquiry-video.ts`                                                                   | 영상 MIME·크기·개수 · 숨은 필드 JSON 계약                    |
 | `lib/data/inquiries.ts`                                                                             | 내 문의 목록·상세·답변·서명 URL                              |
-| `lib/data/inquiry-categories.ts`                                                                    | 활성 카테고리 캐시 조회 · 폴백                               |
+| `lib/data/inquiry-categories.ts`                                                                    | 창구(kind)별 활성 카테고리 캐시 조회 · 폴백(2026-09-14 부터 kind 인자) |
+| `lib/constants/inquiry-kind.ts`                                                                     | 접수 종류 값·라벨·경로·제출 문구(`INQUIRY_KINDS`, 관리자 쪽에 같은 내용의 사본, 2026-09-14) |
+| `lib/constants/inquiry-category-fallback.ts`                                                        | 창구별 정적 폴백 라벨(1:1 문의 4 · 버그제보 4 · 불법이용제보 5, 2026-09-14) |
+| `lib/constants/support-menu.ts`                                                                     | 고객지원 메뉴 5행 — 앞 셋은 `INQUIRY_KINDS` 에서 파생, 아이콘만 여기서 붙임(2026-09-14) |
 | `lib/data/cache.ts`                                                                                 | `CACHE_TAGS.inquiryCategories` · `STATIC_REVALIDATE_SECONDS` |
 | `lib/supabase/storage.ts`                                                                           | 첨부·영상 상한 상수 · 경로 조립 · pending 판정               |
 | `lib/supabase/upload-inquiry-video.ts`                                                              | 서명 업로드 URL + XHR PUT · 진행률 · 취소 · 조각 삭제        |
@@ -868,7 +946,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `lib/utils/downscale-image.ts` · `mask.ts`                                                          | 업로드 전 축소 · 계정 ID 마스킹                              |
 | `lib/utils/inquiry-no.ts`                                                                           | 접수번호 표기 `#1024`(관리자 콘솔에 같은 내용의 사본) · `No. 1024`(목록·상세, 시안 v2) |
 | `lib/utils/file-name.ts`                                                                            | 파일 칩 이름 말줄임 `truncateFileBase()`(확장자는 남기고 앞부분만, 시안 v2)              |
-| `lib/constants/support.ts`                                                                          | 메뉴 · 페이지 크기 · 안내 문구 · 폴백 카테고리 · 파라미터 이름 |
+| `lib/constants/support.ts`                                                                          | 페이지 크기 · 안내 문구 · 파라미터 이름 · 창구별 접수 완료 문구(`INQUIRY_SUBMITTED_COPY`, 2026-09-14) |
 | `lib/constants/inquiry-status.ts`                                                                   | 상태 라벨·색·모양 표(`INQUIRY_STATUS_MAP`) · `resolveInquiryStatus()`(`support.ts` 에서 분리, 시안 v2) |
 | `lib/constants/inquiry-attachment.ts`                                                               | 첨부 안내 문구(`ATTACHMENT_NOTICE_LINES`) · 파일 선택 버튼 라벨(`support.ts` 에서 분리, 시안 v2) |
 | `lib/actions/rate-limit.ts`                                                                         | 접수 30초 · 재수정 10초 쿨다운                               |
@@ -880,15 +958,15 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `admin/app/(admin)/inquiries/page.tsx`                                                                                                             | 목록 · 출처 프리셋 · 필터 조립                                     |
 | `admin/app/(admin)/inquiries/[id]/page.tsx`                                                                                                        | 상세 · 상태 · 답변 · 취소 잠금                                     |
 | `admin/app/(admin)/inquiries/categories/page.tsx`                                                                                                  | 카테고리 관리 화면                                                 |
-| `admin/components/inquiries/InquiryFilters.tsx` · `InquiryTable.tsx`                                                                               | 상태 탭 + GET 폼 · 목록 표                                         |
-| `admin/components/inquiries/InquiryMeta.tsx` · `InquiryEmailMeta.tsx`                                                                              | 웹 · 이메일 메타(인증 뱃지)                                        |
+| `admin/components/inquiries/InquiryFilters.tsx` · `InquiryTable.tsx`                                                                               | 상태 탭 + GET 폼(종류 셀렉트 포함, 2026-09-14) · 목록 표(종류 뱃지 칸) |
+| `admin/components/inquiries/InquiryMeta.tsx` · `InquiryEmailMeta.tsx`                                                                              | 웹 메타(종류 항목 추가, 2026-09-14) · 이메일 메타(인증 뱃지)       |
 | `admin/components/inquiries/InquiryAttachments.tsx`                                                                                                | 썸네일 · 다이얼로그 · 영상 재생 · 내려받기                         |
 | `admin/components/inquiries/InquiryReplyForm.tsx` · `InquiryReplyThread.tsx` · `InquiryEmailThreadItem.tsx` · `InquiryResendButton.tsx`            | 답변 작성 · 스레드 · 다시 보내기                                   |
 | `admin/components/inquiries/InquiryStatusForm.tsx` · `InquiryCloseButton.tsx` · `InquiryStatusBadge.tsx`                                           | 상태 변경 · 종료 · 뱃지(상태 폼은 충돌 스냅샷도 실어 보냅니다)     |
 | `admin/components/inquiries/InquiryAssignmentCard.tsx` · `InquiryAssignmentControls.tsx` · `InquiryAssigneeCell.tsx` · `InquiryAssigneeFilter.tsx` | 담당자 카드 · 버튼/확인 의도 · 목록 담당자 칸 · 목록 필터          |
 | `admin/components/inquiries/use-inquiry-edit-lock.ts` · `InquiryEditLockBanner.tsx`                                                                | 잠금 claim/하트비트/폴링/해제 · "작성 중" · "앞선 스레드" 배너     |
 | `admin/components/inquiries/InquiryNotes.tsx` · `InquiryNoteDeleteButton.tsx`                                                                      | 내부 메모 목록·작성 · 삭제 확인                                    |
-| `admin/components/inquiry-categories/**`                                                                                                           | 목록 · 등록/수정 다이얼로그 · 삭제 · 세부 유형 편집기              |
+| `admin/components/inquiry-categories/**`                                                                                                           | 목록 · 등록/수정 다이얼로그 · 삭제 · 세부 유형 편집기 · `category-sections.ts`(kind 별 3섹션 그룹핑) · `category-kind-move.ts`(종류 이동 확인 판단, 2026-09-14) |
 | `admin/lib/actions/inquiries-actions.ts`                                                                                                           | 상태 전이 · 답변 등록 · 메일 발송 위임                             |
 | `admin/lib/actions/inquiry-category-actions.ts`                                                                                                    | 카테고리 CRUD · 토글 · 순서 · 무효화                               |
 | `admin/lib/actions/inquiry-email-actions.ts`                                                                                                       | 답신 다시 보내기                                                   |
@@ -903,10 +981,12 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `admin/lib/validation/inquiry-no-search.ts` · `admin/lib/utils/inquiry-no.ts`                                                                      | 검색어에서 접수번호 읽기 · `#1024` 표기(사용자 사이트와 같은 내용) |
 | `admin/lib/validation/inquiry-source.ts`                                                                                                           | 출처 값·라벨 · `email`/`general` 표시 치환                         |
 | `admin/lib/validation/inquiry-categories.ts`                                                                                                       | 카테고리 입력 계약 · `toCategoryKey()` · 세부 유형 규칙            |
+| `admin/lib/validation/inquiry-reply-templates.ts`                                                                                                  | 템플릿 입력 계약 · `templateCategoryLabel()`(선택지 `종류 · 라벨`, 2026-09-14) |
+| `admin/lib/constants/inquiry-kind.ts`                                                                                                              | 접수 종류 값·라벨(클라이언트 사본과 글자 그대로 같아야 함, 2026-09-14) |
 | `admin/lib/email/send-inquiry-reply.ts`                                                                                                            | `email-outbound` 호출 계약(응답 코드 → 문구)                       |
 | `admin/lib/revalidate.ts`                                                                                                                          | `CLIENT_CACHE_TAGS.inquiryCategories` · `revalidateClient()`       |
-| `admin/lib/nav.ts` · `admin/lib/auth/permissions.ts`                                                                                               | 고객지원 메뉴(출처 프리셋) · `inquiries` 모듈                      |
-| `admin/components/audit/audit-labels.ts`                                                                                                           | 감사 로그 영역·동작 라벨(§5.7)                                     |
+| `admin/lib/nav.ts` · `admin/lib/auth/permissions.ts`                                                                                               | 고객지원 메뉴("홈페이지 문의", 2026-09-14 개명 · 출처 프리셋) · `inquiries` 모듈(라벨 "홈페이지 문의") |
+| `admin/components/audit/audit-labels.ts`                                                                                                           | 감사 로그 영역·동작 라벨(§5.7). `inquiry`/`inquiries` 라벨 "홈페이지 문의", `kind` 필드 라벨 "종류"(2026-09-14) |
 
 ### 이메일 · 배치 · 문서
 

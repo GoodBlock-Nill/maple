@@ -1,16 +1,73 @@
-# 1:1 문의 — 2026-09-10 · 09-11 변경 사항 정리
+# 고객지원(1:1 문의 · 버그제보 · 불법이용제보) — 2026-09-10 · 09-11 · 09-14 변경 사항 정리
 
-기준 커밋 `0f186be`(2026-09-11 14:38) · 대상 기간 **2026-09-10 ~ 2026-09-11** · 현재 상태 문서 `docs/admin/INQUIRY-GUIDE.md`
+기준 커밋 `d4eccf8`(2026-09-14) · 대상 기간 **2026-09-10 ~ 2026-09-11 · 2026-09-14** · 현재 상태 문서 `docs/admin/INQUIRY-GUIDE.md`
 
 > 같은 내용의 단일 HTML 문서: `docs/admin/INQUIRY-CHANGELOG.html` (다이어그램 포함)
 >
-> 이 문서는 **무엇이 어떻게 바뀌었는지**만 다룹니다. "지금 어떻게 동작하는가"는 `docs/admin/INQUIRY-GUIDE.md`, 템플릿 세 갈래 비교는 `docs/admin/TEMPLATES-GUIDE.md`, 이메일 유입은 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `EMAIL-INQUIRY-ACTIVATION.md` 입니다.
+> 이 문서는 **무엇이 어떻게 바뀌었는지**만 다룹니다. "지금 어떻게 동작하는가"는 `docs/admin/INQUIRY-GUIDE.md`, 템플릿 세 갈래 비교는 `docs/admin/TEMPLATES-GUIDE.md`, 이메일 유입은 `docs/admin/EMAIL-INQUIRY-PLAN.md` · `EMAIL-INQUIRY-ACTIVATION.md`, 접수 종류(kind) 설계는 `docs/reference/inquiry-kinds-spec.md` 입니다.
 
-이틀 동안 1:1 문의는 **폼 하나에서 운영 도구로** 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 **여러 운영자가 겹치지 않게 처리**하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 **고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다**.
+이틀 동안(09-10 · 09-11) 1:1 문의는 **폼 하나에서 운영 도구로** 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 **여러 운영자가 겹치지 않게 처리**하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 **고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다**. 사흘 뒤 09-14 에는 **1:1 문의 하나였던 창구가 셋으로 늘었습니다** — 버그제보·불법이용제보가 같은 폼·같은 목록·같은 권한 위에 **종류(kind)** 축 하나로 추가됐습니다(§0).
 
 ---
 
-## 0. 2026-09-11 오후 — 고객지원 v2 디자인 적용
+## 0. 2026-09-14 — 접수 종류(1:1 문의·버그제보·불법이용제보) 도입 + 관리자 메뉴 "홈페이지 문의"
+
+오너 요청으로 1:1 문의하기와 **동일한 레이아웃·로직**의 버그제보·불법이용제보 접수 창구를 추가했습니다. 세 창구는 같은 테이블(`inquiries`)·같은 폼·같은 첨부 규칙·같은 상태 전이·같은 답변 템플릿·같은 감사 로그를 공유하고 **분류(`kind`) 하나만** 다릅니다. 관리자 사이드바의 '1:1 문의' 메뉴도 세 창구를 모두 가리키는 뜻에 맞춰 **'홈페이지 문의'**로 이름을 바꿨습니다. 자세한 설계·동작은 `docs/admin/INQUIRY-GUIDE.md` §1.4 를 보세요 — 이 절은 **무엇이 바뀌었는지**만 요약합니다.
+
+| 날짜 · 시각 | 커밋 | 영역 | 변경 요약 | 마이그레이션 |
+| ----------- | ---- | ---- | --------- | ------------- |
+| 09-14 | `2ab1806` | DB · 관리자 | **접수 종류(kind) 도입** — `inquiry_categories.kind` · `inquiries.kind` · 트리거 `inquiries_set_kind_from_category` · 기존 카테고리 4종 재배치(접속·서버 등 → 버그제보) + 불법이용제보 5종 시드 · `update_inquiry_category()` 9인자 · 관리자 카테고리 화면 kind 별 3섹션 · 목록 종류 필터·뱃지 · 메뉴 "홈페이지 문의" | `20260914000100` |
+| 09-14 | `d4eccf8` | 클라 | **버그제보·불법이용제보 접수 창구** — `/support/bug` · `/support/report`(1:1 문의와 같은 컴포넌트, kind 만 다름) · 고객지원 메뉴 5행 · 모바일 세그먼트 탭 5개(가로 스크롤) · 창구별 카테고리 캐시·폴백 · 내 문의 내역 종류 알약 | — |
+
+### 무엇이 바뀌었나
+
+- **데이터 모델** — `inquiry_categories`·`inquiries`에 `kind text` 열이 하나씩 붙었습니다(`inquiry`\|`bug`\|`report`, 기본값 `inquiry`). **단일 출처는 카테고리**입니다 — 트리거가 카테고리 라벨로 `inquiries.kind` 를 다시 계산하므로, 앱이 INSERT 에 넣는 kind 는 의도를 드러내는 주석일 뿐입니다.
+- **카테고리 재배치** — 접속·서버 · 캐릭터·게임 진행 · 저장·데이터 · 기능·UI 는 **버그제보**로, 재화·아이템 · 콘텐츠·밸런스 · 계정·이용환경 · 기타·건의는 **1:1 문의**에 남았습니다. 재화·아이템 카테고리의 세부 유형 `'비정상 재화/아이템 획득'` 은 **불법이용제보의 `bug-abuse`(버그 악용·비정상 획득)로 옮겼습니다** — 과거 문의의 `type` 값은 그대로 남습니다.
+- **불법이용제보 카테고리 5종 신규 시드** — 불법 프로그램 · 버그 악용·비정상 획득 · 계정·현금 거래 · 욕설·비매너 · 기타 제보(프리필은 기존 8종과 같은 문체, "제보 대상 닉네임" 항목 추가).
+- **클라이언트 라우트** — `/support`(1:1 문의) · `/support/bug` · `/support/report` 세 라우트가 `InquiryKindPage` 컴포넌트 하나를 kind 만 바꿔 그립니다. 접수 완료 모달 문구도 창구별(1:1 문의 "문의가 접수되었습니다", 버그제보·불법이용제보 "제보가 접수되었습니다")입니다.
+- **카테고리 조회·캐시가 창구별**로 나뉩니다 — `getInquiryCategories(kind)`, 캐시 함수도 창구마다 따로 감싸 서로 새어 나가지 않게 했습니다. 조회 실패 시 폴백도 창구별(`INQUIRY_CATEGORY_FALLBACK[kind]`).
+- **내 문의 내역**은 세 창구를 필터 없이 함께 보여 주고, 행마다 **종류 알약**(1:1 문의 · 버그제보 · 불법이용제보)이 카테고리 앞에 섭니다. 상세 메타 줄에도 "종류" 항목이 맨 앞에 옵니다.
+- **관리자 메뉴 개명** — 사이드바·모듈 라벨이 '1:1 문의'에서 **'홈페이지 문의'**로 바뀌었습니다(`admin/lib/nav.ts` · `admin/lib/auth/permissions.ts`). 감사 로그의 도메인·테이블 라벨(`inquiry`/`inquiries`)도 같이 바뀌어, 감사 목록의 "1:1 문의 상태 변경" 같은 표기가 **"홈페이지 문의 상태 변경"**으로 보입니다.
+- **관리자 목록**에 종류 필터(`?kind=`, 이메일 프리셋에서는 숨김)와 종류 뱃지 칸이 붙었습니다. 카테고리·유형 필터 옵션은 종류를 고르면 그 kind 것만 남습니다.
+- **카테고리 관리 화면**이 kind 별 3섹션(1:1 문의 · 버그제보 · 불법이용제보)으로 나뉘고, 등록·수정 다이얼로그에 종류 셀렉트가 붙었습니다. 수정 시 kind 를 바꾸면 그 카테고리로 접수된 문의가 1건 이상일 때만 "이 카테고리로 접수된 문의 N건의 종류도 함께 바뀝니다" 확인 창이 뜹니다.
+- **답변 템플릿 선택지**가 `종류 · 라벨`(예: `버그제보 · 접속·서버`)로 표시됩니다 — 세 창구의 카테고리가 한 목록에 섞이므로 지금 답하는 문의의 창구와 같은 템플릿인지 한눈에 알아야 합니다.
+- **RPC `update_inquiry_category()`가 9인자**로 바뀌었습니다(`p_kind` 추가, 옛 8인자 함수는 drop). kind 가 바뀌면 라벨 변경과 같은 방식으로 같은 트랜잭션에서 과거 문의의 `category`·`kind` 를 함께 옮기고, 옮긴 수를 반환합니다(라벨·kind 중 하나라도 바뀌면 셉니다).
+
+### 영향 범위
+
+- **클라이언트** — `app/(public)/support/{page,bug/page,report/page}.tsx` · `components/support/{InquiryKindPage,InquiryRow,InquiryDetailMeta,SupportTabs}.tsx` · `lib/constants/{inquiry-kind,support,support-menu,inquiry-category-fallback}.ts` · `lib/data/inquiry-categories.ts` · `lib/actions/inquiry-actions.ts`(`createInquiry(kind, …)`) · `lib/actions/inquiry-edit-actions.ts`(접수된 kind 로 카테고리 조회).
+- **관리자** — `admin/lib/nav.ts`(메뉴 개명) · `admin/components/inquiry-categories/{category-sections,category-kind-move}.ts`(신규) · `admin/components/inquiries/{InquiryFilters,InquiryTable,InquiryMeta}.tsx` · `admin/lib/validation/inquiry-reply-templates.ts`(`templateCategoryLabel()`) · `admin/components/audit/audit-labels.ts`(도메인·테이블 라벨 개명 + `kind` 필드 라벨) · `admin/lib/constants/inquiry-kind.ts`(신규, 클라이언트 사본).
+- **DB — 마이그레이션 있음**: `supabase/migrations/20260914000100_inquiry_kind.sql`. 이메일 인바운드·RLS·스토리지 정책은 **손대지 않았습니다** — kind 는 행 조건이 아니라 열 하나라 기존 정책이 그대로 적용됩니다.
+
+### 마이그레이션 노트 (`20260914000100_inquiry_kind.sql`)
+
+1. **실행 순서가 의미를 가집니다** — 카테고리 이동·시드를 먼저 끝낸 뒤 기존 `inquiries` 를 백필합니다. 반대로 하면 백필이 "전부 1:1 문의"였던 옛 분류를 그대로 굳혀 버립니다.
+2. **카테고리 이동**은 `key` 로 찍습니다(운영자가 라벨을 고쳤을 수 있어서) — `connection`·`character`·`save-data`·`feature-ui` → `bug`. `sort_order` 도 kind 안의 순서로 재부여했습니다(버그제보 0..3, 1:1 문의 0..3).
+3. **백필**은 `inquiries.category` 와 `inquiry_categories.label` 을 조인해 갱신합니다 — 카테고리 표에 없는 옛 라벨('계정' · '결제', 이메일 인바운드의 임의 문자열)은 그대로 `'inquiry'` 에 남습니다. `is distinct from` 으로 좁혀 값이 그대로인 행까지 `updated_at` 을 미는 일이 없게 했습니다.
+4. **트리거 `inquiries_set_kind_from_category`**는 `SECURITY DEFINER` 입니다 — 비활성 카테고리로 접수·수정된 문의도 매칭해야 해서, `INVOKER` 로 두면 그 문의만 기본값 `'inquiry'` 로 떨어집니다(버그제보가 1:1 문의 목록에 섞입니다). 트리거는 `guard_inquiry_owner_update` → `inquiries_set_kind_from_category` → `set_updated_at` 순서로 실행됩니다.
+5. **`update_inquiry_category()` 는 9인자로 교체**했습니다 — 옛 8인자 함수를 드롭하지 않으면 PostgREST 가 어느 쪽을 고를지 모호해 "종류만 저장되지 않는" 경로가 남습니다.
+6. **RLS·스토리지 정책은 변경 없음** — `inquiries`·`inquiry_categories` 의 정책은 행 조건(소유자·`is_admin()`·`is_active`)만 보고 열을 열거하지 않으므로 새 열이 자동으로 따라옵니다.
+
+### 테스트 요약
+
+| 영역 | 결과 |
+| ---- | ---- |
+| 클라이언트 단위 | **1362건 전체 통과** |
+| 클라이언트 E2E `tests/e2e/support-inquiries.spec.ts` | **11건 전체 통과**(chromium) |
+| 관리자 단위 | **887건 전체 통과** |
+| 관리자 E2E `admin/tests/e2e/inquiry-categories.spec.ts` | **2건 전체 통과**(kind 3섹션 · 종류 변경 확인 + 과거 문의 재배치 포함) |
+| 관리자 E2E `admin/tests/e2e/inquiry-reply-templates.spec.ts` | **3건 전체 통과**(`종류 · 라벨` 선택지 포함) |
+
+### 운영자 확인 사항
+
+- **카테고리 종류는 관리자에서 재배치할 수 있습니다** — `/inquiries/categories` 수정 다이얼로그의 종류 셀렉트로 옮기면, 그 카테고리로 접수된 과거 문의도 같은 트랜잭션에서 함께 옮겨집니다(확인 창에 건수가 표시됩니다). 삭제가 아니라 **이동**이라 이력은 그대로 남습니다.
+- **재화·아이템 카테고리는 의도적으로 1:1 문의에 남았습니다** — 운영자 복구가 필요한 문의라, 제보로 보내면 "확인만 하고 답변 없이 닫는" 흐름에 섞여 복구 요청이 묻힙니다. 옮기지 마세요.
+- 이메일로 들어오는 문의는 항상 **1:1 문의 창구**입니다(수신 함수가 카테고리를 `'email'` 로 고정, 카테고리 표에 없는 라벨이라 트리거가 기본값을 그대로 둡니다) — 이메일 프리셋에는 종류 필터가 없습니다.
+- 템플릿·카테고리를 새로 만들 때는 **라벨이 세 창구를 통틀어 유니크**해야 합니다(전역 유니크는 kind 도입 전과 동일).
+
+---
+
+## 1. 2026-09-11 오후 — 고객지원 v2 디자인 적용
 
 새 시안(메이플 글자월드, `docs/reference/figma/support-v2-spec.md`)을 사용자 사이트 고객지원 화면에 반영했습니다. **로직·데이터 흐름은 바뀌지 않았습니다** — 카테고리·세부 유형·계정 ID·첨부 3+2·동의·프리필·접수번호·수정/취소 권한은 이전 그대로이고, 카드 골격·목록·상세·폼의 마크업만 다시 그렸습니다. 자세한 화면 설명은 `docs/admin/INQUIRY-GUIDE.md` §2.7 로 옮겼습니다 — 이 절은 **무엇이 바뀌었는지**만 요약합니다.
 
@@ -45,7 +102,7 @@
 
 ---
 
-## 1. 한눈에 보기
+## 2. 한눈에 보기
 
 | 구성 요소                                       | 상태                 | 메모                                                                         |
 | ----------------------------------------------- | -------------------- | ---------------------------------------------------------------------------- |
@@ -54,7 +111,7 @@
 | 관리자 고객지원 모듈                            | 배포됨               | 목록·상세·카테고리 관리·답변 템플릿·담당자·내부 메모                         |
 | `purge-withdrawn`                               | 재배포됨(2026-09-10) | pending 첨부 청소 포함(version 4) · **첫 야간 실행 결과는 아직 미확인**      |
 | `email-inbound` · `email-outbound`              | 재배포됨(2026-09-11) | 제목 규칙 `[글자월드 문의 #1024]` 반영. **제공자 계정·DNS·secret 은 미연동** |
-| 플래그 `NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS` | **OFF**              | 꺼져 있으면 계정 ID 프리필이 사실상 비어 있습니다(§7)                        |
+| 플래그 `NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS` | **OFF**              | 꺼져 있으면 계정 ID 프리필이 사실상 비어 있습니다(§8)                        |
 
 | 날짜 · 시각    | 커밋      | 영역                      | 변경 요약                                                                                                                                                                                                                     | 마이그레이션                           |
 | -------------- | --------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
@@ -74,7 +131,7 @@
 
 ---
 
-## 2. 사용자 화면 변경(이전 → 이후)
+## 3. 사용자 화면 변경(이전 → 이후)
 
 ### 2.1 접수 폼 — 필드와 필수 규칙
 
@@ -86,8 +143,8 @@
 | 카테고리           | 코드 상수 4종                | **DB 8종**(`inquiry_categories`) · 설명 한 줄 · 선택 시 **프리필 교체**    | `b78dfd7` · `20260910000400` |
 | 세부 문의 유형     | 고정 3종(문의 · 신고 · 제안) | **고른 카테고리의 `subtypes` 만** · 없으면 셀렉트 잠금 + hidden `기타`     | `af1a886` · `20260910000700` |
 | 제목 · 내용        | 필수                         | 그대로(2~~100자 · 5~~4000자). 내용 칸은 프리필이 채웁니다                  | —                            |
-| 첨부               | 사실상 필수처럼 안내         | **선택**. 이미지·PDF 와 영상이 서로 다른 경로(§2.3)                        | `af1a886`                    |
-| 개인정보 수집 동의 | 필수(접수만)                 | 그대로. 다만 **체크 표시가 보이도록** 고쳤습니다(§2.5)                     | `643834c`                    |
+| 첨부               | 사실상 필수처럼 안내         | **선택**. 이미지·PDF 와 영상이 서로 다른 경로(§3.3)                        | `af1a886`                    |
+| 개인정보 수집 동의 | 필수(접수만)                 | 그대로. 다만 **체크 표시가 보이도록** 고쳤습니다(§3.5)                     | `643834c`                    |
 
 - 필수는 **카테고리 · 세부 유형 · 계정 ID · 제목 · 내용 · 동의** 여섯입니다. 하나라도 비면 제출 버튼이 잠기고 그 아래에 `필수 항목을 모두 입력해 주세요.` 가 섭니다(`isInquiryFormFilled()`).
 - 잠금 판정은 **값의 모양을 보지 않습니다** — "아직 아무것도 고르지 않은 폼"만 막습니다. 자릿수·상한은 스키마가 보고 필드 옆 문구로 돌려줍니다.
@@ -165,7 +222,7 @@ flowchart TD
 
 ---
 
-## 3. 관리자 화면 변경(이전 → 이후)
+## 4. 관리자 화면 변경(이전 → 이후)
 
 ### 3.1 목록 `/inquiries`
 
@@ -253,7 +310,7 @@ sequenceDiagram
 
 ---
 
-## 4. 데이터 · 인프라 변경
+## 5. 데이터 · 인프라 변경
 
 ### 4.1 마이그레이션 8개
 
@@ -302,7 +359,7 @@ sequenceDiagram
 
 ---
 
-## 5. 운영 절차 변화
+## 6. 운영 절차 변화
 
 ### 5.1 권장 처리 흐름
 
@@ -347,7 +404,7 @@ sequenceDiagram
 
 ---
 
-## 6. 테스트 결과
+## 7. 테스트 결과
 
 ### 6.1 지금 다시 돌린 결과(2026-09-11)
 
@@ -380,7 +437,7 @@ sequenceDiagram
 
 ---
 
-## 7. 미검증 · 후속 과제
+## 8. 미검증 · 후속 과제
 
 | 항목                         | 지금 상태                                                                                                                         |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -397,7 +454,7 @@ sequenceDiagram
 
 ---
 
-## 8. 파일 인덱스 (이틀 동안 새로 생겼거나 크게 바뀐 것)
+## 9. 파일 인덱스 (2026-09-10 ~ 09-14 새로 생겼거나 크게 바뀐 것)
 
 ### DB · 함수
 
@@ -412,6 +469,7 @@ sequenceDiagram
 | `supabase/migrations/20260911000200_inquiry_reply_templates.sql`       | `e4937d4` |
 | `supabase/migrations/20260911000300_inquiry_assignment.sql`            | `fb448aa` |
 | `supabase/migrations/20260911000400_inquiry_no.sql`                    | `fb448aa` |
+| `supabase/migrations/20260914000100_inquiry_kind.sql`                  | `2ab1806` |
 | `supabase/functions/_shared/email/subject.ts`                          | `fb448aa` |
 | `supabase/functions/email-inbound/ack.ts` · `received.ts`              | `fb448aa` |
 | `supabase/functions/email-outbound/index.ts`                           | `fb448aa` |
@@ -435,6 +493,10 @@ sequenceDiagram
 | `components/support/InquiryRow.tsx` · `InquiryDetailCard.tsx` · `InquirySubmittedDialog.tsx` · `components/account/InquiryTable.tsx` | `fb448aa`                         |
 | `components/support/SupportCard.tsx` · `SupportTabs.tsx` · `SupportBackLink.tsx` · `InquiryPagination.tsx` · `InquiryDetailMeta.tsx` · `InquiryFileChip.tsx`(신규) · `lib/constants/inquiry-status.ts` · `inquiry-attachment.ts`(분리) · `lib/utils/file-name.ts`(신규) · `lib/data/query.ts`(`pageRange`/`toPagedListResult`) | `0f186be` |
 | `components/layout/SiteHeader.tsx` · `SiteNav.tsx` · `footer-variants.ts`(1200px 헤더 · 핑크 밑줄 · 고객지원 푸터 v2) | `6acbe50` |
+| `app/(public)/support/bug/page.tsx` · `report/page.tsx`(신규) · `components/support/InquiryKindPage.tsx`(신규) | `d4eccf8` |
+| `lib/constants/inquiry-kind.ts`(신규) · `support-menu.ts`(신규) · `inquiry-category-fallback.ts`(신규) · `support.ts`(창구별 접수 완료 문구) | `d4eccf8` |
+| `lib/data/inquiry-categories.ts`(창구별 캐시로 재작성) · `lib/actions/inquiry-actions.ts`(`kind` bind) · `inquiry-edit-actions.ts`(접수된 kind 로 조회) | `d4eccf8` |
+| `components/support/InquiryRow.tsx` · `InquiryDetailMeta.tsx`(종류 알약·항목 추가) · `SupportTabs.tsx`(5탭 가로 스크롤) | `d4eccf8` |
 
 ### 관리자 콘솔
 
@@ -451,7 +513,11 @@ sequenceDiagram
 | `admin/lib/actions/inquiry-assignment-actions.ts` · `inquiry-lock-actions.ts` · `inquiry-note-actions.ts` · `inquiry-shared.ts`                    | `fb448aa`                         |
 | `admin/lib/data/inquiry-detail.ts` · `inquiry-filters.ts` · `inquiry-refs.ts` · `inquiry-assignment.ts`                                            | `fb448aa`                         |
 | `admin/lib/validation/inquiry-assignment.ts` · `inquiry-no-search.ts` · `admin/lib/utils/inquiry-no.ts`                                            | `fb448aa`                         |
-| `admin/components/audit/audit-labels.ts`                                                                                                           | `0bf646d` · `e4937d4` · `fb448aa` |
+| `admin/components/audit/audit-labels.ts`                                                                                                           | `0bf646d` · `e4937d4` · `fb448aa` · `2ab1806`(도메인·테이블 라벨 개명 + `kind` 필드) |
+| `admin/lib/nav.ts`(메뉴 "홈페이지 문의") · `admin/lib/auth/permissions.ts`(모듈 라벨)                                                              | `2ab1806`                         |
+| `admin/lib/constants/inquiry-kind.ts`(신규) · `admin/components/inquiry-categories/category-sections.ts`(신규) · `category-kind-move.ts`(신규)    | `2ab1806`                         |
+| `admin/components/inquiries/InquiryFilters.tsx`(종류 셀렉트) · `InquiryTable.tsx`(종류 뱃지) · `InquiryMeta.tsx`(종류 항목)                        | `2ab1806`                         |
+| `admin/lib/validation/inquiry-reply-templates.ts`(`templateCategoryLabel()`)                                                                       | `2ab1806`                         |
 
 ### 테스트 · 문서
 
@@ -461,6 +527,9 @@ sequenceDiagram
 | `admin/tests/e2e/inquiry-categories.spec.ts` · `inquiry-reply-templates.spec.ts` · `inquiry-assignment.spec.ts`                      | `b78dfd7` · `e4937d4` · `fb448aa`             |
 | `admin/tests/unit/inquiry-assignment-*.test.ts` · `inquiry-conflict.test.ts` · `inquiry-note-actions.test.ts` · `inquiry-no.test.ts` | `fb448aa`                                     |
 | `tests/unit/support/**` · `tests/unit/validation/inquiry*.test.ts` · `tests/unit/utils/inquiry-*.test.ts`                            | 전 구간                                       |
-| `docs/admin/INQUIRY-GUIDE.md` · `.html`                                                                                              | `ddd2cc1` · `700b22a` · `fb448aa`             |
+| `docs/admin/INQUIRY-GUIDE.md` · `.html`                                                                                              | `ddd2cc1` · `700b22a` · `fb448aa` · (§1.4 접수 종류) |
 | `docs/admin/TEMPLATES-GUIDE.md` · `.html`                                                                                            | `700b22a`                                     |
 | `docs/1on1.md`                                                                                                                       | `b78dfd7`                                     |
+| `docs/admin/INQUIRY-CHANGELOG.md` · `.html`                                                                                          | (이 문서, §0 접수 종류)                       |
+| `docs/reference/inquiry-kinds-spec.md`(신규)                                                                                         | 접수 종류(kind) 설계 원안                     |
+| `admin/tests/unit/inquiry-kind.test.ts` · `inquiry-category-sections.test.ts` · `tests/unit/constants/inquiry-kind.test.ts`(신규)    | `2ab1806` · `d4eccf8`                         |

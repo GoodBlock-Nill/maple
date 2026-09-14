@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1:1 문의 변경 사항 정리</title>
+<title>고객지원 변경 사항 정리(1:1 문의 · 버그제보 · 불법이용제보)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 </head>
 <body>
@@ -150,42 +150,101 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 <nav class="index" aria-label="목차">
   <div class="brand">글자월드 <b>CHANGELOG</b></div>
   <ol>
-    <li><a href="#s0"><span class="n">00</span>고객지원 v2 디자인</a></li>
-    <li><a href="#s1"><span class="n">01</span>한눈에 보기</a></li>
-    <li><a href="#s2"><span class="n">02</span>사용자 화면 변경</a></li>
-    <li><a href="#s3"><span class="n">03</span>관리자 화면 변경</a></li>
-    <li><a href="#s4"><span class="n">04</span>데이터 · 인프라</a></li>
-    <li><a href="#s5"><span class="n">05</span>운영 절차 변화</a></li>
-    <li><a href="#s6"><span class="n">06</span>테스트 결과</a></li>
-    <li><a href="#s7"><span class="n">07</span>미검증 · 후속 과제</a></li>
-    <li><a href="#s8"><span class="n">08</span>파일 인덱스</a></li>
+    <li><a href="#s0"><span class="n">00</span>접수 종류(kind) 도입</a></li>
+    <li><a href="#s1"><span class="n">01</span>고객지원 v2 디자인</a></li>
+    <li><a href="#s2"><span class="n">02</span>한눈에 보기</a></li>
+    <li><a href="#s3"><span class="n">03</span>사용자 화면 변경</a></li>
+    <li><a href="#s4"><span class="n">04</span>관리자 화면 변경</a></li>
+    <li><a href="#s5"><span class="n">05</span>데이터 · 인프라</a></li>
+    <li><a href="#s6"><span class="n">06</span>운영 절차 변화</a></li>
+    <li><a href="#s7"><span class="n">07</span>테스트 결과</a></li>
+    <li><a href="#s8"><span class="n">08</span>미검증 · 후속 과제</a></li>
+    <li><a href="#s9"><span class="n">09</span>파일 인덱스</a></li>
   </ol>
-  <p class="meta">대상 기간 2026-09-10 ~ 09-11<br>기준 커밋 <code>0f186be</code><br>현재 상태 <code>docs/admin/INQUIRY-GUIDE.md</code></p>
+  <p class="meta">대상 기간 2026-09-10 ~ 09-11 · 09-14<br>기준 커밋 <code>d4eccf8</code><br>현재 상태 <code>docs/admin/INQUIRY-GUIDE.md</code></p>
 </nav>
 
 <main>
 <header class="title">
   <div class="eyebrow">Change Summary · 고객지원</div>
-  <h1>1:1 문의 변경 사항 정리</h1>
-  <p class="lede">이틀 동안 1:1 문의는 <strong>폼 하나에서 운영 도구로</strong> 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 <strong>여러 운영자가 겹치지 않게 처리</strong>하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 <strong>고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다</strong>.</p>
+  <h1>고객지원 변경 사항 정리</h1>
+  <p class="lede">이틀 동안(09-10 · 09-11) 1:1 문의는 <strong>폼 하나에서 운영 도구로</strong> 바뀌었습니다. 첫날은 접수가 실제로 되게 만드는 일(첨부 실패 수정 → 카테고리·프리필 → 영상 첨부)이었고, 둘째 날은 들어온 문의를 <strong>여러 운영자가 겹치지 않게 처리</strong>하는 일(필수 규칙 → 답변 템플릿 → 회원 연결 → 배정·잠금·충돌·메모·접수번호)이었고, 09-11 오후에는 협업 기능이 안정된 뒤 <strong>고객지원 화면 전체를 새 시안(v2)으로 다시 그렸습니다</strong>. 사흘 뒤 09-14 에는 <strong>1:1 문의 하나였던 창구가 셋으로 늘었습니다</strong> — 버그제보·불법이용제보가 같은 폼·같은 목록·같은 권한 위에 <strong>종류(kind)</strong> 축 하나로 추가됐습니다(§00).</p>
   <div class="chips">
-    <span class="chip db"><span class="dot"></span>DB · 마이그레이션 8개 · RPC 7개 신규</span>
+    <span class="chip db"><span class="dot"></span>DB · 마이그레이션 9개 · RPC 7개 신규</span>
     <span class="chip client"><span class="dot"></span>사용자 · 필수 6항목 · 첨부 두 경로 · 접수번호</span>
     <span class="chip admin"><span class="dot"></span>관리자 · 배정 · 잠금 · 충돌 · 메모 · 템플릿</span>
     <span class="chip mail"><span class="dot"></span>메일 · 제목 <code>[글자월드 문의 #1024]</code></span>
   </div>
   <div class="board" aria-label="구성 요소 상태">
-    <div><span class="k">DB</span><span class="v">마이그레이션 8개 추가</span><span class="s done">적용됨</span><span class="d"><code>20260910000400</code> ~ <code>20260911000400</code></span></div>
+    <div><span class="k">DB</span><span class="v">마이그레이션 9개 추가</span><span class="s done">적용됨</span><span class="d"><code>20260910000400</code> ~ <code>20260914000100</code></span></div>
+    <div><span class="k">Client+Admin</span><span class="v">접수 종류(kind)</span><span class="s done">2026-09-14</span><span class="d">커밋 <code>2ab1806</code> · <code>d4eccf8</code> · 1:1 문의 · 버그제보 · 불법이용제보, §00</span></div>
     <div><span class="k">Client</span><span class="v">접수 폼</span><span class="s done">배포됨</span><span class="d">필수 6항목 · 카테고리 프리필 · 이미지/영상 첨부 · 접수번호 안내</span></div>
-    <div><span class="k">Admin</span><span class="v">고객지원 모듈</span><span class="s done">배포됨</span><span class="d">목록 · 상세 · 카테고리 관리 · 답변 템플릿 · 담당자 · 내부 메모</span></div>
+    <div><span class="k">Admin</span><span class="v">고객지원 모듈("홈페이지 문의")</span><span class="s done">배포됨</span><span class="d">목록 · 상세 · 카테고리 관리 · 답변 템플릿 · 담당자 · 내부 메모. 메뉴 이름 2026-09-14 개명</span></div>
     <div><span class="k">Batch</span><span class="v">purge-withdrawn</span><span class="s done">2026-09-10 재배포</span><span class="d">pending 첨부 청소 포함(version 4) · <strong>첫 야간 실행은 미확인</strong></span></div>
     <div><span class="k">Email</span><span class="v">email-inbound · email-outbound</span><span class="s done">2026-09-11 재배포</span><span class="d">제목 규칙 반영. <strong>제공자 계정·DNS·secret 은 미연동</strong></span></div>
-    <div><span class="k">Flag</span><span class="v">월드 계정 입력칸</span><span class="s todo">OFF</span><span class="d"><code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> — 꺼져 있으면 계정 ID 프리필이 비어 있습니다(§07)</span></div>
+    <div><span class="k">Flag</span><span class="v">월드 계정 입력칸</span><span class="s todo">OFF</span><span class="d"><code>NEXT_PUBLIC_FEATURE_MSW_ACCOUNT_FIELDS</code> — 꺼져 있으면 계정 ID 프리필이 비어 있습니다(§08)</span></div>
   </div>
 </header>
 
 <section id="s0">
-  <div class="sec-head"><span class="num">00</span><h2>2026-09-11 오후 — 고객지원 v2 디자인 적용</h2></div>
+  <div class="sec-head"><span class="num">00</span><h2>2026-09-14 — 접수 종류(1:1 문의·버그제보·불법이용제보) 도입 + 관리자 메뉴 "홈페이지 문의"</h2></div>
+  <p>오너 요청으로 1:1 문의하기와 <strong>동일한 레이아웃·로직</strong>의 버그제보·불법이용제보 접수 창구를 추가했습니다. 세 창구는 같은 테이블(<code>inquiries</code>)·같은 폼·같은 첨부 규칙·같은 상태 전이·같은 답변 템플릿·같은 감사 로그를 공유하고 <strong>분류(<code>kind</code>) 하나만</strong> 다릅니다. 관리자 사이드바의 '1:1 문의' 메뉴도 세 창구를 모두 가리키는 뜻에 맞춰 <strong>'홈페이지 문의'</strong>로 이름을 바꿨습니다. 자세한 설계·동작은 <code>docs/admin/INQUIRY-GUIDE.md</code> §01-4 를 보세요 — 이 절은 <strong>무엇이 바뀌었는지</strong>만 요약합니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>날짜 · 시각</th><th>커밋</th><th>영역</th><th>변경 요약</th><th>마이그레이션</th></tr></thead>
+    <tbody>
+      <tr><td>09-14</td><td><code>2ab1806</code></td><td><span class="tag dbt">DB</span> <span class="tag outb">관리자</span></td><td><strong>접수 종류(kind) 도입</strong> — <code>inquiry_categories.kind</code> · <code>inquiries.kind</code> · 트리거 <code>inquiries_set_kind_from_category</code> · 기존 카테고리 4종 재배치(접속·서버 등 → 버그제보) + 불법이용제보 5종 시드 · <code>update_inquiry_category()</code> 9인자 · 관리자 카테고리 화면 kind 별 3섹션 · 목록 종류 필터·뱃지 · 메뉴 "홈페이지 문의"</td><td><code>20260914000100</code></td></tr>
+      <tr><td>09-14</td><td><code>d4eccf8</code></td><td><span class="tag in">클라</span></td><td><strong>버그제보·불법이용제보 접수 창구</strong> — <code>/support/bug</code> · <code>/support/report</code>(1:1 문의와 같은 컴포넌트, kind 만 다름) · 고객지원 메뉴 5행 · 모바일 세그먼트 탭 5개(가로 스크롤) · 창구별 카테고리 캐시·폴백 · 내 문의 내역 종류 알약</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>무엇이 바뀌었나</h3>
+  <ul>
+    <li><strong>데이터 모델</strong> — <code>inquiry_categories</code>·<code>inquiries</code>에 <code>kind text</code> 열이 하나씩 붙었습니다(<code>inquiry</code>|<code>bug</code>|<code>report</code>, 기본값 <code>inquiry</code>). <strong>단일 출처는 카테고리</strong>입니다 — 트리거가 카테고리 라벨로 <code>inquiries.kind</code> 를 다시 계산하므로, 앱이 INSERT 에 넣는 kind 는 의도를 드러내는 주석일 뿐입니다.</li>
+    <li><strong>카테고리 재배치</strong> — 접속·서버 · 캐릭터·게임 진행 · 저장·데이터 · 기능·UI 는 <strong>버그제보</strong>로, 재화·아이템 · 콘텐츠·밸런스 · 계정·이용환경 · 기타·건의는 <strong>1:1 문의</strong>에 남았습니다. 재화·아이템 카테고리의 세부 유형 <code>'비정상 재화/아이템 획득'</code> 은 <strong>불법이용제보의 <code>bug-abuse</code>(버그 악용·비정상 획득)로 옮겼습니다</strong> — 과거 문의의 <code>type</code> 값은 그대로 남습니다.</li>
+    <li><strong>불법이용제보 카테고리 5종 신규 시드</strong> — 불법 프로그램 · 버그 악용·비정상 획득 · 계정·현금 거래 · 욕설·비매너 · 기타 제보(프리필은 기존 8종과 같은 문체, "제보 대상 닉네임" 항목 추가).</li>
+    <li><strong>클라이언트 라우트</strong> — <code>/support</code>(1:1 문의) · <code>/support/bug</code> · <code>/support/report</code> 세 라우트가 <code>InquiryKindPage</code> 컴포넌트 하나를 kind 만 바꿔 그립니다. 접수 완료 모달 문구도 창구별(1:1 문의 "문의가 접수되었습니다", 버그제보·불법이용제보 "제보가 접수되었습니다")입니다.</li>
+    <li><strong>카테고리 조회·캐시가 창구별</strong>로 나뉩니다 — <code>getInquiryCategories(kind)</code>, 캐시 함수도 창구마다 따로 감싸 서로 새어 나가지 않게 했습니다. 조회 실패 시 폴백도 창구별(<code>INQUIRY_CATEGORY_FALLBACK[kind]</code>).</li>
+    <li><strong>내 문의 내역</strong>은 세 창구를 필터 없이 함께 보여 주고, 행마다 <strong>종류 알약</strong>(1:1 문의 · 버그제보 · 불법이용제보)이 카테고리 앞에 섭니다. 상세 메타 줄에도 "종류" 항목이 맨 앞에 옵니다.</li>
+    <li><strong>관리자 메뉴 개명</strong> — 사이드바·모듈 라벨이 '1:1 문의'에서 <strong>'홈페이지 문의'</strong>로 바뀌었습니다(<code>admin/lib/nav.ts</code> · <code>admin/lib/auth/permissions.ts</code>). 감사 로그의 도메인·테이블 라벨(<code>inquiry</code>/<code>inquiries</code>)도 같이 바뀌어, 감사 목록의 "1:1 문의 상태 변경" 같은 표기가 <strong>"홈페이지 문의 상태 변경"</strong>으로 보입니다.</li>
+    <li><strong>관리자 목록</strong>에 종류 필터(<code>?kind=</code>, 이메일 프리셋에서는 숨김)와 종류 뱃지 칸이 붙었습니다. 카테고리·유형 필터 옵션은 종류를 고르면 그 kind 것만 남습니다.</li>
+    <li><strong>카테고리 관리 화면</strong>이 kind 별 3섹션(1:1 문의 · 버그제보 · 불법이용제보)으로 나뉘고, 등록·수정 다이얼로그에 종류 셀렉트가 붙었습니다. 수정 시 kind 를 바꾸면 그 카테고리로 접수된 문의가 1건 이상일 때만 "이 카테고리로 접수된 문의 N건의 종류도 함께 바뀝니다" 확인 창이 뜹니다.</li>
+    <li><strong>답변 템플릿 선택지</strong>가 <code>종류 · 라벨</code>(예: <code>버그제보 · 접속·서버</code>)로 표시됩니다 — 세 창구의 카테고리가 한 목록에 섞이므로 지금 답하는 문의의 창구와 같은 템플릿인지 한눈에 알아야 합니다.</li>
+    <li><strong>RPC <code>update_inquiry_category()</code>가 9인자</strong>로 바뀌었습니다(<code>p_kind</code> 추가, 옛 8인자 함수는 drop). kind 가 바뀌면 라벨 변경과 같은 방식으로 같은 트랜잭션에서 과거 문의의 <code>category</code>·<code>kind</code> 를 함께 옮기고, 옮긴 수를 반환합니다(라벨·kind 중 하나라도 바뀌면 셉니다).</li>
+  </ul>
+
+  <div class="kv">
+    <div><div class="k">영향 범위 — 클라이언트</div><div class="v"><code>app/(public)/support/{page,bug/page,report/page}.tsx</code> · <code>components/support/{InquiryKindPage,InquiryRow,InquiryDetailMeta,SupportTabs}.tsx</code> · <code>lib/constants/{inquiry-kind,support,support-menu,inquiry-category-fallback}.ts</code> · <code>lib/data/inquiry-categories.ts</code> · <code>lib/actions/inquiry-actions.ts</code>(<code>createInquiry(kind, …)</code>) · <code>lib/actions/inquiry-edit-actions.ts</code>(접수된 kind 로 카테고리 조회)</div></div>
+    <div><div class="k">영향 범위 — 관리자</div><div class="v"><code>admin/lib/nav.ts</code>(메뉴 개명) · <code>admin/components/inquiry-categories/{category-sections,category-kind-move}.ts</code>(신규) · <code>admin/components/inquiries/{InquiryFilters,InquiryTable,InquiryMeta}.tsx</code> · <code>admin/lib/validation/inquiry-reply-templates.ts</code>(<code>templateCategoryLabel()</code>) · <code>admin/components/audit/audit-labels.ts</code>(도메인·테이블 라벨 개명 + <code>kind</code> 필드 라벨) · <code>admin/lib/constants/inquiry-kind.ts</code>(신규, 클라이언트 사본)</div></div>
+    <div><div class="k">영향 범위 — DB</div><div class="v"><strong>마이그레이션 있음</strong>: <code>supabase/migrations/20260914000100_inquiry_kind.sql</code>. 이메일 인바운드·RLS·스토리지 정책은 <strong>손대지 않았습니다</strong> — kind 는 행 조건이 아니라 열 하나라 기존 정책이 그대로 적용됩니다</div></div>
+  </div>
+
+  <h3>마이그레이션 노트(<code>20260914000100_inquiry_kind.sql</code>)</h3>
+  <ol class="steps">
+    <li><strong>실행 순서가 의미를 가집니다</strong> — 카테고리 이동·시드를 먼저 끝낸 뒤 기존 <code>inquiries</code> 를 백필합니다. 반대로 하면 백필이 "전부 1:1 문의"였던 옛 분류를 그대로 굳혀 버립니다.</li>
+    <li><strong>카테고리 이동</strong>은 <code>key</code> 로 찍습니다(운영자가 라벨을 고쳤을 수 있어서) — <code>connection</code>·<code>character</code>·<code>save-data</code>·<code>feature-ui</code> → <code>bug</code>. <code>sort_order</code> 도 kind 안의 순서로 재부여했습니다(버그제보 0..3, 1:1 문의 0..3).</li>
+    <li><strong>백필</strong>은 <code>inquiries.category</code> 와 <code>inquiry_categories.label</code> 을 조인해 갱신합니다 — 카테고리 표에 없는 옛 라벨('계정' · '결제', 이메일 인바운드의 임의 문자열)은 그대로 <code>'inquiry'</code> 에 남습니다. <code>is distinct from</code> 으로 좁혀 값이 그대로인 행까지 <code>updated_at</code> 을 미는 일이 없게 했습니다.</li>
+    <li><strong>트리거 <code>inquiries_set_kind_from_category</code></strong>는 <code>SECURITY DEFINER</code> 입니다 — 비활성 카테고리로 접수·수정된 문의도 매칭해야 해서, <code>INVOKER</code> 로 두면 그 문의만 기본값 <code>'inquiry'</code> 로 떨어집니다(버그제보가 1:1 문의 목록에 섞입니다). 트리거는 <code>guard_inquiry_owner_update</code> → <code>inquiries_set_kind_from_category</code> → <code>set_updated_at</code> 순서로 실행됩니다.</li>
+    <li><strong><code>update_inquiry_category()</code> 는 9인자로 교체</strong>했습니다 — 옛 8인자 함수를 드롭하지 않으면 PostgREST 가 어느 쪽을 고를지 모호해 "종류만 저장되지 않는" 경로가 남습니다.</li>
+    <li><strong>RLS·스토리지 정책은 변경 없음</strong> — <code>inquiries</code>·<code>inquiry_categories</code> 의 정책은 행 조건(소유자·<code>is_admin()</code>·<code>is_active</code>)만 보고 열을 열거하지 않으므로 새 열이 자동으로 따라옵니다.</li>
+  </ol>
+
+  <h3>테스트 요약</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>영역</th><th>결과</th></tr></thead>
+    <tbody>
+      <tr><td>클라이언트 단위</td><td><strong>1362건 전체 통과</strong></td></tr>
+      <tr><td>클라이언트 E2E <code>tests/e2e/support-inquiries.spec.ts</code></td><td><strong>11건 전체 통과</strong>(chromium)</td></tr>
+      <tr><td>관리자 단위</td><td><strong>887건 전체 통과</strong></td></tr>
+      <tr><td>관리자 E2E <code>admin/tests/e2e/inquiry-categories.spec.ts</code></td><td><strong>2건 전체 통과</strong>(kind 3섹션 · 종류 변경 확인 + 과거 문의 재배치 포함)</td></tr>
+      <tr><td>관리자 E2E <code>admin/tests/e2e/inquiry-reply-templates.spec.ts</code></td><td><strong>3건 전체 통과</strong>(<code>종류 · 라벨</code> 선택지 포함)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout ok"><span class="icon">운영자 확인</span><p><strong>카테고리 종류는 관리자에서 재배치할 수 있습니다</strong> — <code>/inquiries/categories</code> 수정 다이얼로그의 종류 셀렉트로 옮기면, 그 카테고리로 접수된 과거 문의도 같은 트랜잭션에서 함께 옮겨집니다(확인 창에 건수가 표시됩니다). 삭제가 아니라 <strong>이동</strong>이라 이력은 그대로 남습니다. <strong>재화·아이템 카테고리는 의도적으로 1:1 문의에 남았습니다</strong> — 운영자 복구가 필요한 문의라, 옮기지 마세요. 이메일로 들어오는 문의는 항상 <strong>1:1 문의 창구</strong>입니다(이메일 프리셋에는 종류 필터가 없습니다).</p></div>
+</section>
+
+<section id="s1">
+  <div class="sec-head"><span class="num">01</span><h2>2026-09-11 오후 — 고객지원 v2 디자인 적용</h2></div>
   <p>새 시안(메이플 글자월드, <code>docs/reference/figma/support-v2-spec.md</code>)을 사용자 사이트 고객지원 화면에 반영했습니다. <strong>로직·데이터 흐름은 바뀌지 않았습니다</strong> — 카테고리·세부 유형·계정 ID·첨부 3+2·동의·프리필·접수번호·수정/취소 권한은 이전 그대로이고, 카드 골격·목록·상세·폼의 마크업만 다시 그렸습니다. 자세한 화면 설명은 <code>docs/admin/INQUIRY-GUIDE.md</code> §02-7 로 옮겼습니다 — 이 절은 <strong>무엇이 바뀌었는지</strong>만 요약합니다.</p>
   <div class="tbl"><table>
     <thead><tr><th>날짜 · 시각</th><th>커밋</th><th>영역</th><th>변경 요약</th><th>마이그레이션</th></tr></thead>
@@ -214,8 +273,8 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
   </div>
 </section>
 
-<section id="s1">
-  <div class="sec-head"><span class="num">01</span><h2>한눈에 보기</h2></div>
+<section id="s2">
+  <div class="sec-head"><span class="num">02</span><h2>한눈에 보기</h2></div>
   <p>이 문서는 <strong>무엇이 어떻게 바뀌었는지</strong>만 다룹니다. "지금 어떻게 동작하는가"는 <code>docs/admin/INQUIRY-GUIDE.md</code>, 템플릿 세 갈래 비교는 <code>docs/admin/TEMPLATES-GUIDE.md</code>, 이메일 유입은 <code>docs/admin/EMAIL-INQUIRY-PLAN.md</code> · <code>EMAIL-INQUIRY-ACTIVATION.md</code> 에 있습니다.</p>
   <div class="tbl"><table>
     <thead><tr><th>날짜 · 시각</th><th>커밋</th><th>영역</th><th>변경 요약</th><th>마이그레이션</th></tr></thead>
@@ -235,8 +294,8 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
   </table></div>
 </section>
 
-<section id="s2">
-  <div class="sec-head"><span class="num">02</span><h2>사용자 화면 변경 (이전 → 이후)</h2></div>
+<section id="s3">
+  <div class="sec-head"><span class="num">03</span><h2>사용자 화면 변경 (이전 → 이후)</h2></div>
   <p class="src">components/support/** · components/account/InquiryTable.tsx · lib/validation/inquiry.ts · lib/utils/inquiry-no.ts</p>
 
   <h3>2.1 접수 폼 — 필드와 필수 규칙</h3>
@@ -325,8 +384,8 @@ flowchart TD
 </pre></div>
 </section>
 
-<section id="s3">
-  <div class="sec-head"><span class="num">03</span><h2>관리자 화면 변경 (이전 → 이후)</h2></div>
+<section id="s4">
+  <div class="sec-head"><span class="num">04</span><h2>관리자 화면 변경 (이전 → 이후)</h2></div>
   <p class="src">admin/app/(admin)/inquiries/** · admin/components/inquiries/** · admin/components/inquiry-categories/** · admin/components/inquiry-reply-templates/** · admin/lib/{actions,data,validation}/inquir*.ts</p>
 
   <h3>3.1 목록 <code>/inquiries</code></h3>
@@ -424,8 +483,8 @@ sequenceDiagram
 </pre></div>
 </section>
 
-<section id="s4">
-  <div class="sec-head"><span class="num">04</span><h2>데이터 · 인프라 변경</h2></div>
+<section id="s5">
+  <div class="sec-head"><span class="num">05</span><h2>데이터 · 인프라 변경</h2></div>
   <p class="src">supabase/migrations/20260910000400 … 20260911000400 · supabase/functions/**</p>
 
   <h3>4.1 마이그레이션 8개</h3>
@@ -478,8 +537,8 @@ sequenceDiagram
   </ul>
 </section>
 
-<section id="s5">
-  <div class="sec-head"><span class="num">05</span><h2>운영 절차 변화</h2></div>
+<section id="s6">
+  <div class="sec-head"><span class="num">06</span><h2>운영 절차 변화</h2></div>
 
   <h3>5.1 권장 처리 흐름</h3>
   <ol class="steps">
@@ -525,8 +584,8 @@ sequenceDiagram
   </ul>
 </section>
 
-<section id="s6">
-  <div class="sec-head"><span class="num">06</span><h2>테스트 결과</h2></div>
+<section id="s7">
+  <div class="sec-head"><span class="num">07</span><h2>테스트 결과</h2></div>
 
   <h3>6.1 지금 다시 돌린 결과 (2026-09-11)</h3>
   <div class="tbl"><table>
@@ -562,8 +621,8 @@ sequenceDiagram
   </ul>
 </section>
 
-<section id="s7">
-  <div class="sec-head"><span class="num">07</span><h2>미검증 · 후속 과제</h2></div>
+<section id="s8">
+  <div class="sec-head"><span class="num">08</span><h2>미검증 · 후속 과제</h2></div>
   <div class="tbl"><table>
     <thead><tr><th>항목</th><th>지금 상태</th></tr></thead>
     <tbody>
@@ -581,9 +640,9 @@ sequenceDiagram
   </table></div>
 </section>
 
-<section id="s8">
-  <div class="sec-head"><span class="num">08</span><h2>파일 인덱스</h2></div>
-  <p>이틀 동안 새로 생겼거나 크게 바뀐 것만 모았습니다. 전체 목록은 <code>docs/admin/INQUIRY-GUIDE.md</code> §9.</p>
+<section id="s9">
+  <div class="sec-head"><span class="num">09</span><h2>파일 인덱스</h2></div>
+  <p>2026-09-10 ~ 09-14 새로 생겼거나 크게 바뀐 것만 모았습니다. 전체 목록은 <code>docs/admin/INQUIRY-GUIDE.md</code> §09.</p>
   <div class="tbl"><table>
     <thead><tr><th>경로</th><th>커밋</th></tr></thead>
     <tbody>
@@ -593,6 +652,7 @@ sequenceDiagram
       <tr><td><code>supabase/migrations/20260910000700_inquiry_category_subtypes.sql</code> · <code>000800_inquiry_prefill_subtype_block.sql</code> · <code>000900_inquiry_account_id_required.sql</code></td><td><code>af1a886</code></td></tr>
       <tr><td><code>supabase/migrations/20260911000200_inquiry_reply_templates.sql</code></td><td><code>e4937d4</code></td></tr>
       <tr><td><code>supabase/migrations/20260911000300_inquiry_assignment.sql</code> · <code>20260911000400_inquiry_no.sql</code></td><td><code>fb448aa</code></td></tr>
+      <tr><td><code>supabase/migrations/20260914000100_inquiry_kind.sql</code></td><td><code>2ab1806</code></td></tr>
       <tr><td><code>supabase/functions/_shared/email/subject.ts</code> · <code>email-inbound/ack.ts</code> · <code>received.ts</code> · <code>email-outbound/index.ts</code></td><td><code>fb448aa</code></td></tr>
       <tr><td><code>supabase/functions/purge-withdrawn/index.ts</code></td><td><code>2e3f6ae</code></td></tr>
       <tr><td colspan="2"><span class="tag in">사용자 사이트</span></td></tr>
@@ -609,6 +669,10 @@ sequenceDiagram
       <tr><td><code>components/support/InquiryRow.tsx</code> · <code>InquiryDetailCard.tsx</code> · <code>InquirySubmittedDialog.tsx</code> · <code>components/account/InquiryTable.tsx</code></td><td><code>fb448aa</code></td></tr>
       <tr><td><code>components/support/SupportCard.tsx</code> · <code>SupportTabs.tsx</code> · <code>SupportBackLink.tsx</code> · <code>InquiryPagination.tsx</code> · <code>InquiryDetailMeta.tsx</code> · <code>InquiryFileChip.tsx</code>(신규) · <code>lib/constants/inquiry-status.ts</code> · <code>inquiry-attachment.ts</code>(분리) · <code>lib/utils/file-name.ts</code>(신규) · <code>lib/data/query.ts</code>(<code>pageRange</code>/<code>toPagedListResult</code>)</td><td><code>0f186be</code></td></tr>
       <tr><td><code>components/layout/SiteHeader.tsx</code> · <code>SiteNav.tsx</code> · <code>footer-variants.ts</code>(1200px 헤더 · 핑크 밑줄 · 고객지원 푸터 v2)</td><td><code>6acbe50</code></td></tr>
+      <tr><td><code>app/(public)/support/bug/page.tsx</code> · <code>report/page.tsx</code>(신규) · <code>components/support/InquiryKindPage.tsx</code>(신규)</td><td><code>d4eccf8</code></td></tr>
+      <tr><td><code>lib/constants/inquiry-kind.ts</code>(신규) · <code>support-menu.ts</code>(신규) · <code>inquiry-category-fallback.ts</code>(신규) · <code>support.ts</code>(창구별 접수 완료 문구)</td><td><code>d4eccf8</code></td></tr>
+      <tr><td><code>lib/data/inquiry-categories.ts</code>(창구별 캐시로 재작성) · <code>lib/actions/inquiry-actions.ts</code>(<code>kind</code> bind) · <code>inquiry-edit-actions.ts</code>(접수된 kind 로 조회)</td><td><code>d4eccf8</code></td></tr>
+      <tr><td><code>components/support/InquiryRow.tsx</code> · <code>InquiryDetailMeta.tsx</code>(종류 알약·항목 추가) · <code>SupportTabs.tsx</code>(5탭 가로 스크롤)</td><td><code>d4eccf8</code></td></tr>
       <tr><td colspan="2"><span class="tag outb">관리자 콘솔</span></td></tr>
       <tr><td><code>admin/app/(admin)/inquiries/categories/page.tsx</code> · <code>admin/components/inquiry-categories/**</code> · <code>admin/lib/actions/inquiry-category-actions.ts</code></td><td><code>b78dfd7</code> · <code>af1a886</code></td></tr>
       <tr><td><code>admin/app/(admin)/inquiries/reply-templates/page.tsx</code> · <code>admin/components/inquiry-reply-templates/**</code> · <code>admin/components/inquiries/InquiryReplyTemplatePicker.tsx</code></td><td><code>e4937d4</code></td></tr>
@@ -619,19 +683,26 @@ sequenceDiagram
       <tr><td><code>admin/lib/actions/inquiry-assignment-actions.ts</code> · <code>inquiry-lock-actions.ts</code> · <code>inquiry-note-actions.ts</code> · <code>inquiry-shared.ts</code></td><td><code>fb448aa</code></td></tr>
       <tr><td><code>admin/lib/data/inquiry-detail.ts</code> · <code>inquiry-filters.ts</code> · <code>inquiry-refs.ts</code> · <code>inquiry-assignment.ts</code></td><td><code>fb448aa</code></td></tr>
       <tr><td><code>admin/lib/validation/inquiry-assignment.ts</code> · <code>inquiry-no-search.ts</code> · <code>admin/lib/utils/inquiry-no.ts</code></td><td><code>fb448aa</code></td></tr>
-      <tr><td><code>admin/components/audit/audit-labels.ts</code></td><td><code>0bf646d</code> · <code>e4937d4</code> · <code>fb448aa</code></td></tr>
+      <tr><td><code>admin/components/audit/audit-labels.ts</code></td><td><code>0bf646d</code> · <code>e4937d4</code> · <code>fb448aa</code> · <code>2ab1806</code>(도메인·테이블 라벨 개명 + <code>kind</code> 필드)</td></tr>
+      <tr><td><code>admin/lib/nav.ts</code>(메뉴 "홈페이지 문의") · <code>admin/lib/auth/permissions.ts</code>(모듈 라벨)</td><td><code>2ab1806</code></td></tr>
+      <tr><td><code>admin/lib/constants/inquiry-kind.ts</code>(신규) · <code>admin/components/inquiry-categories/category-sections.ts</code>(신규) · <code>category-kind-move.ts</code>(신규)</td><td><code>2ab1806</code></td></tr>
+      <tr><td><code>admin/components/inquiries/InquiryFilters.tsx</code>(종류 셀렉트) · <code>InquiryTable.tsx</code>(종류 뱃지) · <code>InquiryMeta.tsx</code>(종류 항목)</td><td><code>2ab1806</code></td></tr>
+      <tr><td><code>admin/lib/validation/inquiry-reply-templates.ts</code>(<code>templateCategoryLabel()</code>)</td><td><code>2ab1806</code></td></tr>
       <tr><td colspan="2"><span class="tag mailt">테스트 · 문서</span></td></tr>
       <tr><td><code>tests/e2e/support-inquiries.spec.ts</code> · <code>tests/e2e/video-fixture.ts</code></td><td><code>900abc5</code> · <code>2e3f6ae</code> · <code>af1a886</code> · <code>643834c</code></td></tr>
       <tr><td><code>admin/tests/e2e/inquiry-categories.spec.ts</code> · <code>inquiry-reply-templates.spec.ts</code> · <code>inquiry-assignment.spec.ts</code></td><td><code>b78dfd7</code> · <code>e4937d4</code> · <code>fb448aa</code></td></tr>
       <tr><td><code>admin/tests/unit/inquiry-assignment-*.test.ts</code> · <code>inquiry-conflict.test.ts</code> · <code>inquiry-note-actions.test.ts</code> · <code>inquiry-no.test.ts</code></td><td><code>fb448aa</code></td></tr>
-      <tr><td><code>docs/admin/INQUIRY-GUIDE.md</code> · <code>.html</code></td><td><code>ddd2cc1</code> · <code>700b22a</code> · <code>fb448aa</code></td></tr>
+      <tr><td><code>docs/admin/INQUIRY-GUIDE.md</code> · <code>.html</code></td><td><code>ddd2cc1</code> · <code>700b22a</code> · <code>fb448aa</code> · (§01-4 접수 종류)</td></tr>
+      <tr><td><code>docs/admin/INQUIRY-CHANGELOG.md</code> · <code>.html</code></td><td>(이 문서, §00 접수 종류)</td></tr>
       <tr><td><code>docs/admin/TEMPLATES-GUIDE.md</code> · <code>.html</code></td><td><code>700b22a</code></td></tr>
       <tr><td><code>docs/1on1.md</code></td><td><code>b78dfd7</code></td></tr>
+      <tr><td><code>docs/reference/inquiry-kinds-spec.md</code>(신규)</td><td>접수 종류(kind) 설계 원안</td></tr>
+      <tr><td><code>admin/tests/unit/inquiry-kind.test.ts</code> · <code>inquiry-category-sections.test.ts</code> · <code>tests/unit/constants/inquiry-kind.test.ts</code>(신규)</td><td><code>2ab1806</code> · <code>d4eccf8</code></td></tr>
     </tbody>
   </table></div>
 </section>
 
-<footer>글자월드 1:1 문의 변경 사항 정리 · 대상 기간 2026-09-10 ~ 2026-09-11 · 기준 커밋 <code>0f186be</code> · 현재 상태 문서 <code>docs/admin/INQUIRY-GUIDE.md</code> · <code>TEMPLATES-GUIDE.md</code></footer>
+<footer>글자월드 고객지원 변경 사항 정리 · 대상 기간 2026-09-10 ~ 2026-09-11 · 09-14 · 기준 커밋 <code>d4eccf8</code> · 현재 상태 문서 <code>docs/admin/INQUIRY-GUIDE.md</code> · <code>TEMPLATES-GUIDE.md</code></footer>
 </main>
 </div>
 
