@@ -1,3 +1,4 @@
+import { CellLink } from '@/components/community/ContentFilters'
 import { ReportDetailDialog } from '@/components/reports/ReportDetailDialog'
 import { ReportTabs } from '@/components/reports/ReportTabs'
 import { Badge } from '@/components/ui/Badge'
@@ -70,8 +71,17 @@ export default async function ReportsPage(props: PageProps<'/reports'>) {
             {row.target?.isHidden === true && <Badge tone="warn">숨김</Badge>}
             {row.target?.deletedAt != null && <Badge tone="danger">삭제</Badge>}
           </span>
+          {/* 제목을 누르면 사용자 사이트의 원문으로 간다(새 탭). 다이얼로그를 열지
+              않고도 맥락을 확인할 수 있어야 한다는 운영 피드백(2026-09-14).
+              삭제된 대상은 원문이 없으므로 텍스트로 남긴다. */}
           <span className="line-clamp-1" title={row.target?.excerpt}>
-            {row.target?.excerpt ?? '(대상을 찾을 수 없음)'}
+            {previewHrefOf(row) === null ? (
+              (row.target?.excerpt ?? '(대상을 찾을 수 없음)')
+            ) : (
+              <CellLink href={previewHrefOf(row) ?? ''} external>
+                {row.target?.excerpt}
+              </CellLink>
+            )}
           </span>
         </span>
       ),
