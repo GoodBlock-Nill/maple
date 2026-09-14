@@ -7,7 +7,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 경로 | `/legal`, `/legal/[slug]`(`#history` 앵커) |
+| 경로 | `/legal`, `/legal/[slug]`(`?tab=edit\|preview\|history`) |
 | 권한 모듈 | `legal` — read / write |
 | 주요 테이블 | `legal_documents`, `legal_document_versions` |
 | 클라이언트 영향 | 발행·예약 저장일 때만 태그 `legal` 재검증 |
@@ -16,7 +16,7 @@
 **한눈에 상세**
 
 - **권한** 목록은 read 로 열리지만 편집 화면은 `requirePermission('legal','write')` 다.
-- **권한** 읽기 전용 관리자는 카드의 `편집`·`버전 이력` 버튼 자체를 보지 못한다.
+- **권한** 읽기 전용 관리자는 카드의 초안·발행본·이력 버튼 자체를 보지 못한다(클라이언트 링크만 남는다).
 - **테이블** `legal_documents` 컬럼: `slug`(unique), `title`.
 - **테이블** `legal_document_versions` 컬럼: `document_id`, `version`, `effective_date date`, `content_html`.
 - **테이블** 이어서: `summary`, `is_published`, `published_at`, `created_by`, `created_at`.
@@ -25,11 +25,12 @@
 **관련 파일**
 
 - 페이지 `admin/app/(admin)/legal/{page,[slug]/page}.tsx`
-- 컴포넌트 `admin/components/legal/{LegalForm,LegalPublishFields,LegalEditor,LegalToolbar}.tsx`
+- 컴포넌트 `admin/components/legal/{LegalDocumentCard,LegalTabs,LegalVersionStrip,LegalReadOnlyBanner}.tsx`
+- 컴포넌트 `admin/components/legal/{LegalForm,LegalPublishFields,LegalPublishConfirm,LegalEditor,LegalToolbar}.tsx`
 - 컴포넌트 `admin/components/legal/{LegalPreview,LegalDiffView,LegalVersionHistory}.tsx`
-- 컴포넌트 `admin/components/legal/{version-diff,legal-prose}.ts`
+- 컴포넌트 `admin/components/legal/{version-diff,legal-prose}.ts`, 훅 `use-unsaved-guard.ts`
 - 액션 `admin/lib/actions/legal-actions.ts`, 데이터 `admin/lib/data/legal.ts`
-- 검증 `admin/lib/validation/legal.ts`, 상수 `admin/lib/constants/legal.ts`
+- 검증 `admin/lib/validation/{legal,legal-state}.ts`, 상수 `admin/lib/constants/legal.ts`
 - 정제 `admin/lib/sanitize/legal-html.ts`
 - 마이그레이션 `supabase/migrations/20260908002200_legal_documents.sql`, `20260910000300_legal_marketing.sql`
 - 시드 생성기 `scripts/seed-legal.mjs`
@@ -41,8 +42,8 @@
 | # | 문서 | 경로 | 한 줄 |
 |---|---|---|---|
 | 01 | [01-list.md](01-list.md) | `/legal` | 문서 4종의 발행 현황 카드 |
-| 02 | [02-document.md](02-document.md) | `/legal/[slug]` | 헤더·미리보기·비교·이력 |
-| 03 | [03-version-form.md](03-version-form.md) | 편집 폼 | 요약·본문·발행 설정 |
+| 02 | [02-document.md](02-document.md) | `/legal/[slug]` | 버전 칩 + 편집·미리보기·이력 탭 |
+| 03 | [03-version-form.md](03-version-form.md) | 편집 탭 | 요약·본문·발행 설정·확인창 |
 
 ## 2. 메뉴 전체 규칙
 
@@ -58,12 +59,20 @@
 - DB 체크 `legal_documents_slug_known` 이 같은 집합을 강제한다.
 - 그 밖의 슬러그로 편집 화면을 열면 `notFound()`(404)다.
 
-**발행본 불변** 이미 발행한(`is_published = true`) 개정본은 문안을 덮어쓸 수 없다. 폼이 통째로 잠기고(`fieldset disabled` + 저장 버튼 비활성), 서버 액션도 "이미 발행한 개정본은 고칠 수 없습니다. 새 버전을 만들어 주세요."로 거절한다. 고치려면 이력에서 `이 버전으로 새 초안 만들기` 를 쓴다 — 분쟁 시점의 문안을 되짚을 수 있어야 하기 때문이다.
+**발행본 불변** 이미 발행한(`is_published = true`) 개정본은 문안을 덮어쓸 수 없다. 화면은 통째로 잠근다 — 에디터는 `editable: false`(툴바 없음·회색 바탕), 변경 요약은 `disabled`, 발행 설정은 `fieldset disabled`, 저장 버튼은 아예 렌더하지 않는다. 서버 액션도 "이미 발행한 개정본은 고칠 수 없습니다. 새 버전을 만들어 주세요."로 거절한다. 다음 행동은 편집 탭 맨 위 배너가 안내한다(`이 버전으로 새 초안 만들기`) — 분쟁 시점의 문안을 되짚을 수 있어야 하기 때문이다.
+
+**되돌릴 수 없는 저장만 묻는다** 발행·예약으로 저장하면 확인창이 한 번 뜬다(`legalConfirmCopy`). 임시저장은 묻지 않는다 — 되돌릴 수 있는 저장까지 확인창을 띄우면 운영자가 읽지 않고 누르는 습관이 들어 정작 발행 확인이 무의미해진다.
+
+**저장하지 않은 편집** 편집 가능한 폼에서 본문·요약·발행 설정을 건드리면 `beforeunload` 경고가 걸린다(`use-unsaved-guard.ts`). 새로고침·탭 닫기만 잡고 `<Link>` 이동은 잡지 않는다 — 라우터까지 가로채면 저장 후 리다이렉트도 함께 막힌다.
 
 **현재 시행본 판정** `selectCurrentLegalVersion(versions, today)`(`admin/lib/validation/legal.ts`)와 DB 함수 `current_legal_version(slug)` 이 같은 규칙이어야 한다. 갈리면 예약 개정본이 걸린 날 관리자 미리보기와 사용자 화면이 다른 버전을 보여 준다.
 
 1. 발행본 중 시행일이 오늘 이하인 것이 있으면 시행일이 가장 늦은 것을 고른다(같으면 나중에 발행한 것).
 2. 그런 것이 하나도 없으면(모두 예약) 가장 최근에 발행한 것을 고른다.
+
+**시행 중 · 노출 중** 위 2번으로 고른 개정본은 시행 전인데도 독자에게 보인다. 그때 화면은 "시행 중" 대신 **노출 중**이라고 적는다(`legalCurrentTerm`) — 옆에 붙은 시행일이 미래라서, "시행 중"이라고 쓰면 두 값이 서로 어긋나 보인다. 목록 카드의 첫 줄, 버전 칩, 편집 화면 머리글이 모두 이 함수를 쓴다.
+
+**문서 상태 세 묶음** `resolveLegalDocumentState(versions, today)`(`admin/lib/validation/legal-state.ts`)가 개정본 목록을 `current`(위 규칙) · `scheduled`(발행본이면서 시행일이 미래, 가장 가까운 것) · `drafts`(미발행, 최신 생성순)로 나눈다. `scheduled` 에서 `current` 는 제외한다 — 같은 개정본이 두 줄에 나오면 무엇이 보이는지 판단할 수 없다.
 
 **날짜는 KST 달력 날짜** `effective_date` 는 시각 없는 `date` 컬럼이라 UTC 로 해석하면 한국 자정~오전 9시 사이에 하루가 밀린다. `kstToday()`·`formatEffectiveDate()` 가 `new Date()` 를 쓰지 않는 이유다.
 
