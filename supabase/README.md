@@ -5,7 +5,8 @@
 ```
 supabase/
   config.toml                      로컬 스택 설정 (project_id = "maple")
-  migrations/                      마이그레이션 10개 (아래 표)
+  migrations/                      마이그레이션 40개 (아래 표, 파일명 타임스탬프순)
+  functions/                       Edge Function 3종 (§1-2)
   seed.sql                         개발/스테이징 시드 (db reset 시 자동 적용)
   seed-users.md                    테스트 계정 생성 절차 (auth 는 SQL 로 못 만든다)
 ```
@@ -20,6 +21,8 @@ supabase/
 | `20260908000600_functions_triggers.sql`             | `set_updated_at` · `is_admin` · `handle_new_user` · `increment_post_view` · 집계/권한 가드                                       |
 | `20260908000700_rls_policies.sql`                   | 전 테이블 RLS + 정책                                                                                                             |
 | `20260908000800_storage_buckets.sql`                | 버킷 3종 + `storage.objects` 정책                                                                                                |
+| `20260908001000_fix_guard_trigger_privileges.sql`   | 보안 수정 — 가드 트리거(`guard_post_counters` · `guard_profile_role`)를 `SECURITY INVOKER` 로 고쳐 실제로 막게 함                |
+| `20260908001100_reports_and_author_edits.sql`       | `reports` 신설 + 작성자 본인 수정/삭제 컬럼 단위 가드 확대                                                                       |
 | `20260908001200_social_auth_profiles.sql`           | 간편로그인 전환 — `profiles.provider`/`provider_id`/동의 시각 3종 + `handle_new_user` 개편                                       |
 | `20260908001300_post_content_html.sql`              | 본문 에디터 도입 — `content_format` 에 `html` 보장 + 저장 형식 계약 주석                                                         |
 | `20260908001400_post_likes.sql`                     | `post_likes` (복합 PK) + `sync_post_like_count()` 집계 트리거                                                                    |
@@ -27,7 +30,29 @@ supabase/
 | `20260908001600_news_categories.sql`                | 뉴스 말머리 6종 확장 — `maintenance`/`update`/`info` 추가 + 칩 순서(`sort_order`) 재정렬                                         |
 | `20260908001700_admin_foundation.sql`               | 관리자 사이트 기반 — `admin_invites` · `audit_logs` · 제재/숨김 컬럼 + `is_suspended()` + `handle_new_user` 초대 승격            |
 | `20260908001900_inquiries_owner_edit_cancel.sql`    | 문의 소유자 수정/접수 취소 — `inquiries.cancelled_at` + `inquiries_update_own` + `guard_inquiry_owner_update()` + 첨부 삭제 정책 |
+| `20260908002000_admin_grants_and_ranking_rpc.sql`   | 관리자 콘텐츠 테이블 GRANT 명시 + 랭킹 스냅샷 교체 RPC `replace_ranking_snapshot()`                                              |
 | `20260908002100_reports_admin_update_and_notes.sql` | 신고 처리 — `reports` UPDATE 권한 + `note`/`resolved_by`/`resolved_at` + `guard_report_admin_columns()`                          |
+| `20260908002200_legal_documents.sql`                | `legal_documents` + `legal_document_versions`(약관·정책 문서와 개정 이력) + `current_legal_version()`                           |
+| `20260909000100_hero_banner_media.sql`              | 히어로 배너 유튜브 영상 허용 — `media_type`/`video_url` + 종류·주소 불일치 CHECK                                                 |
+| `20260909000200_admin_roles.sql`                    | `admin_roles` · `profiles.admin_role_id` — 모듈 × read/write 권한 체계, `is_super_admin()`                                      |
+| `20260909000300_email_inquiries.sql`                | 이메일 문의 유입 — `inquiries.source`/`email_*`/`direction` 등                                                                   |
+| `20260909000400_account_withdrawal.sql`             | 회원 탈퇴/파기 2단계 — `deleted_at`/`purged_at` · `is_withdrawn()` · `purge_withdrawn_profiles()` · cron 블록                    |
+| `20260910000100_coupons.sql`                        | `coupons` · `coupon_redemptions` · `redeem_coupon()` RPC                                                                         |
+| `20260910000200_my_coupon_redemptions.sql`          | `my_coupon_redemptions()` RPC — 코드 열거 없이 내 등록 이력만 조회                                                               |
+| `20260910000300_legal_marketing.sql`                | 약관 슬러그에 `marketing`(마케팅 수신 동의 고지) 추가                                                                            |
+| `20260910000400_inquiry_categories.sql`             | `inquiry_categories`(라벨·설명·프리필·순서) + 공개 읽기 RLS + 시드 8종                                                           |
+| `20260910000500_inquiry_category_admin.sql`         | `inquiry_category_usage()` · `update_inquiry_category()`(개명 시 과거 문의 재라벨링)                                            |
+| `20260910000600_inquiry_video_attachments.sql`      | 첨부 버킷 영상 MIME 허용 + `stale_inquiry_pending_attachments()`                                                                 |
+| `20260910000700_inquiry_category_subtypes.sql`      | `inquiry_categories.subtypes[]`(카테고리별 세부 문의 유형)                                                                       |
+| `20260910000800_inquiry_prefill_subtype_block.sql`  | 프리필 본문에서 "세부 문의 유형" 안내 블록 정규식 제거                                                                           |
+| `20260910000900_inquiry_account_id_required.sql`    | `inquiries.account_id` 길이 CHECK(≤40) — 웹 폼 필수화에 맞춘 제약                                                                |
+| `20260911000100_news_category_templates.sql`        | `news_category_templates`(카테고리별 새 글 작성 기본 양식) + 시드 6종                                                            |
+| `20260911000200_inquiry_reply_templates.sql`        | `inquiry_reply_templates`(공통/카테고리별 답변 상용구) + 시드 6종                                                                |
+| `20260911000300_inquiry_assignment.sql`             | 문의 협업 — `assigned_to`/`editing_by` · `inquiry_notes` · `claim_inquiry_edit()` · `add_inquiry_reply()`                        |
+| `20260911000400_inquiry_no.sql`                     | `inquiries.inquiry_no`(접수번호, 1001부터 `generated always as identity`)                                                       |
+| `20260911000500_news_pin_limit.sql`                 | 뉴스 상단 고정 최대 3개 제약                                                                                                     |
+| `20260911000600_inquiry_attachments_max_5.sql`      | 첨부 상한 재정의 — 이미지·PDF 3개 + 영상 2개, 합계 5개(종류별 CHECK 2개 추가)                                                    |
+| `20260914000100_inquiry_kind.sql`                   | 고객지원 접수 종류(kind: `inquiry`\|`bug`\|`report`) 축 추가 — 카테고리 8종 재배치 + 불법이용제보 카테고리 5종 시드. 클라이언트 `/support` · `/support/bug` · `/support/report`, 관리자 "홈페이지 문의"·카테고리 종류별 관리와 함께 배포됨 — `docs/reference/inquiry-kinds-spec.md` |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -39,6 +64,31 @@ supabase/
 | `admin.ts`                           | 서비스 롤(RLS 우회). `server-only`              |
 | `types.ts`                           | `Tables<'posts'>` 등 스키마 타입 별칭           |
 | `roles.ts` / `storage.ts` / `env.ts` | 순수 헬퍼 (단위 테스트: `tests/unit/supabase/`) |
+
+### 주요 테이블
+
+| 테이블                       | 영역                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `profiles`                     | 회원 프로필(간편로그인 1:1) · 권한 · 제재 · 탈퇴/파기 상태 |
+| `board_categories`             | 뉴스·커뮤니티 카테고리                              |
+| `posts` · `comments`           | 뉴스·커뮤니티 글 · 댓글                             |
+| `post_likes`                   | 게시글 좋아요                                       |
+| `inquiries` · `inquiry_replies`| 1:1 문의 · 답변 스레드                              |
+| `inquiry_categories`           | 문의 카테고리·프리필·세부 유형                       |
+| `inquiry_reply_templates`      | 관리자 답변 상용구                                  |
+| `inquiry_notes`                | 운영자 전용 내부 메모                               |
+| `faqs`                         | 자주 묻는 질문                                      |
+| `reports`                      | 신고 접수·처리                                      |
+| `site_settings` · `hero_banners` | 사이트 설정 · 히어로 배너                          |
+| `gacha_items`                  | 확률형 아이템 정보                                  |
+| `rankings`                     | 랭킹 스냅샷                                         |
+| `coupons` · `coupon_redemptions` | 쿠폰 발급 · 등록 이력                              |
+| `legal_documents` · `legal_document_versions` | 약관·정책 문서와 개정 이력                |
+| `news_category_templates`      | 뉴스 카테고리별 작성 기본 양식                       |
+| `admin_invites` · `admin_roles`| 관리자 초대 · 역할(모듈별 권한)                     |
+| `audit_logs`                   | 관리자 행위 이력(추가 전용)                         |
+
+전체 스키마는 마이그레이션 원문이 기준이다. RLS·트리거 상세는 §3~§6.
 
 ---
 
@@ -61,7 +111,13 @@ pnpm dlx supabase db push
 
 # 적용 전 diff 확인
 pnpm dlx supabase db push --dry-run
+
+# 마이그레이션 이력 테이블(ledger)이 어긋나 일부가 "이미 적용됨"으로 스킵될 때
+pnpm dlx supabase db push --include-all
 ```
+
+`--include-all` 은 로컬 이력과 원격 `supabase_migrations.schema_migrations` 가 갈렸을 때만 쓴다
+(예: 마이그레이션 파일을 나중에 합치거나 순서를 바꾼 경우). 평소에는 맨 위 명령으로 충분하다.
 
 ### 로컬 스택 + 시드
 
@@ -84,18 +140,63 @@ psql "$SUPABASE_DB_URL" -f supabase/seed.sql
 
 ### 타입 생성
 
-테이블·enum·함수를 추가하면 반드시 다시 뽑는다.
+테이블·enum·함수를 추가하면 반드시 다시 뽑는다. 사용자 사이트와 관리자 콘솔이 같은 타입
+파일을 쓰므로 저장소 루트에서 한 번에 만든다.
 
 ```bash
-supabase gen types typescript --linked > types/database.types.ts
+pnpm gen:types   # types/database.types.ts + admin/types/database.types.ts 를 함께 생성
 pnpm typecheck
 ```
 
-로컬 스택 기준으로 뽑으려면 `--local` 을 쓴다.
+로컬 스택 기준으로 뽑으려면 `supabase gen types typescript --local > types/database.types.ts` 를
+직접 쓴다(`pnpm gen:types` 는 `--linked` 고정).
 
 ### 테스트 계정
 
 `supabase/seed-users.md` 참고. `seed.sql` 은 `auth.users` 를 건드리지 않는다.
+
+### 설정 반영 (`config push`)
+
+`supabase/config.toml` 의 `[auth]` 섹션(익명 로그인 · Site URL · Redirect URLs 허용 목록)은
+코드가 아니라 프로젝트 설정이라 마이그레이션이 아닌 별도 명령으로 원격에 반영한다.
+
+```bash
+pnpm dlx supabase config push   # diff 를 보여 주고 [Y/n] 로 확인
+```
+
+관리자 콘솔의 초대·비밀번호 재설정 콜백(`http://localhost:3100/**`,
+`https://maple-admin.vercel.app/**`)과 사용자 사이트 콜백이 이미 `additional_redirect_urls` 에
+들어 있다 — 새 배포 도메인을 추가했다면 이 파일을 고치고 `config push` 를 다시 돌린다. 등록하지
+않으면 초대·재설정 메일의 링크가 `redirectTo` 를 무시하고 엉뚱한 사이트로 간다.
+
+### Edge Function 배포
+
+```bash
+pnpm dlx supabase functions deploy <name> --use-api
+```
+
+| 함수              | 용도                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `email-inbound`   | `contact@` 로 들어온 메일을 `inquiries`(`source='email'`)로 저장 + 접수 확인 메일 발신       |
+| `email-outbound`  | 관리자 콘솔의 답신을 메일로 발송(운영자 세션 JWT 로 호출, 제목에 접수번호 태그)              |
+| `purge-withdrawn` | 탈퇴 후 90일 경과 회원의 개인정보 파기(`purge_withdrawn_profiles()` 호출) + 버려진 pending 첨부 청소. pg_cron 이 매일 UTC 18:00(KST 03:00) 에 `x-cron-secret` 헤더로 호출한다 — 상세는 `docs/admin/ACCOUNT-WITHDRAWAL-GUIDE.md` §4 |
+
+세 함수 모두 `supabase/functions/_shared/`(제공자 어댑터 · Deno 헬퍼)를 공유한다. 제공자
+API 키(`RESEND_API_KEY` 등)·크론 시크릿(`CRON_SECRET`)은 함수 secret 으로만 두고 저장소에
+커밋하지 않는다.
+
+### 정책 문서(Legal) 시드 재생성
+
+약관·정책 코드 문안(`lib/content/{privacy,operating}-policy`)을 고쳤으면 마이그레이션 SEED
+구간을 다시 뽑는다.
+
+```bash
+node scripts/seed-legal.mjs
+```
+
+**이미 적용된 마이그레이션을 다시 실행해도 운영 DB 는 바뀌지 않는다** — 배포된 DB 는 그
+SEED 를 다시 읽지 않는다. 문안을 운영에 반영하려면 관리자 콘솔(`/legal`)에서 새 버전을
+발행하거나 새 마이그레이션을 쓴다.
 
 ---
 

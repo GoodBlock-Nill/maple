@@ -4,6 +4,8 @@
 별도의 Next.js 앱이고 별도로 배포한다(Vercel `maple-admin`, Root Directory = `admin`).
 
 기획은 `docs/admin/PLAN.md` 가 단일 출처다. 이 문서는 "코드가 어떻게 놓여 있는가"만 다룬다.
+실무 연동 지도(인증 시퀀스·권한 체계·캐시 무효화 전체 그림)는 `docs/admin/DEVELOPER-GUIDE.md`,
+1:1 문의·템플릿 시스템 상세는 §6 끝의 "관련 문서"를 본다.
 
 ```bash
 pnpm install                      # 저장소 루트에서 (워크스페이스)
@@ -29,11 +31,26 @@ admin/
   app/
     (auth)/        로그인 · 비밀번호 재설정 · 초대 수락      (사이드바 없음)
     (admin)/       인증된 관리 화면 전부                  (layout 이 requireAdmin())
+      page.tsx           대시보드
+      news/               뉴스 목록·작성·수정 · templates/(카테고리 템플릿, [category])
+      community/          posts/ · comments/ (모더레이션)
+      reports/            신고 처리
+      members/            회원 목록 · [id](상세, 홈페이지 문의 탭 포함)
+      coupons/            쿠폰 발급 · [id](등록 내역·지급 처리)
+      inquiries/          홈페이지 문의(1:1 문의·버그제보·불법이용제보)·이메일 문의 목록 · [id] · categories/ · reply-templates/
+      faqs/               FAQ
+      gacha/              확률형 아이템 정보 · new/ · [id]
+      rankings/           랭킹 스냅샷 확인·롤백
+      settings/           사이트 설정 · 히어로 배너
+      legal/              약관·정책 문서 버전 발행 · [slug]
+      admins/             관리자 계정 · 역할 · 초대
+      audit/              감사 로그
     auth/callback/ 초대·재설정 링크 착지점(role 게이트)
   components/
     ui/            공용 프리미티브 (Button · Table · Dialog · Toast …)
     layout/        AdminShell · Sidebar · Topbar · ComingSoon
-    <모듈>/        모듈 전용 컴포넌트 (admins/, dashboard/, …)
+    <모듈>/        모듈 전용 컴포넌트 (admins/, dashboard/, inquiries/, inquiry-categories/,
+                   inquiry-reply-templates/, news-templates/, members/, …)
   lib/
     nav.ts         사이드바 정보 구조 — 화면을 추가하면 여기 한 줄
     revalidate.ts  사용자 사이트 캐시 무효화(revalidateClient) — 아래 §3
@@ -41,7 +58,7 @@ admin/
     auth/          requireAdmin() · requirePermission() · permissions.ts · 30분 비활동 세션
     actions/       서버 액션 (+ FormState 계약)
     data/          읽기 전용 조회
-    utils/         cn · 날짜 · 목록 URL 상태
+    utils/         cn · 날짜 · 목록 URL 상태 · 문의 접수번호/템플릿 치환
     audit.ts       writeAuditLog()
   scripts/         bootstrap-admin.mjs (첫 슈퍼어드민)
   proxy.ts         Next 16 의 구 middleware — 세션 갱신 · 로그인 게이트 · 30분 만료
@@ -99,8 +116,8 @@ admin/
 
 권한은 **역할(`admin_roles`) × 모듈**이다. 모듈마다 `none` · `read` · `write` 중
 하나를 갖고, `write` 는 `read` 를 포함한다. 모듈 목록의 단일 출처는
-`lib/auth/permissions.ts` 의 `ADMIN_MODULES` 13개다(대시보드 · 뉴스 · 커뮤니티 ·
-신고 · 회원 · 1:1 문의 · FAQ · 가이드 · 랭킹 · 사이트 설정 · Legal · 관리자 · 감사 로그).
+`lib/auth/permissions.ts` 의 `ADMIN_MODULES` 14개다(대시보드 · 뉴스 · 커뮤니티 ·
+신고 · 회원 · 쿠폰 · 홈페이지 문의 · FAQ · 가이드 · 랭킹 · 사이트 설정 · Legal · 관리자 · 감사 로그).
 
 | 역할                     | 성격                        | 내용                                               |
 | ------------------------ | --------------------------- | -------------------------------------------------- |
@@ -208,7 +225,7 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
 
 ## 6. 이메일 문의 (고객지원 › 이메일 문의)
 
-`contact@` 로 들어온 메일을 1:1 문의와 같은 화면에서 처리한다. 설계는
+`contact@` 로 들어온 메일을 홈페이지 문의와 같은 화면에서 처리한다. 설계는
 `docs/admin/EMAIL-INQUIRY-PLAN.md`, 켜는 순서는 `docs/admin/EMAIL-INQUIRY-ACTIVATION.md` 다.
 
 - 수신·발신은 Supabase Edge Function 둘(`supabase/functions/email-inbound` · `email-outbound`)이
@@ -217,5 +234,20 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
   JWT 로 `email-outbound` 를 호출할 뿐이다(`lib/email/send-inquiry-reply.ts`).
 - 제공자 어댑터·서명 검증·본문 정제 같은 순수 로직은 `supabase/functions/_shared/email/*.ts` 에 있고
   루트 vitest(`tests/unit/email/**`)가 검증한다. Deno 전용 코드는 `_shared/deno/` 와 각 함수 폴더에만 둔다.
-- 사이드바의 `1:1 문의` · `이메일 문의` 는 `/inquiries?source=web|email` 프리셋이다. 새 라우트가 아니다.
+- 사이드바의 `홈페이지 문의` · `이메일 문의` 는 `/inquiries?source=web|email` 프리셋이다. 새 라우트가 아니다.
 - 이메일 문의는 `user_id` 가 항상 null 이다(메일 주소로 회원을 연결하지 않는다 — 사칭 위험).
+
+## 7. 관련 문서
+
+1:1 문의·카테고리·템플릿·협업(배정·잠금·내부 메모)은 이 문서에서 다루지 않는다 — 아래를 본다.
+
+| 문서                                       | 내용                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------ |
+| `docs/admin/DEVELOPER-GUIDE.md`             | 사용자 사이트 ↔ 관리자 콘솔 연동 전체 지도(인증·권한·캐시 무효화) |
+| `docs/admin/INQUIRY-GUIDE.md`               | 1:1 문의 개발 가이드 — 흐름·데이터 모델·첨부·협업                 |
+| `docs/admin/TEMPLATES-GUIDE.md`             | 문의 프리필 · 뉴스 카테고리 템플릿 · 답변 템플릿 세 갈래 비교       |
+| `docs/admin/EMAIL-INQUIRY-PLAN.md` / `-ACTIVATION.md` | 이메일 문의 설계 · 제공자(Resend) 연동 활성화 절차       |
+| `docs/admin/ACCOUNT-WITHDRAWAL-GUIDE.md`    | 회원 탈퇴·개인정보 파기 라이프사이클                              |
+| `docs/reference/inquiry-kinds-spec.md`      | 고객지원 접수 종류(1:1 문의·버그제보·불법이용제보) 확장 설계 — DB 마이그레이션은 적용, 화면 라우트는 진행 중 |
+
+**최근 변경**은 `docs/admin/INQUIRY-CHANGELOG.md` 를 본다(날짜별 커밋·마이그레이션·테스트 결과).
