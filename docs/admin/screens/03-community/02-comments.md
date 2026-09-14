@@ -39,19 +39,28 @@
 
 | 열 | 종류 | 정렬 | 값의 출처 | 동작 / 표시 규칙 |
 |---|---|---|---|---|
-| 선택 | 체크박스 `name="ids" form="bulk-hide-form"` (w-10) | — | `row.id` | `aria-label="{내용 앞 20자} 선택"`. 이미 숨김·삭제된 행은 `disabled`. read 전용이면 열 자체가 빠진다 |
+| 선택 | 체크박스 `name="ids" form="bulk-hide-form"` (w-10) | — | `row.id` | `aria-label`·비활성 조건(아래) |
 | 내용 | 텍스트(`line-clamp-2 whitespace-pre-wrap`, `title` 툴팁에 전문) | — | `comments.content` | 폭 지정이 없어 남은 자리를 전부 먹는다. **평문이다**(댓글에는 에디터가 없다) |
-| 게시글 | 외부 링크(w-44, `line-clamp-1`) | — | `posts(title)` 임베드 | `{CLIENT_SITE_URL}/community/{post_id}` 새 탭. 관리자에는 게시글 상세 화면이 없어 **항상 사용자 사이트 원문으로 보낸다**. 원 게시글이 조회되지 않으면 제목 자리에 `(삭제된 게시글)`. 게시글이 삭제됐어도 **링크는 그대로 걸린다**(게시글 목록과 달리 링크를 떼지 않는다 — 누르면 404) |
+| 게시글 | 외부 링크(w-44, `line-clamp-1`) | — | `posts(title)` 임베드 | 원문 링크 규칙(아래) |
 | 작성자 | 링크 또는 텍스트(w-28) | — | `author_name` / `author_id` | `author_id !== null` 이면 `/members/{authorId}`. 탈퇴 계정은 muted 텍스트 |
 | 상태 | `Badge`(w-20) | — | `contentStatus(row)` | 정상(success) / 숨김(warn) / 삭제(danger) |
 | 작성일 | 텍스트(muted, w-36) | `created_at` (**유일한 정렬 키, 기본 desc**) | `comments.created_at` | `formatDateTime()` |
-| 조치 | 버튼 묶음(우측, w-124px) | — | — | `ModerationActions kind="comment"`. 원문 미리보기 버튼은 없다 — "게시글" 칸의 링크가 그 역할을 한다 |
+| 조치 | 버튼 묶음(우측, w-124px) | — | — | `ModerationActions kind="comment"`(아래) |
+
+**동작 상세**
+- **선택** — `aria-label="{내용 앞 20자} 선택"`. 이미 숨김·삭제된 행은 `disabled`. read 전용이면 열 자체가 빠진다.
+- **게시글** — `{CLIENT_SITE_URL}/community/{post_id}` 새 탭. 관리자에는 게시글 상세 화면이 없어 **항상 사용자 사이트 원문으로 보낸다**. 원 게시글이 조회되지 않으면 제목 자리에 `(삭제된 게시글)`. 게시글이 삭제됐어도 **링크는 그대로 걸린다**(게시글 목록과 달리 링크를 떼지 않는다 — 누르면 404).
+- **조치** — 원문 미리보기 버튼은 없다 — "게시글" 칸의 링크가 그 역할을 한다.
 
 ## 1.5 행 조치 (`ModerationActions kind="comment"`)
 | 필드/컨트롤 | 노출·활성 조건 | 확인 | 동작 |
 |---|---|---|---|
-| 숨김 / 숨김 해제 | 삭제된 행에서는 `disabled` | 없음(즉시) | `setCommentHiddenAction` → `comments.is_hidden` → 감사 `community.comment.hide`/`unhide` → 토스트 `"댓글을 숨김 처리했습니다."` / `"댓글을 숨김 해제했습니다."` |
-| 삭제 / 복구 | 항상 | 다이얼로그(제목 `댓글 삭제`/`댓글 복구`) | `setCommentDeletedAction` → `comments.deleted_at` → 감사 `community.comment.delete`/`restore` → 토스트 `"댓글을 삭제했습니다."` / `"댓글을 복구했습니다."` |
+| 숨김 / 숨김 해제 | 삭제된 행에서는 `disabled` | 없음(즉시) | `setCommentHiddenAction` 실행(아래) |
+| 삭제 / 복구 | 항상 | 다이얼로그(제목 `댓글 삭제`/`댓글 복구`) | `setCommentDeletedAction` 실행(아래) |
+
+**동작 상세**
+- **숨김 / 숨김 해제** — `setCommentHiddenAction` → `comments.is_hidden` → 감사 `community.comment.hide`/`unhide` → 토스트 `"댓글을 숨김 처리했습니다."` / `"댓글을 숨김 해제했습니다."`.
+- **삭제 / 복구** — `setCommentDeletedAction` → `comments.deleted_at` → 감사 `community.comment.delete`/`restore` → 토스트 `"댓글을 삭제했습니다."` / `"댓글을 복구했습니다."`.
 
 ## 1.6 페이지네이션
 `buildHref('/community/comments', searchParams, { page: String(page) })`, 총 페이지 `ceil(count / 20)`.

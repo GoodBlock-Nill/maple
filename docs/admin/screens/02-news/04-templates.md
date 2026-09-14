@@ -12,8 +12,11 @@
 | 필드/컨트롤 | 종류 | 동작 / 문구 |
 |---|---|---|
 | 제목 | `PageHeader` | "카테고리 템플릿 관리" |
-| 설명 | 텍스트 | "카테고리별 글 양식입니다. 새 글 작성 화면에서 카테고리를 고르면 제목·요약·본문이 이 양식으로 채워집니다. {{날짜}} 같은 자리는 자동으로 바뀌지 않으니 작성할 때 직접 고쳐 주세요." |
+| 설명 | 텍스트 | 페이지 설명 문구(아래) |
 | 뉴스 목록 | 링크 버튼(secondary) | `/news` |
+
+**동작 상세**
+- **설명** — "카테고리별 글 양식입니다. 새 글 작성 화면에서 카테고리를 고르면 제목·요약·본문이 이 양식으로 채워집니다. {{날짜}} 같은 자리는 자동으로 바뀌지 않으니 작성할 때 직접 고쳐 주세요."
 
 ## 1.2 목록 (`NewsTemplateList`)
 `Card` + `CardHeader`(제목 `카테고리 템플릿 (6)`, 설명 "새 글 작성 화면에서 카테고리를 고르면 이 양식이 제목·요약·본문을 채웁니다."). 한 줄에 카테고리 하나(`<li data-testid="news-template-{categoryKey}">`).
@@ -22,10 +25,13 @@
 |---|---|---|---|---|
 | 카테고리 뱃지 | `Badge`(폭 92px 고정) | `label` / `tone` | 폭을 고정해 줄마다 제목 시작 위치가 흔들리지 않게 한다 | — |
 | 제목 템플릿 | 한 줄(`line-clamp-1`, bold) | `title_template` | 비어 있으면 `제목 템플릿 없음` | — |
-| 본문 발췌 | 한 줄(muted, `line-clamp-1`) | `body_template` | `postHtmlText()` 로 태그를 벗기고 공백을 접은 평문. 비어 있으면 `본문 템플릿 없음`. 서식까지 보려면 편집 화면의 미리보기를 본다 | — |
+| 본문 발췌 | 한 줄(muted, `line-clamp-1`) | `body_template` | 평문 변환·빈 값 문구(아래) | — |
 | 기본값 / 수정됨 · 최종 수정 | 한 줄(muted) | `isDefault`, `updated_at` | `기본값` 또는 `수정됨` + ` · 저장된 적 없음`(행 없음) 또는 ` · 최종 수정 {YYYY-MM-DD HH:mm}` | — |
 | 사용 여부 | `Badge` | `is_active` | `사용`(success) / `사용 안 함`(neutral) | — |
 | 수정 | 링크 버튼(secondary sm) | — | 항상 | `/news/templates/{categoryKey}` → [05-templates-edit.md](05-templates-edit.md) |
+
+**동작 상세**
+- **본문 발췌** — `postHtmlText()` 로 태그를 벗기고 공백을 접은 평문. 비어 있으면 `본문 템플릿 없음`. 서식까지 보려면 편집 화면의 미리보기를 본다.
 
 **`isDefault` 판정** `isSameAsSeed()` — 저장된 `title_template`·`summary_template`·`body_template` **세 값이 모두** 코드 시드와 문자 단위로 같으면 `기본값`. `is_active` 는 비교에 넣지 않는다. 코드 시드(`admin/lib/constants/news-templates.ts`)와 마이그레이션 시드(`20260911000100_news_category_templates.sql`)는 한 생성기(`node scripts/gen-news-templates.mjs`)가 함께 뽑아 글자까지 같다.
 
@@ -35,9 +41,11 @@
 | 값 | 라벨 | 색 | 언제 |
 |---|---|---|---|
 | `is_active = true` | 사용 | success | 새 글에서 이 카테고리를 고르면 템플릿이 채워진다 |
-| `is_active = false` | 사용 안 함 | neutral | 문안은 남아 있지만 새 글 폼이 아무것도 채우지 않는다(`decideNewsTemplateApply` 가 `none`). 수정 화면의 "템플릿 불러오기" 버튼도 사라진다 |
+| `is_active = false` | 사용 안 함 | neutral | 새 글 폼이 채우지 않음, 수정 화면 버튼도 숨김(아래) |
 | `isDefault = true` | 기본값 | neutral(편집 화면 헤더 뱃지) | 문안 셋이 코드 시드와 동일 |
 | `isDefault = false` | 수정됨 | accent | 하나라도 다름. 이때만 "기본값으로 되돌리기" 버튼이 보인다 |
+
+- **`is_active = false`(사용 안 함)** — 문안은 남아 있지만 새 글 폼이 아무것도 채우지 않는다(`decideNewsTemplateApply` 가 `none`). 수정 화면의 "템플릿 불러오기" 버튼도 사라진다.
 
 **클라이언트와의 상호작용**
 - **없음.** `news_category_templates` 는 RLS `news_category_templates_admin_all`(`is_admin()`)로 관리자에게만 열려 있고, anon·일반 로그인 사용자에게는 SELECT 조차 열지 않는다(발행 전 점검 일정·이벤트 보상 초안이 템플릿에 적히는 일이 흔한데 아직 공개된 정보가 아니다).

@@ -17,8 +17,11 @@
 | 필드/컨트롤 | 종류 | 필수·제한 | 기본값 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | 제목 | 텍스트 | — | "FAQ" | — |
-| 설명 | 텍스트 | — | "카테고리 안에서 ▲▼ 로 순서를 바꾸고 '순서 저장'을 눌러 확정합니다. 미발행 항목은 사용자 사이트에 보이지 않습니다." | — |
+| 설명 | 텍스트 | — | 페이지 설명 문구(아래) | — |
 | FAQ 등록 | 버튼(primary) | write 권한 | 카테고리 = 첫 값(`notice`) | 다이얼로그([11-faq-form.md](11-faq-form.md)) |
+
+**동작 상세**
+- **설명** — "카테고리 안에서 ▲▼ 로 순서를 바꾸고 '순서 저장'을 눌러 확정합니다. 미발행 항목은 사용자 사이트에 보이지 않습니다."
 
 ## 2. 카테고리 섹션 (`FaqCategorySection`, 5개)
 
@@ -35,9 +38,12 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | 섹션 제목 | 텍스트 | — | `{라벨} ({항목 수})` | — |
-| 순서 저장 | 버튼(secondary, sm) + 폼 | write. 순서가 실제로 바뀐 경우에만 활성(`hasFaqOrderChanged`) | "순서 저장" / "저장 중…" | hidden `category` + hidden `ids`(콤마 연결). `reorderFaqsAction` → `sort_order` 를 0..n-1 로 다시 쓴다 → 감사 `faq.reorder`(`after: { category, ids }`) → `faqs` 태그 재검증 → 토스트 "순서를 저장했습니다." |
+| 순서 저장 | 버튼(secondary, sm) + 폼 | write. 순서가 실제로 바뀐 경우에만 활성(`hasFaqOrderChanged`) | "순서 저장" / "저장 중…" | `reorderFaqsAction` 실행(아래) |
 | 추가 | 버튼(secondary, sm) | write | **그 섹션의 카테고리**가 기본 선택 | 다이얼로그 |
 | 빈 섹션 | 안내문 | — | — | "등록된 항목이 없습니다." |
+
+**동작 상세**
+- **순서 저장** — hidden `category` + hidden `ids`(콤마 연결). `reorderFaqsAction` → `sort_order` 를 0..n-1 로 다시 쓴다 → 감사 `faq.reorder`(`after: { category, ids }`) → `faqs` 태그 재검증 → 토스트 "순서를 저장했습니다."
 
 정렬 UPDATE 는 `.eq('id', id).eq('category', category)` 로 **두 조건**을 건다 — 다른 카테고리의 id 를 섞어 보내도 그 행의 순번이 바뀌지 않는다(문의 카테고리 정렬에는 없는 안전장치다).
 
@@ -45,13 +51,17 @@
 
 | 열/요소 | 값의 출처 | 표시 규칙 |
 |---|---|---|
-| ▲ / ▼ | 클라이언트 순서 상태 | write 일 때만. `aria-label="{질문} 위로/아래로"`. 끝에서는 비활성. **누르면 저장되지 않는다** — "순서 저장"으로 확정 |
+| ▲ / ▼ | 클라이언트 순서 상태 | 노출·비활성 조건(아래) |
 | 질문 | `question` | 굵게, 한 줄 말줄임 |
 | 답변 요약 | `answer` | 흐린 글자, 한 줄 말줄임 |
 | 발행 여부 | `is_published` | `Badge success` "발행" / `Badge neutral` "미발행" |
-| 숨기기·발행 | 버튼(ghost, sm) + 폼 | hidden `faqId`, `isPublished`(반대값 문자열). `toggleFaqPublishAction` → 감사 `faq.publish` → 태그 재검증 → 토스트 "FAQ를 발행했습니다." / "FAQ를 숨겼습니다." |
+| 숨기기·발행 | 버튼(ghost, sm) + 폼 | 필드·액션 계약(아래) |
 | 수정 | 버튼(secondary, sm) | 다이얼로그(프리필된 값) |
 | 삭제 | 버튼(danger, sm) | 확인 다이얼로그([11-faq-form.md](11-faq-form.md) §3) |
+
+**동작 상세**
+- **▲ / ▼** — write 일 때만. `aria-label="{질문} 위로/아래로"`. 끝에서는 비활성. **누르면 저장되지 않는다** — "순서 저장"으로 확정.
+- **숨기기·발행** — hidden `faqId`, `isPublished`(반대값 문자열). `toggleFaqPublishAction` → 감사 `faq.publish` → 태그 재검증 → 토스트 "FAQ를 발행했습니다." / "FAQ를 숨겼습니다."
 
 화면 상태는 **순서(id 나열)뿐**이다. 항목의 내용·발행 여부는 매번 서버가 준 `group.items` 에서 읽는다 — 항목을 상태로 복사하면 토글·수정 뒤 서버가 새 값을 보내도 화면이 예전 값을 계속 그린다(실제로 겪은 버그).
 
@@ -63,16 +73,21 @@
 |---|---|---|---|---|---|
 | 등록 | `createFaqAction` | `faqSchema` | insert, `sort_order = getNextFaqSortOrder(category)`(그 카테고리 최대+1) | `faq.create`(`after: { category, question, is_published, sort_order }` — **답변 본문은 넣지 않는다**) | `revalidatePath('/faqs')` + `revalidateClient(['faqs'])` |
 | 수정 | `updateFaqAction` | `faqSchema` + `faqId` 존재 | update. **카테고리를 옮기면** 새 카테고리 맨 뒤로 `sort_order` 재계산 | `faq.update`(before/after, 답변 포함) | 동일 |
-| 삭제 | `deleteFaqAction` | `faqId` 존재 | delete. **남은 항목의 순번은 다시 매기지 않는다**(구멍 0,1,3 이 있어도 표시 순서는 같고 다음 정렬 저장이 정리한다) | `faq.delete`(before 전체) | 동일 |
+| 삭제 | `deleteFaqAction` | `faqId` 존재 | delete, 남은 순번 처리(아래) | `faq.delete`(before 전체) | 동일 |
 | 발행 토글 | `toggleFaqPublishAction` | `faqId` 존재 | `is_published` | `faq.publish` | 동일 |
 | 순서 저장 | `reorderFaqsAction` | `faqReorderSchema`(category enum + uuid 1개 이상) | 행마다 `sort_order = index` (category 조건 동반) | `faq.reorder` | 동일 |
+
+**동작 상세**
+- **삭제(DB)** — delete. **남은 항목의 순번은 다시 매기지 않는다**(구멍 0,1,3 이 있어도 표시 순서는 같고 다음 정렬 저장이 정리한다).
 
 ## 5. 상태·뱃지 의미
 
 | 뱃지 | 값 | 의미 |
 |---|---|---|
 | 발행(success) | `is_published = true` | 사용자 사이트 `/support/faq` 아코디언에 나온다 |
-| 미발행(neutral) | `is_published = false` | `faqs_select_published` RLS 로 사용자 쪽에서 **즉시 사라진다**(캐시 만료를 기다릴 것도 없이 행 자체가 조회되지 않는다) |
+| 미발행(neutral) | `is_published = false` | 사용자 쪽에서 즉시 사라진다(아래) |
+
+- **미발행(neutral)** — `faqs_select_published` RLS 로 사용자 쪽에서 **즉시 사라진다**(캐시 만료를 기다릴 것도 없이 행 자체가 조회되지 않는다).
 
 ## 6. 클라이언트와의 상호작용
 
@@ -93,7 +108,10 @@
 | 등록·수정 실패 | "FAQ를 등록/수정하지 못했습니다. 잠시 후 다시 시도해 주세요." |
 | 삭제 실패 | "FAQ를 삭제하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요." |
 | 발행 토글 실패 | "FAQ 발행 상태를 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요." |
-| 순서 저장 일부 실패 | "순서를 저장하지 못했습니다. 일부만 반영됐을 수 있으니 새로고침해 순서를 확인해 주세요." |
+| 순서 저장 일부 실패 | "순서를 저장하지 못했습니다…"(아래) |
 | 정렬 페이로드가 깨짐 / 카테고리가 enum 밖 | "정렬 정보를 읽지 못했습니다." |
 | 사용자 사이트 재검증 실패 | 저장은 성공한다. 경고 로그만 남고 최대 300초 뒤 자동 반영 |
-| 읽기 전용 관리자(`faqs:read`) | ▲▼·순서 저장·추가·발행 토글·수정·삭제와 헤더의 등록 버튼이 전부 렌더되지 않는다(미발행 항목 열람은 가능) |
+| 읽기 전용 관리자(`faqs:read`) | 조치 버튼 전부 미노출(아래) |
+
+- **순서 저장 일부 실패** — 전체 문구는 "순서를 저장하지 못했습니다. 일부만 반영됐을 수 있으니 새로고침해 순서를 확인해 주세요."
+- **읽기 전용 관리자** — ▲▼·순서 저장·추가·발행 토글·수정·삭제와 헤더의 등록 버튼이 전부 렌더되지 않는다(미발행 항목 열람은 가능).

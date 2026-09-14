@@ -25,10 +25,14 @@
 | 정렬 보존 | hidden input `sort` | — | `serializeSort(sort)` = `published_at:desc` 등 | 필터를 바꿔도 정렬이 풀리지 않게 실어 보낸다 |
 | 카테고리 | `Select` `name="category"` (폭 w-40) | 목록은 `listNewsCategories()`. 잘못된 값은 `isNewsCategoryKey()` 에서 걸려 필터 없음으로 떨어진다 | placeholder "전체", 현재 `?category=` | `onChange` 에서 폼 즉시 제출(`requestSubmit()`). 서버: `query.eq('category_key', …)` |
 | 상태 | `Select` `name="status"` (폭 w-44) | `NEWS_STATUSES` 5종. 모르는 값 → 전체 | placeholder **"전체(삭제 제외)"**, 현재 `?status=` | `onChange` 즉시 제출. 서버 `applyNewsStatusFilter()` 가 아래 표대로 조건을 건다 |
-| 고정 | `Select` `name="pinned"` (폭 w-32) | 옵션은 `1`(라벨 "고정만") 하나. `parseNewsPinnedFilter()` 가 `z.enum(['0','1'])` 로 파싱, 그 밖은 false | placeholder "전체", `?pinned=1` 이면 선택됨 | `onChange` 즉시 제출. 서버 `query.eq('is_pinned', true)`. **상태 필터와 별개 축**이라 "숨김이면서 고정"도 걸러진다 |
-| 검색 | `Input type="search"` `name="q"` (폭 w-64) | `maxLength = SEARCH_MAX_LENGTH(60)`, 라벨 옆에 `현재/최대` 카운트 | placeholder "제목 · 요약", 현재 `?q=` | Enter 또는 "검색" 버튼으로 제출. 서버 `or(title.ilike.%p%,summary.ilike.%p%)` — **제목과 요약을 함께** 찾는다 |
+| 고정 | `Select` `name="pinned"` (폭 w-32) | 옵션은 `1`(라벨 "고정만") 하나. `parseNewsPinnedFilter()` 가 `z.enum(['0','1'])` 로 파싱, 그 밖은 false | placeholder "전체", `?pinned=1` 이면 선택됨 | `onChange` 즉시 제출. 서버 조건(아래) |
+| 검색 | `Input type="search"` `name="q"` (폭 w-64) | `maxLength = SEARCH_MAX_LENGTH(60)`, 라벨 옆에 `현재/최대` 카운트 | placeholder "제목 · 요약", 현재 `?q=` | Enter/"검색" 버튼 제출. 서버 조건(아래) |
 | 검색(버튼) | submit 버튼 | — | — | 폼 제출 |
 | 초기화 | 링크 버튼(ghost) | `isFiltered`(카테고리·상태·고정·검색어 중 하나라도 있음)일 때만 보인다 | — | `/news` 로 이동 — **정렬·페이지까지 전부 지운다** |
+
+**동작 상세**
+- **고정** — `onChange` 즉시 제출. 서버 `query.eq('is_pinned', true)`. **상태 필터와 별개 축**이라 "숨김이면서 고정"도 걸러진다.
+- **검색** — Enter 또는 "검색" 버튼으로 제출. 서버 `or(title.ilike.%p%,summary.ilike.%p%)` — **제목과 요약을 함께** 찾는다.
 
 **상태 필터 → 질의 조건** (`applyNewsStatusFilter()`, 판정 기준이 `deriveNewsStatus()` 와 같아야 뱃지와 필터 결과가 어긋나지 않는다)
 
@@ -50,7 +54,10 @@
 |---|---|---|
 | 총 N건 | `listNews().total` (`count: 'exact'`) | `toLocaleString('ko-KR')`. **필터가 적용된 건수**다 |
 | 고정 x/3 | `getPinnedNewsSummary().count` / `NEWS_PIN_LIMIT` | 집계 실패면 `?/3` |
-| 삭제 안내 | — | `status === null`(전체)일 때만 덧붙는다: `· 삭제된 글은 상태 필터에서 "삭제"를 골라야 보입니다.` |
+| 삭제 안내 | — | `status === null`(전체)일 때만 표시(아래) |
+
+**동작 상세**
+- **삭제 안내** — `status === null`(전체)일 때만 덧붙는다: `· 삭제된 글은 상태 필터에서 "삭제"를 골라야 보입니다.`
 
 ## 1.4 일괄 처리 바 (`NewsTable`, `news:write` 전용)
 표 전체가 하나의 `<form>` 이다. 체크박스가 `ids` 반복 필드로 모이고, 제출 버튼의 `name="intent"`/`value` 가 함께 FormData 에 담긴다. `aria-live="polite"` 로 선택 개수 변화를 읽어 준다.
@@ -58,8 +65,12 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | N건 선택 | 텍스트 | — | `0건 선택` | 컴포넌트 상태 `selected` 의 길이 |
-| 선택 숨김 | submit 버튼(secondary sm) `name="intent" value="hide"` | 선택 0건이거나 처리 중이면 `disabled` | — | `newsStateAction(intent='hide')` → `posts.is_hidden = true` (여러 건 한 질의) → 감사 `news.hide` ×N → `revalidatePath('/news')` + 태그 `news-list` → 성공 토스트 `"N건을 숨겼습니다."` 후 선택 해제 |
-| 선택 삭제 | 버튼(danger sm) | 선택 0건·처리 중이면 `disabled` | — | 확인 다이얼로그를 연다(폼 제출이 아니라 `useTransition` 으로 직접 호출 — 다이얼로그 버튼이 표 밖에 있어도 선택이 실린다) |
+| 선택 숨김 | submit 버튼(secondary sm) `name="intent" value="hide"` | 선택 0건이거나 처리 중이면 `disabled` | — | `newsStateAction(intent='hide')` 실행(아래) |
+| 선택 삭제 | 버튼(danger sm) | 선택 0건·처리 중이면 `disabled` | — | 확인 다이얼로그를 연다(아래) |
+
+**동작 상세**
+- **선택 숨김** — `newsStateAction(intent='hide')` → `posts.is_hidden = true` (여러 건 한 질의) → 감사 `news.hide` ×N → `revalidatePath('/news')` + 태그 `news-list` → 성공 토스트 `"N건을 숨겼습니다."` 후 선택 해제.
+- **선택 삭제** — 확인 다이얼로그를 연다. 폼 제출이 아니라 `useTransition` 으로 직접 호출(다이얼로그 버튼이 표 밖에 있어도 선택이 실린다).
 
 **선택 삭제 확인 다이얼로그**
 | 요소 | 문구 |
@@ -68,7 +79,9 @@
 | 설명 | `선택한 {N}건을 삭제합니다. 목록의 상태 필터에서 삭제를 골라 복구할 수 있습니다.` |
 | 본문 | `삭제해도 데이터는 남습니다(소프트 삭제). 사용자 사이트에서는 즉시 사라집니다.` |
 | 버튼 | `취소` / `삭제`(처리 중 `삭제 중…`) |
-| 확정 시 | `newsStateAction(intent='delete')` → `posts.deleted_at = now()` → 감사 `news.delete` ×N → 태그 `news-list` → 토스트 `"N건을 삭제했습니다."` → 선택 해제 + 다이얼로그 닫힘 |
+| 확정 시 | 아래 |
+
+- **확정 시** — `newsStateAction(intent='delete')` → `posts.deleted_at = now()` → 감사 `news.delete` ×N → 태그 `news-list` → 토스트 `"N건을 삭제했습니다."` → 선택 해제 + 다이얼로그 닫힘.
 
 ## 1.5 표 (`NewsTable` + `buildNewsColumns`)
 `caption="뉴스 목록"`, 빈 결과 문구 `"조건에 맞는 뉴스가 없습니다."`. 정렬 링크는 서버에서 미리 만들어 내려준다(`sortHrefs` — 함수는 서버→클라이언트 경계를 넘지 못한다).
@@ -78,7 +91,7 @@
 | 선택 | 체크박스 `name="ids" value={id}` (폭 w-10) | — | 컴포넌트 상태 | 헤더는 "전체 선택"(현재 페이지 20건 기준 토글). **`news:write` 가 없으면 열 자체가 빠진다** |
 | 제목 | 뱃지 + 링크 (`min-w-[220px]`) | `title` | `posts.title` | `is_pinned` 이면 앞에 `고정`(accent) 뱃지. 제목 클릭 → `/news/{id}`(수정 화면) |
 | 카테고리 | `Badge` (폭 w-28) | — | `posts.category_key` | `newsCategoryLabel()`/`newsCategoryTone()`. 모르는 키는 키 원문 + neutral |
-| 상태 · 노출 | 뱃지 2개 (폭 w-28) | — | `deriveNewsStatus()` / `deriveNewsVisibility()` | 한 칸에 나란히. 편집 상태만으로는 "지금 독자에게 보이는가"를 알 수 없어 둘을 붙여 둔다 → [README 의 두 축 표](README.md#편집-상태-vs-클라이언트-노출-두-축) |
+| 상태 · 노출 | 뱃지 2개 (폭 w-28) | — | `deriveNewsStatus()` / `deriveNewsVisibility()` | 한 칸에 나란히 표시(아래) |
 | 발행일 | 텍스트(muted, `w-36`) | `published_at` (**기본 정렬, desc**) | `posts.published_at` | `formatDateTime()` = KST `YYYY-MM-DD HH:mm` |
 | 조회수 | 우측 정렬 숫자(`w-24`) | `view_count` | `posts.view_count` | `toLocaleString('ko-KR')` |
 | 수정일 | 텍스트(muted, `w-36`) | `updated_at` | `posts.updated_at` | `formatDateTime()`. 조회수 증가로도 밀리는 값이다(본문이 실제로 바뀐 시각은 `edited_at`) |
@@ -86,16 +99,24 @@
 
 정렬 헤더는 `<Link>` 다(`sortHref()`): 같은 키를 다시 누르면 `desc → asc` 로 뒤집고, 다른 키를 누르면 `desc` 로 시작한다. **정렬이 바뀌면 `page` 파라미터를 지운다.** `aria-sort` 로 현재 방향을 알리고 화살표(`↕`/`↑`/`↓`)를 붙인다.
 
+**동작 상세**
+- **상태 · 노출** — 편집 상태만으로는 "지금 독자에게 보이는가"를 알 수 없어 둘을 붙여 둔다 → [README 의 두 축 표](README.md#편집-상태-vs-클라이언트-노출-두-축).
+
 ## 1.6 행 조치 (`NewsRowActions`, `news:write` 전용)
 표 전체가 일괄 처리용 `<form>` 안이라 폼을 중첩할 수 없다 — 서버 액션을 `useTransition` 안에서 직접 부른다(그러지 않으면 행 버튼이 선택된 모든 행을 함께 보낸다). 액션이 `revalidatePath()` 를 부르므로 응답 하나에 재렌더된 목록이 함께 온다.
 
 | 필드/컨트롤 | 종류 | 노출 조건 | 확인 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | 수정 | 링크 버튼(ghost sm) | 항상 | 없음 | `/news/{id}` |
-| 보기 | 링크 버튼(ghost sm, `target="_blank" rel="noopener noreferrer"`) | 항상 | 없음 | `{NEXT_PUBLIC_CLIENT_SITE_URL}/news/{id}` — 관리자 미리보기가 아니라 **독자가 보는 실제 페이지**. 발행 전이면 404 지만 링크는 항상 둔다. `aria-label="{제목} 클라이언트에서 보기"` |
-| 숨김 / 숨김 해제 | 버튼(ghost sm) | `status !== 'deleted'` | **없음(즉시 실행)** | `newsStateAction(intent='hide'\|'unhide')` → `posts.is_hidden` → 감사 `news.hide`/`news.unhide` → 태그 `news-list` → 토스트 `"1건을 숨겼습니다."` / `"1건을 숨김을 해제했습니다."` |
+| 보기 | 링크 버튼(ghost sm, `target="_blank" rel="noopener noreferrer"`) | 항상 | 없음 | 독자 페이지로 이동(아래) |
+| 숨김 / 숨김 해제 | 버튼(ghost sm) | `status !== 'deleted'` | **없음(즉시 실행)** | `newsStateAction(intent='hide'\|'unhide')` 실행(아래) |
 | 삭제 | 버튼(danger sm) | `status !== 'deleted'` | 다이얼로그 | 아래 |
-| 복구 | 버튼(secondary sm) | `status === 'deleted'` | **없음(즉시 실행)** | `newsStateAction(intent='restore')` → `posts.deleted_at = null` → 감사 `news.restore` → 태그 `news-list` → 토스트 `"1건을 복구했습니다."` |
+| 복구 | 버튼(secondary sm) | `status === 'deleted'` | **없음(즉시 실행)** | `newsStateAction(intent='restore')` 실행(아래) |
+
+**동작 상세**
+- **보기** — `{NEXT_PUBLIC_CLIENT_SITE_URL}/news/{id}` — 관리자 미리보기가 아니라 **독자가 보는 실제 페이지**. 발행 전이면 404 지만 링크는 항상 둔다. `aria-label="{제목} 클라이언트에서 보기"`.
+- **숨김 / 숨김 해제** — `newsStateAction(intent='hide'\|'unhide')` → `posts.is_hidden` → 감사 `news.hide`/`news.unhide` → 태그 `news-list` → 토스트 `"1건을 숨겼습니다."` / `"1건을 숨김을 해제했습니다."`.
+- **복구** — `newsStateAction(intent='restore')` → `posts.deleted_at = null` → 감사 `news.restore` → 태그 `news-list` → 토스트 `"1건을 복구했습니다."`.
 
 **행 삭제 확인 다이얼로그**
 | 요소 | 문구 |
@@ -108,30 +129,42 @@
 ## 1.7 페이지네이션
 | 필드/컨트롤 | 종류 | 동작 |
 |---|---|---|
-| 페이지 링크 | `<Link>` | `buildHref('/news', query, { page })` — 현재 필터·정렬을 그대로 물려받는다. **1페이지는 `page` 파라미터를 지운다**(`page: target === 1 ? null : String(target)`) |
+| 페이지 링크 | `<Link>` | `buildHref('/news', query, { page })`(아래) |
 | 총 페이지 | — | `totalPages(list.total)` = `ceil(total / 20)`, 최소 1 |
+
+**동작 상세**
+- **페이지 링크** — `buildHref('/news', query, { page })` — 현재 필터·정렬을 그대로 물려받는다. **1페이지는 `page` 파라미터를 지운다**(`page: target === 1 ? null : String(target)`).
 
 ## 1.8 상태 변경 액션 계약 (`newsStateAction`)
 `admin/lib/actions/news-actions.ts`. 행 버튼과 일괄 바가 **같은 액션**을 쓴다(대상만 `ids` 반복 필드로 다르다).
 
 | 항목 | 값 |
 |---|---|
-| 권한 | 액션 첫 줄에서 `requirePermission('news', 'write')` — 레이아웃이 막고 있어도 서버 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다 |
-| 검증 | **zod 스키마 없음.** `intent` 는 `isNewsIntent()`(`hide`·`unhide`·`delete`·`restore`), `ids` 는 `formData.getAll('ids')` 의 문자열만 |
-| 쓰기 | 세션 클라이언트 · 한 질의(`update(patch).eq('board','news').in('id', ids)`). 삭제 시각은 요청당 한 번만 만든다(`intentPatch(intent, new Date())`) — 행마다 `now()` 를 부르면 같은 일괄 처리가 감사 로그에서 한 묶음으로 읽히지 않는다 |
+| 권한 | `requirePermission('news', 'write')`(아래) |
+| 검증 | **zod 스키마 없음.**(아래) |
+| 쓰기 | 세션 클라이언트 · 한 질의(아래) |
 | 감사 로그 | 대상 **1건마다 1행**. before 는 갱신 전 스냅샷, after 는 `{ ...row, ...patch }` 로 계산한 스냅샷 |
 | 재검증 | `revalidatePath('/news')` + 태그 `news-list`(상태 변경은 항상 태운다) |
-| 성공 토스트 | `` `${ids.length}건을 ${done}` `` — done 은 `숨겼습니다.` / `숨김을 해제했습니다.` / `삭제했습니다.` / `복구했습니다.` |
+| 성공 토스트 | `` `${ids.length}건을 ${done}` ``(아래) |
+
+**동작 상세**
+- **권한** — 액션 첫 줄에서 `requirePermission('news', 'write')` — 레이아웃이 막고 있어도 서버 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다.
+- **검증** — `intent` 는 `isNewsIntent()`(`hide`·`unhide`·`delete`·`restore`), `ids` 는 `formData.getAll('ids')` 의 문자열만.
+- **쓰기** — `update(patch).eq('board','news').in('id', ids)`. 삭제 시각은 요청당 한 번만 만든다(`intentPatch(intent, new Date())`) — 행마다 `now()` 를 부르면 같은 일괄 처리가 감사 로그에서 한 묶음으로 읽히지 않는다.
+- **성공 토스트** — done 은 `숨겼습니다.` / `숨김을 해제했습니다.` / `삭제했습니다.` / `복구했습니다.`.
 
 **오류·예외**
 | 상황 | 결과 |
 |---|---|
 | `intent` 가 4종이 아님 | `formError` "알 수 없는 요청입니다." → 에러 토스트 |
 | `ids` 가 비어 있음 | `formError` "대상을 선택해 주세요." |
-| 숨김 해제가 고정 한도를 넘김 | DB 트리거 `guard_news_pin_limit` 가 막고, `formError` 로 `NEWS_PIN_LIMIT_MESSAGE` 를 낸다(이 화면에는 고정 체크박스 필드가 없어 필드 오류로 붙일 곳이 없다) |
-| 그 밖의 DB 오류 | `formError` "처리하지 못했습니다. 잠시 후 다시 시도해 주세요." + `console.error('[news] 상태 변경 실패', intent, …)` |
+| 숨김 해제가 고정 한도를 넘김 | DB 트리거 `guard_news_pin_limit` 가 막음(아래) |
+| 그 밖의 DB 오류 | `formError` "처리하지 못했습니다. 잠시 후 다시 시도해 주세요."(아래) |
 | 권한 없음 | `requirePermission` 이 `/?error=forbidden` 으로 리다이렉트(대시보드가 배너로 사유를 알린다) |
 | 이미 삭제된 행에 삭제를 다시 검 | 막지 않는다. `deleted_at` 이 새 시각으로 덮인다 |
+
+- **숨김 해제가 고정 한도를 넘김** — `formError` 로 `NEWS_PIN_LIMIT_MESSAGE` 를 낸다(이 화면에는 고정 체크박스 필드가 없어 필드 오류로 붙일 곳이 없다).
+- **그 밖의 DB 오류** — `console.error('[news] 상태 변경 실패', intent, …)` 로도 남는다.
 
 **클라이언트와의 상호작용**
 - 사용자 사이트 `/news`(`app/(public)/news/page.tsx`)가 `getNewsList()` → `unstable_cache(…, ['news-list'], { tags: ['news-list'], revalidate: 60 })` 로 목록을 읽는다. 이 화면의 숨김·삭제·복구는 전부 `news-list` 를 태우므로 다음 요청에서 즉시 사라지거나 되돌아온다.

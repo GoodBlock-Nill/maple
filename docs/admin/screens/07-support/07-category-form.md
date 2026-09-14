@@ -16,15 +16,25 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증 · DB) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | `categoryId` | hidden | 수정 모드에서만. 빈 값이면 "카테고리를 찾을 수 없습니다." | 현재 행 | — |
-| 이름 | `Input` `label`, required, maxLength 20 | trim 후 1~20자. 빈 값 "카테고리 이름을 입력해 주세요." / 초과 "이름은 20자를 넘을 수 없습니다." · DB `inquiry_categories_label_length` + **전역 유니크**(`inquiry_categories_label_key`) | 수정 시 현재 라벨 | 저장되면 `inquiry_categories.label`. hint 가 모드별로 다르다 — 등록: "문의 폼의 카테고리 선택에 그대로 보입니다." / 수정: "… 이름을 바꾸면 이 분류로 접수된 기존 문의도 함께 새 이름으로 옮겨집니다." |
-| 종류 | `Select` `kind` (제어 컴포넌트) | `isInquiryKind` 밖이면 "문의 종류를 다시 골라 주세요." · DB `inquiry_categories_kind_check` | 수정: 현재 kind / 등록: `defaultKind` | 선택지 = `INQUIRY_KINDS`(1:1 문의 · 버그제보 · 불법이용제보). 값을 바꾸면 확인 단계가 초기화된다(`setConfirming(false)`). hint: "이 카테고리가 보일 접수 창구입니다. 사용자 사이트의 1:1 문의 · 버그제보 · 불법이용제보 폼이 각자의 카테고리만 보여 줍니다." |
-| 설명 | `Input` `description`, maxLength 100 | 선택. CRLF→LF + trim 후 ≤100자. 초과 "설명은 100자를 넘을 수 없습니다." · DB `inquiry_categories_description_length` | 현재 설명 | 빈 문자열은 `toNullableText()` 가 **null 로 저장**한다("설명 없음"을 두 벌로 두지 않는다). hint: "카테고리 선택 아래 한 줄로 보입니다. 비워 두면 아무것도 나오지 않습니다." |
-| 프리필(문의 내용 양식) | `Textarea` `prefill`, rows 8, maxLength 2000 | 선택. CRLF→LF + trim 후 ≤2000자. 초과 "프리필은 2000자를 넘을 수 없습니다." · DB `inquiry_categories_prefill_length` | 현재 프리필 | 값을 React 상태로 쥐어 아래 미리보기와 이어 둔다. **평문이다** — 사용자 폼 textarea 에 그대로 들어가므로 마크다운은 해석되지 않고 줄바꿈만 살아남는다. hint: "사용자가 이 카테고리를 고르면 문의 내용 칸에 그대로 채워집니다. 줄바꿈은 그대로 살아납니다." |
-| 세부 문의 유형 | 편집기(§2) | 항목 각 ≤30자 · 최대 20개 · 중복 불가 | 현재 `subtypes` | 항목마다 `name="subtypes"` 인 **진짜 입력**이라 `formData.getAll('subtypes')` 가 화면 순서 그대로 받는다 |
+| 이름 | `Input` `label`, required, maxLength 20 | 필수·길이·유니크(아래) | 수정 시 현재 라벨 | 저장 필드·hint(아래) |
+| 종류 | `Select` `kind` (제어 컴포넌트) | `isInquiryKind` 밖이면 "문의 종류를 다시 골라 주세요." · DB `inquiry_categories_kind_check` | 수정: 현재 kind / 등록: `defaultKind` | 선택지·확인 초기화·hint(아래) |
+| 설명 | `Input` `description`, maxLength 100 | 선택, ≤100자(아래) | 현재 설명 | null 저장 규칙·hint(아래) |
+| 프리필(문의 내용 양식) | `Textarea` `prefill`, rows 8, maxLength 2000 | 선택, ≤2000자(아래) | 현재 프리필 | 상태 연결·평문·hint(아래) |
+| 세부 문의 유형 | 편집기(§2) | 항목 각 ≤30자 · 최대 20개 · 중복 불가 | 현재 `subtypes` | 진짜 입력 필드(아래) |
 | 사용자 화면 미리보기 | 읽기 전용 문단 | — | 비었으면 "프리필을 입력하면 사용자 화면 모습이 보입니다." | 사용자 폼과 **같은 방식**(`whitespace-pre-line`)으로 그린다 |
 | 사용자 폼에 노출 | checkbox `isActive` | 없으면 false | 수정: 현재 값 / 등록: **체크됨** | `is_active`. 끄면 사용자 폼에서 사라지고 관리 화면 뱃지가 "숨김"이 된다 |
 | 취소 | 버튼(secondary) | — | — | 다이얼로그 닫기(입력값은 다시 열면 초기값으로 돌아간다) |
 | 등록 / 수정 | 버튼(submit) | write 권한 | "등록" · "수정" / 진행 중 "저장 중…" | **종류를 옮기는 저장이면 submit 이 아니라 확인 단계로 넘어간다**(§3) |
+
+**동작 상세**
+- **이름(필수·제한)** — trim 후 1~20자. 빈 값 "카테고리 이름을 입력해 주세요." / 초과 "이름은 20자를 넘을 수 없습니다." · DB `inquiry_categories_label_length` + **전역 유니크**(`inquiry_categories_label_key`).
+- **이름(동작)** — 저장되면 `inquiry_categories.label`. hint 가 모드별로 다르다 — 등록: "문의 폼의 카테고리 선택에 그대로 보입니다." / 수정: "… 이름을 바꾸면 이 분류로 접수된 기존 문의도 함께 새 이름으로 옮겨집니다."
+- **종류(동작)** — 선택지 = `INQUIRY_KINDS`(1:1 문의 · 버그제보 · 불법이용제보). 값을 바꾸면 확인 단계가 초기화된다(`setConfirming(false)`). hint: "이 카테고리가 보일 접수 창구입니다. 사용자 사이트의 1:1 문의 · 버그제보 · 불법이용제보 폼이 각자의 카테고리만 보여 줍니다."
+- **설명(필수·제한)** — 선택. CRLF→LF + trim 후 ≤100자. 초과 "설명은 100자를 넘을 수 없습니다." · DB `inquiry_categories_description_length`.
+- **설명(동작)** — 빈 문자열은 `toNullableText()` 가 **null 로 저장**한다("설명 없음"을 두 벌로 두지 않는다). hint: "카테고리 선택 아래 한 줄로 보입니다. 비워 두면 아무것도 나오지 않습니다."
+- **프리필(필수·제한)** — 선택. CRLF→LF + trim 후 ≤2000자. 초과 "프리필은 2000자를 넘을 수 없습니다." · DB `inquiry_categories_prefill_length`.
+- **프리필(동작)** — 값을 React 상태로 쥐어 아래 미리보기와 이어 둔다. **평문이다** — 사용자 폼 textarea 에 그대로 들어가므로 마크다운은 해석되지 않고 줄바꿈만 살아남는다. hint: "사용자가 이 카테고리를 고르면 문의 내용 칸에 그대로 채워집니다. 줄바꿈은 그대로 살아납니다."
+- **세부 문의 유형** — 항목마다 `name="subtypes"` 인 **진짜 입력**이라 `formData.getAll('subtypes')` 가 화면 순서 그대로 받는다.
 
 ### 1.1 `key` 자동 생성
 
@@ -39,13 +49,17 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | 범례 | 텍스트 | — | `세부 문의 유형  {현재 개수} / 20` | — |
-| 안내문 | 텍스트 | — | "사용자가 이 카테고리를 고르면 유형 셀렉트에 이 항목들이 순서대로 보이고, 고른 값이 문의의 유형으로 저장됩니다. 비워 두면 셀렉트가 잠기고 '기타' 로 접수됩니다." | — |
+| 안내문 | 텍스트 | — | 안내 문구(아래) | — |
 | 빈 목록 | 파선 상자 | — | "세부 유형이 없습니다." | 비워 두는 것이 정상 상태다 |
-| 항목 입력 | `Input name="subtypes"`, maxLength 30, `aria-label="세부 유형 {i}"` | 각 ≤30자("세부 유형은 각 30자를 넘을 수 없습니다.") · 빈 칸은 서버에서 **조용히 걷어낸다**(지운 항목) · 중복 금지("같은 세부 유형을 두 번 넣을 수 없습니다.") · DB `inquiry_categories_subtypes_shape` = `inquiry_subtypes_valid()`(1차원 · 20개 이하 · 각 1~30자 · null/공백 없음) | 저장된 값 | 목록의 **순서가 곧 사용자 셀렉트 순서**다 |
+| 항목 입력 | `Input name="subtypes"`, maxLength 30, `aria-label="세부 유형 {i}"` | 길이·중복·형식 규칙(아래) | 저장된 값 | 목록의 **순서가 곧 사용자 셀렉트 순서**다 |
 | ▲ / ▼ | 버튼(secondary, sm) | 끝에서는 비활성 | — | `aria-label="세부 유형 {i} 위로/아래로"`. 자리끼리 맞바꾼다 |
 | 삭제 | 버튼(ghost, sm) | — | — | `aria-label="세부 유형 {i} 삭제"`. 그 줄을 목록에서 뺀다 |
 | 세부 유형 추가 | 버튼(secondary, sm) | 20개면 비활성 | — | 빈 항목을 맨 뒤에 붙인다. 가득 차면 옆에 "20개까지 넣을 수 있습니다." |
 | 오류 | `role="alert"` 문단 | — | — | `fieldErrors.subtypes`(개수·길이·중복) |
+
+**동작 상세**
+- **안내문** — "사용자가 이 카테고리를 고르면 유형 셀렉트에 이 항목들이 순서대로 보이고, 고른 값이 문의의 유형으로 저장됩니다. 비워 두면 셀렉트가 잠기고 '기타' 로 접수됩니다."
+- **항목 입력** — 각 ≤30자("세부 유형은 각 30자를 넘을 수 없습니다.") · 빈 칸은 서버에서 **조용히 걷어낸다**(지운 항목) · 중복 금지("같은 세부 유형을 두 번 넣을 수 없습니다.") · DB `inquiry_categories_subtypes_shape` = `inquiry_subtypes_valid()`(1차원 · 20개 이하 · 각 1~30자 · null/공백 없음).
 
 - 항목의 React `key` 는 **자리(index)** 다. 값으로 두면 같은 글자를 두 번 넣었을 때 입력이 서로 뒤바뀐다.
 - 다이얼로그를 닫았다 열면 `formKey` 가 올라 편집기가 초기값으로 다시 마운트된다.
@@ -64,9 +78,12 @@
 | 요소 | 값 |
 |---|---|
 | 제목 | "문의 종류를 바꿉니다" |
-| 문구 | `kindMoveNotice()` → `{라벨} 카테고리를 {이전 종류} → {새 종류} 로 옮깁니다. 이 카테고리로 접수된 문의 {n}건의 종류도 함께 바뀝니다.` |
+| 문구 | `kindMoveNotice()` 계산 문구(아래) |
 | 버튼 | "취소"(확인 단계만 닫는다) · "종류 바꾸고 저장"(danger, **여기가 진짜 submit**) |
 | 저장 버튼의 변화 | 확인이 필요한 상태에서는 아래 "수정" 버튼이 submit 이 아니라 `onConfirm` 이 된다 |
+
+**동작 상세**
+- **문구** — `kindMoveNotice()` → `{라벨} 카테고리를 {이전 종류} → {새 종류} 로 옮깁니다. 이 카테고리로 접수된 문의 {n}건의 종류도 함께 바뀝니다.`
 
 **다이얼로그를 한 겹 더 띄우지 않는 이유**: 공용 `Dialog` 는 Escape 를 document 에서 듣는다. 겹쳐 띄우면 Escape 한 번에 바깥 폼까지 닫혀 운영자가 쓰던 값을 잃는다. 그래서 같은 다이얼로그 안에서 버튼 줄만 바꿔 단다(폼은 계속 마운트되어 있어 그대로 제출된다).
 
@@ -74,8 +91,12 @@
 
 | 모드 | 액션 | 결과 |
 |---|---|---|
-| 등록 | `createInquiryCategoryAction` | insert(그 창구 맨 뒤 순번, key 자동 생성) → 감사 `inquiry_category.create`(`after: { key, label, description, subtypes, kind, is_active, sort_order }`) → `revalidateCategories()` → 토스트 "카테고리를 등록했습니다." → 다이얼로그 닫힘 + 폼 초기화(프리필·종류가 기본값으로) |
-| 수정 | `updateInquiryCategoryAction` | RPC `update_inquiry_category()` 9인자 → 감사 `inquiry_category.update`(before 전체 + after + `relabelled_inquiries`) → 재검증 → 토스트는 옮긴 건수에 따라 4갈래([06-categories.md](06-categories.md) §5) |
+| 등록 | `createInquiryCategoryAction` | insert·감사·재검증 흐름(아래) |
+| 수정 | `updateInquiryCategoryAction` | RPC·감사·재검증 흐름(아래) |
+
+**동작 상세**
+- **등록** — insert(그 창구 맨 뒤 순번, key 자동 생성) → 감사 `inquiry_category.create`(`after: { key, label, description, subtypes, kind, is_active, sort_order }`) → `revalidateCategories()` → 토스트 "카테고리를 등록했습니다." → 다이얼로그 닫힘 + 폼 초기화(프리필·종류가 기본값으로).
+- **수정** — RPC `update_inquiry_category()` 9인자 → 감사 `inquiry_category.update`(before 전체 + after + `relabelled_inquiries`) → 재검증 → 토스트는 옮긴 건수에 따라 4갈래([06-categories.md](06-categories.md) §5).
 
 ## 5. 상태·뱃지 의미
 
@@ -85,12 +106,16 @@
 
 | 여기서 바꾼 값 | 사용자 사이트에서 | 언제 |
 |---|---|---|
-| 이름 | `/support`·`/support/bug`·`/support/report` 의 카테고리 선택 상자 문구, 그리고 **그 라벨로 접수된 과거 문의의 분류**(RPC 가 함께 옮긴다) | 태그 `inquiry-categories` 재검증(즉시 시도, 실패 시 ≤300초) |
+| 이름 | 카테고리 선택 상자 문구·과거 문의 분류 동기화(아래) | 태그 `inquiry-categories` 재검증(즉시 시도, 실패 시 ≤300초) |
 | 종류 | 그 카테고리가 보이는 폼이 바뀐다 + **과거 문의의 `kind`** 도 함께 옮겨 간다 | 같음 |
 | 설명 | 카테고리 선택 아래 한 줄 | 같음 |
-| 프리필 | 카테고리를 고른 순간 문의 내용 칸에 채워지는 양식. 사용자가 직접 쓴 내용이 있으면 교체 전에 확인 다이얼로그가 뜬다(`INQUIRY_PREFILL_CONFIRM_*`) | 같음 |
+| 프리필 | 문의 내용 칸에 채워지는 양식, 덮어쓰기 확인(아래) | 같음 |
 | 세부 유형 | 유형 셀렉트의 항목과 순서. 비우면 셀렉트가 잠기고 `type='기타'` 로 접수된다 | 같음 |
 | 노출 체크 해제 | 폼 선택지에서 사라진다. 과거 문의의 분류·관리자 필터 옵션은 그대로 | 같음 |
+
+**동작 상세**
+- **이름** — `/support`·`/support/bug`·`/support/report` 의 카테고리 선택 상자 문구, 그리고 **그 라벨로 접수된 과거 문의의 분류**(RPC 가 함께 옮긴다).
+- **프리필** — 카테고리를 고른 순간 문의 내용 칸에 채워지는 양식. 사용자가 직접 쓴 내용이 있으면 교체 전에 확인 다이얼로그가 뜬다(`INQUIRY_PREFILL_CONFIRM_*`).
 
 프리필에 세부 유형 목록을 **다시 적지 않는다** — 두 곳에 두면 사용자가 같은 것을 두 번 고르고 둘이 어긋난 문의가 들어온다(마이그레이션 20260910000700 · 20260910000800).
 

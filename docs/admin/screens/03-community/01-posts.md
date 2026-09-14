@@ -14,7 +14,10 @@
 | 필드 | 값 |
 |---|---|
 | 제목 | "커뮤니티 게시글" |
-| 설명 | `총 {count}건. 숨김·삭제는 사용자 사이트에 즉시 반영됩니다.` — count 는 `toLocaleString('ko-KR')`, **필터가 적용된 건수**다 |
+| 설명 | `총 {count}건. 숨김·삭제는 사용자 사이트에 즉시 반영됩니다.`(아래) |
+
+**동작 상세**
+- **설명** — count 는 `toLocaleString('ko-KR')`, **필터가 적용된 건수**다.
 
 ## 1.2 필터 폼 (`ContentFilters`)
 상태를 갖지 않는 GET 폼(`method="get" action="/community/posts"`). `sort` 만 hidden 으로 실어 보내고(없으면 검색할 때마다 정렬이 풀린다), `page` 는 일부러 뺀다. 자동 제출은 없다 — 값을 고른 뒤 "검색"을 눌러야 반영된다.
@@ -23,12 +26,16 @@
 |---|---|---|---|---|
 | 정렬 보존 | hidden `sort` | — | 현재 `?sort=`(없으면 필드 자체를 그리지 않는다) | — |
 | 카테고리 | `Select` `name="category"` (w-36) | `COMMUNITY_CATEGORY_KEYS`(`chat`·`question`·`info`) 밖의 값은 무시(전체) | placeholder "전체", 현재 `?category=` | `query.eq('category_key', …)`. **게시글 목록에만 있다** |
-| 상태 | `Select` `name="status"` (w-32) | `CONTENT_STATUS_FILTERS`(`visible`·`hidden`·`deleted`), 라벨 정상/숨김/삭제. 밖의 값은 전체 | placeholder "전체" | `visible` → `is_hidden=false and deleted_at is null` / `hidden` → `is_hidden=true and deleted_at is null` / `deleted` → `deleted_at is not null` / 없음 → **조건 없음(삭제된 글도 함께 나온다)** |
-| 작성자 | `Input` `name="author"` (w-44) | `maxLength = SEARCH_MAX_LENGTH(60)`, 라벨 옆 카운트 | placeholder "닉네임 일부" | `containsPattern()` 으로 `\ % _` 를 이스케이프한 뒤 `ilike('author_name', '%…%')` — **작성 시점 닉네임 스냅샷**(`posts.author_name`)을 찾는다. 회원이 닉네임을 바꿔도 옛 글은 옛 닉네임으로 남는다 |
+| 상태 | `Select` `name="status"` (w-32) | `CONTENT_STATUS_FILTERS`(`visible`·`hidden`·`deleted`), 라벨 정상/숨김/삭제. 밖의 값은 전체 | placeholder "전체" | 상태별 질의 조건(아래) |
+| 작성자 | `Input` `name="author"` (w-44) | `maxLength = SEARCH_MAX_LENGTH(60)`, 라벨 옆 카운트 | placeholder "닉네임 일부" | 닉네임 검색 규칙(아래) |
 | 시작일 | `Input type="date"` `name="from"` (w-40) | `YYYY-MM-DD`. 파싱 실패면 조건 없음 | 현재 `?from=` | `kstDayBoundary(from)` → `created_at >= {그날 KST 00:00}` |
 | 종료일 | `Input type="date"` `name="to"` (w-40) | 위와 동일 | 현재 `?to=` | `kstDayBoundary(to, 1)` → `created_at < {다음 날 KST 00:00}` — **종료일 당일을 포함**한다 |
 | 검색 | submit 버튼 | — | — | 폼 제출 |
 | 초기화 | 링크 버튼(ghost) | **항상 보인다**(필터 유무와 무관) | — | `/community/posts` — 정렬·페이지까지 전부 지운다 |
+
+**동작 상세**
+- **상태** — `visible` → `is_hidden=false and deleted_at is null` / `hidden` → `is_hidden=true and deleted_at is null` / `deleted` → `deleted_at is not null` / 없음 → **조건 없음(삭제된 글도 함께 나온다)**.
+- **작성자** — `containsPattern()` 으로 `\ % _` 를 이스케이프한 뒤 `ilike('author_name', '%…%')` — **작성 시점 닉네임 스냅샷**(`posts.author_name`)을 찾는다. 회원이 닉네임을 바꿔도 옛 글은 옛 닉네임으로 남는다.
 
 기간 경계를 KST 로 끊는 이유: UTC 자정으로 끊으면 오전 9시 이전 글이 전날로 밀려 운영자가 고른 기간과 화면의 "작성일"이 어긋난다.
 
@@ -46,9 +53,9 @@
 
 | 열 | 종류 | 정렬 | 값의 출처 | 동작 / 표시 규칙 |
 |---|---|---|---|---|
-| 선택 | 체크박스 `name="ids" form="bulk-hide-form"` (w-10, 가운데) | — | `row.id` | `aria-label="{제목} 선택"`. **이미 숨김이거나 삭제된 행은 `disabled`**(+`opacity-40`). `community:write` 가 없으면 열 자체가 빠진다 |
-| 제목 | 링크 또는 텍스트 (`min-w-[160px]`, `line-clamp-1`, `title` 툴팁) | — | `posts.title` | `deletedAt === null` 이면 `{CLIENT_SITE_URL}/community/{id}` 새 탭(`target="_blank" rel="noreferrer"`). **삭제된 글은 링크 없이 muted 텍스트**(상세가 404 라서) |
-| 작성자 | 링크 또는 텍스트 (w-28) | — | `author_name` / `author_id` | `author_id !== null` 이면 `/members/{authorId}`(관리자 회원 상세, 같은 탭). 탈퇴로 `author_id = null` 이면 muted 텍스트만 |
+| 선택 | 체크박스 `name="ids" form="bulk-hide-form"` (w-10, 가운데) | — | `row.id` | `aria-label`·비활성 조건(아래) |
+| 제목 | 링크 또는 텍스트 (`min-w-[160px]`, `line-clamp-1`, `title` 툴팁) | — | `posts.title` | 클릭 시 이동 규칙(아래) |
+| 작성자 | 링크 또는 텍스트 (w-28) | — | `author_name` / `author_id` | 링크 조건(아래) |
 | 카테고리 | `Badge` (w-24) | — | `category_key` | `categories[key] ?? key` — 라벨을 못 읽으면 키 원문. 기본 톤(색 구분 없음) |
 | 상태 | `Badge` (w-20) | — | `contentStatus(row)` | 정상(success) / 숨김(warn) / 삭제(danger) |
 | 댓글 | 우측 정렬 숫자 (w-20) | `comment_count` | `posts.comment_count` | 트리거가 유지하는 집계값. 천 단위 구분 없음(원시 숫자) |
@@ -57,13 +64,22 @@
 | 작성일 | 텍스트(muted, w-36) | `created_at` (**기본, desc**) | `posts.created_at` | `formatDateTime()` = KST `YYYY-MM-DD HH:mm` |
 | 조치 | 버튼 묶음(우측, w-124px) | — | — | `ModerationActions kind="post"`. `community:write` 가 없으면 셀이 비어 있다(열은 남는다) |
 
+**동작 상세**
+- **선택** — `aria-label="{제목} 선택"`. **이미 숨김이거나 삭제된 행은 `disabled`**(+`opacity-40`). `community:write` 가 없으면 열 자체가 빠진다.
+- **제목** — `deletedAt === null` 이면 `{CLIENT_SITE_URL}/community/{id}` 새 탭(`target="_blank" rel="noreferrer"`). **삭제된 글은 링크 없이 muted 텍스트**(상세가 404 라서).
+- **작성자** — `author_id !== null` 이면 `/members/{authorId}`(관리자 회원 상세, 같은 탭). 탈퇴로 `author_id = null` 이면 muted 텍스트만.
+
 정렬 링크는 `sortHref('/community/posts', searchParams, params.sort, key)` — 같은 키를 다시 누르면 `desc → asc`, 다른 키는 `desc` 로 시작하고 **`page` 파라미터를 지운다**. 허용 키(`POST_SORT_KEYS`) 밖의 `?sort=` 는 기본값으로 떨어진다.
 
 ## 1.5 행 조치 (`ModerationActions`, `community:write` 전용)
 | 필드/컨트롤 | 종류 | 노출·활성 조건 | 확인 | 동작 |
 |---|---|---|---|---|
-| 숨김 / 숨김 해제 | 폼 제출 버튼(secondary sm). 숨은 필드 `id`, `on`(현재 숨김이면 `0`, 아니면 `1`) | **삭제된 행에서는 `disabled`** | 없음(즉시) | `setPostHiddenAction` → `posts.is_hidden` → 감사 `community.post.hide`/`unhide` → 토스트 `"게시글을 숨김 처리했습니다."` / `"게시글을 숨김 해제했습니다."` |
-| 삭제 / 복구 | 버튼(삭제=danger, 복구=secondary) | 항상 | 다이얼로그 | `setPostDeletedAction` → `posts.deleted_at` → 감사 `community.post.delete`/`restore` → 토스트 `"게시글을 삭제했습니다."` / `"게시글을 복구했습니다."` |
+| 숨김 / 숨김 해제 | 폼 제출 버튼(secondary sm). 숨은 필드 `id`, `on`(현재 숨김이면 `0`, 아니면 `1`) | **삭제된 행에서는 `disabled`** | 없음(즉시) | `setPostHiddenAction` 실행(아래) |
+| 삭제 / 복구 | 버튼(삭제=danger, 복구=secondary) | 항상 | 다이얼로그 | `setPostDeletedAction` 실행(아래) |
+
+**동작 상세**
+- **숨김 / 숨김 해제** — `setPostHiddenAction` → `posts.is_hidden` → 감사 `community.post.hide`/`unhide` → 토스트 `"게시글을 숨김 처리했습니다."` / `"게시글을 숨김 해제했습니다."`.
+- **삭제 / 복구** — `setPostDeletedAction` → `posts.deleted_at` → 감사 `community.post.delete`/`restore` → 토스트 `"게시글을 삭제했습니다."` / `"게시글을 복구했습니다."`.
 
 다이얼로그 문구와 액션 계약은 [03-moderation-dialog.md](03-moderation-dialog.md).
 
@@ -88,5 +104,8 @@
 | 잘못된 `?status=`·`?category=`·`?sort=` | 조용히 기본값(전체 / 기본 정렬)으로 떨어진다 |
 | 잘못된 `?from=`·`?to=` | 해당 조건만 무시된다 |
 | 대상이 그 사이 사라짐 | 조치 시 `formError` "게시글을 찾을 수 없습니다." |
-| 조치 실패(DB 오류) | `formError` "게시글 처리를 하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요." — 에러 토스트로 뜬다 |
-| 읽기 전용 관리자 | 선택 열·일괄 바는 렌더되지 않고, 조치 셀은 비어 있다. 직접 POST 해도 `requirePermission('community','write')` 이 막는다 |
+| 조치 실패(DB 오류) | `formError` "게시글 처리를 하지 못했습니다…"(아래) |
+| 읽기 전용 관리자 | 선택 열·일괄 바는 렌더되지 않고, 조치 셀은 비어 있다(아래) |
+
+- **조치 실패(DB 오류)** — 전체 문구는 "게시글 처리를 하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요." 에러 토스트로 뜬다.
+- **읽기 전용 관리자** — 직접 POST 해도 `requirePermission('community','write')` 이 막는다.

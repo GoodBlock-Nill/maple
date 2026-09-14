@@ -7,10 +7,16 @@
 | 항목 | 값 |
 |---|---|
 | 경로 | `/reports` (별도 라우트 없음 — "신고 상세"는 목록 행에서 여는 다이얼로그) |
-| 권한 모듈 | `reports` — read / write. **read**: 탭·유형 필터·목록·상세 다이얼로그 열람(버튼 라벨이 "상세", 처리/기각 탭이 렌더되지 않는다). **write**: 미처리 행의 버튼이 "처리"가 되고 다이얼로그에 처리·기각 폼이 붙는다. 처리 중 대상 숨김·삭제는 `requireAnyPermission(['community','reports'],'write')`, 작성자 정지는 `requirePermission('members','write')`(= `suspendMember()` 안) |
-| 주요 테이블 | `reports`(`target_type`·`target_id`·`reporter_id`·`reason`·`detail`·`status`·`created_at`·`note`·`resolved_by`·`resolved_at`). 조치에 따라 연쇄: `posts`/`comments`(`is_hidden`·`deleted_at`), `profiles`(`suspended_until`·`suspension_reason`) |
-| 클라이언트 영향 | `reports` 자체는 사용자 사이트가 읽지 않아 캐시 태그가 없다. 처리에서 **숨김·삭제**를 고르면 `moderateTarget()` 이 `community-list` 를 재검증 → `/community` 목록 반영. **정지**는 관리자 화면 `/members/[id]` 만 `revalidatePath`(정지 여부는 매 요청 세션에서 읽으므로 캐시 무효화가 필요 없다) |
-| 관련 파일 | 페이지 `admin/app/(admin)/reports/page.tsx` · 컴포넌트 `admin/components/reports/{ReportTabs,ReportTypeFilter,ReportDetailDialog,ReportResolveForm,ReportDismissForm,report-icons}.tsx` · 액션 `admin/lib/actions/reports-actions.ts`(+`moderation-actions.ts`, `members-actions.ts`) · 데이터 `admin/lib/data/reports.ts` · 검증 `admin/lib/validation/{moderation,members}.ts` · 마이그레이션 `20260908001100_reports_and_author_edits`, `20260908001700_admin_foundation`, `20260908002100_reports_admin_update_and_notes` |
+| 권한 모듈 | `reports` — read / write(아래) |
+| 주요 테이블 | `reports`, 조치에 따라 `posts`/`comments`, `profiles`(아래) |
+| 클라이언트 영향 | 캐시 태그 없음, 조치별 재검증 경로(아래) |
+| 관련 파일 | 페이지·컴포넌트·액션·데이터·검증·마이그레이션(아래) |
+
+**동작 상세**
+- **권한 모듈** — `reports` — read / write. **read**: 탭·유형 필터·목록·상세 다이얼로그 열람(버튼 라벨이 "상세", 처리/기각 탭이 렌더되지 않는다). **write**: 미처리 행의 버튼이 "처리"가 되고 다이얼로그에 처리·기각 폼이 붙는다. 처리 중 대상 숨김·삭제는 `requireAnyPermission(['community','reports'],'write')`, 작성자 정지는 `requirePermission('members','write')`(= `suspendMember()` 안).
+- **주요 테이블** — `reports`(`target_type`·`target_id`·`reporter_id`·`reason`·`detail`·`status`·`created_at`·`note`·`resolved_by`·`resolved_at`). 조치에 따라 연쇄: `posts`/`comments`(`is_hidden`·`deleted_at`), `profiles`(`suspended_until`·`suspension_reason`).
+- **클라이언트 영향** — `reports` 자체는 사용자 사이트가 읽지 않아 캐시 태그가 없다. 처리에서 **숨김·삭제**를 고르면 `moderateTarget()` 이 `community-list` 를 재검증 → `/community` 목록 반영. **정지**는 관리자 화면 `/members/[id]` 만 `revalidatePath`(정지 여부는 매 요청 세션에서 읽으므로 캐시 무효화가 필요 없다).
+- **관련 파일** — 페이지 `admin/app/(admin)/reports/page.tsx` · 컴포넌트 `admin/components/reports/{ReportTabs,ReportTypeFilter,ReportDetailDialog,ReportResolveForm,ReportDismissForm,report-icons}.tsx` · 액션 `admin/lib/actions/reports-actions.ts`(+`moderation-actions.ts`, `members-actions.ts`) · 데이터 `admin/lib/data/reports.ts` · 검증 `admin/lib/validation/{moderation,members}.ts` · 마이그레이션 `20260908001100_reports_and_author_edits`, `20260908001700_admin_foundation`, `20260908002100_reports_admin_update_and_notes`.
 
 ## 화면 목록
 | 파일 | 경로 | 설명 |
@@ -52,10 +58,12 @@ DB CHECK `reports_status_check (status in ('open','resolved','dismissed'))`. **D
 ### 감사 로그
 | action | 언제 | before/after |
 |---|---|---|
-| `report.resolve` | 처리 완료 | before `{ status }`, after `{ status:'resolved', note, moderation(조치 종류), report_ids(함께 종결한 id 배열), target:{type,id} }` |
+| `report.resolve` | 처리 완료 | before `{ status }`, after 상세(아래) |
 | `report.dismiss` | 기각 | before `{ status }`, after `{ status:'dismissed', note, report_ids, target }` |
 | `community.{post\|comment}.{hide\|delete}` | 처리에서 숨김·삭제를 고른 경우 `moderateTarget()` 이 추가로 남긴다 | 콘텐츠 조치 스냅샷 |
 | `member.suspend` | 처리에서 정지를 고른 경우 `suspendMember()` 가 추가로 남긴다 | 정지 전/후 |
+
+- **`report.resolve` after** — `{ status:'resolved', note, moderation(조치 종류), report_ids(함께 종결한 id 배열), target:{type,id} }`.
 
 **신고 1건 처리에 감사 로그가 2행 남을 수 있다**(조치 + 종결). 라벨 매핑은 정상이다: `DOMAIN_LABELS.report = '신고'`, `VERB_LABELS.resolve = '처리'`, `dismiss = '기각'`, `TABLE_LABELS.reports = '신고'`. (같이 남는 `community.*` 행은 라벨이 없어 영문으로 보인다 — [커뮤니티 README](../03-community/README.md#감사-로그) 참고.)
 

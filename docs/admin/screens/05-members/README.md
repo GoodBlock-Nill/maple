@@ -8,10 +8,16 @@
 | 항목 | 값 |
 |---|---|
 | 경로 | `/members` (하위: `/members/[id]`) |
-| 권한 모듈 | `members` — read / write (`admin/lib/auth/permissions.ts`). read 는 목록·상세·활동 탭을 보고, write 는 상세의 조치 버튼(`MemberActions`)이 추가로 보인다. 홈페이지 문의 탭은 `inquiries:read` 를 따로 본다. 개인정보 즉시 파기만 `requireSuperAdmin()` |
-| 주요 테이블 | `profiles`(`nickname`·`email`·`provider`/`provider_id`·`role`·`suspended_until`·`suspension_reason`·`msw_uid`·`msw_profile_code`·`marketing_*_opt_out`·`deleted_at`·`purged_at`·`terms_agreed_at`·`privacy_agreed_at`·`age_confirmed_at`). 활동 집계는 `posts`·`comments`·`reports`·`inquiries` |
-| 클라이언트 영향 | 캐시 태그 없음이 기본이다 — 사용자 사이트는 세션마다 `profiles` 를 직접 읽는다(`lib/auth/current-user.ts`). **예외는 개인정보 즉시 파기 하나**로, `community-list` 태그를 재검증한다(`admin/lib/revalidate.ts`) |
-| 관련 파일 | 페이지 `admin/app/(admin)/members/{page,[id]/page}.tsx` · 컴포넌트 `admin/components/members/*` · 액션 `admin/lib/actions/{members-actions,member-lifecycle-actions,member-shared}.ts` · 조회 `admin/lib/data/{members,member-activity,member-inquiries}.ts` · 검증 `admin/lib/validation/{members,member-status,member-list-params}.ts` · 마이그레이션 `20260908000200`·`20260908001500`·`20260908001700`·`20260909000400` |
+| 권한 모듈 | `members` — read / write(아래) |
+| 주요 테이블 | `profiles`(아래) |
+| 클라이언트 영향 | 캐시 태그 없음이 기본(아래) |
+| 관련 파일 | 페이지·컴포넌트·액션·조회·검증·마이그레이션(아래) |
+
+**동작 상세**
+- **권한 모듈** — `members` — read / write (`admin/lib/auth/permissions.ts`). read 는 목록·상세·활동 탭을 보고, write 는 상세의 조치 버튼(`MemberActions`)이 추가로 보인다. 홈페이지 문의 탭은 `inquiries:read` 를 따로 본다. 개인정보 즉시 파기만 `requireSuperAdmin()`.
+- **주요 테이블** — `profiles`(`nickname`·`email`·`provider`/`provider_id`·`role`·`suspended_until`·`suspension_reason`·`msw_uid`·`msw_profile_code`·`marketing_*_opt_out`·`deleted_at`·`purged_at`·`terms_agreed_at`·`privacy_agreed_at`·`age_confirmed_at`). 활동 집계는 `posts`·`comments`·`reports`·`inquiries`.
+- **클라이언트 영향** — 캐시 태그 없음이 기본이다 — 사용자 사이트는 세션마다 `profiles` 를 직접 읽는다(`lib/auth/current-user.ts`). **예외는 개인정보 즉시 파기 하나**로, `community-list` 태그를 재검증한다(`admin/lib/revalidate.ts`).
+- **관련 파일** — 페이지 `admin/app/(admin)/members/{page,[id]/page}.tsx` · 컴포넌트 `admin/components/members/*` · 액션 `admin/lib/actions/{members-actions,member-lifecycle-actions,member-shared}.ts` · 조회 `admin/lib/data/{members,member-activity,member-inquiries}.ts` · 검증 `admin/lib/validation/{members,member-status,member-list-params}.ts` · 마이그레이션 `20260908000200`·`20260908001500`·`20260908001700`·`20260909000400`.
 
 ## 화면 목록
 

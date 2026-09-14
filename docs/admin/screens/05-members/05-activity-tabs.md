@@ -11,7 +11,11 @@
 
 | 컨트롤 | 종류 | 필수·제한(검증) | 기본값 | 동작 / 상호작용 |
 |---|---|---|---|---|
-| 탭 링크 5개 | `<Link>` | `ACTIVITY_TABS` = `posts`·`comments`·`reports-made`·`reports-received`·`inquiries`. 그 밖의 값은 `posts` 로 떨어진다 | `posts` | 라벨 + 건수(`toLocaleString('ko-KR')`). `buildHref(path, searchParams, { tab })` — 다른 쿼리는 유지된다. 활성 탭은 `aria-current="page"` + accent 밑줄 |
+| 탭 링크 5개 | `<Link>` | `ACTIVITY_TABS` 5종(아래) | `posts` | 라벨·건수·유지 규칙(아래) |
+
+**동작 상세**
+- **탭 링크 5개(필수·제한)** — `ACTIVITY_TABS` = `posts`·`comments`·`reports-made`·`reports-received`·`inquiries`. 그 밖의 값은 `posts` 로 떨어진다.
+- **탭 링크 5개(동작)** — 라벨 + 건수(`toLocaleString('ko-KR')`). `buildHref(path, searchParams, { tab })` — 다른 쿼리는 유지된다. 활성 탭은 `aria-current="page"` + accent 밑줄.
 
 | 탭 값 | 라벨 | 건수의 출처 |
 |---|---|---|
@@ -53,13 +57,17 @@
 
 | 열 | 값의 출처 | 동작 / 상호작용 |
 |---|---|---|
-| 대상 | `reports.target_type` + 대상 본문 | 뱃지(accent) "게시글"/"댓글"(`REPORT_TARGET_LABEL`) + 발췌 60자(`excerpt()`). 대상을 못 읽으면 "(대상 없음)" |
-| 사유 | `reports.reason` | `REPORT_REASON_LABEL` — 스팸·광고 / 욕설·비방 / 음란·불쾌 / 개인정보 노출 / 기타. **사용자 사이트의 신고 다이얼로그 문구와 글자까지 같아야 한다** |
+| 대상 | `reports.target_type` + 대상 본문 | 뱃지·발췌·빈 값 표시(아래) |
+| 사유 | `reports.reason` | `REPORT_REASON_LABEL` 5종·문구 일치 요구(아래) |
 | 신고자 | `profiles!reports_reporter_id_fkey.nickname` | 프로필을 못 읽으면 "(탈퇴)" |
 | 상태 | `reports.status` | 뱃지: 미처리(warn) / 처리 완료·기각(neutral) — `REPORT_STATUS_LABEL` |
 | 신고일 | `reports.created_at` | `formatDateTime()` |
 
 신고를 여기서 처리할 수는 없다(처리·기각은 `/reports`).
+
+**동작 상세**
+- **대상** — 뱃지(accent) "게시글"/"댓글"(`REPORT_TARGET_LABEL`) + 발췌 60자(`excerpt()`). 대상을 못 읽으면 "(대상 없음)".
+- **사유** — `REPORT_REASON_LABEL` — 스팸·광고 / 욕설·비방 / 음란·불쾌 / 개인정보 노출 / 기타. **사용자 사이트의 신고 다이얼로그 문구와 글자까지 같아야 한다**.
 
 ## 5.5 홈페이지 문의 탭 (`inquiries`, `MemberInquiriesTab`)
 
@@ -67,14 +75,16 @@
 
 | 상태 | 화면 |
 |---|---|
-| `inquiries:read` 없음 | 표 대신 안내 한 줄 "문의 조회 권한이 없습니다."(조회 자체를 건너뛴다 — 빈 표와 권한 없음이 구분되어야 한다) |
+| `inquiries:read` 없음 | 표 대신 안내 한 줄 "문의 조회 권한이 없습니다."(아래) |
 | 조회 실패 | 표 위에 `FormBanner`(`LIST_LOAD_ERROR`) |
 | 0건 | "접수한 문의가 없습니다." |
 
+- **`inquiries:read` 없음** — 조회 자체를 건너뛴다 — 빈 표와 권한 없음이 구분되어야 한다.
+
 | 열 | 값의 출처 | 동작 / 상호작용 |
 |---|---|---|
-| 접수번호 | `inquiries.inquiry_no` | `formatInquiryNo()`, 모노스페이스·`tabular-nums`. 문의 목록과 **같은 자리·같은 표기**(두 화면을 번호로 대조한다) |
-| 종류 | `inquiries.kind` | 뱃지(neutral) `INQUIRY_KIND_MAP[kind].label`. CHECK 제약이 타입에 없어 경계에서 `isInquiryKind()` 로 좁히고, 모르면 `DEFAULT_INQUIRY_KIND` |
+| 접수번호 | `inquiries.inquiry_no` | `formatInquiryNo()`, 모노스페이스·`tabular-nums`. 같은 자리·표기 규칙(아래) |
+| 종류 | `inquiries.kind` | 뱃지(neutral) `INQUIRY_KIND_MAP[kind].label`. 경계 처리 규칙(아래) |
 | 제목 | `inquiries.title` | `/inquiries/{id}` 로 링크(관리자 문의 상세). 한 줄 말줄임 |
 | 카테고리 · 유형 | `inquiries.category` · `type` | `inquiryCategoryLabel()` · `inquiryTypeLabel()` 을 ` · ` 로 이어 붙인다 |
 | 상태 | `inquiries.status` · `cancelled_at` | `InquiryStatusBadge` |
@@ -85,16 +95,22 @@
 |---|---|---|
 | 전체 보기 | `activity.inquiryCount > 표시된 행 수` 일 때만 | `/inquiries?user={회원id}` 로 이동 — 문의 목록을 이 회원으로 좁혀 연다 |
 
+**동작 상세**
+- **접수번호** — `formatInquiryNo()`, 모노스페이스·`tabular-nums`. 문의 목록과 **같은 자리·같은 표기**(두 화면을 번호로 대조한다).
+- **종류** — CHECK 제약이 타입에 없어 경계에서 `isInquiryKind()` 로 좁히고, 모르면 `DEFAULT_INQUIRY_KIND`.
+
 ## 상태·뱃지 의미
 
 | 뱃지 | 값 → 라벨 | 색 | 언제 |
 |---|---|---|---|
 | 콘텐츠 상태 | `visible` → 정상 | success | `is_hidden=false` and `deleted_at is null` |
 | | `hidden` → 숨김 | warn | 운영 숨김 |
-| | `deleted` → 삭제 | danger | 작성자 삭제(`deleted_at`). 숨김과 동시에 서 있어도 삭제로 표시 — 그렇지 않으면 운영자가 복구를 눌러도 글이 돌아오지 않는 것처럼 느낀다 |
+| | `deleted` → 삭제 | danger | 작성자 삭제(`deleted_at`). 숨김과 동시 서도 삭제 우선(아래) |
 | 신고 상태 | `open` → 미처리 | warn | 아직 처리되지 않음 |
 | | `resolved`/`dismissed` → 처리 완료/기각 | neutral | 종결 |
 | 대상 종류 | `post`/`comment` → 게시글/댓글 | accent | 항상 |
+
+- **`deleted`(삭제)** — 숨김과 동시에 서 있어도 삭제로 표시 — 그렇지 않으면 운영자가 복구를 눌러도 글이 돌아오지 않는 것처럼 느낀다.
 
 ## 클라이언트와의 상호작용
 

@@ -32,8 +32,11 @@
 | `expectedStatus` | hidden | 문자열(모르는 값이면 비교 생략) | 화면을 연 시점의 `status` | 충돌 감지 스냅샷 |
 | `expectedReplyCount` | hidden | 정수 ≥0(아니면 비교 생략) | 화면을 연 시점의 `replies.length` | 충돌 감지 스냅샷 |
 | 상태 | select `status`, sr-only 라벨 "상태 변경" | `z.enum(INQUIRY_STATUS_VALUES)` + 전이표 | 갈 수 있는 첫 상태 | **갈 수 없는 값은 옵션에 없다** — 규칙을 화면에서 배우게 한다 |
-| 제출 | 버튼(sm) | write 권한 | 문구 "상태 변경" / 진행 중 "변경 중…" | `updateInquiryStatusAction` → 감사 `inquiry.status` → `revalidateInquiry()` → 성공 토스트 `상태를 '{라벨}'로 바꿨습니다.`(조사 자동) |
+| 제출 | 버튼(sm) | write 권한 | 문구 "상태 변경" / 진행 중 "변경 중…" | `updateInquiryStatusAction` 실행(아래) |
 | 오류 | `FormError` | — | — | 아래 §5 표 |
+
+**동작 상세**
+- **제출** — `updateInquiryStatusAction` → 감사 `inquiry.status` → `revalidateInquiry()` → 성공 토스트 `상태를 '{라벨}'로 바꿨습니다.`(조사 자동).
 
 폼 자체가 **`isLocked` 이거나 갈 곳이 없으면 렌더되지 않는다**.
 
@@ -44,10 +47,12 @@
 | 요소 | 값 |
 |---|---|
 | 다이얼로그 제목 | "문의 종료" |
-| 설명 | "사용자 화면의 상태가 '종료'로 바뀝니다. 필요하면 나중에 '처리 중'으로 되돌릴 수 있습니다." |
+| 설명 | 안내 문구(아래) |
 | 숨은 값 | `inquiryId`, `status=closed`, `expectedStatus`, `expectedReplyCount` |
 | 버튼 | "취소" · "종료"(진행 중 "종료 중…") |
 | 성공 | 토스트 후 다이얼로그 닫힘 |
+
+- **설명** — "사용자 화면의 상태가 '종료'로 바뀝니다. 필요하면 나중에 '처리 중'으로 되돌릴 수 있습니다."
 
 ## 2. 담당자 카드 (`InquiryAssignmentCard`)
 
@@ -57,24 +62,33 @@
 |---|---|---|---|---|
 | 현재 담당자 | 뱃지 | — | 미배정이면 `warn` "미배정", 아니면 닉네임 뱃지(`accent`=나 / `neutral`=남) | `data-testid="inquiry-assignee"`. 내 담당이면 "내가 담당" 문구, `assigned_at` 이 있으면 "{일시} 배정" |
 | 나에게 배정 | 버튼 | write. 이미 내 담당이면 렌더 안 함 | — | 미배정이면 **곧바로 폼 제출**, 남이 맡고 있으면 확인 다이얼로그("담당자 가져오기") |
-| 담당자 변경 | select `assigneeId` + "변경" 버튼 | `z.uuid('담당자를 찾을 수 없습니다.')`, 액션이 `profiles.role='admin'` 재확인 | 현재 담당자 또는 나 | 선택지는 관리자 전원(내 항목에 " (나)"). 남이 맡고 있으면 확인 다이얼로그("담당자 변경") |
+| 담당자 변경 | select `assigneeId` + "변경" 버튼 | `z.uuid('담당자를 찾을 수 없습니다.')`, 액션이 `profiles.role='admin'` 재확인 | 현재 담당자 또는 나 | 선택지 구성·확인 다이얼로그(아래) |
 | 배정 해제 | 버튼(ghost) | write. 담당자가 있을 때만 | — | 내 배정이면 즉시, 남의 배정이면 확인 다이얼로그("배정 해제") |
 | 오류 배너 | `FormBanner` | — | — | 배정·해제 액션의 `formError` 를 함께 보여 준다 |
+
+**동작 상세**
+- **담당자 변경** — 선택지는 관리자 전원(내 항목에 " (나)"). 남이 맡고 있으면 확인 다이얼로그("담당자 변경").
 
 **확인 다이얼로그 문구(남의 배정을 건드릴 때만)**
 
 | 의도 | 제목 | 설명 | 실행 버튼 |
 |---|---|---|---|
-| 가져오기 | 담당자 가져오기 | `{닉네임} 관리자가 맡고 있는 문의입니다. 담당자를 나로 바꾸면 상대의 화면에도 그대로 보이고, 이미 쓰고 있던 답변이 사라지지는 않습니다.` | 내가 담당 |
-| 변경 | 담당자 변경 | `{닉네임} 관리자가 맡고 있는 문의입니다. 담당자를 바꿔도 지금까지의 답변과 메모는 그대로 남습니다.` | 담당자 변경 |
-| 해제 | 배정 해제 | `{닉네임} 관리자의 배정을 해제합니다. 문의는 '미배정'으로 돌아가고 상태와 답변은 그대로입니다.` | 배정 해제 |
+| 가져오기 | 담당자 가져오기 | 안내 문구(아래) | 내가 담당 |
+| 변경 | 담당자 변경 | 안내 문구(아래) | 담당자 변경 |
+| 해제 | 배정 해제 | 안내 문구(아래) | 배정 해제 |
+
+- **가져오기 설명** — `{닉네임} 관리자가 맡고 있는 문의입니다. 담당자를 나로 바꾸면 상대의 화면에도 그대로 보이고, 이미 쓰고 있던 답변이 사라지지는 않습니다.`
+- **변경 설명** — `{닉네임} 관리자가 맡고 있는 문의입니다. 담당자를 바꿔도 지금까지의 답변과 메모는 그대로 남습니다.`
+- **해제 설명** — `{닉네임} 관리자의 배정을 해제합니다. 문의는 '미배정'으로 돌아가고 상태와 답변은 그대로입니다.`
 
 **서버 동작**
 
 | 동작 | 액션·파일 | DB | 감사 | 토스트 |
 |---|---|---|---|---|
-| 배정 | `assignInquiryAction` (`admin/lib/actions/inquiry-assignment-actions.ts`) | `assigned_to`, `assigned_at=now()`. **미배정 + 접수 대기**였다면 이어서 `pending→in_progress` 전이 | `inquiry.assign`(before/after + 닉네임) | `담당자를 나에게 지정했습니다.` 또는 `담당자를 {닉네임}(으)로 지정했습니다.` + 승격 시 " 상태도 '처리 중'으로 옮겼습니다." |
+| 배정 | `assignInquiryAction` (`admin/lib/actions/inquiry-assignment-actions.ts`) | `assigned_to`, `assigned_at=now()`. **미배정 + 접수 대기**였다면 이어서 `pending→in_progress` 전이 | `inquiry.assign`(before/after + 닉네임) | 토스트 문구(아래) |
 | 해제 | `unassignInquiryAction` | `assigned_to=null`, `assigned_at=null`(**상태는 건드리지 않는다**) | `inquiry.unassign` | `담당자 배정을 해제했습니다.` |
+
+- **배정 토스트** — `담당자를 나에게 지정했습니다.` 또는 `담당자를 {닉네임}(으)로 지정했습니다.` + 승격 시 " 상태도 '처리 중'으로 옮겼습니다."
 
 상태 승격이 실패해도 배정은 되돌리지 않는다 — 담당자는 이미 정해졌고 상태는 헤더 select 로 옮길 수 있다.
 
@@ -93,9 +107,11 @@
 | 연락 이메일 | `contact_email ?? profiles.email ?? '-'` | 접수 시 적은 값이 우선 |
 | 카테고리 · 유형 | `inquiryCategoryLabel(category) · inquiryTypeLabel(type)` | 표시용 치환만 한다 |
 | 접수일 | `created_at` | `formatDateTime()` |
-| 최근 업데이트 | `updated_at` | 답변·상태·답장이 들어오면 갱신. **작성 중 하트비트로는 밀리지 않는다**(`set_inquiry_updated_at`) |
+| 최근 업데이트 | `updated_at` | 갱신 조건(아래) |
 | 첫 답변 | `answered_at` | 값이 있을 때만 행이 생긴다 |
 | 접수 취소 | `cancelled_at` | 값이 있을 때만 |
+
+- **최근 업데이트** — 답변·상태·답장이 들어오면 갱신. **작성 중 하트비트로는 밀리지 않는다**(`set_inquiry_updated_at`).
 
 ### 3.2 이메일 문의 (`InquiryEmailMeta`)
 
@@ -106,9 +122,11 @@
 | 원본 Message-ID | `email_message_id` | 모노스페이스·한 줄 말줄임, 원문은 `title` 속성에 남긴다(제공자 문의 때 필요) |
 | 카테고리 · 유형 | "이메일 · 일반" | 수신 함수가 고정한 `email`/`general` 을 한국어로 치환 |
 | 수신 시각 | `created_at` | — |
-| 인증 | SPF·DKIM·DMARC 칩 3개 | `pass`→success-green, `fail`→warn, 그 밖·null→neutral. 라벨은 `SPF pass` 형태, 판정이 없으면 `SPF 판정 없음` |
+| 인증 | SPF·DKIM·DMARC 칩 3개 | 톤·라벨 규칙(아래) |
 | 최근 업데이트 | `updated_at` | — |
 | 첫 답변 | `answered_at` | 값이 있을 때만 |
+
+- **인증** — `pass`→success-green, `fail`→warn, 그 밖·null→neutral. 라벨은 `SPF pass` 형태, 판정이 없으면 `SPF 판정 없음`.
 
 **작성자 링크·계정 ID 행이 없다.** 발신자 주소로 회원을 확정하지 않기 때문이다(`user_id` 를 채우지 않는다). `email_thread_key` 는 조회는 하되 화면에 그리지 않는다.
 
@@ -126,10 +144,15 @@
 | 조건 | 표시 |
 |---|---|
 | `url === null`(서명 실패) | 파선 상자 `{파일명} (링크 발급 실패)` |
-| `mimeType` 이 `video/*` | 한 줄 전체를 차지하는 `<video controls preload="metadata">` + 파일명 · 크기 · "내려받기" 링크. `preload="metadata"` 라 상세를 여는 것만으로 원본을 받지 않는다 |
-| `mimeType` 이 `image/*` | 96×96 썸네일 버튼 → 누르면 `Dialog` 안에서 원본(최대 70vh). **새 탭으로 열지 않는다**(서명 URL 이 주소창·히스토리에 남는다). `next/image` 도 쓰지 않는다(5분 뒤 만료되는 URL 을 최적화 캐시가 붙들면 깨진 이미지가 남는다) |
-| 그 밖(PDF 등) | `{url}&download={파일명}` 링크(새 탭). Storage 의 `download` 파라미터로 Content-Disposition 을 붙여 원래 이름으로 받게 한다 |
+| `mimeType` 이 `video/*` | 인라인 재생 컨트롤(아래) |
+| `mimeType` 이 `image/*` | 썸네일·원본 보기 방식(아래) |
+| 그 밖(PDF 등) | 다운로드 링크 방식(아래) |
 | 크기 표기 | 1MB 미만은 `NKB`(최소 1), 이상은 `N.NMB`. 0 이하면 빈 문자열 |
+
+**동작 상세**
+- **`video/*`** — 한 줄 전체를 차지하는 `<video controls preload="metadata">` + 파일명 · 크기 · "내려받기" 링크. `preload="metadata"` 라 상세를 여는 것만으로 원본을 받지 않는다.
+- **`image/*`** — 96×96 썸네일 버튼 → 누르면 `Dialog` 안에서 원본(최대 70vh). **새 탭으로 열지 않는다**(서명 URL 이 주소창·히스토리에 남는다). `next/image` 도 쓰지 않는다(5분 뒤 만료되는 URL 을 최적화 캐시가 붙들면 깨진 이미지가 남는다).
+- **그 밖(PDF 등)** — `{url}&download={파일명}` 링크(새 탭). Storage 의 `download` 파라미터로 Content-Disposition 을 붙여 원래 이름으로 받게 한다.
 
 접수 시 상한은 사용자 사이트 상수(`lib/supabase/storage.ts`)가 소유한다: 이미지·PDF 5MB/개 · 최대 3개 · 합계 12MB, 영상 100MB/개 · 최대 2개. DB 도 같은 규칙을 건다 — `inquiries_attachments_max_5`(합계 5) · `inquiries_attachments_file_kind_max_3` · `inquiries_attachments_video_kind_max_2`(모두 `inquiry_attachment_kind_count()` 로 판정, 마이그레이션 20260911000600). 버킷 `inquiry-attachments` 의 `allowed_mime_types` 는 이미지 · PDF · zip · txt · 영상 4종을 연다.
 
@@ -137,13 +160,19 @@
 
 | 요소 | 값 |
 |---|---|
-| 카드 제목 | `답변 {N}건` |
-| 설명 | "사용자 화면에 그대로 보이는 내용입니다." |
+| 카드 제목 | `답변 {N}건` — 운영자 답변만 세는 이유(아래) |
+| 설명 | 기본 문구·회원 답장 접두(아래) |
 | 빈 상태 | 파선 상자 "아직 등록된 답변이 없습니다." |
-| 한 건 | `data-testid="inquiry-reply"`. `author_name`(굵게) · `created_at`(`formatDateTime`) · 본문(`whitespace-pre-line`) |
+| 운영자 답변 | `data-testid="inquiry-reply"`. `author_name`(굵게) · `created_at`(`formatDateTime`) · 본문(`whitespace-pre-line`) |
+| 회원 답장(2026-09-14) | 뱃지·구분선·첨부 방식(아래) |
 | 정렬 | `created_at` 오름차순(오래된 순) — 사용자 화면과 같은 순서 |
 
-**웹 스레드는 `direction` 을 보지 않는다.** 회원 답장(inbound) 행이 생기면 운영자 답변과 **구분 없이** 같은 모양으로 그려진다(구분은 `author_name` 뿐). README §2.7 참고.
+**동작 상세**
+- **카드 제목** — `답변 {N}건` — **운영자 답변만** 센다(2026-09-14). 회원 답장까지 섞어 세면 "몇 번 답했는가"를 읽을 수 없다.
+- **설명** — "사용자 화면에 그대로 보이는 내용입니다." · 회원 답장이 1건 이상이면 "회원 답장 N건이 함께 있습니다."가 앞에 붙는다.
+- **회원 답장(2026-09-14)** — `data-testid="inquiry-member-reply"`. **"회원 답장" 뱃지** + 왼쪽 굵은 선(`border-accent/25 bg-accent-soft/40`)으로 운영자 답변과 구분 · 첨부는 같은 `InquiryAttachments` 방식.
+
+**웹 스레드는 `direction` 과 `author_id` 로 회원 답장을 가른다**(2026-09-14) — `isMemberReply` = `direction='inbound'` 이고 `author_id` not null. 이메일 인바운드는 `author_id` 가 없어 같은 판정에 걸리지 않는다(관리자 화면이 아니라 이메일 스레드로 따로 그려진다, §4.3). 첨부는 스레드 전체를 한 번에 서명한다(`signThreadAttachments`) — 답변마다 서명하면 왕복이 스레드 길이만큼 늘어난다. README §2.7 참고.
 
 ### 4.3 답변 스레드 — 이메일 (`InquiryEmailThreadItem`)
 
@@ -152,9 +181,14 @@
 | 카드 제목 | `스레드 {N}건` |
 | 설명 | "받은 메일과 보낸 답신입니다. 보낸 답신은 사용자의 메일 주소로 발송됩니다." |
 | 빈 상태 | "아직 주고받은 메일이 없습니다." |
-| 방향 | inbound = 왼쪽 정렬 + `Badge neutral` "받은 메일" / outbound = 오른쪽 정렬 + `Badge accent` "보낸 답신". **정렬과 문구를 함께** 쓴다(색만으로 판단하지 않게) |
-| 발송 상태 | `delivery_status` → `queued` "대기"(neutral) · `sent` "발송됨"(success-green) · `failed` "실패"(danger). null 이면 뱃지 없음(= 발송 대상이 아님) |
-| 다시 보내기 | `canWrite && delivery_status === 'failed'` 일 때만 버튼. '대기'에는 세우지 않는다 — 결과를 기다리는 중에 누르면 같은 메일이 두 통 간다 |
+| 방향 | 정렬·뱃지 규칙(아래) |
+| 발송 상태 | `delivery_status` 값별 표시(아래) |
+| 다시 보내기 | 노출 조건(아래) |
+
+**동작 상세**
+- **방향** — inbound = 왼쪽 정렬 + `Badge neutral` "받은 메일" / outbound = 오른쪽 정렬 + `Badge accent` "보낸 답신". **정렬과 문구를 함께** 쓴다(색만으로 판단하지 않게).
+- **발송 상태** — `delivery_status` → `queued` "대기"(neutral) · `sent` "발송됨"(success-green) · `failed` "실패"(danger). null 이면 뱃지 없음(= 발송 대상이 아님).
+- **다시 보내기** — `canWrite && delivery_status === 'failed'` 일 때만 버튼. '대기'에는 세우지 않는다 — 결과를 기다리는 중에 누르면 같은 메일이 두 통 간다.
 
 **다시 보내기 동작** — `resendInquiryEmailAction`(`admin/lib/actions/inquiry-email-actions.ts`). 확인 다이얼로그 없음(되돌리기 어려운 조작이 아니다). 버튼 문구 "다시 보내기" / "보내는 중…".
 
@@ -196,18 +230,24 @@
 | 상황 | 결과 |
 |---|---|
 | 존재하지 않는 id / uuid 아님 | `notFound()` → 404 |
-| 상태 변경: 스냅샷 불일치 | `{ formError: INQUIRY_CONFLICT_MESSAGE, code: 'conflict' }` — "다른 운영자가 먼저 처리했습니다. 최신 내용을 확인해 주세요." |
+| 상태 변경: 스냅샷 불일치 | `INQUIRY_CONFLICT_MESSAGE`(아래) |
 | 상태 변경: 같은 상태 | "이미 같은 상태입니다. 상태는 바뀌지 않았습니다." |
 | 상태 변경: 전이표 위반(직접 POST) | `{from} 상태에서는 {to}로 바꿀 수 없습니다.` |
 | 상태 변경: UPDATE 실패 | "상태를 바꾸지 못했습니다. 목록을 새로고침한 뒤 다시 시도해 주세요." |
-| 취소된 문의에 조작 | "사용자가 접수를 취소한 문의입니다. 상태 변경과 답변 등록을 할 수 없습니다." (액션·RPC 양쪽에서) |
+| 취소된 문의에 조작 | 액션·RPC 양쪽에서 차단(아래) |
 | 배정: 같은 담당자 | "이미 이 운영자가 담당하고 있습니다." |
 | 배정: 대상이 관리자가 아님(직접 POST) | "관리자만 담당자로 지정할 수 있습니다." |
 | 해제: 이미 미배정 | "이미 담당자가 없습니다." |
 | 첨부 서명 실패 | 그 항목만 "(링크 발급 실패)" — 나머지는 정상 |
 | 첨부 jsonb 원소가 깨짐 | `toAttachments()` 가 그 원소를 버린다(`path` 가 없으면 제외) |
-| 답변 조회 실패 | `console.error('[inquiries] 답변 조회 실패')` + 빈 목록(본문은 그대로 보인다) |
+| 답변 조회 실패 | 빈 목록(아래) |
 | 메모 조회 실패 | 빈 목록 |
 | `direction`·`delivery_status` 가 제약 밖의 값 | 각각 `outbound` · 상태 없음으로 떨어뜨린다 |
-| 종료 상태 | 답변 폼 대신 안내: "종료된 문의입니다. 답변을 이어가려면 상태를 '처리 중'으로 되돌려 주세요." |
-| 읽기 전용 관리자 | 상태 select·종료·담당자 컨트롤·답변 폼·메모 입력·메모 삭제가 전부 렌더되지 않는다(스레드·메모 열람은 가능) |
+| 종료 상태 | 답변 폼 대신 안내 문구(아래) |
+| 읽기 전용 관리자 | 조치 컨트롤 전부 미노출(아래) |
+
+- **상태 변경: 스냅샷 불일치** — `{ formError: INQUIRY_CONFLICT_MESSAGE, code: 'conflict' }` — "다른 운영자가 먼저 처리했습니다. 최신 내용을 확인해 주세요."
+- **취소된 문의에 조작** — "사용자가 접수를 취소한 문의입니다. 상태 변경과 답변 등록을 할 수 없습니다." (액션·RPC 양쪽에서).
+- **답변 조회 실패** — `console.error('[inquiries] 답변 조회 실패')` + 빈 목록(본문은 그대로 보인다).
+- **종료 상태** — 답변 폼 대신 안내: "종료된 문의입니다. 답변을 이어가려면 상태를 '처리 중'으로 되돌려 주세요."
+- **읽기 전용 관리자** — 상태 select·종료·담당자 컨트롤·답변 폼·메모 입력·메모 삭제가 전부 렌더되지 않는다(스레드·메모 열람은 가능).

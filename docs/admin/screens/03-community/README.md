@@ -7,10 +7,16 @@
 | 항목 | 값 |
 |---|---|
 | 경로 | `/community/posts`(대표), `/community/comments` |
-| 권한 모듈 | `community` — read / write (`admin/lib/auth/permissions.ts`). **read**: 목록·필터·정렬·페이지(선택 열, 일괄 숨김 바, 행 조치 열이 통째로 빠진다). **write**: 선택 체크박스 + 일괄 숨김 바 + 행별 숨김/해제·삭제/복구. 예외로 `moderateTarget()`(신고 처리가 부르는 공용 숨김·삭제 경로)만 `requireAnyPermission(['community','reports'], 'write')` — 신고 담당 역할이 커뮤니티 쓰기 없이도 대상을 숨길 수 있어야 하기 때문 |
-| 주요 테이블 | `posts`(board='community' — `title`·`category_key`·`author_id`·`author_name`·`is_hidden`·`deleted_at`·`comment_count`·`like_count`·`view_count`·`created_at`), `comments`(`post_id`·`content`·`author_id`·`author_name`·`is_hidden`·`deleted_at`·`created_at`), `board_categories`(board='community') |
-| 클라이언트 영향 | 태그 `community-list` 재검증 → 사용자 사이트 `/community` 목록(`lib/data/community.ts` 의 `getCommunityList`, `unstable_cache` 60초)에 즉시 반영. 상세 `/community/[id]` 와 댓글은 세션 조회라 태그와 무관하게 다음 요청부터 바로 사라진다. 관리자 화면 `/community/posts`·`/community/comments` + **`/reports`** 도 함께 `revalidatePath` |
-| 관련 파일 | 페이지 `admin/app/(admin)/community/{posts,comments}/page.tsx` · 컴포넌트 `admin/components/community/{ContentFilters,BulkHideBar,ModerationActions}.tsx` · 액션 `admin/lib/actions/moderation-actions.ts` · 데이터 `admin/lib/data/community.ts` · 검증 `admin/lib/validation/moderation.ts` · 캐시 `admin/lib/revalidate.ts` · 마이그레이션 `20260908000300_boards_posts_comments`, `20260908000700_rls_policies`, `20260908001100_reports_and_author_edits`, `20260908001700_admin_foundation` |
+| 권한 모듈 | `community` — read / write (아래) |
+| 주요 테이블 | `posts`(board='community'), `comments`, `board_categories`(board='community')(아래) |
+| 클라이언트 영향 | 태그 `community-list` 재검증(아래) |
+| 관련 파일 | 페이지·컴포넌트·액션·데이터·검증·캐시·마이그레이션(아래) |
+
+**동작 상세**
+- **권한 모듈** — `community` — read / write (`admin/lib/auth/permissions.ts`). **read**: 목록·필터·정렬·페이지(선택 열, 일괄 숨김 바, 행 조치 열이 통째로 빠진다). **write**: 선택 체크박스 + 일괄 숨김 바 + 행별 숨김/해제·삭제/복구. 예외로 `moderateTarget()`(신고 처리가 부르는 공용 숨김·삭제 경로)만 `requireAnyPermission(['community','reports'], 'write')` — 신고 담당 역할이 커뮤니티 쓰기 없이도 대상을 숨길 수 있어야 하기 때문.
+- **주요 테이블** — `posts`(board='community' — `title`·`category_key`·`author_id`·`author_name`·`is_hidden`·`deleted_at`·`comment_count`·`like_count`·`view_count`·`created_at`), `comments`(`post_id`·`content`·`author_id`·`author_name`·`is_hidden`·`deleted_at`·`created_at`), `board_categories`(board='community').
+- **클라이언트 영향** — 태그 `community-list` 재검증 → 사용자 사이트 `/community` 목록(`lib/data/community.ts` 의 `getCommunityList`, `unstable_cache` 60초)에 즉시 반영. 상세 `/community/[id]` 와 댓글은 세션 조회라 태그와 무관하게 다음 요청부터 바로 사라진다. 관리자 화면 `/community/posts`·`/community/comments` + **`/reports`** 도 함께 `revalidatePath`.
+- **관련 파일** — 페이지 `admin/app/(admin)/community/{posts,comments}/page.tsx` · 컴포넌트 `admin/components/community/{ContentFilters,BulkHideBar,ModerationActions}.tsx` · 액션 `admin/lib/actions/moderation-actions.ts` · 데이터 `admin/lib/data/community.ts` · 검증 `admin/lib/validation/moderation.ts` · 캐시 `admin/lib/revalidate.ts` · 마이그레이션 `20260908000300_boards_posts_comments`, `20260908000700_rls_policies`, `20260908001100_reports_and_author_edits`, `20260908001700_admin_foundation`.
 
 ## 화면 목록
 | 파일 | 경로 | 설명 |
@@ -24,8 +30,10 @@
 ### 두 축: 숨김(`is_hidden`) vs 삭제(`deleted_at`)
 | 컬럼 | 누가 세우나 | 의미 |
 |---|---|---|
-| `is_hidden` | **운영자만**(가드 트리거 `guard_post_counters` / `guard_comment_columns` 가 일반 사용자의 변경을 이전 값으로 되돌린다) | 운영 숨김. 작성자에게도 보이지 않는다(`posts_select_own` 에 `not is_hidden` 이 붙어 있다) |
+| `is_hidden` | **운영자만**(아래) | 운영 숨김. 작성자에게도 보이지 않는다(`posts_select_own` 에 `not is_hidden` 이 붙어 있다) |
 | `deleted_at` | 작성자(본인 삭제) **또는** 운영자 | 소프트 삭제. 행은 남는다 |
+
+- **`is_hidden` 누가 세우나** — 가드 트리거 `guard_post_counters` / `guard_comment_columns` 가 일반 사용자의 변경을 이전 값으로 되돌린다.
 
 **표시 상태**(`contentStatus()`, `admin/lib/validation/moderation.ts`) — **삭제가 숨김을 이긴다.**
 

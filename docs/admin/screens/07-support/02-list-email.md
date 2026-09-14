@@ -30,12 +30,16 @@
 | 컨트롤 | 웹 프리셋 | 이메일 프리셋 |
 |---|---|---|
 | 담당자 `assignee` | 있음 | 있음(같음) |
-| 종류 `kind` | select | **숨김.** 주소에 실려 온 값은 `<input type="hidden" name="kind">` 로 나른다 — 화면에 없는 조건이 검색 한 번에 조용히 사라지지 않게 |
+| 종류 `kind` | select | **숨김**(아래) |
 | 카테고리 `category` | select | **없음**(hidden 도 없음) |
 | 유형 `type` | select(옵션 있을 때) | **없음** |
 | 등록일 `from`/`to` | 있음 | 있음(같음) |
-| 검색 `q` | 있음 | 있음. placeholder 문구가 "… · 발신자 주소"를 포함하는 이유가 여기 있다 — `email_from.ilike` 조건이 같은 or 절에 들어 있다 |
+| 검색 `q` | 있음 | 있음, 발신자 주소도 함께 검색(아래) |
 | 초기화 | `status·source·user·kind` 유지 | 같음 |
+
+**동작 상세**
+- **종류 `kind`** — 주소에 실려 온 값은 `<input type="hidden" name="kind">` 로 나른다 — 화면에 없는 조건이 검색 한 번에 조용히 사라지지 않게.
+- **검색 `q`** — placeholder 문구가 "… · 발신자 주소"를 포함하는 이유가 여기 있다 — `email_from.ilike` 조건이 같은 or 절에 들어 있다.
 
 ## 4. 표 — '계정' 칸만 다르다
 
@@ -43,8 +47,11 @@
 
 | 열 | 이메일 프리셋의 표시 |
 |---|---|
-| 계정 | `inquiries.email_from` 을 모노스페이스로(없으면 `-`). 그 아래 SPF·DKIM·DMARC 중 **하나라도 `fail`** 이면 `Badge tone="warn"` "인증 실패" |
+| 계정 | 표시 규칙(아래) |
 | 나머지 열 | 01 과 동일. 카테고리 · 유형 칸은 표시 치환으로 "이메일 · 일반"이 된다 |
+
+**동작 상세**
+- **계정** — `inquiries.email_from` 을 모노스페이스로(없으면 `-`). 그 아래 SPF·DKIM·DMARC 중 **하나라도 `fail`** 이면 `Badge tone="warn"` "인증 실패".
 
 `hasEmailAuthFailure()`(`admin/lib/data/inquiry-email.ts`)는 판정이 없는 값(`none` · null · 모양이 깨진 jsonb)을 **실패로 보지 않는다** — 레코드를 두지 않은 정상 도메인까지 경고로 칠하면 뱃지가 의미를 잃는다.
 
@@ -72,5 +79,7 @@
 | `email_auth` 가 배열·문자열 등 예상 밖 모양 | `parseEmailAuth()` 가 null → 뱃지 없음(화면은 죽지 않는다) |
 | `email_from` 이 null | 계정 칸에 `-`, 상세 헤더에 "(발신자 없음)" |
 | `source` 컬럼이 CHECK 밖의 값 | `toInquirySource()` 가 `'web'` 으로 떨어뜨린다(빈 화면보다 낫다) |
-| 이메일 제공자 미연동 | 코드·DB·함수는 배포돼 있으나 계정·DNS·secret 연동은 미완료다(`docs/admin/INQUIRY-GUIDE.md` §1.1). 발송 시도는 `EMAIL_NOT_CONFIGURED_MESSAGE` 로 끝난다 |
+| 이메일 제공자 미연동 | 계정·DNS·secret 연동 미완료(아래) |
 | `?kind=` 가 주소에 남아 있음 | 화면에 select 가 없어도 hidden 으로 유지되어 계속 적용된다(대개 결과 0건) |
+
+- **이메일 제공자 미연동** — 코드·DB·함수는 배포돼 있으나 계정·DNS·secret 연동은 미완료다(`docs/admin/INQUIRY-GUIDE.md` §1.1). 발송 시도는 `EMAIL_NOT_CONFIGURED_MESSAGE` 로 끝난다.

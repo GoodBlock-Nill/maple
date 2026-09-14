@@ -25,9 +25,14 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | `inquiryId` | hidden | `z.uuid('문의를 찾을 수 없습니다.')` | 현재 문의 | — |
-| 메모 내용 | Textarea `body`, rows 3, required | `plainTextField(2000, …)` — CRLF→LF, trim 후 1~2000자. DB `inquiry_notes_body_length check (char_length(body) between 1 and 2000)` 와 같은 숫자 | 빈칸. placeholder "예: 결제 로그 확인함. 환불 기준 확인 후 답변 예정." | hint = "운영자 전용 · 고객에게 보이지 않습니다. 사용자 화면과 답신 메일 어디에도 나가지 않습니다." 값을 React 상태로 쥐고 성공 시 직접 비운다 |
+| 메모 내용 | Textarea `body`, rows 3, required | `plainTextField(2000, …)` 규칙(아래) | 빈칸. placeholder "예: 결제 로그 확인함. 환불 기준 확인 후 답변 예정." | hint·상태 관리(아래) |
 | 오류 배너 | `FormBanner` | — | — | `state.formError` |
-| 메모 남기기 | 버튼(sm, 우측 정렬) | write 권한 | "메모 남기기" / "남기는 중…" | `createInquiryNoteAction` → `inquiry_notes` insert → 감사 `inquiry_note.create` → `revalidateInquiry()` → 토스트 "내부 메모를 남겼습니다." |
+| 메모 남기기 | 버튼(sm, 우측 정렬) | write 권한 | "메모 남기기" / "남기는 중…" | `createInquiryNoteAction` 실행(아래) |
+
+**동작 상세**
+- **메모 내용(필수·제한)** — `plainTextField(2000, …)` — CRLF→LF, trim 후 1~2000자. DB `inquiry_notes_body_length check (char_length(body) between 1 and 2000)` 와 같은 숫자.
+- **메모 내용(동작)** — hint = "운영자 전용 · 고객에게 보이지 않습니다. 사용자 화면과 답신 메일 어디에도 나가지 않습니다." 값을 React 상태로 쥐고 성공 시 직접 비운다.
+- **메모 남기기** — `createInquiryNoteAction` → `inquiry_notes` insert → 감사 `inquiry_note.create` → `revalidateInquiry()` → 토스트 "내부 메모를 남겼습니다."
 
 빈 값·초과 문구: "메모 내용을 입력해 주세요." / "메모는 2000자를 넘을 수 없습니다."
 
@@ -78,9 +83,11 @@
 |---|---|
 | 조회 실패 | `console.error('[inquiries] 내부 메모 조회 실패')` + 빈 목록(문의 본문은 그대로 보인다) |
 | 빈 본문 / 2000자 초과 | 필드 오류 문구(§2) |
-| insert 실패 | "메모를 남기지 못했습니다. 작성한 내용은 그대로 있으니 잠시 후 다시 저장해 주세요." — 입력값은 남는다 |
+| insert 실패 | "메모를 남기지 못했습니다…"(아래) |
 | 지우려는 메모가 없음 / `noteId` 가 uuid 아님 | "메모를 찾을 수 없습니다. 목록을 새로고침해 주세요." |
 | 남의 메모 삭제 시도(직접 POST) | "내가 남긴 메모만 지울 수 있습니다." (액션 · RLS 두 겹) |
 | delete 실패 | "메모를 지우지 못했습니다. 잠시 후 다시 시도해 주세요." |
 | 작성자 계정 삭제됨 | `author_id = null` → 그 메모는 **아무도 지울 수 없다**(닉네임 스냅샷만 남아 열람은 가능) |
 | 읽기 전용 관리자 | 입력 폼과 삭제 버튼이 없고 목록만 보인다 |
+
+- **insert 실패** — 전체 문구는 "메모를 남기지 못했습니다. 작성한 내용은 그대로 있으니 잠시 후 다시 저장해 주세요." 입력값은 남는다.

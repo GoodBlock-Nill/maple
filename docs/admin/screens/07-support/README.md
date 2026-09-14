@@ -7,11 +7,18 @@
 
 | 항목 | 값 |
 |---|---|
-| 경로 | `/inquiries?source=web` · `/inquiries?source=email` · `/inquiries/[id]` · `/inquiries/categories` · `/inquiries/reply-templates` · `/faqs` |
-| 권한 모듈 | 문의 계열 전부 `inquiries`(read/write), FAQ 만 `faqs`(read/write). `admin/lib/auth/permissions.ts` 의 라벨은 각각 '홈페이지 문의' · 'FAQ' |
-| 주요 테이블 | `inquiries`, `inquiry_replies`, `inquiry_notes`, `inquiry_categories`, `inquiry_reply_templates`, `faqs`, `email_inbound_events` |
-| 클라이언트 영향 | 문의·답변·메모는 캐시 태그가 없다(세션마다 RLS 로 직접 조회 → 즉시). 카테고리는 `inquiry-categories`, FAQ 는 `faqs` 태그 재검증. 답변 템플릿은 관리자 전용이라 태그 없음 |
-| 관련 파일 | `admin/app/(admin)/{inquiries,faqs}/**` · `admin/components/{inquiries,inquiry-categories,inquiry-reply-templates,faqs}/**` · `admin/lib/{actions,data,validation}/{inquir*,faq*}.ts` · `admin/lib/utils/{inquiry-no,inquiry-reply-template}.ts` · `admin/lib/constants/inquiry-kind.ts` · `supabase/migrations/2026090840*·2026091*` · `supabase/functions/email-{inbound,outbound}` |
+| 경로 | 문의·카테고리·템플릿·FAQ 6개 라우트(아래) |
+| 권한 모듈 | `inquiries`(문의 계열), `faqs`(FAQ)(아래) |
+| 주요 테이블 | `inquiries`·`inquiry_replies`·`inquiry_notes`·`inquiry_categories`(아래) |
+| 클라이언트 영향 | 문의·답변·메모는 캐시 없음, 카테고리·FAQ는 태그 재검증(아래) |
+| 관련 파일 | 페이지·컴포넌트·액션·유틸·마이그레이션(아래) |
+
+**동작 상세**
+- **경로** — `/inquiries?source=web` · `/inquiries?source=email` · `/inquiries/[id]` · `/inquiries/categories` · `/inquiries/reply-templates` · `/faqs`.
+- **주요 테이블** — `inquiries`, `inquiry_replies`, `inquiry_notes`, `inquiry_categories`, `inquiry_reply_templates`, `faqs`, `email_inbound_events`.
+- **권한 모듈** — 문의 계열 전부 `inquiries`(read/write), FAQ 만 `faqs`(read/write). `admin/lib/auth/permissions.ts` 의 라벨은 각각 '홈페이지 문의' · 'FAQ'.
+- **클라이언트 영향** — 문의·답변·메모는 캐시 태그가 없다(세션마다 RLS 로 직접 조회 → 즉시). 카테고리는 `inquiry-categories`, FAQ 는 `faqs` 태그 재검증. 답변 템플릿은 관리자 전용이라 태그 없음.
+- **관련 파일** — `admin/app/(admin)/{inquiries,faqs}/**` · `admin/components/{inquiries,inquiry-categories,inquiry-reply-templates,faqs}/**` · `admin/lib/{actions,data,validation}/{inquir*,faq*}.ts` · `admin/lib/utils/{inquiry-no,inquiry-reply-template}.ts` · `admin/lib/constants/inquiry-kind.ts` · `supabase/migrations/2026090840*·2026091*` · `supabase/functions/email-{inbound,outbound}`.
 
 ## 1. 화면 목록
 
@@ -64,8 +71,10 @@
 ### 2.3 권한
 | 모듈 | read 로 보이는 것 | write 가 더 보여 주는 것 |
 |---|---|---|
-| `inquiries` | 목록·상세·스레드·내부 메모·카테고리·템플릿(전부 읽기) | 상태 변경 select, 종료 버튼, 담당자 컨트롤, 답변 폼, 메모 입력·삭제, 카테고리/템플릿의 ▲▼·순서 저장·토글·등록·수정·삭제 |
+| `inquiries` | 목록·상세·스레드·내부 메모·카테고리·템플릿(전부 읽기) | write 로 추가되는 조작(아래) |
 | `faqs` | `/faqs` 목록(미발행 포함) | FAQ 등록·수정·삭제·발행 토글·순서 저장 |
+
+- **`inquiries` write** — 상태 변경 select, 종료 버튼, 담당자 컨트롤, 답변 폼, 메모 입력·삭제, 카테고리/템플릿의 ▲▼·순서 저장·토글·등록·수정·삭제.
 
 모든 서버 액션이 스스로 `requirePermission(...)` 를 다시 부른다 — 화면의 버튼 유무는 인가가 아니다. 쓰기는 전부 세션 클라이언트로 하고(서비스 롤 금지) RLS(`inquiries_select_admin` · `inquiry_notes_select_admin` · `inquiry_reply_templates_admin_all` · `inquiry_categories_admin_all` · `faqs_admin_all`)가 다시 검사한다.
 
@@ -101,14 +110,16 @@
 - `docs/admin/TEMPLATES-GUIDE.md` — 세 갈래 템플릿(문의 카테고리 프리필 · 뉴스 카테고리 템플릿 · 답변 템플릿) 비교
 - `docs/reference/inquiry-thread-spec.md` — 회원 답장(스레드) 규칙
 
-### 2.7 아직 화면이 없는 DB 기능 (2026-09-14 기준)
-마이그레이션 `20260914000400_inquiry_thread.sql` 이 회원 답장을 열었지만 **관리자·사용자 어느 쪽에도 UI 가 없다**(`user_replied_at` · `add_inquiry_user_reply` 를 참조하는 앱 코드가 없다).
+### 2.7 회원 답장(대화 스레드, 2026-09-14 배포)
+마이그레이션 `20260914000400_inquiry_thread.sql` 이 연 회원 답장은 **관리자·사용자 양쪽에 UI 가 있다**(커밋 `df57060` 관리자, `6edbcf9` 사용자). 처리 중인 문의에 한해 사용자가 같은 접수번호로 이어 쓴다 — 새 문의를 만들지 않는다.
 
 | DB 요소 | 규칙 | 지금 화면에서 |
 |---|---|---|
-| `inquiry_replies.attachments` | 이미지·PDF 3 + 영상 2, 합계 5 (`inquiry_attachment_kind_count`) | 읽지 않는다 |
-| `inquiries.user_replied_at` | 회원 답장 도착 시각. 운영자 답변(outbound)이 들어오면 트리거가 null 로 되돌린다 | 목록·상세에 뱃지 없음 |
-| `add_inquiry_user_reply(uuid, text, jsonb)` | 본인 → 취소 아님 → **처리 중에서만** → 운영자 답변 있음 → 마지막 운영자 답변 이후 3건 미만 → 내용 1~2000자·첨부 상한. 코드: `not_owner` · `cancelled` · `not_in_progress` · `no_operator_reply` · `too_many` · `invalid` | 호출부 없음 |
+| `inquiry_replies.attachments` | 이미지·PDF 3 + 영상 2, 합계 5 (`inquiry_attachment_kind_count`) | 관리자 스레드가 서명 URL 로 그림(일괄 서명). 사용자 스레드도 같은 첨부 표시 |
+| `inquiries.user_replied_at` | 회원 답장 도착 시각. 운영자 답변(outbound)이 들어오면 트리거가 null 로 되돌린다 | 목록·회원 상세에 "회원 답장" 뱃지, `?awaiting=1` 필터가 이 값을 읽는다 |
+| `add_inquiry_user_reply(uuid, text, jsonb)` | 조건 체인·오류 코드(아래) | 사용자 답장 폼(`InquiryUserReplyForm` → `replyToInquiry`)의 유일한 호출부 |
 | `touch_inquiry_on_reply()` | 답변·답장 INSERT 마다 `inquiries.updated_at = now()` | 목록 '업데이트' 칸이 이미 이 값을 본다 |
 
-회원 답장 행이 실제로 생기면 관리자 상세의 웹 스레드는 그것을 **작성자 이름만 다른 답변**으로 그린다(웹 스레드는 `direction` 을 보지 않는다 — 03-detail §4 참고).
+- **`add_inquiry_user_reply` 규칙** — 본인 → 취소 아님 → **처리 중에서만** → 운영자 답변 있음 → 마지막 운영자 답변 이후 3건 미만 → 내용 1~2000자·첨부 상한. 코드: `not_owner` · `cancelled` · `not_in_progress` · `no_operator_reply` · `too_many` · `invalid`.
+
+관리자 상세의 웹 스레드는 회원 답장(`direction='inbound'` + `author_id` not null)을 "회원 답장" 뱃지 + 왼쪽 굵은 선으로 구분해 그린다(03-detail §4 참고). 답변 폼 "등록 후 상태" 기본값은 **처리 중**(오너 지시, 휴먼 에러 방지) — 04-reply-form 참고.

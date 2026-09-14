@@ -7,10 +7,16 @@
 | 항목 | 값 |
 |---|---|
 | 경로 | `/news` (하위: `/news/new`, `/news/[id]`, `/news/templates`, `/news/templates/[category]`) |
-| 권한 모듈 | `news` — read / write (`admin/lib/auth/permissions.ts`). **read**: 목록 조회·필터·정렬·페이지 이동만(선택 열과 행 조치 열이 통째로 빠진다, `buildNewsColumns()`). **write**: "새 뉴스 작성"·"카테고리 템플릿" 버튼, 일괄 숨김/삭제 바, 행별 수정/숨김/삭제/복구, `/news/new`·`/news/[id]`·`/news/templates*` 진입 |
-| 주요 테이블 | `posts`(board='news' — `title`·`summary`·`content`·`content_format`·`category_key`·`is_published`·`published_at`·`is_pinned`·`is_hidden`·`deleted_at`·`view_count`·`author_id`·`author_name`·`edited_at`), `news_category_templates`(카테고리당 1행), `board_categories`(board='news' — 카테고리 라벨·순서) |
-| 클라이언트 영향 | 태그 `news-list` 재검증 → 사용자 사이트 `/news`(`app/(public)/news/page.tsx` → `lib/data/news.ts` 의 `getNewsList`, `unstable_cache` 60초) 목록이 즉시 갱신. 상세 `/news/[id]` 는 `getNewsById()` 가 매 요청 세션 조회라 태그와 무관하게 바로 반영. 템플릿 저장·복원은 클라이언트에 영향 없음(관리자 전용 테이블) |
-| 관련 파일 | 페이지 `admin/app/(admin)/news/**` · 컴포넌트 `admin/components/news/**`, `admin/components/news-templates/**`, `admin/components/editor/**` · 액션 `admin/lib/actions/{news-actions,news-template-actions}.ts`, `admin/components/editor/upload-action.ts` · 데이터 `admin/lib/data/{news,news-templates}.ts` · 검증 `admin/lib/validation/{news,news-templates}.ts` · 상수 `admin/lib/constants/{news,news-templates,field-limits,messages}.ts` · 정제 `admin/lib/sanitize/{post-html,video-embed,render-post-html}.ts` · 캐시 `admin/lib/revalidate.ts` · 마이그레이션 `20260908000300_boards_posts_comments`, `20260908001600_news_categories`, `20260908001700_admin_foundation`, `20260908001100_reports_and_author_edits`, `20260911000100_news_category_templates`, `20260911000500_news_pin_limit` |
+| 권한 모듈 | `news` — read / write (`admin/lib/auth/permissions.ts`)(아래) |
+| 주요 테이블 | `posts`(board='news'), `news_category_templates`, `board_categories`(아래) |
+| 클라이언트 영향 | 태그 `news-list` 재검증(아래) |
+| 관련 파일 | 페이지·컴포넌트·액션·데이터·검증·상수·정제·캐시·마이그레이션(아래) |
+
+**동작 상세**
+- **권한 모듈** — `news` — read / write (`admin/lib/auth/permissions.ts`). **read**: 목록 조회·필터·정렬·페이지 이동만(선택 열과 행 조치 열이 통째로 빠진다, `buildNewsColumns()`). **write**: "새 뉴스 작성"·"카테고리 템플릿" 버튼, 일괄 숨김/삭제 바, 행별 수정/숨김/삭제/복구, `/news/new`·`/news/[id]`·`/news/templates*` 진입.
+- **주요 테이블** — `posts`(board='news' — `title`·`summary`·`content`·`content_format`·`category_key`·`is_published`·`published_at`·`is_pinned`·`is_hidden`·`deleted_at`·`view_count`·`author_id`·`author_name`·`edited_at`), `news_category_templates`(카테고리당 1행), `board_categories`(board='news' — 카테고리 라벨·순서).
+- **클라이언트 영향** — 태그 `news-list` 재검증 → 사용자 사이트 `/news`(`app/(public)/news/page.tsx` → `lib/data/news.ts` 의 `getNewsList`, `unstable_cache` 60초) 목록이 즉시 갱신. 상세 `/news/[id]` 는 `getNewsById()` 가 매 요청 세션 조회라 태그와 무관하게 바로 반영. 템플릿 저장·복원은 클라이언트에 영향 없음(관리자 전용 테이블).
+- **관련 파일** — 페이지 `admin/app/(admin)/news/**` · 컴포넌트 `admin/components/news/**`, `admin/components/news-templates/**`, `admin/components/editor/**` · 액션 `admin/lib/actions/{news-actions,news-template-actions}.ts`, `admin/components/editor/upload-action.ts` · 데이터 `admin/lib/data/{news,news-templates}.ts` · 검증 `admin/lib/validation/{news,news-templates}.ts` · 상수 `admin/lib/constants/{news,news-templates,field-limits,messages}.ts` · 정제 `admin/lib/sanitize/{post-html,video-embed,render-post-html}.ts` · 캐시 `admin/lib/revalidate.ts` · 마이그레이션 `20260908000300_boards_posts_comments`, `20260908001600_news_categories`, `20260908001700_admin_foundation`, `20260908001100_reports_and_author_edits`, `20260911000100_news_category_templates`, `20260911000500_news_pin_limit`.
 
 ## 화면 목록
 | 파일 | 경로 | 설명 |
@@ -71,14 +77,19 @@
 | 항목 | 허용 |
 |---|---|
 | 태그 | `p` `br` `strong` `em` `s` `u` `h2` `h3` `ul` `ol` `li` `blockquote` `a` `img` `div`(영상 자리표시자 전용) |
-| 속성 | `a`: `href`·`rel`·`target` / `img`: `src`·`alt`·`width`·`height` / `div`: `data-video`. 그 밖(`style`·`class`·`on*`)은 전부 제거 |
-| 링크 | `^https?://\S+$` 만 남기고, `rel="noopener noreferrer nofollow" target="_blank"` 를 **강제로 덮어쓴다**. 아니면 태그째 사라진다 |
-| 이미지 | `{SUPABASE_URL}/storage/v1/object/public/post-images/` 로 시작하는 `src` 만. 외부 URL 은 제거. `width`/`height` 는 숫자 1~4자리만 |
+| 속성 | 태그별 허용 속성(아래) |
+| 링크 | `^https?://\S+$` 만 남기고 `rel`/`target` 강제 재작성(아래) |
+| 이미지 | 버킷 URL 만 허용, 크기 속성 제약(아래) |
 | 영상 | `data-video="youtube:<id>" \| "vimeo:<id>"` 토큰만. `parseVideoToken()` 이 형식을 다시 검사한다 |
 | 통째로 버림 | `script` `style` `textarea` `option` `noscript` `template` `iframe` (내용 포함) |
 | 기타 | 프로토콜 상대 URL(`//host`) 금지, `img` 는 https 만, 끝의 빈 문단(`<p></p>`) 제거 |
 
 정제 후 빈 문자열이면 뉴스 본문은 "저장할 수 있는 본문이 없습니다."(필드 오류 `content`), 템플릿 본문은 입력이 있었을 때만 같은 문구(필드 오류 `body`)를 낸다.
+
+**동작 상세**
+- **속성** — `a`: `href`·`rel`·`target` / `img`: `src`·`alt`·`width`·`height` / `div`: `data-video`. 그 밖(`style`·`class`·`on*`)은 전부 제거.
+- **링크** — `^https?://\S+$` 만 남기고, `rel="noopener noreferrer nofollow" target="_blank"` 를 **강제로 덮어쓴다**. 아니면 태그째 사라진다.
+- **이미지** — `{SUPABASE_URL}/storage/v1/object/public/post-images/` 로 시작하는 `src` 만. 외부 URL 은 제거. `width`/`height` 는 숫자 1~4자리만.
 
 ### 감사 로그
 | action | 언제 | 대상 | before/after |

@@ -14,7 +14,10 @@
 
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
-| 권한 안내 배너 | `FormBanner` | — | 숨김 | `firstValue(searchParams.error) === 'forbidden'` 이면 지표 위에 뜬다. 문구는 페이지 상수 `FORBIDDEN_MESSAGE` — "이 화면을 볼 권한이 없습니다. 필요하면 슈퍼어드민에게 요청해 주세요." 닫기 버튼 없음(다른 화면으로 이동하면 사라진다) |
+| 권한 안내 배너 | `FormBanner` | — | 숨김 | 조건 충족 시 지표 위에 표시(아래) |
+
+**동작 상세**
+- **권한 안내 배너** — `firstValue(searchParams.error) === 'forbidden'` 이면 지표 위에 뜬다. 문구는 페이지 상수 `FORBIDDEN_MESSAGE` — "이 화면을 볼 권한이 없습니다. 필요하면 슈퍼어드민에게 요청해 주세요." 닫기 버튼 없음(다른 화면으로 이동하면 사라진다).
 
 ## 1.2 지표 카드 (`StatCard` 9장)
 2열(`grid-cols-2`, lg 이상 4열) 그리드. 카드는 링크가 아니다 — 값만 보여 주고, 이동은 아래 최근 활동 목록으로 한다. 큰 숫자는 `toLocaleString('ko-KR')` 로 천 단위 콤마를 찍는다.
@@ -42,12 +45,17 @@
 | 필드/컨트롤 | 종류 | 값의 출처 | 표시 규칙 | 클릭 시 이동 |
 |---|---|---|---|---|
 | 종류 뱃지 | `Badge`(폭 68px 고정, 가운데 정렬) | `kind` | 뉴스=`accent` / 커뮤니티=`neutral` / 댓글=`neutral` / 문의=`warn` / 신고=`danger` | — |
-| 제목 | 한 줄 텍스트(`truncate`) | 뉴스·커뮤니티 `posts.title`, 댓글 `comments.content`(공백 접어 40자 + `…`, `truncate()`), 문의 `inquiries.title`, 신고 `"게시글 신고 · {reason}"` / `"댓글 신고 · {reason}"` | 신고의 `{reason}` 은 **`report_reason` enum 원문**(`spam`·`abuse`·`obscene`·`privacy`·`other`)이다 — 여기서는 한국어 라벨(`REPORT_REASON_LABEL`)로 바꾸지 않는다 | 종류별 경로(아래) |
-| 작성자/구분 | 오른쪽 정렬 텍스트(sm 미만에서는 숨김) | 게시글·댓글 `author_name`, 문의 `inquiries.category`(카테고리 키 원문), 신고 고정 문자열 `신고 접수` | 폭 28(7rem) 고정 · `truncate` | — |
+| 제목 | 한 줄 텍스트(`truncate`) | 종류별 소스(아래) | `{reason}` 은 enum 원문(아래) | 종류별 경로(아래) |
+| 작성자/구분 | 오른쪽 정렬 텍스트(sm 미만에서는 숨김) | 종류별 값(아래) | 폭 28(7rem) 고정 · `truncate` | — |
 | 시각 | `<time dateTime={createdAt}>` | `created_at` | `formatRelativeDay()` — KST 기준 오늘이면 `HH:mm`, 아니면 `YYYY-MM-DD` | — |
-| 행(전체) | `<Link>` | `href` | hover 배경 + 포커스 링 | 뉴스 → `/news`, 커뮤니티 → `/community/posts`, 댓글 → `/community/comments`, 문의 → `/inquiries`, 신고 → `/reports` |
+| 행(전체) | `<Link>` | `href` | hover 배경 + 포커스 링 | 종류별 경로(아래) |
 | 빈 목록 | 안내 문구 | — | 네 질의가 모두 비면 "최근 활동이 없습니다." | — |
 
+**동작 상세**
+- **제목(값의 출처)** — 뉴스·커뮤니티는 `posts.title`, 댓글은 `comments.content`(공백 접어 40자 + `…`, `truncate()`), 문의는 `inquiries.title`, 신고는 `"게시글 신고 · {reason}"` / `"댓글 신고 · {reason}"`.
+- **제목(표시 규칙)** — 신고의 `{reason}` 은 **`report_reason` enum 원문**(`spam`·`abuse`·`obscene`·`privacy`·`other`)이다 — 여기서는 한국어 라벨(`REPORT_REASON_LABEL`)로 바꾸지 않는다.
+- **작성자/구분(값의 출처)** — 게시글·댓글은 `author_name`, 문의는 `inquiries.category`(카테고리 키 원문), 신고는 고정 문자열 `신고 접수`.
+- **행(전체)(클릭 시 이동)** — 뉴스 → `/news`, 커뮤니티 → `/community/posts`, 댓글 → `/community/comments`, 문의 → `/inquiries`, 신고 → `/reports`.
 - 이동 경로는 **메뉴 목록**이다. 개별 글·댓글·문의·신고의 상세로 딥링크하지 않는다(`href` 에 id 를 싣지 않는다).
 - 정렬은 ISO 문자열의 `localeCompare` 내림차순이다 — 네 테이블이 모두 `timestamptz` 를 같은 ISO 형식으로 돌려주므로 문자열 비교가 곧 시간순이다.
 

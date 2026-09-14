@@ -14,10 +14,13 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | memberId | hidden | `forceWithdrawMemberSchema` = `{ memberId: z.uuid('대상 회원을 찾을 수 없습니다.') }` | 현재 회원 id | — |
-| (사유 입력 없음) | — | — | — | 되돌리기 어려운 조작이라 근거는 확인 다이얼로그가 아니라 **감사 로그와 별도 기록**(요청 티켓)에 남아야 한다. 입력칸을 두면 그 칸이 근거의 전부가 된다 |
+| (사유 입력 없음) | — | — | — | 사유를 입력칸에 남기지 않는 이유(아래) |
 | 취소 | 버튼(secondary) | 진행 중 비활성 | — | 닫기 |
 | 탈퇴 처리 | submit(danger) | 진행 중 비활성, 라벨 "탈퇴 처리 중…" | — | `forceWithdrawMemberAction` |
 | 폼 오류 배너 | `FormBanner` | — | — | 다이얼로그 안에 표시 |
+
+**동작 상세**
+- **(사유 입력 없음)** — 되돌리기 어려운 조작이라 근거는 확인 다이얼로그가 아니라 **감사 로그와 별도 기록**(요청 티켓)에 남아야 한다. 입력칸을 두면 그 칸이 근거의 전부가 된다.
 
 **액션 경로** `forceWithdrawMemberAction`(`admin/lib/actions/member-lifecycle-actions.ts`)
 1. `requirePermission('members','write')` → 스키마 파싱.
@@ -56,11 +59,15 @@
 
 | 요소 | 값 |
 |---|---|
-| 함수 | `public.purge_withdrawn_profiles(interval '90 days')` — SECURITY DEFINER · `service_role` 전용. `for update skip locked` 로 훑고 처리한 id 를 반환. 감사 로그 `member.purge`(행위자 `null`, after `{purged_at, cutoff}`) |
-| 호출자 | Edge Function `supabase/functions/purge-withdrawn/index.ts` — 반환된 id 마다 `auth.admin.deleteUser`. 실패하면 그 프로필의 `purged_at` 을 비워 다음 날 재시도 |
+| 함수 | `public.purge_withdrawn_profiles(interval '90 days')`(아래) |
+| 호출자 | Edge Function `supabase/functions/purge-withdrawn/index.ts`(아래) |
 | 인가 | `x-cron-secret` 헤더 == `CRON_SECRET`, 또는 `Authorization: Bearer <SERVICE_ROLE_KEY>`(수동 실행) |
 | 스케줄 | pg_cron `purge-withdrawn-daily` `0 18 * * *`(UTC) = 03:00 KST. 시크릿은 Vault `purge_withdrawn_cron_secret` |
 | 응답 | `{ ok, purged, authDeleted, pendingAttachmentsRemoved, failed[] }` |
+
+**동작 상세**
+- **함수** — SECURITY DEFINER · `service_role` 전용. `for update skip locked` 로 훑고 처리한 id 를 반환. 감사 로그 `member.purge`(행위자 `null`, after `{purged_at, cutoff}`).
+- **호출자** — 반환된 id 마다 `auth.admin.deleteUser`. 실패하면 그 프로필의 `purged_at` 을 비워 다음 날 재시도.
 
 배치는 `deleted_at` 을 비우지 않는다 — 언제 탈퇴했는지가 기록이고, 화면은 `purged_at` 을 먼저 보므로 "탈퇴 대기"로 되읽히지 않는다.
 
@@ -94,13 +101,19 @@
 | 요소 | 내용 |
 |---|---|
 | 제목 | "계정 복구" |
-| 본문(복구 가능) | `restoreNotice()` — `탈퇴 후 {N}일이 지났습니다. 계속하면 계정이 복구됩니다. 이용 제한이 있었다면 그대로 적용됩니다.` (`daysSinceWithdrawal()`, 내림) |
-| 본문(파기 완료) | `PURGED_ACCOUNT_MESSAGE` — "이 계정의 개인정보는 보존 기간이 지나 이미 파기되었습니다. 복구할 수 없으며, 로그아웃 후 새로 가입할 수 있습니다." |
-| 계정 복구 | `canRestoreProfile()`(탈퇴 대기 **and** 파기 전)일 때만 렌더. 폼 POST(`restoreAccountAction`), 진행 중 "복구 중…" |
+| 본문(복구 가능) | `restoreNotice()` 계산 문구(아래) |
+| 본문(파기 완료) | `PURGED_ACCOUNT_MESSAGE`(아래) |
+| 계정 복구 | `canRestoreProfile()`(탈퇴 대기 **and** 파기 전)일 때만 렌더(아래) |
 | 로그아웃 | 항상 렌더 |
 | hidden `next` | `sanitizePostAuthPath()` 로 정규화된 복귀 경로 |
-| 결과 | `deleted_at = null` → 트리거가 `member.restore`(행위자 = 본인) → `next` 로 리다이렉트. 정상 회원이 주소로 직접 들어오면 바로 `next` 로 보낸다 |
+| 결과 | `deleted_at = null` → 트리거·리다이렉트(아래) |
 | 실패 | "계정을 복구하지 못했습니다. 탈퇴 상태는 그대로입니다. 다시 시도해 주세요." |
+
+**동작 상세**
+- **본문(복구 가능)** — `restoreNotice()` — `탈퇴 후 {N}일이 지났습니다. 계속하면 계정이 복구됩니다. 이용 제한이 있었다면 그대로 적용됩니다.` (`daysSinceWithdrawal()`, 내림).
+- **본문(파기 완료)** — `PURGED_ACCOUNT_MESSAGE` — "이 계정의 개인정보는 보존 기간이 지나 이미 파기되었습니다. 복구할 수 없으며, 로그아웃 후 새로 가입할 수 있습니다."
+- **계정 복구** — 폼 POST(`restoreAccountAction`), 진행 중 "복구 중…".
+- **결과** — 트리거가 `member.restore`(행위자 = 본인) → `next` 로 리다이렉트. 정상 회원이 주소로 직접 들어오면 바로 `next` 로 보낸다.
 
 복구로 되돌아오는 것은 **상태값뿐**이다 — 닉네임·월드 계정·제재는 그대로 남아 있었으므로 손댈 것이 없다.
 
@@ -114,14 +127,19 @@
 | 상황 | 문구 |
 |---|---|
 | 강제 탈퇴 — 자기 자신 | "자기 자신을 탈퇴 처리할 수는 없습니다." |
-| 강제 탈퇴 — 관리자 | "관리자 계정은 탈퇴 처리할 수 없습니다. 먼저 관리자 권한을 회수해 주세요."(관리자는 `/admins` 의 삭제로 다룬다 — 여기서 탈퇴시키면 역할은 남고 로그인만 막히는 어정쩡한 상태가 된다) |
+| 강제 탈퇴 — 관리자 | "관리자 계정은 탈퇴 처리할 수 없습니다. 먼저 관리자 권한을 회수해 주세요."(아래) |
 | 강제 탈퇴 — 이미 파기 / 이미 탈퇴 | "이미 개인정보가 파기된 회원입니다." / "이미 탈퇴 상태인 회원입니다." |
 | 강제 탈퇴 — DB 실패 | "회원을 탈퇴 처리하지 못했습니다. 계정은 그대로입니다. 잠시 후 다시 시도해 주세요." |
-| 파기 — 자기 자신 | "자기 자신의 개인정보는 이 화면에서 파기할 수 없습니다."(파기는 auth 계정까지 지우므로 진행하는 순간 세션이 끊기고 되돌릴 수단도 사라진다) |
+| 파기 — 자기 자신 | "자기 자신의 개인정보는 이 화면에서 파기할 수 없습니다."(아래) |
 | 파기 — 이미 파기 | "이미 개인정보가 파기된 회원입니다. 더 지울 것이 없습니다." |
 | 파기 — 탈퇴 전 | "탈퇴하지 않은 회원입니다. 먼저 탈퇴 처리를 한 뒤에 파기할 수 있습니다." |
-| 파기 — DB/auth 실패 | "개인정보를 파기하지 못했습니다. 계정은 그대로입니다. 잠시 후 다시 시도해 주세요."(auth 삭제 실패 시 `purged_at` 롤백) |
-| 파기 — 작성자 이름 갱신 실패 | 화면에는 성공으로 보인다. `console.error('[members] 작성자 표시 이름을 갱신하지 못했습니다', …)` 만 남고 다음 배치가 재시도한다 |
+| 파기 — DB/auth 실패 | "개인정보를 파기하지 못했습니다…"(아래) |
+| 파기 — 작성자 이름 갱신 실패 | 화면에는 성공으로 보인다(아래) |
+
+- **강제 탈퇴 — 관리자** — 관리자는 `/admins` 의 삭제로 다룬다 — 여기서 탈퇴시키면 역할은 남고 로그인만 막히는 어정쩡한 상태가 된다.
+- **파기 — 자기 자신** — 파기는 auth 계정까지 지우므로 진행하는 순간 세션이 끊기고 되돌릴 수단도 사라진다.
+- **파기 — DB/auth 실패** — 전체 문구는 "개인정보를 파기하지 못했습니다. 계정은 그대로입니다. 잠시 후 다시 시도해 주세요." auth 삭제 실패 시 `purged_at` 롤백.
+- **파기 — 작성자 이름 갱신 실패** — `console.error('[members] 작성자 표시 이름을 갱신하지 못했습니다', …)` 만 남고 다음 배치가 재시도한다.
 
 - 즉시 파기는 **되돌릴 수 없다**. 실행 전 대상이 맞는지 회원 ID 로 확인한다.
 - `profiles.id → auth.users` FK 는 제거되어 있다(`20260909000400` §3). auth 계정을 지워도 익명화된 프로필 행이 남아 글·댓글의 작성자 연결이 끊기지 않는다.

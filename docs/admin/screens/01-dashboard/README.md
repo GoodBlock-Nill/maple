@@ -7,10 +7,15 @@
 | 항목 | 값 |
 |---|---|
 | 경로 | `/` (하위 화면 없음) |
-| 권한 모듈 | `dashboard` — read (`admin/lib/auth/permissions.ts`). read 면 지표 9장 + 최근 활동 10건을 본다. write 등급은 이 메뉴에서 쓰이지 않는다(쓰기 동작이 없다) |
-| 주요 테이블 | `profiles`, `posts`(board='news'/'community'), `comments`, `reports`, `inquiries`, `coupon_redemptions` — 전부 `count: 'exact', head: true` 읽기만 |
+| 권한 모듈 | `dashboard` — read (아래) |
+| 주요 테이블 | `profiles`, `posts`, `comments`, `reports`, `inquiries`, `coupon_redemptions`(아래) |
 | 클라이언트 영향 | 없음. 서버 액션이 없고 캐시 태그를 태우지 않는다 |
-| 관련 파일 | 페이지 `admin/app/(admin)/page.tsx` · 컴포넌트 `admin/components/dashboard/RecentActivity.tsx`, `admin/components/ui/StatCard.tsx` · 데이터 `admin/lib/data/dashboard.ts` · 문구 `admin/lib/constants/messages.ts` · 권한 `admin/lib/auth/{permissions,require-admin}.ts` |
+| 관련 파일 | 페이지·컴포넌트·데이터·문구·권한(아래) |
+
+**동작 상세**
+- **권한 모듈** — `dashboard` — read (`admin/lib/auth/permissions.ts`). read 면 지표 9장 + 최근 활동 10건을 본다. write 등급은 이 메뉴에서 쓰이지 않는다(쓰기 동작이 없다).
+- **주요 테이블** — `profiles`, `posts`(board='news'/'community'), `comments`, `reports`, `inquiries`, `coupon_redemptions` — 전부 `count: 'exact', head: true` 읽기만.
+- **관련 파일** — 페이지 `admin/app/(admin)/page.tsx` · 컴포넌트 `admin/components/dashboard/RecentActivity.tsx`, `admin/components/ui/StatCard.tsx` · 데이터 `admin/lib/data/dashboard.ts` · 문구 `admin/lib/constants/messages.ts` · 권한 `admin/lib/auth/{permissions,require-admin}.ts`.
 
 ## 화면 목록
 | 파일 | 경로 | 설명 |
