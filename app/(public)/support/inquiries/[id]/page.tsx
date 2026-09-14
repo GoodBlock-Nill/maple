@@ -3,11 +3,12 @@ import { notFound, redirect } from 'next/navigation'
 import { FlashNotice } from '@/components/board/FlashNotice'
 import { PageShell } from '@/components/layout/PageShell'
 import { InquiryDetailCard } from '@/components/support/InquiryDetailCard'
-import { InquiryReplyThread } from '@/components/support/InquiryReplyThread'
+import { InquiryReplySection } from '@/components/support/InquiryReplySection'
 import { InquirySubmittedDialog } from '@/components/support/InquirySubmittedDialog'
 import { SupportBackLink } from '@/components/support/SupportBackLink'
 import { SupportCard } from '@/components/support/SupportCard'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { INQUIRY_REPLIED_NOTICE, INQUIRY_REPLIED_PARAM } from '@/lib/constants/inquiry-thread'
 import {
   INQUIRY_BACK_TO_LIST_LABEL,
   INQUIRY_CANCELLED_NOTICE,
@@ -19,7 +20,8 @@ import {
   INQUIRY_UPDATED_PARAM,
   MY_INQUIRIES_PATH,
 } from '@/lib/constants/support'
-import { getInquiryReplies, getMyInquiry, getSignedAttachments } from '@/lib/data/inquiries'
+import { getMyInquiry, getSignedAttachments } from '@/lib/data/inquiries'
+import { getInquiryReplies } from '@/lib/data/inquiry-replies'
 import { firstValue } from '@/lib/utils/list-query'
 
 import type { Metadata } from 'next'
@@ -41,6 +43,7 @@ function readNotice(searchParams: SearchParams): Notice | null {
     { param: INQUIRY_UPDATED_PARAM, message: INQUIRY_UPDATED_NOTICE },
     { param: INQUIRY_CANCELLED_PARAM, message: INQUIRY_CANCELLED_NOTICE },
     { param: INQUIRY_EDIT_LOCKED_PARAM, message: INQUIRY_EDIT_LOCKED_NOTICE },
+    { param: INQUIRY_REPLIED_PARAM, message: INQUIRY_REPLIED_NOTICE },
   ]
 
   return notices.find((notice) => firstValue(searchParams[notice.param]) === '1') ?? null
@@ -77,7 +80,7 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
   const isSubmitted = firstValue(searchParams[INQUIRY_SUBMITTED_PARAM]) === '1'
   const notice = readNotice(searchParams)
   const [replies, attachments] = await Promise.all([
-    getInquiryReplies(inquiry.id),
+    getInquiryReplies(inquiry.id, user.id),
     getSignedAttachments(inquiry.attachments),
   ])
 
@@ -101,8 +104,10 @@ export default async function InquiryDetailPage(props: PageProps<'/support/inqui
 
           <InquiryDetailCard inquiry={inquiry} attachments={attachments} />
 
+          {/* 답변 + 답장 폼. 폼이 열리는 조건은 `canUserReply` 하나가 판정한다. */}
           <div className="mt-4">
-            <InquiryReplyThread
+            <InquiryReplySection
+              inquiryId={inquiry.id}
               replies={replies}
               status={inquiry.status}
               cancelledAt={inquiry.cancelledAt}

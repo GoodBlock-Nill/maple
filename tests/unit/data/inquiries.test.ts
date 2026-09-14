@@ -10,8 +10,7 @@ vi.mock('server-only', () => ({}))
 let stub: SupabaseStub
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => stub.client }))
 
-const { getInquiryReplies, getMyInquiries, getMyInquiry, toAttachments } =
-  await import('@/lib/data/inquiries')
+const { getMyInquiries, getMyInquiry, toAttachments } = await import('@/lib/data/inquiries')
 
 const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001'
 const INQUIRY_ID = '33333333-0000-4000-8000-000000000001'
@@ -117,48 +116,6 @@ describe('getMyInquiry', () => {
 
     // Assert
     expect(inquiry).toBeNull()
-  })
-})
-
-describe('getInquiryReplies', () => {
-  it('should map replies to the domain shape', async () => {
-    // Arrange
-    stub = createSupabaseStub([
-      {
-        data: [
-          {
-            id: 'r1',
-            author_name: '운영자',
-            content: '확인 후 안내드리겠습니다.',
-            created_at: '2026-09-08T02:00:00.000Z',
-          },
-        ],
-        error: null,
-      },
-    ])
-
-    // Act
-    const replies = await getInquiryReplies(INQUIRY_ID)
-
-    // Assert
-    expect(stub.tables).toEqual(['inquiry_replies'])
-    expect(replies[0]).toEqual({
-      id: 'r1',
-      authorName: '운영자',
-      content: '확인 후 안내드리겠습니다.',
-      createdAt: '2026-09-08T02:00:00.000Z',
-    })
-  })
-
-  it('should fall back to an empty thread when replies cannot be read', async () => {
-    // Arrange — 답변을 못 읽었다고 본문까지 감출 이유는 없다.
-    stub = createSupabaseStub([{ data: null, error: { message: 'boom' } }])
-
-    // Act
-    const replies = await getInquiryReplies(INQUIRY_ID)
-
-    // Assert
-    expect(replies).toEqual([])
   })
 })
 

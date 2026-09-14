@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { readField, toFieldErrors } from '@/lib/actions/form-state'
 import { readFiles, removeAttachments, uploadAttachments } from '@/lib/actions/inquiry-attachments'
+import { getLatestInquiryAt } from '@/lib/actions/inquiry-cooldown'
 import {
   claimFormVideos,
   readPendingVideos,
@@ -20,7 +21,6 @@ import { createInquirySchema, validateInquiryAttachments } from '@/lib/validatio
 
 import type { FormState } from '@/lib/actions/form-state'
 import type { InquiryKind } from '@/lib/constants/inquiry-kind'
-import type { TypedSupabaseClient } from '@/lib/supabase/types'
 
 /**
  * 접수 서버 액션 — 1:1 문의 · 버그제보 · 불법이용제보.
@@ -37,22 +37,6 @@ import type { TypedSupabaseClient } from '@/lib/supabase/types'
 
 const LOGIN_MESSAGE = '로그인 후 이용할 수 있습니다.'
 const FAILURE_MESSAGE = '접수하지 못했습니다. 잠시 후 다시 시도해 주세요.'
-
-/** 사용자의 마지막 접수 시각. 도배 판정에만 쓴다. */
-async function getLatestInquiryAt(
-  supabase: TypedSupabaseClient,
-  userId: string,
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('inquiries')
-    .select('created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  return data?.created_at ?? null
-}
 
 export async function createInquiry(
   /** 접수 창구. 폼이 `createInquiry.bind(null, kind)` 로 실어 보낸다. */

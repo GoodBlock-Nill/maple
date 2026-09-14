@@ -37,6 +37,15 @@ const CONSENT_SHOT_DIR =
 
 const REPLY_CONTENT = '문의 주신 내용 확인했습니다. 순차적으로 처리해 드리겠습니다.'
 
+/** 처리 중 상태에서 운영자가 추가 정보를 묻는 답변. 회원 답장의 전제다. */
+const OPERATOR_QUESTION = '확인을 위해 계정 ID 와 발생 시각을 알려 주세요.'
+
+const USER_REPLY_CONTENT = '계정 ID 는 20123456789000000 이고, 어제 21시에 발생했습니다.'
+
+const USER_REPLY_SUBMIT_LABEL = '답장 보내기'
+
+const THREAD_CLOSED_NOTICE = '답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.'
+
 /** 영상 픽스처를 만들 자리. 저장소에 바이너리를 넣지 않는다. */
 const VIDEO_FIXTURE_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-video'
@@ -151,6 +160,37 @@ async function submitInquiry(page: Page, title: string): Promise<string> {
   await page.waitForURL(/\/support\/inquiries\/[0-9a-f-]{36}/)
 
   return page.url().split('/').pop()?.split('?')[0] ?? ''
+}
+
+/** 서비스 롤 클라이언트(널이 아님이 확인된 자리에서만 쓴다). */
+type ServiceClient = NonNullable<ReturnType<typeof createServiceClient>>
+
+/**
+ * "운영자가 처리 중 상태로 답했다"를 만든다.
+ *
+ * 접수 시각도 함께 뒤로 민다. 도배 방지 창(30초)은 접수와 답장이 나눠 쓰는데, 실제
+ * 운영에서 운영자 답변은 몇 시간 뒤에 온다 — 접수 1초 뒤에 답변이 달리는 상황은
+ * 테스트에서만 만들어지는 것이라 그 시간차까지 함께 흉내 낸다(제품 코드에는 창을
+ * 우회하는 길을 두지 않는다).
+ */
+async function seedOperatorQuestion(
+  service: ServiceClient | null,
+  inquiryId: string,
+): Promise<void> {
+  await service?.from('inquiry_replies').insert({
+    inquiry_id: inquiryId,
+    author_name: '운영자',
+    content: OPERATOR_QUESTION,
+    direction: 'outbound',
+  })
+
+  await service
+    ?.from('inquiries')
+    .update({
+      status: 'in_progress',
+      created_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+    })
+    .eq('id', inquiryId)
 }
 
 /**
@@ -915,4 +955,70 @@ test('should accept a bug report and an illegal-use report and list both by kind
   if (isDesktop) {
     await page.screenshot({ path: `${SCREENSHOT_DIR}/inquiries-kinds-1440.png`, fullPage: true })
   }
+})
+
+/**
+ * 회원 답장(2026-09-14).
+ *
+ * 운영자가 **처리 중** 상태로 답한 문의에서만 열리는 대화다. 관리자 화면은 별도
+ * 앱이라 그 상태는 서비스 롤로 만든다 — 확인하려는 것은 콘솔이 아니라 이 화면이
+ * 규칙대로 열리고 닫히는가이기 때문이다.
+ *
+ *   1) 처리 중 + 운영자 답변 → 답장 폼이 열린다(내용이 비면 잠긴 채다)
+ *   2) 보낸 답장이 같은 스레드에 "내 답변"으로, 첨부까지 함께 선다
+ *   3) 답변 완료로 닫히면 폼이 사라지고 완료 안내만 남는다(재개 없음)
+ */
+test('should let the member reply while in progress and close the thread once answered', async ({
+  page,
+}) => {
+  // Arrange
+  const service = createServiceClient()
+
+  test.skip(service === null, '서비스 롤 키가 없어 운영자 답변을 만들 수 없습니다.')
+
+  await stubLogin(page, SUPPORT_PATH)
+
+  const title = `E2E 답장 ${Date.now()}`
+  const inquiryId = await submitInquiry(page, title)
+
+  await page
+    .getByRole('dialog', { name: '문의가 접수되었습니다' })
+    .getByRole('button', { name: '확인' })
+    .click()
+
+  // Act — 운영자가 처리 중 상태로 답변을 남긴 상황을 만든다
+  await seedOperatorQuestion(service, inquiryId)
+  await page.goto(`${LIST_PATH}/${inquiryId}`)
+
+  // Assert — 운영자 답변이 스레드에 서고 답장 폼이 열린다(내용이 비면 잠긴 채다)
+  await expect(page.getByText(OPERATOR_QUESTION)).toBeVisible()
+
+  const submit = page.getByRole('button', { name: USER_REPLY_SUBMIT_LABEL })
+
+  await expect(submit).toBeDisabled()
+
+  // Act — 텍스트 + 이미지 한 장으로 답장한다
+  await page.getByRole('textbox', { name: /답장 내용/u }).fill(USER_REPLY_CONTENT)
+  await page.locator('input[name="attachments"]').setInputFiles('tests/fixtures/pixel.png')
+  await expect(page.getByText('pixel.png')).toBeVisible()
+  await expect(submit).toBeEnabled()
+  await submit.click()
+
+  // Assert — 1회성 안내와 함께 내 답장이 같은 스레드에 붙는다
+  await expect(page.getByText('답장을 보냈습니다.')).toBeVisible()
+  await expect(page.getByText(USER_REPLY_CONTENT)).toBeVisible()
+  await expect(page.getByText('내 답변')).toBeVisible()
+  await expect(page.getByRole('link', { name: /pixel\.png/u })).toBeVisible()
+
+  // Act — 운영자가 답변 완료로 닫는다
+  await service
+    ?.from('inquiries')
+    .update({ status: 'answered', answered_at: new Date().toISOString() })
+    .eq('id', inquiryId)
+  await page.goto(`${LIST_PATH}/${inquiryId}`)
+
+  // Assert — 폼이 사라지고 완료 안내만 남는다(대화는 다시 열리지 않는다)
+  await expect(page.getByRole('button', { name: USER_REPLY_SUBMIT_LABEL })).toHaveCount(0)
+  await expect(page.getByText(THREAD_CLOSED_NOTICE)).toBeVisible()
+  await expect(page.getByText(USER_REPLY_CONTENT)).toBeVisible()
 })

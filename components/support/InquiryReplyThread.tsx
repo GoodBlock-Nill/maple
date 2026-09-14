@@ -1,3 +1,4 @@
+import { InquiryThreadMessage } from '@/components/support/InquiryThreadMessage'
 import { ChatDotsIcon } from '@/components/support/support-icons'
 import {
   INQUIRY_CANCELLED_NO_REPLY_NOTICE,
@@ -6,7 +7,6 @@ import {
   INQUIRY_NO_REPLY_NOTICE,
   INQUIRY_REPLY_HEADING,
 } from '@/lib/constants/support'
-import { formatDateLong } from '@/lib/utils/format-date'
 import { isInquiryCancelled } from '@/lib/utils/inquiry-permissions'
 
 import type { InquiryReply, InquiryStatus } from '@/types/domain'
@@ -16,9 +16,6 @@ type InquiryReplyThreadProps = {
   status: InquiryStatus
   cancelledAt: string | null
 }
-
-/** 답변 상자는 길어도 화면을 통째로 밀어내지 않는다(시안 주석: 287 을 넘으면 내부 스크롤). */
-const REPLY_BODY_MAX_HEIGHT = 287
 
 /**
  * 답변이 없을 때 보여줄 안내 문구를 상태별로 고른다.
@@ -44,11 +41,14 @@ export function resolveNoReplyNotice(status: InquiryStatus, cancelledAt: string 
 }
 
 /**
- * 운영자 답변 스레드(오래된 순).
+ * 문의 대화 스레드(오래된 순).
+ *
+ * 운영자 답변과 회원 답장을 **한 줄기로** 섞어 그린다(2026-09-14) — 답장이 따로
+ * 모여 있으면 "무엇에 대한 답인지"를 사용자가 시각으로 맞춰 봐야 한다. 상자의
+ * 모양은 각 메시지가 정하고(`InquiryThreadMessage`), 여기서는 순서와 빈 상태만 맡는다.
  *
  * 답변이 없어도 영역 자체는 남긴다 — "언제 어디서 답을 받는지"를 알려 주는 것이
- * 이 화면의 존재 이유이기 때문이다. 빈 상태는 파선 상자, 답변은 옅은 파란 상자로
- * 구분한다(시안 v2 pc-2/pc-3).
+ * 이 화면의 존재 이유이기 때문이다. 빈 상태는 파선 상자다(시안 v2 pc-2).
  */
 export function InquiryReplyThread({ replies, status, cancelledAt }: InquiryReplyThreadProps) {
   return (
@@ -65,25 +65,8 @@ export function InquiryReplyThread({ replies, status, cancelledAt }: InquiryRepl
       ) : (
         <ul className="flex flex-col gap-3">
           {replies.map((reply) => (
-            <li key={reply.id} className="rounded-[16px] bg-[#f3f6fe] px-4 py-3 lg:p-6">
-              <p className="flex items-center gap-2 lg:gap-3">
-                <ChatDotsIcon className="size-6 shrink-0 text-[#727272]" />
-                <span className="text-ink text-[14px] leading-[20px] font-medium lg:text-[16px] lg:leading-[22px]">
-                  {reply.authorName}
-                </span>
-                <span aria-hidden className="h-3 w-px shrink-0 bg-[#d9d9d9]" />
-                <span className="text-[13px] leading-[18px] font-medium text-[#727272] lg:text-[15px] lg:leading-[22px]">
-                  {formatDateLong(reply.createdAt)}
-                </span>
-              </p>
-              {/* 답변도 평문이다. 줄바꿈만 살리고 마크업은 해석하지 않는다.
-                  들여쓰기는 머리줄의 작성자 이름이 시작하는 선(아이콘 24 + gap 4)이다. */}
-              <p
-                style={{ maxHeight: `${REPLY_BODY_MAX_HEIGHT}px` }}
-                className="mt-4 overflow-y-auto pl-7 text-[14px] leading-[20px] font-medium break-words whitespace-pre-line text-[#727272] lg:mt-5 lg:text-[16px] lg:leading-[22px]"
-              >
-                {reply.content}
-              </p>
+            <li key={reply.id}>
+              <InquiryThreadMessage reply={reply} />
             </li>
           ))}
         </ul>

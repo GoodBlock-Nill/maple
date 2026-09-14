@@ -350,11 +350,35 @@ export type InquiryCategoryOption = {
   kind: InquiryKind
 }
 
+/**
+ * 답변·답장의 방향.
+ *
+ * `outbound` 는 운영자가 보낸 것, `inbound` 는 회원 쪽에서 들어온 것이다
+ * (웹 답장 · 이메일 회신). 화면은 이 값으로 상자의 좌우 톤을 가른다.
+ */
+export type InquiryReplyDirection = 'outbound' | 'inbound'
+
 export type InquiryReply = {
   id: string
   authorName: string
   content: string
   createdAt: string
+  direction: InquiryReplyDirection
+  /**
+   * 지금 보고 있는 사용자가 쓴 답장인가(`inbound` + `author_id` 일치).
+   *
+   * 방향만으로는 갈리지 않는다 — 이메일 인바운드도 `inbound` 지만 `author_id` 가
+   * 없다(마이그레이션 20260914000400 §5). 머리줄을 "내 답변"으로 바꾸고 답장 횟수를
+   * 셀 때 이 값을 본다.
+   */
+  isMine: boolean
+  /**
+   * 이 답변에 달린 첨부(서명 URL 포함).
+   *
+   * 상세는 첨부를 그리자마자 열어 봐야 하므로 서명까지 마친 모양으로 내려온다 —
+   * 화면이 다시 서명을 발급하려면 서버 왕복이 한 번 더 필요하다.
+   */
+  attachments: readonly SignedInquiryAttachment[]
 }
 
 /* -------------------------------------------------------------------------

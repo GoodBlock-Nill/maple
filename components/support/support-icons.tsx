@@ -68,6 +68,21 @@ export function ChevronRightSmallIcon({ className = 'size-4', ...props }: IconPr
   )
 }
 
+/**
+ * 스레드에서 내 답장의 머리줄에 서는 사람 아이콘(24, stroke 2).
+ *
+ * 운영자 말풍선과 **같은 크기·같은 선 굵기**여야 두 상자의 머리줄이 한 줄에서
+ * 어긋나지 않는다(본문 들여쓰기도 아이콘 폭을 기준으로 잡는다).
+ */
+export function UserIcon({ className = 'size-6', ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth={2} {...STROKE_PROPS} className={className} {...props}>
+      <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" />
+      <path d="M20 21C20 17.6863 16.4183 15 12 15C7.58172 15 4 17.6863 4 21" />
+    </svg>
+  )
+}
+
 /** 파일 칩의 제거 버튼(20, stroke 1.5). */
 export function CloseIcon({ className = 'size-5', ...props }: IconProps) {
   return (

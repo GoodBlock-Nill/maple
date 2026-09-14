@@ -11,7 +11,6 @@ import type {
   InquiryAttachment,
   InquiryDetail,
   InquiryKind,
-  InquiryReply,
   InquiryStatus,
   InquirySummary,
   ListResult,
@@ -19,7 +18,9 @@ import type {
 } from '@/types/domain'
 
 /**
- * 내 문의 내역 데이터 접근 계층 (`inquiries` · `inquiry_replies`).
+ * 내 문의 내역 데이터 접근 계층 (`inquiries`).
+ *
+ * 대화(`inquiry_replies`) 조회는 `lib/data/inquiry-replies.ts` 가 맡는다.
  *
  * 최종 방어선은 RLS 다(`inquiries_select_own` · `inquiry_replies_select_owner`).
  * 그런데도 모든 질의에 `user_id` 조건을 함께 거는 이유는 관리자 세션 때문이다 —
@@ -36,8 +37,6 @@ const INQUIRY_LIST_COLUMNS =
 
 /* prettier-ignore */
 const INQUIRY_DETAIL_COLUMNS = 'id, inquiry_no, title, kind, category, type, status, cancelled_at, created_at, account_id, content, attachments'
-
-const REPLY_COLUMNS = 'id, author_name, content, created_at'
 
 /**
  * 첨부 서명 URL 수명. 상세 페이지를 열어 둔 채 파일을 받는 정도면 충분하고,
@@ -194,32 +193,6 @@ export async function getMyInquiry(id: string, userId: string): Promise<InquiryD
     /* 상세에서는 실제 답변 목록을 따로 읽으므로 개수는 그 길이로 채운다. */
     replyCount: 0,
   }
-}
-
-/**
- * 문의의 운영자 답변(오래된 순).
- *
- * 답변을 못 읽었다고 문의 본문까지 감출 이유는 없어서 오류는 빈 목록으로 삼킨다.
- */
-export async function getInquiryReplies(inquiryId: string): Promise<readonly InquiryReply[]> {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('inquiry_replies')
-    .select(REPLY_COLUMNS)
-    .eq('inquiry_id', inquiryId)
-    .order('created_at', { ascending: true })
-
-  if (error !== null) {
-    return []
-  }
-
-  return data.map((row) => ({
-    id: row.id,
-    authorName: row.author_name,
-    content: row.content,
-    createdAt: row.created_at,
-  }))
 }
 
 async function signPaths(

@@ -161,6 +161,16 @@ export function createSupabaseStub(results: readonly StubResult[] = []): Supabas
 
             return { data: [], error: null }
           },
+          /* 비공개 버킷의 서명 URL. 실패 항목을 흉내 낼 일이 아직 없어 전부 성공으로
+             돌려준다(경로가 그대로 담겨 어느 파일의 링크인지 확인할 수 있다). */
+          createSignedUrls: async (paths: string[], expiresIn: number) => ({
+            data: paths.map((path) => ({
+              path,
+              signedUrl: `https://stub.supabase.co/storage/v1/object/sign/${bucket}/${path}?token=t&exp=${expiresIn}`,
+              error: null,
+            })),
+            error: null,
+          }),
           getPublicUrl: (path: string) => ({
             data: {
               publicUrl: `https://stub.supabase.co/storage/v1/object/public/${bucket}/${path}`,
