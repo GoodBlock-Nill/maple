@@ -17,7 +17,7 @@ export function SiteNav({ id, className }: SiteNavProps) {
 
   return (
     <nav id={id} aria-label="주 메뉴" className={className}>
-      <ul className="flex items-center gap-[50px]">
+      <ul className="flex items-center gap-[64px] xl:gap-[88px]">
         {NAV_ITEMS.filter((item) => !isNavItemHidden(item.href)).map((item) => {
           const isActive = matchesPath(item.href, pathname)
 
