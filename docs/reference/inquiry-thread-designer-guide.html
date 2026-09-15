@@ -174,7 +174,7 @@ td q{quotes:"“" "”"}
   <div class="cards">
     <div class="card"><div class="k">누가</div><div class="v">문의를 쓴 본인만</div><p>로그인한 작성자만 답장할 수 있습니다. 운영자는 관리자 콘솔에서 답변합니다.</p></div>
     <div class="card"><div class="k">언제</div><div class="v">"처리 중" + 운영자 답변 1건 이상</div><p>운영자가 먼저 답을 남기고 상태를 처리 중으로 두었을 때만 답장 폼이 열립니다.</p></div>
-    <div class="card"><div class="k">얼마나</div><div class="v">운영자 답변 하나당 답장 1건</div><p>본문 2,000자, 첨부는 형식에 관계없이 5개 · 합계 200MB. 연속 작성은 30초 간격입니다.</p></div>
+    <div class="card"><div class="k">얼마나</div><div class="v">운영자 답변 하나당 답장 1건</div><p>본문 2,000자, 첨부는 형식에 관계없이 5개 · 합계 200MB. 답장에는 시간 제한이 없습니다.</p></div>
   </div>
   <div class="callout"><b>핵심 한 줄.</b> 대화를 여는 것도 닫는 것도 운영자입니다. 회원은 열린 동안 답하고, "답변 완료"가 되면 다시 열 수 없습니다.</div>
 
@@ -228,7 +228,7 @@ td q{quotes:"“" "”"}
     <div class="step"><div class="num">3</div><div><div class="q">상태가 접수 대기인가?</div><div class="branch"><span class="tag no">예</span><span class="out"><q>운영자 답변 후 답장할 수 있습니다.</q></span></div></div></div>
     <div class="step"><div class="num">4</div><div><div class="q">처리 중인데 운영자 답변이 아직 없는가?</div><div class="branch"><span class="tag no">예</span><span class="out"><q>운영자 답변 후 답장할 수 있습니다.</q> (3번과 같은 문구)</span></div></div></div>
     <div class="step"><div class="num">5</div><div><div class="q">마지막 운영자 답변 이후 내 답장을 이미 보냈는가?</div><div class="branch"><span class="tag warn">예</span><span class="out"><q>운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다.</q></span></div></div></div>
-    <div class="step final"><div class="num">✓</div><div><div class="q">모두 통과 → 스레드 아래에 답장 폼 표시</div><div class="branch"><span class="tag yes">보낼 때</span><span class="out">30초 안에 다시 쓰면 <q>너무 빠르게 작성하고 있습니다. N초 후에 다시 시도해 주세요.</q> 가 폼 위에 뜹니다(문의 접수와 답장을 합쳐 셉니다).</span></div></div></div>
+    <div class="step final"><div class="num">✓</div><div><div class="q">모두 통과 → 스레드 아래에 답장 폼 표시</div><div class="branch"><span class="tag yes">보낼 때</span><span class="out">서버가 같은 순서로 다시 검사합니다. 답장에는 30초 같은 시간 제한이 없습니다 — 1건 규칙이 연타를 막습니다(새 문의 접수에만 30초 간격이 있습니다).</span></div></div></div>
   </div>
 
   <h2><span class="n">05</span>화면 상태 여섯 가지</h2>
@@ -274,7 +274,6 @@ td q{quotes:"“" "”"}
       <tr><td>답장 불가 · 완료/종료</td><td><q>답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.</q></td><td>스레드 아래 한 줄</td></tr>
       <tr><td>답장 불가 · 이미 답장함</td><td><q>운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다.</q></td><td>스레드 아래 한 줄</td></tr>
       <tr><td>보낸 직후</td><td><q>답장을 보냈습니다.</q></td><td>페이지 상단 배너</td></tr>
-      <tr><td>30초 안에 다시 보냄</td><td><q>너무 빠르게 작성하고 있습니다. N초 후에 다시 시도해 주세요.</q></td><td>폼 위 오류 줄</td></tr>
       <tr><td>본문·첨부 규칙 위반</td><td><q>답장은 1~2000자, 첨부는 형식에 관계없이 최대 5개 · 총 200MB 까지 보낼 수 있습니다.</q></td><td>답장 내용 칸 아래</td></tr>
       <tr><td>로그인 풀림</td><td><q>로그인 후 이용할 수 있습니다.</q></td><td>폼 위 오류 줄</td></tr>
       <tr><td>취소된 문의에 보냄</td><td><q>접수가 취소된 문의에는 답장할 수 없습니다.</q></td><td>폼 위 오류 줄</td></tr>
@@ -295,7 +294,7 @@ td q{quotes:"“" "”"}
   <div class="faq">
     <details open><summary>답변 완료된 문의를 왜 다시 열 수 없나요?</summary><p>"완료"의 뜻을 하나로 두기 위해서입니다. 완료 뒤에도 답장이 열려 있으면 운영자는 끝난 건을 계속 지켜봐야 하고, 회원은 어디까지 응답을 기대해도 되는지 알 수 없습니다. 이어지는 질문은 새 문의로 받고, 운영자는 처리 중일 때 충분히 주고받은 뒤 완료로 닫습니다.</p></details>
     <details><summary>왜 운영자 답변 하나당 답장 1건인가요?</summary><p>질문 하나에 답 하나로 주고받아야 운영자가 무엇에 답해야 할지 분명합니다. 답장 한 건에 본문 2,000자와 첨부 5개까지 담을 수 있고, 운영자가 다시 답하면 창이 새로 열리므로 대화는 끊기지 않습니다. (2026-09-15 운영팀 결정. 이전에는 3건이었습니다.)</p></details>
-    <details><summary>30초 간격은 어디에 적용되나요?</summary><p>문의 접수와 답장을 합쳐 계산합니다. 접수 직후 30초 안에는 답장을 보낼 수 없고, 운영자가 바로 다시 답해 창이 열려도 직전 답장 뒤 30초는 기다려야 합니다. 폼은 그대로 보이고 보낼 때 남은 초와 함께 안내가 뜹니다.</p></details>
+    <details><summary>답장에도 30초 연속 작성 제한이 있나요?</summary><p>없습니다(2026-09-15 제거). 답장은 운영자 답변 하나당 1건이라 연타 자체가 불가능해 시간 제한이 할 일이 없었고, "접수 직후 답장"처럼 관계없는 행동이 서로 막히는 부작용만 남았습니다. 새 문의를 연속으로 접수하는 것만 30초 간격으로 제한하며, 그 계산에도 답장 시각은 넣지 않습니다.</p></details>
     <details><summary>접수 취소 상태에는 왜 안내문이 없나요?</summary><p>스레드 자리에 이미 "접수가 취소된 문의입니다."가 있어서, 그 아래에 "답장할 수 없습니다"를 또 쓰면 같은 말을 두 번 하게 됩니다. 취소는 회원이 스스로 한 결정이라 이유를 더 설명할 필요도 없습니다.</p></details>
     <details><summary>회원이 답장하면 상태가 바뀌나요?</summary><p>바뀌지 않습니다. 처리 중 그대로이고, 관리자 목록에 "회원 답장" 뱃지가 켜져 운영자가 놓치지 않게 합니다. 상태 변경은 언제나 운영자가 답변을 등록하면서 정합니다.</p></details>
   </div>

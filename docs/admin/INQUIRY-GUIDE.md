@@ -218,7 +218,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 2. **스키마 파싱** — 그 창구의 허용 카테고리·세부 유형을 `getInquiryCategories(kind)` 로 **매번 새로** 읽어 스키마를 만듭니다. 상수로 굳히면 운영자가 추가한 카테고리가 서버에서 거절됩니다.
 3. **영상 목록 파싱** — `videoAttachments` 숨은 필드의 JSON. 모양이 어긋나면 `null`(빈 목록과 구분) → `영상 첨부 정보가 올바르지 않습니다. 다시 시도해 주세요.`
 4. **첨부 재검증** — 형식에 관계없이 개수·합계(최대 5개 · 합계 200MB)만 봅니다(오너 지시, 2026-09-14 — 종류별 상한은 없습니다).
-5. **도배 판정** — 마지막 접수 시각 기준 **30초**(`WRITE_COOLDOWN_SECONDS`). 메모리 카운터가 아니라 DB 의 `created_at` 을 봅니다.
+5. **도배 판정** — 마지막 **접수** 시각 기준 **30초**(`WRITE_COOLDOWN_SECONDS`). 메모리 카운터가 아니라 DB `inquiries.created_at` 을 봅니다. 접수 시각끼리만 봅니다 — 회원 답장 시각은 이 창에 들어오지 않습니다(2026-09-15).
 6. **이미지 업로드** — `<uid>/<uuid>-<파일명>`. 도중 실패하면 이미 올린 것을 지웁니다.
 7. **영상 확정** — pending 오브젝트를 검증하고 접수 자리로 `move`. 실패하면 이미지 업로드분을 되돌립니다.
 8. **INSERT** — `status:'pending'` 을 명시합니다(`inquiries_insert_own` 정책이 `pending` 만 허용). `kind` 도 명시합니다 — 트리거(`inquiries_set_kind_from_category`)가 카테고리로 다시 정하지만, 이 행이 어느 창구로 들어왔는지 INSERT 문에서도 읽혀야 합니다.
@@ -281,7 +281,8 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 - `status = 'in_progress'`(오너 확정 규칙 — **처리 중에서만** 열립니다. `answered` 는 재개 불가)
 - 운영자 답변(`direction='outbound'`) 1건 이상
 - 마지막 운영자 답변 **이후** 사용자 답장 **1건 미만** — 운영자 답변 하나에 답장 하나입니다(2026-09-15 오너 결정으로 3건에서 좁혔습니다)
-- 접수 폼과 같은 30초 쿨다운(`remainingCooldown` 재사용 — 접수와 답장이 창 하나를 나눠 씁니다)
+
+답장에는 **쿨다운이 없습니다**(2026-09-15 오너 결정). 운영자 답변 하나에 답장 하나라 연타할 창 자체가 없고, 접수 쪽 30초 창에 답장 시각을 섞으면 "답장했더니 새 문의 접수가 막히는" 경계가 생깁니다.
 
 **대화의 개폐는 운영자 답변 폼의 "다음 상태" 선택입니다** — 처리 중을 고르면 대화가 열리고, 답변 완료를 고르면 닫혀 다시 열리지 않습니다(`INQUIRY_STATUS_TRANSITIONS` 에 `answered → in_progress` 가 없으므로). `closed → in_progress`(운영자 재개)는 기존 그대로입니다.
 
@@ -300,11 +301,12 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 
 1. 로그인 확인 → `로그인 후 이용할 수 있습니다.`
 2. 본문 1~2000자(RPC 상한과 접수 폼 상한 `INQUIRY_CONTENT_MAX` 중 **작은 쪽**, `INQUIRY_USER_REPLY_MAX`) · 첨부 재검증(접수 폼과 같은 한도, §3)
-3. 접수·답장이 공유하는 30초 쿨다운
-4. 이미지 업로드 → 영상 `claimFormVideos` → 실패하면 방금 올린 이미지만 롤백
-5. RPC `add_inquiry_user_reply(p_inquiry_id, p_content, p_attachments)` 호출
-6. RPC 가 실패하면 업로드·영상 확정을 모두 롤백하고 코드별 문구를 돌려줍니다
-7. 성공하면 `revalidatePath`(목록·상세) 뒤 `redirect(상세?replied=1)` — 1회성 안내 "답장을 보냈습니다."
+3. 이미지 업로드 → 영상 `claimFormVideos` → 실패하면 방금 올린 이미지만 롤백
+4. RPC `add_inquiry_user_reply(p_inquiry_id, p_content, p_attachments)` 호출
+5. RPC 가 실패하면 업로드·영상 확정을 모두 롤백하고 코드별 문구를 돌려줍니다
+6. 성공하면 `revalidatePath`(목록·상세) 뒤 `redirect(상세?replied=1)` — 1회성 안내 "답장을 보냈습니다."
+
+쿨다운 검사는 이 순서에 **없습니다**(2026-09-15 제거). 접수만 30초 창을 쓰고, 답장 연타는 RPC 의 `too_many`(1건 규칙)가 막습니다.
 
 **RPC 실패 코드 → 문구**(`INQUIRY_REPLY_ERROR_MESSAGE`):
 
@@ -870,7 +872,7 @@ sequenceDiagram
 
 ### 7.1 단위 테스트
 
-2026-09-14(회원 답장 스레드 적용 뒤) 실행 결과: **사용자 사이트 1393건 전체 통과 · 관리자 847건 전체 통과**(같은 날 접수 종류 kind 적용 직후는 각각 1362건 · 887건, 2026-09-11 은 1292개(127파일) · 842개(62파일)였습니다 — 관리자는 쿠폰 기능 제거(`c7c624a`)로 문의 스레드 테스트가 늘어도 **순감소**했습니다). 아래는 문의와 직접 관련된 파일만 추린 것입니다.
+2026-09-14(회원 답장 스레드 적용 뒤) 실행 결과: **사용자 사이트 1393건 전체 통과 · 관리자 847건 전체 통과**(같은 날 접수 종류 kind 적용 직후는 각각 1362건 · 887건, 2026-09-11 은 1292개(127파일) · 842개(62파일)였습니다 — 관리자는 쿠폰 기능 제거(`c7c624a`)로 문의 스레드 테스트가 늘어도 **순감소**했습니다). 2026-09-15 답장 쿨다운 제거 뒤 사용자 사이트는 **1395건 전체 통과**입니다(관리자 코드 변경 없음). 아래는 문의와 직접 관련된 파일만 추린 것입니다.
 
 | 파일                                                                                     | 건수  | 무엇을 고정하나                                                                                          |
 | ---------------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
@@ -880,6 +882,7 @@ sequenceDiagram
 | `tests/unit/validation/inquiry-video.test.ts`                                            | 13    | 영상 MIME·크기·개수 순서 · 숨은 필드 JSON 파싱(`null` vs `[]`)                                           |
 | `tests/unit/constants/support.test.ts`                                                   | 12    | 상태 라벨 · 취소 우선 판정 · 첨부 안내 문구가 상수에서 나오는지                                          |
 | `tests/unit/actions/inquiry-actions.test.ts`                                             | 14    | 접수 액션의 순서 — 로그인 · 스키마 · 첨부 · 쿨다운 · 롤백 · redirect · **kind bind 검증**(2026-09-14)   |
+| `tests/unit/actions/inquiry-reply-actions.test.ts`                                       | 4     | 답장 액션 — RPC 인자·redirect · **쿨다운 조회가 없다**(테이블 조회 0건) · 연속 두 건 모두 RPC 도달 · `too_many` 문구(2026-09-15) |
 | `tests/unit/actions/inquiry-videos.test.ts`                                              | 11    | `claimPendingVideos` 의 세 검사와 롤백 · 서비스 롤 부재                                                  |
 | `tests/unit/data/inquiries.test.ts`                                                      | 10    | jsonb 첨부 좁히기 · 답변 수 집계 · 서명 URL 매핑                                                         |
 | `tests/unit/supabase/inquiry-pending-path.test.ts`                                       | 9     | pending 경로 조립과 `isInquiryPendingPath`(깊이 · uid · 트래버설)                                        |
@@ -1042,7 +1045,7 @@ cd admin && pnpm test:e2e -- tests/e2e/inquiries.spec.ts tests/e2e/inquiry-categ
 | `lib/constants/support.ts`                                                                          | 페이지 크기 · 안내 문구 · 파라미터 이름 · 창구별 접수 완료 문구(`INQUIRY_SUBMITTED_COPY`, 2026-09-14) |
 | `lib/constants/inquiry-status.ts`                                                                   | 상태 라벨·색·모양 표(`INQUIRY_STATUS_MAP`) · `resolveInquiryStatus()`(`support.ts` 에서 분리, 시안 v2) |
 | `lib/constants/inquiry-attachment.ts`                                                               | 첨부 안내 문구(`ATTACHMENT_NOTICE_LINES`) · 파일 선택 버튼 라벨(`support.ts` 에서 분리, 시안 v2) |
-| `lib/actions/rate-limit.ts`                                                                         | 접수 30초 · 재수정 10초 쿨다운                               |
+| `lib/actions/rate-limit.ts` · `lib/actions/inquiry-cooldown.ts`                                     | 접수 30초 · 재수정 10초 쿨다운(접수 창은 `getLatestInquiryAt` 의 접수 시각만 봅니다 — 답장은 쿨다운 없음, 2026-09-15) |
 | `components/support/InquiryReplyThread.tsx` · `InquiryThreadMessage.tsx` · `InquiryReplySection.tsx` · `InquiryUserReplyForm.tsx`(신규) | 대화 스레드 렌더 · 답장 폼 노출 판정 · 답장 폼(2026-09-14) |
 | `lib/actions/inquiry-reply-actions.ts`(신규)                                                        | 회원 답장 서버 액션 `replyToInquiry` — 첨부 업로드/영상 확정 · RPC 호출 · 롤백(2026-09-14) |
 | `lib/constants/inquiry-thread.ts` · `lib/utils/inquiry-thread.ts`(신규)                             | 답장 문구·상한 상수 · `canUserReply()` · RPC 결과 파싱(2026-09-14) |
