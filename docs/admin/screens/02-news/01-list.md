@@ -59,22 +59,27 @@
 **동작 상세**
 - **삭제 안내** — `status === null`(전체)일 때만 덧붙는다: `· 삭제된 글은 상태 필터에서 "삭제"를 골라야 보입니다.`
 
-## 1.4 일괄 처리 바 (`NewsTable`, `news:write` 전용)
-표 전체가 하나의 `<form>` 이다. 체크박스가 `ids` 반복 필드로 모이고, 제출 버튼의 `name="intent"`/`value` 가 함께 FormData 에 담긴다. `aria-live="polite"` 로 선택 개수 변화를 읽어 준다.
+## 1.4 일괄 처리 바 (`NewsTable` → `NewsBulkBar`, `news:write` 전용)
+표 전체가 하나의 `<form>` 이다. 체크박스가 `ids` 반복 필드로 모이고, 제출 버튼의 `name="intent"`/`value` 가 함께 FormData 에 담긴다. `aria-live="polite"` 로 선택 개수 변화를 읽어 준다. 버튼 줄만 `NewsBulkBar`(`admin/components/news/NewsBulkBar.tsx`)로 떼어 두었다 — 선택 상태와 액션 호출은 `NewsTable` 에 남는다.
 
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | N건 선택 | 텍스트 | — | `0건 선택` | 컴포넌트 상태 `selected` 의 길이 |
 | 선택 숨김 | submit 버튼(secondary sm) `name="intent" value="hide"` | 고른 것 중 **발행**이 0건이거나 처리 중이면 `disabled`(아래) | — | `newsStateAction(intent='hide')` 실행(아래) |
-| 발행 N건 | 텍스트(muted, `text-[12px]`) | 선택 0건이면 아예 그리지 않는다 | — | 고른 것 중 실제로 숨겨질 건수(아래) |
+| 선택 숨김 해제 | submit 버튼(secondary sm) `name="intent" value="unhide"` | 고른 것 중 **숨김**이 0건이거나 처리 중이면 `disabled`(아래) | — | `newsStateAction(intent='unhide')` 실행(아래) |
+| 발행 N건 · 숨김 M건 | 텍스트(muted, `text-[12px]`) | 선택 0건이면 아예 그리지 않는다 | — | 두 버튼이 각각 실제로 처리할 건수(아래) |
 | 선택 삭제 | 버튼(danger sm) | 선택 0건·처리 중이면 `disabled` | — | 확인 다이얼로그를 연다(아래) |
 
 **동작 상세**
 - **선택 범위** — 선택은 **현재 페이지(최대 20건)** 안에서만 된다. 페이지를 넘기면 선택이 초기화되고, "필터에 맞는 전체 선택"(여러 페이지)은 지원하지 않는다 — 1회 일괄 처리 상한이 곧 20건이라 서버에 별도 상한을 두지 않는다(결정 2026-09-15, 현재 상태 유지).
 - **선택 숨김** — `newsStateAction(intent='hide')` → **발행 상태인 행만** `posts.is_hidden = true` (여러 건 한 질의) → 감사 `news.hide` ×처리 건수 → `revalidatePath('/news')` + 태그 `news-list` → 성공 토스트 후 선택 해제.
-- **숨김 대상** — 숨김은 발행(`published`) 상태에만 건다. 임시저장·예약 글은 독자에게 이미 보이지 않아 숨길 것이 없다. 버튼이 열려 있는지는 화면이 판단하지만 최종 판정은 서버 액션이 다시 한다 → [1.8](#18-상태-변경-액션-계약-newsstateaction).
-- **발행 N건** — `rows` × `selected` 를 `useMemo` 로 걸러 센 값(`isNewsIntentEligible('hide', row.status)`). 20건을 골라도 3건만 처리된다는 것을 누르기 **전에** 알리려는 표시다. `aria-live="polite"` 영역 안이라 선택이 바뀌면 함께 읽힌다.
-- **성공 토스트** — 고른 것이 전부 대상이면 `"N건을 숨겼습니다."`, 일부만 대상이면 `"2건을 숨겼습니다. 발행되지 않은 1건은 제외했습니다."`.
+- **선택 숨김 해제** — `newsStateAction(intent='unhide')` → **숨김 상태인 행만** `posts.is_hidden = false` (여러 건 한 질의) → 감사 `news.unhide` ×처리 건수 → `revalidatePath('/news')` + 태그 `news-list` → 성공 토스트 후 선택 해제.
+- **숨김 대상** — 숨김은 발행(`published`) 상태에만, 해제는 숨김(`hidden`) 상태에만 건다. 임시저장·예약 글은 독자에게 이미 보이지 않아 숨길 것도 되돌릴 것도 없다. 버튼이 열려 있는지는 화면이 판단하지만 최종 판정은 서버 액션이 다시 한다 → [1.8](#18-상태-변경-액션-계약-newsstateaction).
+- **발행 N건 · 숨김 M건** — `countEligible(rows, selected)`(`admin/lib/validation/news-state-eligibility.ts`)를 `useMemo` 로 한 번 불러 두 수를 함께 센다. 20건을 골라도 3건만 처리된다는 것을 누르기 **전에** 알리려는 표시다. `aria-live="polite"` 영역 안이라 선택이 바뀌면 함께 읽힌다.
+- **두 수를 함께 세는 이유** — 같은 선택에서 나온 값이어야 두 버튼의 활성 여부와 안내 문구가 서로 어긋나지 않는다. 숨김과 해제는 각각 따로 센다 — 겹치지 않는 것은 현재 규칙이 그런 것일 뿐이라, 한쪽을 다른 쪽의 여집합으로 두면 규칙이 바뀌는 날 조용히 틀린 수가 찍힌다.
+- **성공 토스트** — 고른 것이 전부 대상이면 `"N건을 숨겼습니다."` / `"N건을 숨김을 해제했습니다."`, 일부만 대상이면 사유가 붙는다(아래).
+- **일부만 대상일 때** — 숨김은 `"2건을 숨겼습니다. 발행되지 않은 1건은 제외했습니다."`, 해제는 `"2건을 숨김을 해제했습니다. 숨김이 아닌 1건은 제외했습니다."`.
+- **해제가 고정 한도를 넘길 때** — 숨긴 고정 글을 되돌리면 상단 고정이 3개를 넘을 수 있다. DB 트리거 `guard_news_pin_limit` 가 막고, 이 화면에는 고정 체크박스가 없어 `NEWS_PIN_LIMIT_MESSAGE` 를 `formError` 로 받아 에러 토스트로 보여 준다 → [1.8](#18-상태-변경-액션-계약-newsstateaction).
 - **선택 삭제** — 확인 다이얼로그를 연다. 폼 제출이 아니라 `useTransition` 으로 직접 호출(다이얼로그 버튼이 표 밖에 있어도 선택이 실린다). 삭제는 상태를 가리지 않는다.
 
 **선택 삭제 확인 다이얼로그**
@@ -175,8 +180,8 @@
 | 권한 없음 | `requirePermission` 이 `/?error=forbidden` 으로 리다이렉트(대시보드가 배너로 사유를 알린다) |
 | 이미 삭제된 행에 삭제를 다시 검 | 막지 않는다. `deleted_at` 이 새 시각으로 덮인다 |
 
-- **고른 것이 전부 숨김 대상이 아님** — 문구는 `NEWS_HIDE_ONLY_PUBLISHED_MESSAGE`(`admin/lib/constants/news.ts`). 행 버튼으로는 이 상태에 이르지 않는다(버튼 자체가 없다) — 직접 POST 나, 목록을 띄워 둔 사이에 다른 운영자가 상태를 바꾼 경우다.
-- **고른 것이 전부 해제 대상이 아님** — 문구는 `NEWS_UNHIDE_ONLY_HIDDEN_MESSAGE`. 상태를 가리지 않는 조작(삭제·복구)인데 대상이 하나도 없으면 `NEWS_NO_TARGET_MESSAGE`("처리할 수 있는 대상이 없습니다.") 로 떨어진다.
+- **고른 것이 전부 숨김 대상이 아님** — 문구는 `NEWS_HIDE_ONLY_PUBLISHED_MESSAGE`(`admin/lib/constants/news.ts`). 화면으로는 이 상태에 이르지 않는다(행 버튼이 없고 일괄 버튼은 닫혀 있다) — 직접 POST 나, 목록을 띄워 둔 사이에 다른 운영자가 상태를 바꾼 경우다.
+- **고른 것이 전부 해제 대상이 아님** — 문구는 `NEWS_UNHIDE_ONLY_HIDDEN_MESSAGE`. 여기도 화면이 먼저 막는다(숨김이 0건이면 "선택 숨김 해제"가 `disabled`). 상태를 가리지 않는 조작(삭제·복구)인데 대상이 하나도 없으면 `NEWS_NO_TARGET_MESSAGE`("처리할 수 있는 대상이 없습니다.") 로 떨어진다.
 - **숨김 해제가 고정 한도를 넘김** — `formError` 로 `NEWS_PIN_LIMIT_MESSAGE` 를 낸다(이 화면에는 고정 체크박스 필드가 없어 필드 오류로 붙일 곳이 없다).
 - **그 밖의 DB 오류** — `console.error('[news] 상태 변경 실패', intent, …)` 로도 남는다.
 

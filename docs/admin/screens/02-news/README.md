@@ -67,7 +67,7 @@
 
 ### 숨김 대상 (발행된 글만)
 - 숨김은 **독자에게 보이는 글을 내리는 조치**다. 그래서 `hide` 는 편집 상태 `published` 에만, `unhide` 는 `hidden` 에만 걸린다. 임시저장·예약 글은 애초에 보이지 않아 숨길 것이 없고, 숨기면 상태 뱃지만 바뀌어 "발행했는데 왜 안 보이나"를 뒤늦게 추적하게 만든다. 삭제·복구는 상태를 가리지 않는다(휴지통은 모든 상태를 받는다).
-- 규칙은 `isNewsIntentEligible(intent, status)` 한 곳에 있다(`admin/lib/validation/news-state-eligibility.ts`). 행 버튼(`newsHideIntent()` — 대상이 아니면 숨김·해제를 **둘 다 그리지 않는다**), 일괄 처리 바(고른 것 중 발행 건수가 0이면 `disabled` + "발행 N건" 표시), 서버 액션(`newsStateAction`)이 모두 이 함수를 쓴다.
+- 규칙은 `isNewsIntentEligible(intent, status)` 한 곳에 있다(`admin/lib/validation/news-state-eligibility.ts`). 행 버튼(`newsHideIntent()` — 대상이 아니면 숨김·해제를 **둘 다 그리지 않는다**), 일괄 처리 바(`countEligible()` 이 센 발행·숨김 건수가 0이면 각 버튼이 `disabled` + "발행 N건 · 숨김 M건" 표시), 서버 액션(`newsStateAction`)이 모두 이 함수를 쓴다.
 - 판정은 목록 뱃지와 같은 `deriveNewsStatus()` 다 — 화면에 "발행"으로 보이는 글이 곧 숨길 수 있는 글이다.
 - 서버가 마지막 방어선이다. 일괄 처리에서 일부만 대상이면 **대상만** 고치고 감사 로그도 그만큼만 남기며, 제외 건수를 토스트에 적는다. 전부 대상이 아니면 질의를 보내지 않고 `NEWS_HIDE_ONLY_PUBLISHED_MESSAGE`("발행된 글만 숨길 수 있습니다.") / `NEWS_UNHIDE_ONLY_HIDDEN_MESSAGE`("숨김 상태인 글만 해제할 수 있습니다.") 를 폼 오류로 돌려준다.
 
