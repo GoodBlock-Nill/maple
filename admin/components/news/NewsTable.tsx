@@ -9,6 +9,7 @@ import { Table } from '@/components/ui/Table'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE, type FormState } from '@/lib/actions/form-state'
 import { newsStateAction } from '@/lib/actions/news-actions'
+import { isNewsIntentEligible } from '@/lib/validation/news-state-eligibility'
 
 import type { NewsListItem } from '@/lib/data/news'
 import type { SortState } from '@/lib/utils/table-query'
@@ -26,6 +27,10 @@ import type { SortState } from '@/lib/utils/table-query'
  * 일괄 삭제만 폼 제출이 아니라 확인 다이얼로그를 거쳐 트랜지션으로 부른다 —
  * 선택 목록이 이미 컴포넌트 상태에 있어 FormData 를 직접 만들 수 있고, 그래야
  * 다이얼로그의 버튼이 표 밖에 있어도 선택이 그대로 실린다.
+ *
+ * "선택 숨김"은 발행된 글에만 걸린다(`isNewsIntentEligible`, 서버 액션과 같은 규칙).
+ * 몇 건이 실제로 숨겨질지 버튼 옆에 적어 둔다 — 20건을 고르고 눌렀는데 3건만
+ * 처리되는 것을 누른 **뒤에** 알게 되면 조치를 되짚어야 한다.
  */
 
 type NewsTableProps = {
@@ -113,6 +118,13 @@ export function NewsTable({ rows, sort, sortHrefs, clientSiteUrl, canWrite }: Ne
 
   const hasSelection = selected.length > 0
 
+  const hidableCount = useMemo(
+    () =>
+      rows.filter((row) => selected.includes(row.id) && isNewsIntentEligible('hide', row.status))
+        .length,
+    [rows, selected],
+  )
+
   return (
     <form action={formAction}>
       {canWrite && (
@@ -127,10 +139,11 @@ export function NewsTable({ rows, sort, sortHrefs, clientSiteUrl, canWrite }: Ne
             value="hide"
             variant="secondary"
             size="sm"
-            disabled={!hasSelection || isPending}
+            disabled={hidableCount === 0 || isPending}
           >
             선택 숨김
           </Button>
+          {hasSelection && <span className="text-muted text-[12px]">발행 {hidableCount}건</span>}
           <Button
             variant="danger"
             size="sm"

@@ -11,6 +11,7 @@ import {
   NEWS_PIN_LIMIT,
   NEWS_PIN_LIMIT_MESSAGE,
   newsAuditSnapshot,
+  newsRowStatus,
   type NewsSnapshot,
   type NewsSnapshotRow,
 } from '@/lib/constants/news'
@@ -24,6 +25,13 @@ import {
   type NewsFormInput,
   type NewsPublishState,
 } from '@/lib/validation/news'
+import {
+  isNewsIntent,
+  isNewsIntentEligible,
+  newsIneligibleMessage,
+  newsSkippedNotice,
+  type NewsIntent,
+} from '@/lib/validation/news-state-eligibility'
 
 import type { Json } from '@/types/database.types'
 
@@ -298,18 +306,14 @@ async function updateNews(
  * 한 건이든 스무 건이든 코드 경로가 하나다.
  * ------------------------------------------------------------------------ */
 
-const NEWS_INTENTS = {
+const NEWS_INTENTS: Record<NewsIntent, { action: string; done: string }> = {
   hide: { action: 'news.hide', done: '숨겼습니다.' },
   unhide: { action: 'news.unhide', done: '숨김을 해제했습니다.' },
   delete: { action: 'news.delete', done: '삭제했습니다.' },
   restore: { action: 'news.restore', done: '복구했습니다.' },
-} as const
-
-export type NewsIntent = keyof typeof NEWS_INTENTS
-
-function isNewsIntent(value: string): value is NewsIntent {
-  return Object.hasOwn(NEWS_INTENTS, value)
 }
+
+export type { NewsIntent }
 
 /**
  * 삭제 시각은 요청 시점으로 한 번만 만든다. 행마다 now() 를 부르면 같은 일괄
@@ -340,14 +344,32 @@ export async function newsStateAction(
   }
 
   const supabase = await createClient()
+  const now = new Date()
   const { data: current } = await supabase
     .from('posts')
     .select(SNAPSHOT_COLUMNS)
     .eq('board', NEWS_BOARD)
     .in('id', ids)
 
-  const patch = intentPatch(intent, new Date())
-  const { error } = await supabase.from('posts').update(patch).eq('board', NEWS_BOARD).in('id', ids)
+  const rows = current ?? []
+  const eligible = rows.filter((row) => isNewsIntentEligible(intent, newsRowStatus(row, now)))
+  const skipped = rows.length - eligible.length
+
+  /* 고른 것이 전부 대상이 아니면 질의를 보내지 않는다 — 감사 로그에도 남기지
+     않는다. "숨김"을 눌렀는데 아무 일도 없었다는 기록이 쌓이면 로그가 흐려진다. */
+  if (skipped > 0 && eligible.length === 0) {
+    return { formError: newsIneligibleMessage(intent) }
+  }
+
+  /* 걸러진 것이 없으면 조회한 적 없는 id(이미 지워진 행 등)까지 그대로 보낸다 —
+     자격 검사를 넣기 전과 같은 질의다. */
+  const targetIds = skipped === 0 ? ids : eligible.map((row) => row.id)
+  const patch = intentPatch(intent, now)
+  const { error } = await supabase
+    .from('posts')
+    .update(patch)
+    .eq('board', NEWS_BOARD)
+    .in('id', targetIds)
 
   if (error !== null) {
     console.error('[news] 상태 변경 실패', intent, error.message)
@@ -362,18 +384,20 @@ export async function newsStateAction(
     }
   }
 
-  for (const row of current ?? []) {
+  for (const row of eligible) {
     await writeAuditLog(actor.id, {
       action: NEWS_INTENTS[intent].action,
       targetTable: 'posts',
       targetId: row.id,
-      before: toJson(newsAuditSnapshot(row)),
-      after: toJson(newsAuditSnapshot({ ...row, ...patch })),
+      before: toJson(newsAuditSnapshot(row, now)),
+      after: toJson(newsAuditSnapshot({ ...row, ...patch }, now)),
     })
   }
 
   revalidatePath(NEWS_PATH)
   await revalidateNewsList()
 
-  return { message: `${ids.length}건을 ${NEWS_INTENTS[intent].done}` }
+  const done = `${targetIds.length}건을 ${NEWS_INTENTS[intent].done}`
+
+  return { message: `${done}${newsSkippedNotice(intent, skipped)}` }
 }

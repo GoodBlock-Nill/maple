@@ -116,6 +116,22 @@ export function isNewsStatus(value: string): value is NewsStatus {
   return (NEWS_STATUSES as readonly string[]).includes(value)
 }
 
+/* ---------------------------------------------------------------------------
+ * 상태 변경 자격 안내 문구
+ *
+ * 숨김은 **독자에게 보이는 글을 내리는 조치**다. 임시저장·예약 글은 애초에 보이지
+ * 않으므로 숨길 것이 없고, 숨기면 상태 뱃지만 바뀌어 "발행했는데 왜 안 보이나"를
+ * 뒤늦게 추적하게 만든다. 그래서 대상은 `published` 하나로 좁힌다.
+ * 문구는 서버 액션(폼 오류)과 문서가 함께 쓰므로 여기 한 곳에 둔다.
+ * ------------------------------------------------------------------------ */
+
+export const NEWS_HIDE_ONLY_PUBLISHED_MESSAGE = '발행된 글만 숨길 수 있습니다.'
+
+export const NEWS_UNHIDE_ONLY_HIDDEN_MESSAGE = '숨김 상태인 글만 해제할 수 있습니다.'
+
+/** 상태를 가리지 않는 조작(삭제·복구)인데도 대상이 하나도 남지 않은 경우. */
+export const NEWS_NO_TARGET_MESSAGE = '처리할 수 있는 대상이 없습니다.'
+
 /** 상태 판정에 필요한 최소 컬럼. 목록·상세가 같은 함수를 쓴다. */
 export type NewsStatusSource = {
   isPublished: boolean
@@ -149,7 +165,7 @@ export function deriveNewsStatus(source: NewsStatusSource, now: Date = new Date(
 }
 
 /* ---------------------------------------------------------------------------
- * 감사 로그 스냅샷
+ * 행 → 상태
  * ------------------------------------------------------------------------ */
 
 /** 스냅샷을 만들 때 필요한 `posts` 컬럼. 조회 쪽과 액션 쪽이 같은 모양을 쓴다. */
@@ -161,6 +177,29 @@ export type NewsSnapshotRow = {
   is_hidden: boolean
   deleted_at: string | null
 }
+
+/**
+ * `posts` 행 → 표시 상태.
+ *
+ * 목록 뱃지(`listNews()`)와 서버 액션의 대상 자격 검사가 **같은 판정**을 써야 한다.
+ * 컬럼 이름만 바꿔 넘기는 한 겹이지만, 그 매핑을 두 군데에 적어 두면 한쪽만 고쳐져
+ * 화면에는 "발행"인데 서버는 "예약"으로 보는 어긋남이 생긴다.
+ */
+export function newsRowStatus(row: NewsSnapshotRow, now: Date = new Date()): NewsStatus {
+  return deriveNewsStatus(
+    {
+      isPublished: row.is_published,
+      publishedAt: row.published_at,
+      isHidden: row.is_hidden,
+      deletedAt: row.deleted_at,
+    },
+    now,
+  )
+}
+
+/* ---------------------------------------------------------------------------
+ * 감사 로그 스냅샷
+ * ------------------------------------------------------------------------ */
 
 export type NewsSnapshot = {
   title: string
@@ -179,15 +218,7 @@ export function newsAuditSnapshot(row: NewsSnapshotRow, now: Date = new Date()):
   return {
     title: row.title,
     category_key: row.category_key,
-    status: deriveNewsStatus(
-      {
-        isPublished: row.is_published,
-        publishedAt: row.published_at,
-        isHidden: row.is_hidden,
-        deletedAt: row.deleted_at,
-      },
-      now,
-    ),
+    status: newsRowStatus(row, now),
   }
 }
 

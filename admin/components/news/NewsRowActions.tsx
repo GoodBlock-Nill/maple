@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE } from '@/lib/actions/form-state'
-import { newsStateAction, type NewsIntent } from '@/lib/actions/news-actions'
+import { newsStateAction } from '@/lib/actions/news-actions'
+import { newsHideIntent } from '@/lib/validation/news-state-eligibility'
 
 import type { NewsStatus } from '@/lib/constants/news'
+import type { NewsHideIntent, NewsIntent } from '@/lib/validation/news-state-eligibility'
 
 /**
  * 목록 행의 조작 버튼.
@@ -19,7 +21,16 @@ import type { NewsStatus } from '@/lib/constants/news'
  *
  * 액션이 `revalidatePath()` 를 부르므로 응답 하나에 재렌더된 목록이 함께 온다 —
  * 별도의 새로고침 호출이 필요 없다(Next 16 "single response carries data and UI").
+ *
+ * 숨김 계열 버튼은 **대상인 상태에만** 그린다(`newsHideIntent()`). 임시저장·예약 글은
+ * 독자에게 이미 보이지 않아 숨길 것이 없고, 눌러도 서버가 같은 규칙으로 거절한다 —
+ * 누를 수 있는데 거절당하는 버튼을 남겨 두지 않는다.
  */
+
+const HIDE_INTENT_LABEL: Record<NewsHideIntent, string> = {
+  hide: '숨김',
+  unhide: '숨김 해제',
+}
 
 type NewsRowActionsProps = {
   id: string
@@ -57,6 +68,8 @@ export function NewsRowActions({ id, title, status, previewUrl }: NewsRowActions
     [id, showToast],
   )
 
+  const hideIntent = newsHideIntent(status)
+
   return (
     <div className="flex items-center justify-end gap-1">
       <Button href={`/news/${id}`} variant="ghost" size="sm">
@@ -82,14 +95,11 @@ export function NewsRowActions({ id, title, status, previewUrl }: NewsRowActions
         </Button>
       ) : (
         <>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={isPending}
-            onClick={() => run(status === 'hidden' ? 'unhide' : 'hide')}
-          >
-            {status === 'hidden' ? '숨김 해제' : '숨김'}
-          </Button>
+          {hideIntent !== null && (
+            <Button variant="ghost" size="sm" disabled={isPending} onClick={() => run(hideIntent)}>
+              {HIDE_INTENT_LABEL[hideIntent]}
+            </Button>
+          )}
           <Button
             variant="danger"
             size="sm"
