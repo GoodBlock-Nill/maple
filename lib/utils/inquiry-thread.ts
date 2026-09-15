@@ -82,7 +82,8 @@ export function canUserReply({
   }
 
   /* 마지막 운영자 답변 **이후**의 내 답장만 센다. 운영자가 다시 답하면 창이 새로
-     열린다 — 대화는 이어지고, 한 번에 쏟아내는 것만 막는다(RPC 와 같은 셈법). */
+     열린다 — 대화는 이어지고, 운영자 답변 하나에 답장 하나만 받는다(RPC 와 같은 셈법,
+     2026-09-15 오너 결정으로 창이 3 에서 1 로 좁혀졌다). */
   const mine = replies.filter((reply) => reply.isMine && reply.createdAt > operatorAt).length
 
   if (mine >= INQUIRY_USER_REPLY_WINDOW) {

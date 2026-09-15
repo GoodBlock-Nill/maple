@@ -97,14 +97,9 @@ describe('canUserReply', () => {
     expect(permission).toEqual({ allowed: false, reason: 'cancelled' })
   })
 
-  it('should stop at three replies sent after the last operator answer', () => {
-    // Arrange
-    const replies = [
-      operator(FIRST_ANSWER),
-      mine('2026-09-14T02:00:00.000Z'),
-      mine('2026-09-14T03:00:00.000Z'),
-      mine('2026-09-14T04:00:00.000Z'),
-    ]
+  it('should stop after one reply sent since the last operator answer', () => {
+    // Arrange — 오너 결정(2026-09-15): 운영자 답변 하나에 답장 하나다.
+    const replies = [operator(FIRST_ANSWER), mine('2026-09-14T02:00:00.000Z')]
 
     // Act
     const permission = canUserReply({ status: 'in_progress', cancelledAt: null, replies })
@@ -118,9 +113,7 @@ describe('canUserReply', () => {
     const replies = [
       operator(FIRST_ANSWER),
       mine('2026-09-14T02:00:00.000Z'),
-      mine('2026-09-14T03:00:00.000Z'),
-      mine('2026-09-14T04:00:00.000Z'),
-      operator('2026-09-14T05:00:00.000Z'),
+      operator('2026-09-14T03:00:00.000Z'),
     ]
 
     // Act
@@ -128,6 +121,22 @@ describe('canUserReply', () => {
 
     // Assert
     expect(permission.allowed).toBe(true)
+  })
+
+  it('should close the window again after the reply that follows the new answer', () => {
+    // Arrange — 창은 답변마다 한 번씩만 열린다(운영자 답변 → 내 답장 → 다시 잠김).
+    const replies = [
+      operator(FIRST_ANSWER),
+      mine('2026-09-14T02:00:00.000Z'),
+      operator('2026-09-14T03:00:00.000Z'),
+      mine('2026-09-14T04:00:00.000Z'),
+    ]
+
+    // Act
+    const permission = canUserReply({ status: 'in_progress', cancelledAt: null, replies })
+
+    // Assert
+    expect(permission).toEqual({ allowed: false, reason: 'too_many' })
   })
 
   it('should ignore inbound replies that are not mine when counting the window', () => {

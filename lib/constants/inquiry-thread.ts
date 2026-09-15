@@ -30,8 +30,14 @@ const USER_REPLY_RPC_MAX = 2_000
 
 export const INQUIRY_USER_REPLY_MAX = Math.min(USER_REPLY_RPC_MAX, INQUIRY_CONTENT_MAX)
 
-/** 마지막 운영자 답변 이후 보낼 수 있는 답장 수. RPC 의 `too_many` 판정과 같은 값이다. */
-export const INQUIRY_USER_REPLY_WINDOW = 3
+/**
+ * 마지막 운영자 답변 이후 보낼 수 있는 답장 수. RPC 의 `too_many` 판정과 같은 값이다.
+ *
+ * 오너 결정(2026-09-15)으로 3 에서 1 로 좁혔다 — 운영자 답변 하나에 답장 하나다.
+ * 창이 다시 열리는 셈법은 그대로라, 운영자가 한 번 더 답하면 다시 한 건을 보낼 수 있다
+ * (마이그레이션 20260915000100).
+ */
+export const INQUIRY_USER_REPLY_WINDOW = 1
 
 export const INQUIRY_USER_REPLY_REQUIRED_MESSAGE = '답장 내용을 입력해 주세요.'
 
@@ -48,7 +54,7 @@ export const INQUIRY_REPLY_CLOSED_NOTICE =
 /** 아직 운영자 답변이 없다. 접수 대기와 "처리 중이지만 답변 전"이 같은 상황이다. */
 export const INQUIRY_REPLY_WAITING_NOTICE = '운영자 답변 후 답장할 수 있습니다.'
 
-export const INQUIRY_REPLY_TOO_MANY_NOTICE = `운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 ${INQUIRY_USER_REPLY_WINDOW}건까지 보낼 수 있습니다.`
+export const INQUIRY_REPLY_TOO_MANY_NOTICE = `운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 ${INQUIRY_USER_REPLY_WINDOW}건만 보낼 수 있습니다.`
 
 /* -------------------------------------------------------------------------
  * 서버 액션 결과

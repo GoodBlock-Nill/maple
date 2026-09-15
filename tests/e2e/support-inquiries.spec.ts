@@ -48,6 +48,10 @@ const USER_REPLY_SUBMIT_LABEL = '답장 보내기'
 
 const THREAD_CLOSED_NOTICE = '답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.'
 
+/** 답장 창이 닫혔을 때의 안내. 오너 결정(2026-09-15)으로 운영자 답변 하나에 답장 하나다. */
+const REPLY_TOO_MANY_NOTICE =
+  '운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다.'
+
 /** 영상 픽스처를 만들 자리. 저장소에 바이너리를 넣지 않는다. */
 const VIDEO_FIXTURE_DIR =
   '/private/tmp/claude-501/-Users-goodblock-Projects-maple/61a98c42-b684-4d24-8c7f-385f43df2325/scratchpad/inquiry-video'
@@ -1022,7 +1026,8 @@ test('should accept a bug report and an illegal-use report and list both by kind
  *
  *   1) 처리 중 + 운영자 답변 → 답장 폼이 열린다(내용이 비면 잠긴 채다)
  *   2) 보낸 답장이 같은 스레드에 "내 답변"으로, 첨부까지 함께 선다
- *   3) 답변 완료로 닫히면 폼이 사라지고 완료 안내만 남는다(재개 없음)
+ *   3) 그 한 건으로 창이 닫힌다 — 운영자 답변 하나에 답장 하나(2026-09-15)
+ *   4) 답변 완료로 닫히면 폼이 사라지고 완료 안내만 남는다(재개 없음)
  */
 test('should let the member reply while in progress and close the thread once answered', async ({
   page,
@@ -1065,6 +1070,10 @@ test('should let the member reply while in progress and close the thread once an
   await expect(page.getByText(USER_REPLY_CONTENT)).toBeVisible()
   await expect(page.getByText('내 답변')).toBeVisible()
   await expect(page.getByRole('link', { name: /pixel\.png/u })).toBeVisible()
+
+  // Assert — 한 건으로 창이 닫힌다(다음 답장은 운영자가 다시 답해야 열린다)
+  await expect(page.getByRole('button', { name: USER_REPLY_SUBMIT_LABEL })).toHaveCount(0)
+  await expect(page.getByText(REPLY_TOO_MANY_NOTICE)).toBeVisible()
 
   // Act — 운영자가 답변 완료로 닫는다
   await service

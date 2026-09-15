@@ -117,14 +117,9 @@ describe('InquiryReplySection', () => {
     expect(screen.getByText(INQUIRY_REPLY_WAITING_NOTICE)).toBeInTheDocument()
   })
 
-  it('should close the window after three replies and say how many are allowed', () => {
-    // Arrange
-    const replies = [
-      OPERATOR_ANSWER,
-      reply('inbound', '2026-09-14T02:00:00.000Z', true),
-      reply('inbound', '2026-09-14T03:00:00.000Z', true),
-      reply('inbound', '2026-09-14T04:00:00.000Z', true),
-    ]
+  it('should close the window after one reply and say how many are allowed', () => {
+    // Arrange — 오너 결정(2026-09-15): 운영자 답변 하나에 답장 하나다.
+    const replies = [OPERATOR_ANSWER, reply('inbound', '2026-09-14T02:00:00.000Z', true)]
 
     // Act
     render(
