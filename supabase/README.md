@@ -5,7 +5,7 @@
 ```
 supabase/
   config.toml                      로컬 스택 설정 (project_id = "maple")
-  migrations/                      마이그레이션 40개 (아래 표, 파일명 타임스탬프순)
+  migrations/                      마이그레이션 45개 (아래 표, 파일명 타임스탬프순)
   functions/                       Edge Function 3종 (§1-2)
   seed.sql                         개발/스테이징 시드 (db reset 시 자동 적용)
   seed-users.md                    테스트 계정 생성 절차 (auth 는 SQL 로 못 만든다)
@@ -53,6 +53,11 @@ supabase/
 | `20260911000500_news_pin_limit.sql`                 | 뉴스 상단 고정 최대 3개 제약                                                                                                     |
 | `20260911000600_inquiry_attachments_max_5.sql`      | 첨부 상한 재정의 — 이미지·PDF 3개 + 영상 2개, 합계 5개(종류별 CHECK 2개 추가)                                                    |
 | `20260914000100_inquiry_kind.sql`                   | 고객지원 접수 종류(kind: `inquiry`\|`bug`\|`report`) 축 추가 — 카테고리 8종 재배치 + 불법이용제보 카테고리 5종 시드. 클라이언트 `/support` · `/support/bug` · `/support/report`, 관리자 "홈페이지 문의"·카테고리 종류별 관리와 함께 배포됨 — `docs/reference/inquiry-kinds-spec.md` |
+| `20260914000200_inquiry_reply_templates_kinds.sql`  | 답변 템플릿 보강 시드 — 공통 2종 · 버그제보 2종 · 불법이용제보 5종(종류 도입으로 빈 카테고리를 채움)                        |
+| `20260914000300_inquiry_reply_templates_followup_wording.sql` | 답변 템플릿 문구 정정 — 추가 정보는 "이 문의에 이어서" 대신 "새 문의로 접수"(제목에 접수번호)                 |
+| `20260914000400_inquiry_thread.sql`                 | 회원 답장 스레드 — `inquiry_replies.attachments` · `inquiries.user_replied_at` · 트리거 · RPC `add_inquiry_user_reply()` |
+| `20260914000500_inquiry_attachments_any_type.sql`   | 첨부 규칙 통일 — 형식 무관 5개 · 합계 200MB(`inquiry_attachments_total_bytes()` + CHECK, 종류별 CHECK 제거)             |
+| `20260915000100_inquiry_user_reply_window_1.sql`    | 회원 답장 창을 운영자 답변 하나당 1건으로 좁힘 — `add_inquiry_user_reply()` 재정의(문턱만 교체, 백필 없음)              |
 
 애플리케이션 쪽 진입점은 `lib/supabase/` 다.
 
@@ -89,6 +94,29 @@ supabase/
 | `audit_logs`                   | 관리자 행위 이력(추가 전용)                         |
 
 전체 스키마는 마이그레이션 원문이 기준이다. RLS·트리거 상세는 §3~§6.
+
+### 고객지원 문의 — 열 · 제약 · RPC (2026-09-14 · 09-15)
+
+| 대상                                          | 내용                                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `inquiries.kind` · `inquiry_categories.kind`  | 접수 종류 `inquiry`\|`bug`\|`report`. 단일 출처는 카테고리 — 트리거가 라벨로 다시 계산한다   |
+| `inquiries.user_replied_at`                   | 회원 답장 도착 표시. 트리거 `touch_inquiry_on_reply()` 가 찍고, 운영자 답변에 null 로 되돌린다 |
+| `inquiry_replies.attachments`                 | jsonb. 원소 형식은 `inquiries.attachments` 와 같다(path · name · size · mimeType)              |
+| `*_attachments_max_5` (CHECK)                 | `inquiries` · `inquiry_replies` 공통 — 첨부 **개수 ≤ 5**, 형식을 가리지 않는다                 |
+| `*_attachments_total_bytes_max_200mb` (CHECK) | 같은 두 테이블 — `inquiry_attachments_total_bytes(jsonb)` 로 잰 **합계 ≤ 200MB**               |
+| `update_inquiry_category()`                   | 9인자(`p_kind` 포함). 라벨·kind 가 바뀌면 같은 트랜잭션에서 과거 문의를 함께 옮긴다            |
+| `add_inquiry_user_reply(…)`                   | 회원 답장의 유일한 쓰기 경로(아래)                                                             |
+
+`add_inquiry_user_reply(p_inquiry_id uuid, p_content text, p_attachments jsonb)` 는 `SECURITY
+DEFINER` + `set search_path = public` 이고 실행 권한은 `authenticated` · `service_role` 에만 준다.
+`inquiry_replies` 에 **사용자 INSERT 정책을 만들지 않았기 때문**이다 — "누구의 문의에 · 어떤
+direction 으로 · 몇 건까지"를 정책 하나로 쓸 수 없다. 검사 순서는 본인 소유 → 취소 아님 →
+`in_progress` → 운영자 답변 1건 이상 → 마지막 운영자 답변 이후의 답장 문턱(운영자 답변 하나당
+1건) → 내용·첨부 상한이다. 반환은 `{ok:true, reply_id}` 또는 `{ok:false, code}` 이고 코드는
+`not_owner` · `cancelled` · `not_in_progress` · `no_operator_reply` · `too_many` · `invalid`
+여섯이다. **순서가 곧 안내 문구의 우선순위**라 흔들면 화면 판정(`canUserReply()`)과 어긋나고,
+없는 문의와 남의 문의는 둘 다 `not_owner` 다(구분하면 존재 여부 조회기가 된다).
+설계는 `docs/reference/inquiry-thread-spec.md`.
 
 ---
 
@@ -349,7 +377,7 @@ await admin.from('profiles').delete().eq('id', user.id)
 | `posts`            | 공개·미삭제·게시시각 도래분 조회 | + 본인 글 조회, 커뮤니티 글 작성/수정/삭제            | 전체 CRUD (뉴스 포함) |
 | `comments`         | 공개 글의 미삭제 댓글 조회       | + 본인 댓글 작성/수정/삭제                            | 전체 CRUD             |
 | `inquiries`        | ✗                                | 본인 문의 조회 · 접수 · 수정(접수 대기만) · 접수 취소 | 전체 CRUD             |
-| `inquiry_replies`  | ✗                                | 본인 문의의 답변 조회                                 | 전체 CRUD             |
+| `inquiry_replies`  | ✗                                | 본인 문의의 답변 조회 · 답장은 RPC 로만(INSERT 정책 없음) | 전체 CRUD             |
 | `faqs`             | `is_published` 조회              | 동일                                                  | 전체 CRUD             |
 | `site_settings`    | 조회                             | 조회                                                  | 수정                  |
 | `hero_banners`     | 노출기간 내 활성 배너            | 동일                                                  | 전체 CRUD             |

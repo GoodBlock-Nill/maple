@@ -32,7 +32,7 @@ admin/
     (auth)/        로그인 · 비밀번호 재설정 · 초대 수락      (사이드바 없음)
     (admin)/       인증된 관리 화면 전부                  (layout 이 requireAdmin())
       page.tsx           대시보드
-      news/               뉴스 목록·작성·수정 · templates/(카테고리 템플릿, [category])
+      news/               뉴스 목록(일괄 숨김·숨김 해제·삭제)·작성·수정 · templates/(카테고리 템플릿, [category])
       community/          posts/ · comments/ (모더레이션)
       reports/            신고 처리
       members/            회원 목록 · [id](상세, 홈페이지 문의 탭 포함)
@@ -41,7 +41,7 @@ admin/
       gacha/              확률형 아이템 정보 · new/ · [id]
       rankings/           랭킹 스냅샷 확인·롤백
       settings/           사이트 설정 · 히어로 배너
-      legal/              약관·정책 문서 버전 발행 · [slug]
+      legal/              약관·정책 문서 버전 발행 · [slug](편집·미리보기·이력 탭, `?tab=`)
       admins/             관리자 계정 · 역할 · 초대
       audit/              감사 로그
     auth/callback/ 초대·재설정 링크 착지점(role 게이트)
@@ -248,8 +248,25 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
 | `docs/admin/EMAIL-INQUIRY-PLAN.md` / `-ACTIVATION.md` | 이메일 문의 설계 · 제공자(Resend) 연동 활성화 절차       |
 | `docs/admin/ACCOUNT-WITHDRAWAL-GUIDE.md`    | 회원 탈퇴·개인정보 파기 라이프사이클                              |
 | `docs/reference/inquiry-kinds-spec.md`      | 고객지원 접수 종류(1:1 문의·버그제보·불법이용제보) 확장 설계 — DB 마이그레이션은 적용, 화면 라우트는 진행 중 |
+| `docs/reference/inquiry-thread-spec.md`     | 회원 답장 스레드 설계 — 허용 조건 · RPC `add_inquiry_user_reply()` · 관리자 뱃지·필터 |
 
 **최근 변경**은 `docs/admin/INQUIRY-CHANGELOG.md` 를 본다(날짜별 커밋·마이그레이션·테스트 결과).
+모듈 동작이 바뀐 것만 아래에 짧게 남긴다 — 화면 단위 설명의 단일 출처는 `docs/admin/screens/` 다.
+
+- **2026-09-15 · 뉴스 목록** — 숨김은 **발행** 글에만, 숨김 해제는 **숨김** 글에만 건다(임시저장·예약
+  글에는 버튼이 서지 않는다). 일괄 처리는 "선택 숨김" · "선택 숨김 해제" · "선택 삭제" 셋이고, 누르기
+  전에 "발행 N건 · 숨김 M건" 으로 실제 처리 건수를 알린다. 선택 범위는 **현재 페이지 20건**이며,
+  일부만 대상이면 성공 토스트에 제외 건수와 사유가 붙는다
+  (`lib/validation/news-state-eligibility.ts` · `docs/admin/screens/02-news/01-list.md` §1.4).
+- **2026-09-15 · Legal** — 발행한 개정본은 **읽기 전용**이고, 다음 행동은 편집 탭 맨 위 배너
+  `이 버전으로 새 초안 만들기` 가 안내한다. 목록 카드의 버튼은 상태별로 갈린다(`초안 이어서 편집` ·
+  `새 초안 만들기` · `현재 발행본 보기` · `버전 이력`). 상세 `/legal/[slug]` 는
+  `?tab=edit|preview|history` 세 탭(편집 · 미리보기 · 이력·비교)이고, 확인창은 **되돌릴 수 없는**
+  발행·예약 저장에만 뜬다. 저장하지 않은 편집은 `beforeunload` 가 잡고, 시행 전인데 독자에게 보이는
+  개정본은 "시행 중" 대신 **"노출 중"** 으로 적는다(`docs/admin/screens/11-legal/README.md` §2).
+- **2026-09-14 · 홈페이지 문의** — 답변 폼의 "등록 후 상태" 기본값이 **처리 중**이다. 답변 완료로
+  저장하면 회원 답장 창이 닫히고 다시 열리지 않는다(`answered → in_progress` 전이가 없다). 목록·회원
+  상세에는 "회원 답장" 뱃지가 붙고, 공이 넘어온 문의만 보는 `?awaiting=1` 필터가 있다.
 
 ## 8. 화면 설명서 공개 URL
 

@@ -88,11 +88,16 @@ DB 를 처음 붙이는 경우 `supabase/README.md` §1 을 먼저 본다(로컬
 | 커뮤니티      | `/community`, `/community/[id]`, `/community/[id]/edit`, `/community/write`                | —                                                              |
 | 가이드        | `/guide`                                                                                   | 확률형 아이템 정보. "준비 중" 플래그 있음                     |
 | 랭킹          | `/ranking`                                                                                 | "준비 중" 플래그 있음                                         |
-| 고객지원      | `/support`(1:1 문의) · `/support/bug`(버그제보) · `/support/report`(불법이용제보), `/support/faq`, `/support/inquiries`(+`[id]`, `[id]/edit`) | 세 창구가 같은 폼·로직(종류별 카테고리·프리필·세부 유형, 첨부 형식 무관 최대 5개·200MB, 접수번호). 내 문의 내역은 세 종류를 종류 라벨과 함께 표시 — `docs/reference/inquiry-kinds-spec.md` |
+| 고객지원      | `/support`(1:1 문의) · `/support/bug`(버그제보) · `/support/report`(불법이용제보), `/support/faq`, `/support/inquiries`(+`[id]`, `[id]/edit`) | 세 창구가 같은 폼·로직(종류별 카테고리·프리필·세부 유형, 첨부 5개·200MB, 접수번호). 내 문의 내역은 종류 라벨과 함께 표시, 상세는 답장 스레드(아래) |
 | 마이페이지    | `/account`, `/account/link`                                                                | 닉네임·계정 관리, 계정 연동, 회원 탈퇴              |
 | 정책 문서     | `/policy/[slug]`                                                                           | `privacy` · `operating` · `discord` · `marketing`             |
 | 소개          | `/about`                                                                                   | 기본 비활성(플래그)                                            |
 | 로그인/온보딩 | `/login`, `/register`, `/auth/onboarding`, `/auth/restore`, `/auth/callback`               | 간편로그인(구글·네이버) 전용, 이메일·비밀번호 가입 없음         |
+
+고객지원 상세(`/support/inquiries/[id]`)는 **회원 답장 스레드**다 — 운영자가 답변한 **처리 중**
+문의에 한해 회원이 같은 접수번호로 답장한다(운영자 답변 하나당 1건, 텍스트 + 첨부 형식 무관
+5개·200MB). 답변 완료로 닫힌 대화는 다시 열리지 않고, 30초 도배 제한은 **접수에만** 걸린다.
+설계는 `docs/reference/inquiry-thread-spec.md`, 화면 톤은 `docs/reference/inquiry-thread-designer-guide.html`.
 
 ### 코드
 
@@ -104,7 +109,7 @@ lib/          actions · auth · constants · content · data · mock ·
 supabase/     migrations · functions · config.toml · seed.sql
 scripts/      seed-legal.mjs · gen-news-templates.mjs
 tests/        unit · e2e · manual(운영 DB 대고 돌리는 RLS 검증 스크립트)
-docs/         admin(개발자 가이드) · reference(Figma 시안 스펙)
+docs/         admin(개발자 가이드·화면 설명서) · reference(Figma 시안 스펙 · 기능 설계)
 admin/        관리자 콘솔 — 별도 Next.js 앱, admin/README.md 참고
 ```
 
@@ -157,3 +162,6 @@ admin/        관리자 콘솔 — 별도 Next.js 앱, admin/README.md 참고
 - `docs/admin/DEVELOPER-GUIDE.md` — 사용자 사이트 ↔ 관리자 콘솔 연동 실무 지도(인증·권한·캐시 무효화)
 - `docs/admin/INQUIRY-GUIDE.md` · `TEMPLATES-GUIDE.md` — 1:1 문의·템플릿 시스템 상세
 - `docs/admin/ACCOUNT-WITHDRAWAL-GUIDE.md` — 회원 탈퇴·파기 라이프사이클
+- `docs/reference/inquiry-kinds-spec.md` — 고객지원 접수 종류(1:1 문의·버그제보·불법이용제보) 설계
+- `docs/reference/inquiry-thread-spec.md` — 회원 답장 스레드 설계(규칙·데이터·RPC)
+- `docs/reference/inquiry-thread-designer-guide.html` — 답장 스레드 디자이너 가이드(공개 URL `https://maple-admin.vercel.app/docs/inquiry-thread`)
