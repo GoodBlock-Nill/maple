@@ -9,7 +9,7 @@ describe('FooterLegalLinks', () => {
     // Arrange & Act
     render(<FooterLegalLinks links={FOOTER_POLICY_LINKS} />)
 
-    // Assert — 시안 v3 §5: 개인정보처리방침 · 디스코드 운영정책 · 글자월드 운영정책.
+    // Assert — 시안 v3 §5 세 문서 + 마케팅 정보 수신 동의(오너 요청 2026-09-15).
     expect(screen.getByRole('link', { name: '개인정보처리방침' })).toHaveAttribute(
       'href',
       '/policy/privacy',
@@ -21,6 +21,10 @@ describe('FooterLegalLinks', () => {
     expect(screen.getByRole('link', { name: '글자월드 운영정책' })).toHaveAttribute(
       'href',
       '/policy/operating',
+    )
+    expect(screen.getByRole('link', { name: '마케팅 정보 수신 동의' })).toHaveAttribute(
+      'href',
+      '/policy/marketing',
     )
   })
 

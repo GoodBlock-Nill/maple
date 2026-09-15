@@ -90,13 +90,11 @@ export const POLICY_LINKS: readonly NavItem[] = [
 ]
 
 /**
- * 푸터 Legal 열. 시안 v2 §5 는 세 문서만 세운다 — "마케팅 정보 수신 동의"는
- * 가입·마이페이지의 동의 흐름 안에서 읽는 문서라 푸터에서는 뺀다(문서 자체는
- * `/policy/marketing` 에 그대로 열려 있다).
+ * 푸터 정책 링크 줄. 시안 v3 는 세 문서만 세웠지만 오너 요청(2026-09-15)으로
+ * "마케팅 정보 수신 동의"까지 네 문서를 모두 건다 — 가입·마이페이지 동의 흐름을
+ * 거치지 않은 방문자도 푸터에서 문서를 찾을 수 있어야 한다.
  */
-export const FOOTER_POLICY_LINKS: readonly NavItem[] = POLICY_LINKS.filter(
-  (link) => link.href !== '/policy/marketing',
-)
+export const FOOTER_POLICY_LINKS: readonly NavItem[] = POLICY_LINKS
 
 /**
  * IP 고지 문구.
