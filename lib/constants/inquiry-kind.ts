@@ -41,14 +41,15 @@ export const INQUIRY_KINDS = [
   {
     value: 'bug',
     label: '버그제보',
-    menuLabel: '버그제보',
+    /* 메뉴 문구는 오너 결정(2026-09-15) — 알약·관리자 라벨("버그제보")과 다르다. */
+    menuLabel: '버그 신고하기',
     path: '/support/bug',
     submitLabel: '제보하기',
   },
   {
     value: 'report',
     label: '불법이용제보',
-    menuLabel: '불법이용제보',
+    menuLabel: '이용자 신고하기',
     path: '/support/report',
     submitLabel: '제보하기',
   },

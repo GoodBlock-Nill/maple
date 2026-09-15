@@ -3,7 +3,7 @@ import { InquiryKindPage } from '@/components/support/InquiryKindPage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '불법이용제보',
+  title: '이용자 신고하기',
   description:
     '불법 프로그램·버그 악용·현금 거래·비매너 이용을 제보해 주세요. 운영자가 확인 후 조치합니다.',
 }

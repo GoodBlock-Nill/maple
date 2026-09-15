@@ -3,7 +3,7 @@ import { InquiryKindPage } from '@/components/support/InquiryKindPage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '버그제보',
+  title: '버그 신고하기',
   description: '글자월드에서 겪은 오류·비정상 동작을 제보해 주세요. 운영자가 확인 후 답변합니다.',
 }
 

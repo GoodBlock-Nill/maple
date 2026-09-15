@@ -102,8 +102,8 @@ describe('SUPPORT_MENU', () => {
     // Assert
     expect(labels).toEqual([
       '1:1 문의하기',
-      '버그제보',
-      '불법이용제보',
+      '버그 신고하기',
+      '이용자 신고하기',
       '자주 묻는 질문',
       '내 문의 내역',
     ])
