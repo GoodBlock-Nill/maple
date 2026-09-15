@@ -1,7 +1,7 @@
 # 고객지원 접수 종류(kind) 확장 — 1:1 문의 · 버그제보 · 불법이용제보 (2026-09-14 설계)
 
 오너 요청: 고객지원에 **1:1 문의하기와 동일한 레이아웃·로직**으로 버그제보·불법이용제보를 추가한다.
-메뉴 순서 = 1:1 문의하기 · 버그제보 · 불법이용제보 · 자주 묻는 질문 · 내 문의 내역.
+메뉴 순서 = 1:1 문의하기 · 버그 신고하기 · 이용자 신고하기 · 자주 묻는 질문 · 내 문의 내역(메뉴 문구는 2026-09-15 오너 결정으로 변경. 종류 라벨 "버그제보"·"불법이용제보"는 알약·관리자에서 그대로).
 내 문의 내역에는 세 종류가 모두 표시된다. 1:1 문의의 카테고리·유형 중 버그/불법이용에 맞는 것은 그쪽으로 옮긴다.
 클라이언트와 관리자가 어긋나지 않아야 한다.
 
@@ -46,8 +46,8 @@
 ```ts
 export const INQUIRY_KINDS = [
   { value: 'inquiry', label: '1:1 문의', menuLabel: '1:1 문의하기', path: '/support', submitLabel: '문의하기' },
-  { value: 'bug',     label: '버그제보', menuLabel: '버그제보',     path: '/support/bug', submitLabel: '제보하기' },
-  { value: 'report',  label: '불법이용제보', menuLabel: '불법이용제보', path: '/support/report', submitLabel: '제보하기' },
+  { value: 'bug',     label: '버그제보', menuLabel: '버그 신고하기',   path: '/support/bug', submitLabel: '제보하기' },
+  { value: 'report',  label: '불법이용제보', menuLabel: '이용자 신고하기', path: '/support/report', submitLabel: '제보하기' },
 ] as const
 export type InquiryKind = 'inquiry' | 'bug' | 'report'
 export const DEFAULT_INQUIRY_KIND: InquiryKind = 'inquiry'
