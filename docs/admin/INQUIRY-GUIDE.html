@@ -431,7 +431,7 @@ flowchart TD
   <p class="src">docs/reference/inquiry-thread-spec.md · 20260914000400_inquiry_thread.sql · lib/constants/inquiry-thread.ts · lib/utils/inquiry-thread.ts · lib/actions/inquiry-reply-actions.ts · components/support/InquiryReplyThread.tsx · InquiryThreadMessage.tsx · InquiryReplySection.tsx · InquiryUserReplyForm.tsx</p>
   <p>운영자가 답한 문의에 한해, 사용자가 <strong>같은 접수번호 안에서</strong> 이어 쓸 수 있습니다(새 문의를 만들지 않습니다). 텍스트·이미지·영상 첨부가 가능하고 한도는 접수 폼과 같습니다(§03).</p>
   <div class="kv">
-    <div><div class="k">허용 조건</div><div class="v">전부 만족해야 답장 폼이 뜹니다(<code>canUserReply()</code>) — 본인 문의 · <code>cancelled_at is null</code> · <code>status='in_progress'</code>(오너 확정 규칙, <strong>처리 중에서만</strong>. <code>answered</code> 는 재개 불가) · 운영자 답변(<code>direction='outbound'</code>) 1건 이상 · 마지막 운영자 답변 이후 답장 3건 미만 · 접수 폼과 같은 30초 쿨다운</div></div>
+    <div><div class="k">허용 조건</div><div class="v">전부 만족해야 답장 폼이 뜹니다(<code>canUserReply()</code>) — 본인 문의 · <code>cancelled_at is null</code> · <code>status='in_progress'</code>(오너 확정 규칙, <strong>처리 중에서만</strong>. <code>answered</code> 는 재개 불가) · 운영자 답변(<code>direction='outbound'</code>) 1건 이상 · 마지막 운영자 답변 이후 답장 없음(<strong>운영자 답변 하나당 1건</strong>, 2026-09-15. 이전 3건) · 접수 폼과 같은 30초 쿨다운</div></div>
     <div><div class="k">개폐 스위치</div><div class="v">운영자 답변 폼의 "다음 상태" 선택입니다 — <strong>처리 중</strong>이면 대화가 열리고, <strong>답변 완료</strong>면 닫혀 다시 열리지 않습니다(<code>answered → in_progress</code> 전이가 없으므로). <code>closed → in_progress</code>(운영자 재개)는 기존 그대로</div></div>
     <div><div class="k">스레드 렌더</div><div class="v"><code>InquiryReplyThread</code> → <code>InquiryThreadMessage</code> — 운영자 답변과 사용자 답장을 시간순으로 한 줄기에 섞어 그립니다. 운영자 답변은 옅은 파란 상자(<code>#f3f6fe</code>), 내 답장은 흰 상자 + 테두리(<code>#cdd3db</code>). 머리줄은 운영자면 저장된 작성자 이름, 내 답장이면 <strong>"내 답변"</strong></div></div>
     <div><div class="k">답장 서버 액션</div><div class="v"><code>replyToInquiry(inquiryId, prev, formData)</code> — id 는 <code>bind</code> 로 받습니다. 로그인 확인 → 본문·첨부 재검증(<code>INQUIRY_USER_REPLY_MAX</code>) → 30초 쿨다운 → 이미지 업로드·영상 확정 → RPC 호출 → 실패 시 업로드·영상 롤백 → 성공 시 <code>revalidatePath</code> 뒤 <code>redirect(상세?replied=1)</code></div></div>
@@ -442,7 +442,7 @@ flowchart TD
     <tbody>
       <tr><td>답변 완료 · 종료</td><td><code>답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.</code></td></tr>
       <tr><td>접수 대기 · 아직 운영자 답변 없음</td><td><code>운영자 답변 후 답장할 수 있습니다.</code></td></tr>
-      <tr><td>3건 초과</td><td><code>운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.</code></td></tr>
+      <tr><td>이미 답장함(창 1건)</td><td><code>운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다.</code></td></tr>
       <tr><td>접수 취소</td><td>문구 없음 — 스레드 자리에 이미 "접수가 취소된 문의입니다"가 서 있습니다</td></tr>
     </tbody>
   </table></div>
@@ -634,7 +634,7 @@ sequenceDiagram
       <tr><td><code>claim_inquiry_edit(p_inquiry_id, p_force)</code></td><td><code>SECURITY DEFINER</code> + 첫 줄 <code>is_admin()</code></td><td>작성 중 잠금을 잡거나 갱신(하트비트). 5분 넘게 끊긴 잠금은 만료, <code>p_force</code> 면 살아 있는 잠금도 가로챕니다(§05-9)</td></tr>
       <tr><td><code>release_inquiry_edit(p_inquiry_id)</code></td><td>동일</td><td><strong>내가 쥔</strong> 잠금만 풉니다 — 남의 것을 풀 수 있으면 가로채기가 감사 로그 없이 우회됩니다</td></tr>
       <tr><td><code>add_inquiry_reply(p_inquiry_id, p_content, p_author_name, p_expected_reply_count, p_expected_status, p_delivery_status)</code></td><td><code>SECURITY INVOKER</code> + 첫 줄 <code>is_admin()</code></td><td>답변 INSERT <strong>+ 충돌 감지</strong>를 한 트랜잭션으로. 기대값이 지금 DB 와 다르면 <code>{"ok":false,"code":"conflict"}</code>(§05-9)</td></tr>
-      <tr><td><code>add_inquiry_user_reply(p_inquiry_id, p_content, p_attachments)</code></td><td><code>SECURITY DEFINER</code>(사용자에게 <code>inquiry_replies</code> INSERT 권한을 열지 않기 위해)</td><td><strong>회원 답장의 유일한 쓰기 경로</strong>(2026-09-14). 소유자 · 취소 아님 · 처리 중 · 운영자 답변 있음 · 마지막 답변 이후 3건 미만을 순서대로 보고 어긋나면 코드로 돌려줍니다(§02-8). 성공하면 <code>{ok:true, reply_id}</code></td></tr>
+      <tr><td><code>add_inquiry_user_reply(p_inquiry_id, p_content, p_attachments)</code></td><td><code>SECURITY DEFINER</code>(사용자에게 <code>inquiry_replies</code> INSERT 권한을 열지 않기 위해)</td><td><strong>회원 답장의 유일한 쓰기 경로</strong>(2026-09-14). 소유자 · 취소 아님 · 처리 중 · 운영자 답변 있음 · 마지막 답변 이후 답장 없음(창 1건, 2026-09-15)을 순서대로 보고 어긋나면 코드로 돌려줍니다(§02-8). 성공하면 <code>{ok:true, reply_id}</code></td></tr>
     </tbody>
   </table></div>
   <div class="callout warn"><span class="icon">권한</span><p><code>update_inquiry_category()</code> 는 RLS 만 믿지 않고 <strong>함수가 스스로 <code>is_admin()</code> 을 다시 봅니다.</strong> RLS 에만 기대면 비관리자가 불렀을 때 "0건 갱신"이 조용히 성공으로 돌아오고, 최악의 경우 자기 문의의 분류만 바꾸는 길이 열립니다. 사용 통계 둘은 반대로 <code>INVOKER</code> 라서 일반 사용자가 부르면 <strong>자기 문의만</strong> 세어집니다 — 정보가 새지 않습니다.</p></div>
@@ -1021,7 +1021,7 @@ sequenceDiagram
       <tr><td><code>admin/tests/unit/inquiry-no.test.ts</code> · <code>tests/unit/utils/inquiry-no.test.ts</code></td><td>7 · 3</td><td><code>#1024</code> 표기(두 앱이 같은 결과) · 검색어에서 접수번호 읽기(<code>1024</code> · <code>#1024</code> · 0·과대 자릿수 거절)</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-reply-template-placeholders.test.ts</code></td><td>9</td><td>자리표시자 4종 치환 · 반복·공백 허용 · 모르는 표시 보존 · 빈 값 폴백 · 접수번호</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-reply-template-picker.test.tsx</code></td><td>7</td><td>빈 칸이면 바로 삽입 · 쓰던 글이 있으면 확인 창 · 끝에 추가 · 취소 · 선택 전 버튼 잠금</td></tr>
-      <tr><td><code>tests/unit/utils/inquiry-thread.test.ts</code></td><td>15</td><td><code>canUserReply</code> 판정 순서(취소 · 답변 완료 · 처리 중 · 미답변 · 3건 초과) · 안내 문구 매핑 · RPC 결과 파싱(2026-09-14)</td></tr>
+      <tr><td><code>tests/unit/utils/inquiry-thread.test.ts</code></td><td>15</td><td><code>canUserReply</code> 판정 순서(취소 · 답변 완료 · 처리 중 · 미답변 · 창 초과) · 안내 문구 매핑 · RPC 결과 파싱(2026-09-14)</td></tr>
       <tr><td><code>tests/unit/support/InquiryReplyThread.test.tsx</code> · <code>InquiryReplySection.test.tsx</code></td><td>6 · 6</td><td>운영자 답변·회원 답장이 섞인 스레드 렌더 · 상태별 빈 문구 · 답장 폼 노출 조건(2026-09-14)</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-replies-thread.test.ts</code></td><td>3</td><td><code>isMemberReply</code> 판정(웹 답장 vs 이메일 인바운드) · 스레드 첨부 일괄 서명(2026-09-14)</td></tr>
       <tr><td><code>admin/tests/unit/inquiry-awaiting-filter.test.ts</code></td><td>6</td><td><code>?awaiting=1</code> 파싱(<code>'1'</code> 만 참) · 탭 건수 공유 · 초기화에서 유지(2026-09-14)</td></tr>

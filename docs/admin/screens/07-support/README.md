@@ -120,6 +120,6 @@
 | `add_inquiry_user_reply(uuid, text, jsonb)` | 조건 체인·오류 코드(아래) | 사용자 답장 폼(`InquiryUserReplyForm` → `replyToInquiry`)의 유일한 호출부 |
 | `touch_inquiry_on_reply()` | 답변·답장 INSERT 마다 `inquiries.updated_at = now()` | 목록 '업데이트' 칸이 이미 이 값을 본다 |
 
-- **`add_inquiry_user_reply` 규칙** — 본인 → 취소 아님 → **처리 중에서만** → 운영자 답변 있음 → 마지막 운영자 답변 이후 3건 미만 → 내용 1~2000자·첨부 상한. 코드: `not_owner` · `cancelled` · `not_in_progress` · `no_operator_reply` · `too_many` · `invalid`.
+- **`add_inquiry_user_reply` 규칙** — 본인 → 취소 아님 → **처리 중에서만** → 운영자 답변 있음 → 마지막 운영자 답변 이후 1건 미만(운영자 답변 하나당 답장 1건, 2026-09-15) → 내용 1~2000자·첨부 상한. 코드: `not_owner` · `cancelled` · `not_in_progress` · `no_operator_reply` · `too_many` · `invalid`.
 
 관리자 상세의 웹 스레드는 회원 답장(`direction='inbound'` + `author_id` not null)을 "회원 답장" 뱃지 + 왼쪽 굵은 선으로 구분해 그린다(03-detail §4 참고). 답변 폼 "등록 후 상태" 기본값은 **처리 중**(오너 지시, 휴먼 에러 방지) — 04-reply-form 참고.

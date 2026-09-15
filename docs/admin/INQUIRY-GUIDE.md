@@ -165,7 +165,7 @@ flowchart TD
     DET -->|"pending 이고 미취소"| EDIT["수정 /edit"]
     DET -->|"pending · in_progress 이고 미취소"| CAN["접수 취소<br/>closed + cancelled_at"]
     DET -->|"운영자 답변 등록 후"| ANS["답변 열람 · 상태 답변 완료"]
-    ANS -->|"처리 중 · 운영자 답변 1건 이상 · 연속 3건 미만"| RPL["회원 답장<br/>replyToInquiry → add_inquiry_user_reply"]
+    ANS -->|"처리 중 · 운영자 답변 1건 이상 · 답변 하나당 답장 1건"| RPL["회원 답장<br/>replyToInquiry → add_inquiry_user_reply"]
     RPL --> DET
     ANS -->|"답변 완료로 닫힘"| CLOSED["대화 종료 · 재개 불가<br/>새 문의로 접수 안내"]
 ```
@@ -280,7 +280,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 - 본인 문의 · `cancelled_at is null`
 - `status = 'in_progress'`(오너 확정 규칙 — **처리 중에서만** 열립니다. `answered` 는 재개 불가)
 - 운영자 답변(`direction='outbound'`) 1건 이상
-- 마지막 운영자 답변 **이후** 사용자 답장 3건 미만
+- 마지막 운영자 답변 **이후** 사용자 답장 **1건 미만** — 운영자 답변 하나에 답장 하나입니다(2026-09-15 오너 결정으로 3건에서 좁혔습니다)
 - 접수 폼과 같은 30초 쿨다운(`remainingCooldown` 재사용 — 접수와 답장이 창 하나를 나눠 씁니다)
 
 **대화의 개폐는 운영자 답변 폼의 "다음 상태" 선택입니다** — 처리 중을 고르면 대화가 열리고, 답변 완료를 고르면 닫혀 다시 열리지 않습니다(`INQUIRY_STATUS_TRANSITIONS` 에 `answered → in_progress` 가 없으므로). `closed → in_progress`(운영자 재개)는 기존 그대로입니다.
@@ -291,7 +291,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 | --- | --- |
 | 답변 완료 · 종료 | `답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.` |
 | 접수 대기 · 아직 운영자 답변 없음 | `운영자 답변 후 답장할 수 있습니다.` |
-| 3건 초과 | `운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.` |
+| 답장 창이 닫힘(운영자 답변 하나에 답장 하나) | `운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다.` |
 | 접수 취소 | 문구 없음 — 스레드 자리에 이미 "접수가 취소된 문의입니다"가 서 있습니다 |
 
 **스레드 렌더**(`InquiryReplyThread` → `InquiryThreadMessage`) — 운영자 답변과 사용자 답장을 시간순으로 한 줄기에 섞어 그립니다. 운영자 답변은 옅은 파란 상자(`#f3f6fe`), 내 답장은 흰 상자 + 테두리(`#cdd3db`, 배경을 주지 않아 색 있는 쪽이 운영자 답변 하나로 남습니다). 머리줄 이름은 운영자면 저장된 작성자 이름, 내 답장이면 **"내 답변"**. 각 메시지의 첨부는 `InquiryAttachmentList` 로 그 말 아래에 붙습니다.
@@ -314,7 +314,7 @@ POST 를 로그인 페이지로 **리다이렉트하지 않습니다** — 본�
 | `cancelled` | `접수가 취소된 문의에는 답장할 수 없습니다.` |
 | `not_in_progress` | `답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.` |
 | `no_operator_reply` | `운영자 답변 후 답장할 수 있습니다.` |
-| `too_many` | `운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.` |
+| `too_many` | `운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다.` |
 | `invalid` | `답장은 1~2000자, 첨부는 형식에 관계없이 최대 5개 · 총 200MB 까지 보낼 수 있습니다.` |
 
 화면 판정(`canUserReply()`)과 RPC 판정(§4.4)은 **같은 순서**입니다 — 폼은 보이는데 보내면 거절되는 상태를 만들지 않기 위해서입니다. 다만 실제 권한은 RPC 가 다시 봅니다 — 이 화면은 마지막 방어선이 아닙니다.
@@ -523,7 +523,7 @@ zip · txt 는 **이메일 수신 첨부**용이라 웹 폼은 일부러 더 좁
 | `claim_inquiry_edit(p_inquiry_id, p_force)`                                                                               | `SECURITY DEFINER` + 첫 줄 `is_admin()`              | 작성 중 잠금을 잡거나 갱신(하트비트). 5분 넘게 끊긴 잠금은 만료, `p_force` 면 살아 있는 잠금도 가로챕니다(§5.9)                   |
 | `release_inquiry_edit(p_inquiry_id)`                                                                                      | 동일                                                 | **내가 쥔** 잠금만 풉니다 — 남의 것을 풀 수 있으면 가로채기가 감사 로그 없이 우회됩니다                                           |
 | `add_inquiry_reply(p_inquiry_id, p_content, p_author_name, p_expected_reply_count, p_expected_status, p_delivery_status)` | `SECURITY INVOKER` + 첫 줄 `is_admin()`              | 답변 INSERT **+ 충돌 감지**를 한 트랜잭션으로. 기대값이 지금 DB 와 다르면 `{"ok":false,"code":"conflict"}`(§5.9)                  |
-| `add_inquiry_user_reply(p_inquiry_id, p_content, p_attachments)` | `SECURITY DEFINER`(사용자에게 `inquiry_replies` INSERT 권한을 열지 않기 위해) | **회원 답장의 유일한 쓰기 경로**(2026-09-14). 소유자 · 취소 아님 · 처리 중 · 운영자 답변 있음 · 마지막 답변 이후 3건 미만을 순서대로 보고 어긋나면 코드로 돌려줍니다(§2.8). 성공하면 `{ok:true, reply_id}` |
+| `add_inquiry_user_reply(p_inquiry_id, p_content, p_attachments)` | `SECURITY DEFINER`(사용자에게 `inquiry_replies` INSERT 권한을 열지 않기 위해) | **회원 답장의 유일한 쓰기 경로**(2026-09-14). 소유자 · 취소 아님 · 처리 중 · 운영자 답변 있음 · 마지막 답변 이후 1건 미만(운영자 답변 하나당 답장 1건, 2026-09-15)을 순서대로 보고 어긋나면 코드로 돌려줍니다(§2.8). 성공하면 `{ok:true, reply_id}` |
 
 `update_inquiry_category()` 는 RLS 만 믿지 않고 **함수가 스스로 `is_admin()` 을 다시 봅니다.** RLS 에만 기대면 비관리자가 불렀을 때 "0건 갱신"이 조용히 성공으로 돌아옵니다. 사용 통계 둘은 반대로 `INVOKER` 라서 일반 사용자가 부르면 **자기 문의만** 세어집니다.
 
@@ -889,7 +889,7 @@ sequenceDiagram
 | `tests/unit/support/InquiryConsentField.test.tsx` · `InquiryForm.test.tsx`               | 5 · 3 | 동의 체크박스가 보이는지 · 켜짐 표시(흰 체크) · 라벨 클릭 · 오류 연결 · 동의 없이는 제출 잠김            |
 | `tests/unit/data/inquiry-categories.test.ts` · `support/InquirySubmittedDialog.test.tsx` | 7 · 7 | 창구별 캐시·폴백(kind 별 격리 확인, 2026-09-14) · 접수 완료 모달(창구별 문구)                            |
 | `tests/unit/constants/inquiry-kind.test.ts`                                              | 12    | `INQUIRY_KINDS` 값·라벨·경로·제출 문구 · `isInquiryKind()` · `inquiryKindLabel()` 알 수 없는 값 폴백(2026-09-14) |
-| `tests/unit/utils/inquiry-thread.test.ts`                                                | 15    | `canUserReply` 판정 순서(취소 · 답변 완료 · 처리 중 · 미답변 · 3건 초과) · 안내 문구 매핑 · RPC 결과 파싱(2026-09-14) |
+| `tests/unit/utils/inquiry-thread.test.ts`                                                | 16    | `canUserReply` 판정 순서(취소 · 답변 완료 · 처리 중 · 미답변 · 창 닫힘) · 창이 답변마다 한 번 열림(2026-09-15) · 안내 문구 매핑 · RPC 결과 파싱 |
 | `tests/unit/support/InquiryReplyThread.test.tsx` · `InquiryReplySection.test.tsx`         | 6 · 6 | 운영자 답변·회원 답장이 섞인 스레드 렌더 · 상태별 빈 문구 · 답장 폼 노출 조건(2026-09-14) |
 | `admin/tests/unit/inquiry-replies-thread.test.ts`                                        | 3     | `isMemberReply` 판정(웹 답장 vs 이메일 인바운드) · 스레드 첨부 일괄 서명(2026-09-14) |
 | `admin/tests/unit/inquiry-awaiting-filter.test.ts`                                       | 6     | `?awaiting=1` 파싱(`'1'` 만 참) · 탭 건수 공유 · 초기화에서 유지(2026-09-14) |

@@ -3,10 +3,14 @@
 운영팀 요청: 1:1 문의·버그제보·불법이용제보에서 **운영자가 답변한 건에 한해** 유저가 같은 접수번호 안에서 운영자 요청에 답할 수 있어야 한다(새 문의 생성 없이). 텍스트·이미지·영상 첨부 가능.
 오너 확정 규칙: **처리 중(in_progress) 상태에서만 유저 답장 가능. 답변 완료(answered)는 재개 불가.**
 
+**변경 이력**
+
+- 2026-09-15: 답장 창 **3건 → 1건**(운영자 답변 하나당 답장 1건). 창이 다시 열리는 셈법은 그대로 — 운영자가 다시 답하면 1건을 더 보낼 수 있다. 마이그레이션 `20260915000100_inquiry_user_reply_window_1.sql`.
+
 > 디자이너용 시각 가이드: `docs/reference/inquiry-thread-designer-guide.html` (공개 URL https://maple-admin.vercel.app/docs/inquiry-thread). 규칙이 바뀌면 함께 갱신한다.
 
 ## 1. 규칙
-- 유저 답장 허용 조건(전부 만족): 본인 문의 · `cancelled_at is null` · `status = 'in_progress'` · 운영자 답변(`direction='outbound'`) 1건 이상 · 마지막 운영자 답변 이후 유저 답장 3건 미만 · 30초 쿨다운(기존 `remainingCooldown` 재사용).
+- 유저 답장 허용 조건(전부 만족): 본인 문의 · `cancelled_at is null` · `status = 'in_progress'` · 운영자 답변(`direction='outbound'`) 1건 이상 · 마지막 운영자 답변 이후 유저 답장 **1건 미만**(운영자 답변 하나당 답장 1건) · 30초 쿨다운(기존 `remainingCooldown` 재사용).
 - 운영자 답변 폼의 기존 "다음 상태" 선택이 곧 모드다: **처리 중** = 대화 유지(유저 답장 열림), **답변 완료** = 스레드 닫힘. `answered → in_progress` 전이는 없다(기존 `INQUIRY_STATUS_TRANSITIONS` 그대로: answered → closed 만). `closed → in_progress`(운영자 재개)는 기존대로 둔다.
 - 유저 답장이 들어오면 `inquiries.user_replied_at` 이 찍히고, 운영자가 다시 답하면 null 로 돌아간다 → 관리자 목록·탭에서 "유저 답변 도착"을 바로 본다.
 - 접수 대기(pending) 문의의 수정·접수 취소 규칙은 그대로. 유저 답장은 수정·삭제 불가.
@@ -24,7 +28,7 @@
 ## 3. 클라이언트
 - 상세(`/support/inquiries/[id]`) 답변 영역 → **스레드**: 시간순으로 운영자 답변(기존 #f3f6fe 상자 + 머리줄 "글자월드 운영팀 | 일시")과 유저 답장(흰 상자 · border #cdd3db · 머리줄 "내 답변 | 일시")을 섞어 그린다. 각 메시지의 첨부는 기존 `InquiryAttachmentList` 방식(서명 URL, 이미지 썸네일·PDF·영상)으로 아래에.
 - 허용 조건이 맞으면 스레드 아래 **답장 폼**(`InquiryUserReplyForm`, 클라이언트 컴포넌트): 내용 textarea(필수, ≤2000) + 첨부(기존 `InquiryAttachmentField` 재사용: 형식 무관 최대 5개 · 합계 200MB, 2026-09-14, 같은 안내 문구) + "답장 보내기" 버튼(183×54 스타일 동일). 서버 액션 `replyToInquiry(inquiryId, prev, formData)`: 로그인·쿨다운 → 파일 업로드(`uploadAttachments`)·영상 claim(`claimFormVideos`) → RPC → 실패 시 업로드 롤백(기존 패턴) → `revalidatePath` 상세 → 리다이렉트 `?replied=1`(1회성 안내 "답장을 보냈습니다").
-- 허용되지 않을 때 안내 한 줄(파선 상자 톤): 답변 완료/종료 → "답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요."; 접수 대기 → "운영자 답변 후 답장할 수 있습니다."; 3건 초과 → "운영자 답변을 기다려 주세요."
+- 허용되지 않을 때 안내 한 줄(파선 상자 톤): 답변 완료/종료 → "답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요."; 접수 대기 → "운영자 답변 후 답장할 수 있습니다."; 창이 닫힘(답변 하나에 답장 하나) → "운영자 답변을 기다려 주세요. 운영자 답변 하나에 답장은 1건만 보낼 수 있습니다."
 - 목록 행 상태 pill 은 그대로(처리 중). 상세 메타 변화 없음.
 - `InquiryReply` 타입에 `direction: 'outbound'|'inbound'`, `attachments`, `isMine` 추가. `getInquiryReplies` 가 `direction, author_id, attachments` 를 읽고 첨부 서명은 `getSignedAttachments` 재사용.
 
