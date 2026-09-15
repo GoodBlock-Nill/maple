@@ -2,6 +2,8 @@
 /.next/
 /out/
 /build
+# scripts/sync-docs.mjs 가 docs/admin/ 에서 떠 오는 사본 (단일 출처는 docs/admin/)
+/public/docs/
 /coverage
 /test-results/
 /playwright-report/

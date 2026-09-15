@@ -27,6 +27,15 @@ const PUBLIC_PREFIXES = [
   '/reset-password',
   '/invite/accept',
   '/auth/callback',
+  /*
+   * `/docs/*` — 화면 설명서(`/docs/screens`)는 **의도적으로 로그인 없이 공개**한다
+   * (소유자 결정, 2026-09-15). 문서는 `docs/admin/SCREENS-GUIDE.html` 한 벌을 그대로
+   * 복사한 정적 HTML 이고 비밀값·운영 데이터를 담지 않는다. 여기에 문서를 더 얹을 때는
+   * 공개해도 되는 내용인지부터 확인한다(허용 목록: `scripts/sync-docs-lib.mjs`).
+   * 확장자가 `.html` 이라 아래 matcher 의 정적 자산 예외에 걸리지 않는다 — 프록시는
+   * 그대로 타고, 여기 접두사 판정으로 통과시킨다.
+   */
+  '/docs',
 ] as const
 
 const LOGIN_PATH = '/login'

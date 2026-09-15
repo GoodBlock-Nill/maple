@@ -250,3 +250,30 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
 | `docs/reference/inquiry-kinds-spec.md`      | 고객지원 접수 종류(1:1 문의·버그제보·불법이용제보) 확장 설계 — DB 마이그레이션은 적용, 화면 라우트는 진행 중 |
 
 **최근 변경**은 `docs/admin/INQUIRY-CHANGELOG.md` 를 본다(날짜별 커밋·마이그레이션·테스트 결과).
+
+## 8. 화면 설명서 공개 URL
+
+메뉴별 화면·기능 설명서(`docs/admin/SCREENS-GUIDE.html`)를 **로그인 없이**
+`https://maple-admin.vercel.app/docs/screens`(로컬 `http://localhost:3100/docs/screens`)
+에서 연다. 기획·디자인처럼 콘솔 계정이 없는 사람에게 링크 하나로 넘기기 위해서다
+(소유자 결정, 2026-09-15). 문서는 정적 HTML 이고 비밀값·운영 데이터를 담지 않는다.
+
+문서의 단일 출처는 `docs/admin/` 이다 — 관리자 앱 안에 사본을 **커밋하지 않는다**.
+대신 `scripts/sync-docs.mjs` 가 `dev`·`build` 앞에서 허용 목록에 적힌 파일만
+`public/docs/` 로 떠 온다. 원본이 없으면 에러를 찍고 빌드를 멈춘다.
+
+| 파일                        | 역할                                                        |
+| --------------------------- | ----------------------------------------------------------- |
+| `scripts/sync-docs-lib.mjs` | 허용 목록(`DOC_SOURCES`)과 복사 로직 — 단위 테스트 대상      |
+| `scripts/sync-docs.mjs`     | 실행 진입점. 경로를 스크립트 위치 기준으로 푼다              |
+| `next.config.ts`            | `/docs/screens` → `/docs/screens.html` rewrite (주소 가리기) |
+| `proxy.ts`                  | `PUBLIC_PREFIXES` 에 `/docs` — 로그인 게이트 통과            |
+| `.gitignore`                | `/public/docs/` — 생성물이라 커밋하지 않는다                 |
+
+다른 문서를 더 열려면 `scripts/sync-docs-lib.mjs` 의 `DOC_SOURCES` 에 한 줄
+(`'<공개할 파일명>': '../../docs/admin/<원본>.html'`)을 더하고, 필요하면
+`next.config.ts` 에 rewrite 를 하나 붙인다. **공개해도 되는 내용인지 먼저 확인한다** —
+`/docs/*` 는 통째로 인증 밖이다.
+
+> pnpm 은 `prebuild` 같은 npm 라이프사이클 훅을 기본으로 실행하지 않는다.
+> 그래서 `dev`·`build` 스크립트 앞에 `node scripts/sync-docs.mjs &&` 를 직접 붙였다.

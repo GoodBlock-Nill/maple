@@ -6,6 +6,7 @@
 
 작성 규칙: 코드에서 확인한 사실만 쓴다. 파일 경로는 저장소 루트 기준. 워딩은 "카테고리".
 HTML 한 벌(`docs/admin/SCREENS-GUIDE.html`)은 이 파일들을 메뉴 탭으로 묶은 것이다.
+배포본은 로그인 없이 <https://maple-admin.vercel.app/docs/screens> 에서 볼 수 있다(관리자 앱 빌드 때 `admin/scripts/sync-docs.mjs` 가 복사한다).
 
 | # | 메뉴 | 문서 | 경로 | 클라이언트 상호작용 요약 |
 |---|---|---|---|---|

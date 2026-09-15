@@ -25,6 +25,17 @@ function supabaseStorageHostname(): string | null {
 const storageHostname = supabaseStorageHostname()
 
 const nextConfig: NextConfig = {
+  /**
+   * 화면 설명서(`docs/admin/SCREENS-GUIDE.html`)를 `/docs/screens` 로 연다.
+   *
+   * 원본은 저장소 `docs/admin/` 에만 두고(단일 출처), 빌드·개발 서버 기동 때
+   * `scripts/sync-docs.mjs` 가 `public/docs/screens.html` 로 한 벌 떠 온다.
+   * 주소에 `.html` 을 노출하지 않으려고 rewrite 로 가린다 — 배열로 돌려주면
+   * 파일시스템(pages · public) 검사 뒤(afterFiles)에 적용된다.
+   */
+  async rewrites() {
+    return [{ source: '/docs/screens', destination: '/docs/screens.html' }]
+  },
   images: {
     remotePatterns:
       storageHostname === null
