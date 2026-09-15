@@ -563,6 +563,7 @@ HTML 한 벌(<code>docs/admin/SCREENS-GUIDE.html</code>)은 이 파일들을 메
 </tbody></table></div>
 <p><strong>동작 상세</strong></p>
 <ul>
+<li><strong>선택 범위</strong> — 선택은 <strong>현재 페이지(최대 20건)</strong> 안에서만 된다. 페이지를 넘기면 선택이 초기화되고, &quot;필터에 맞는 전체 선택&quot;(여러 페이지)은 지원하지 않는다 — 1회 일괄 처리 상한이 곧 20건이라 서버에 별도 상한을 두지 않는다(결정 2026-09-15, 현재 상태 유지).</li>
 <li><strong>선택 숨김</strong> — <code>newsStateAction(intent=&#39;hide&#39;)</code> → <strong>발행 상태인 행만</strong> <code>posts.is_hidden = true</code> (여러 건 한 질의) → 감사 <code>news.hide</code> ×처리 건수 → <code>revalidatePath(&#39;/news&#39;)</code> + 태그 <code>news-list</code> → 성공 토스트 후 선택 해제.</li>
 <li><strong>숨김 대상</strong> — 숨김은 발행(<code>published</code>) 상태에만 건다. 임시저장·예약 글은 독자에게 이미 보이지 않아 숨길 것이 없다. 버튼이 열려 있는지는 화면이 판단하지만 최종 판정은 서버 액션이 다시 한다 → <a href="#18-상태-변경-액션-계약-newsstateaction">1.8</a>.</li>
 <li><strong>발행 N건</strong> — <code>rows</code> × <code>selected</code> 를 <code>useMemo</code> 로 걸러 센 값(<code>isNewsIntentEligible(&#39;hide&#39;, row.status)</code>). 20건을 골라도 3건만 처리된다는 것을 누르기 <strong>전에</strong> 알리려는 표시다. <code>aria-live=&quot;polite&quot;</code> 영역 안이라 선택이 바뀌면 함께 읽힌다.</li>
