@@ -65,12 +65,16 @@
 | 필드/컨트롤 | 종류 | 필수·제한(검증) | 기본값·프리필 | 동작 / 상호작용 |
 |---|---|---|---|---|
 | N건 선택 | 텍스트 | — | `0건 선택` | 컴포넌트 상태 `selected` 의 길이 |
-| 선택 숨김 | submit 버튼(secondary sm) `name="intent" value="hide"` | 선택 0건이거나 처리 중이면 `disabled` | — | `newsStateAction(intent='hide')` 실행(아래) |
+| 선택 숨김 | submit 버튼(secondary sm) `name="intent" value="hide"` | 고른 것 중 **발행**이 0건이거나 처리 중이면 `disabled`(아래) | — | `newsStateAction(intent='hide')` 실행(아래) |
+| 발행 N건 | 텍스트(muted, `text-[12px]`) | 선택 0건이면 아예 그리지 않는다 | — | 고른 것 중 실제로 숨겨질 건수(아래) |
 | 선택 삭제 | 버튼(danger sm) | 선택 0건·처리 중이면 `disabled` | — | 확인 다이얼로그를 연다(아래) |
 
 **동작 상세**
-- **선택 숨김** — `newsStateAction(intent='hide')` → `posts.is_hidden = true` (여러 건 한 질의) → 감사 `news.hide` ×N → `revalidatePath('/news')` + 태그 `news-list` → 성공 토스트 `"N건을 숨겼습니다."` 후 선택 해제.
-- **선택 삭제** — 확인 다이얼로그를 연다. 폼 제출이 아니라 `useTransition` 으로 직접 호출(다이얼로그 버튼이 표 밖에 있어도 선택이 실린다).
+- **선택 숨김** — `newsStateAction(intent='hide')` → **발행 상태인 행만** `posts.is_hidden = true` (여러 건 한 질의) → 감사 `news.hide` ×처리 건수 → `revalidatePath('/news')` + 태그 `news-list` → 성공 토스트 후 선택 해제.
+- **숨김 대상** — 숨김은 발행(`published`) 상태에만 건다. 임시저장·예약 글은 독자에게 이미 보이지 않아 숨길 것이 없다. 버튼이 열려 있는지는 화면이 판단하지만 최종 판정은 서버 액션이 다시 한다 → [1.8](#18-상태-변경-액션-계약-newsstateaction).
+- **발행 N건** — `rows` × `selected` 를 `useMemo` 로 걸러 센 값(`isNewsIntentEligible('hide', row.status)`). 20건을 골라도 3건만 처리된다는 것을 누르기 **전에** 알리려는 표시다. `aria-live="polite"` 영역 안이라 선택이 바뀌면 함께 읽힌다.
+- **성공 토스트** — 고른 것이 전부 대상이면 `"N건을 숨겼습니다."`, 일부만 대상이면 `"2건을 숨겼습니다. 발행되지 않은 1건은 제외했습니다."`.
+- **선택 삭제** — 확인 다이얼로그를 연다. 폼 제출이 아니라 `useTransition` 으로 직접 호출(다이얼로그 버튼이 표 밖에 있어도 선택이 실린다). 삭제는 상태를 가리지 않는다.
 
 **선택 삭제 확인 다이얼로그**
 | 요소 | 문구 |
@@ -109,13 +113,15 @@
 |---|---|---|---|---|
 | 수정 | 링크 버튼(ghost sm) | 항상 | 없음 | `/news/{id}` |
 | 보기 | 링크 버튼(ghost sm, `target="_blank" rel="noopener noreferrer"`) | 항상 | 없음 | 독자 페이지로 이동(아래) |
-| 숨김 / 숨김 해제 | 버튼(ghost sm) | `status !== 'deleted'` | **없음(즉시 실행)** | `newsStateAction(intent='hide'\|'unhide')` 실행(아래) |
+| 숨김 | 버튼(ghost sm) | `status === 'published'` (아래) | **없음(즉시 실행)** | `newsStateAction(intent='hide')` 실행(아래) |
+| 숨김 해제 | 버튼(ghost sm) | `status === 'hidden'` (아래) | **없음(즉시 실행)** | `newsStateAction(intent='unhide')` 실행(아래) |
 | 삭제 | 버튼(danger sm) | `status !== 'deleted'` | 다이얼로그 | 아래 |
 | 복구 | 버튼(secondary sm) | `status === 'deleted'` | **없음(즉시 실행)** | `newsStateAction(intent='restore')` 실행(아래) |
 
 **동작 상세**
 - **보기** — `{NEXT_PUBLIC_CLIENT_SITE_URL}/news/{id}` — 관리자 미리보기가 아니라 **독자가 보는 실제 페이지**. 발행 전이면 404 지만 링크는 항상 둔다. `aria-label="{제목} 클라이언트에서 보기"`.
 - **숨김 / 숨김 해제** — `newsStateAction(intent='hide'\|'unhide')` → `posts.is_hidden` → 감사 `news.hide`/`news.unhide` → 태그 `news-list` → 토스트 `"1건을 숨겼습니다."` / `"1건을 숨김을 해제했습니다."`.
+- **노출 조건** — 두 버튼은 한 자리를 번갈아 쓴다(`newsHideIntent()`, `admin/lib/validation/news-state-eligibility.ts`). **임시저장·예약 글에는 둘 다 그리지 않는다** — 독자에게 이미 보이지 않아 숨길 것이 없고, 눌러도 서버가 같은 규칙으로 거절하므로 남겨 두면 빨간 토스트만 뜨는 자리가 된다. 수정·보기·삭제는 상태와 무관하게 그대로 있다.
 - **복구** — `newsStateAction(intent='restore')` → `posts.deleted_at = null` → 감사 `news.restore` → 태그 `news-list` → 토스트 `"1건을 복구했습니다."`.
 
 **행 삭제 확인 다이얼로그**
@@ -142,27 +148,34 @@
 |---|---|
 | 권한 | `requirePermission('news', 'write')`(아래) |
 | 검증 | **zod 스키마 없음.**(아래) |
+| 대상 자격 | `hide` 는 `published`, `unhide` 는 `hidden` 에만. 삭제·복구는 상태를 가리지 않는다(아래) |
 | 쓰기 | 세션 클라이언트 · 한 질의(아래) |
 | 감사 로그 | 대상 **1건마다 1행**. before 는 갱신 전 스냅샷, after 는 `{ ...row, ...patch }` 로 계산한 스냅샷 |
 | 재검증 | `revalidatePath('/news')` + 태그 `news-list`(상태 변경은 항상 태운다) |
-| 성공 토스트 | `` `${ids.length}건을 ${done}` ``(아래) |
+| 성공 토스트 | `` `${처리 건수}건을 ${done}` `` + 제외가 있으면 사유 한 문장(아래) |
 
 **동작 상세**
 - **권한** — 액션 첫 줄에서 `requirePermission('news', 'write')` — 레이아웃이 막고 있어도 서버 액션은 UI 를 거치지 않는 직접 POST 로 호출될 수 있다.
 - **검증** — `intent` 는 `isNewsIntent()`(`hide`·`unhide`·`delete`·`restore`), `ids` 는 `formData.getAll('ids')` 의 문자열만.
-- **쓰기** — `update(patch).eq('board','news').in('id', ids)`. 삭제 시각은 요청당 한 번만 만든다(`intentPatch(intent, new Date())`) — 행마다 `now()` 를 부르면 같은 일괄 처리가 감사 로그에서 한 묶음으로 읽히지 않는다.
-- **성공 토스트** — done 은 `숨겼습니다.` / `숨김을 해제했습니다.` / `삭제했습니다.` / `복구했습니다.`.
+- **대상 자격** — 갱신 전 스냅샷을 읽은 뒤 각 행의 상태를 `deriveNewsStatus()` 로 판정해(목록 뱃지와 같은 판정) `isNewsIntentEligible()` 로 거른다. 규칙은 `admin/lib/validation/news-state-eligibility.ts` 한 곳에 있고 행 버튼·일괄 바가 같은 함수를 쓴다. 화면이 막더라도 서버가 다시 검사하는 이유는 서버 액션이 UI 를 거치지 않는 직접 POST 로 불릴 수 있기 때문이다.
+- **일부만 대상일 때** — 대상인 id 에만 한 질의로 걸고, 감사 로그도 그만큼만 남긴다. 제외된 건수는 토스트에 사유와 함께 적는다. 전부 대상이 아니면 **질의를 보내지 않고** 감사 로그도 남기지 않는다(아무 일도 없었다는 기록이 쌓이면 로그가 흐려진다).
+- **쓰기** — `update(patch).eq('board','news').in('id', 대상 id)`. 걸러진 것이 없으면 받은 `ids` 를 그대로 보낸다. 삭제 시각은 요청당 한 번만 만든다(`intentPatch(intent, now)`) — 행마다 `now()` 를 부르면 같은 일괄 처리가 감사 로그에서 한 묶음으로 읽히지 않는다.
+- **성공 토스트** — done 은 `숨겼습니다.` / `숨김을 해제했습니다.` / `삭제했습니다.` / `복구했습니다.`. 제외가 있으면 뒤에 ` 발행되지 않은 N건은 제외했습니다.`(hide) / ` 숨김이 아닌 N건은 제외했습니다.`(unhide) 가 붙는다.
 
 **오류·예외**
 | 상황 | 결과 |
 |---|---|
 | `intent` 가 4종이 아님 | `formError` "알 수 없는 요청입니다." → 에러 토스트 |
 | `ids` 가 비어 있음 | `formError` "대상을 선택해 주세요." |
+| 고른 것이 전부 숨김 대상이 아님 | `formError` "발행된 글만 숨길 수 있습니다."(아래) |
+| 고른 것이 전부 해제 대상이 아님 | `formError` "숨김 상태인 글만 해제할 수 있습니다."(아래) |
 | 숨김 해제가 고정 한도를 넘김 | DB 트리거 `guard_news_pin_limit` 가 막음(아래) |
 | 그 밖의 DB 오류 | `formError` "처리하지 못했습니다. 잠시 후 다시 시도해 주세요."(아래) |
 | 권한 없음 | `requirePermission` 이 `/?error=forbidden` 으로 리다이렉트(대시보드가 배너로 사유를 알린다) |
 | 이미 삭제된 행에 삭제를 다시 검 | 막지 않는다. `deleted_at` 이 새 시각으로 덮인다 |
 
+- **고른 것이 전부 숨김 대상이 아님** — 문구는 `NEWS_HIDE_ONLY_PUBLISHED_MESSAGE`(`admin/lib/constants/news.ts`). 행 버튼으로는 이 상태에 이르지 않는다(버튼 자체가 없다) — 직접 POST 나, 목록을 띄워 둔 사이에 다른 운영자가 상태를 바꾼 경우다.
+- **고른 것이 전부 해제 대상이 아님** — 문구는 `NEWS_UNHIDE_ONLY_HIDDEN_MESSAGE`. 상태를 가리지 않는 조작(삭제·복구)인데 대상이 하나도 없으면 `NEWS_NO_TARGET_MESSAGE`("처리할 수 있는 대상이 없습니다.") 로 떨어진다.
 - **숨김 해제가 고정 한도를 넘김** — `formError` 로 `NEWS_PIN_LIMIT_MESSAGE` 를 낸다(이 화면에는 고정 체크박스 필드가 없어 필드 오류로 붙일 곳이 없다).
 - **그 밖의 DB 오류** — `console.error('[news] 상태 변경 실패', intent, …)` 로도 남는다.
 

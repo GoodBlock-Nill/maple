@@ -13,10 +13,10 @@
 | 관련 파일 | 페이지·컴포넌트·액션·데이터·검증·상수·정제·캐시·마이그레이션(아래) |
 
 **동작 상세**
-- **권한 모듈** — `news` — read / write (`admin/lib/auth/permissions.ts`). **read**: 목록 조회·필터·정렬·페이지 이동만(선택 열과 행 조치 열이 통째로 빠진다, `buildNewsColumns()`). **write**: "새 뉴스 작성"·"카테고리 템플릿" 버튼, 일괄 숨김/삭제 바, 행별 수정/숨김/삭제/복구, `/news/new`·`/news/[id]`·`/news/templates*` 진입.
+- **권한 모듈** — `news` — read / write (`admin/lib/auth/permissions.ts`). **read**: 목록 조회·필터·정렬·페이지 이동만(선택 열과 행 조치 열이 통째로 빠진다, `buildNewsColumns()`). **write**: "새 뉴스 작성"·"카테고리 템플릿" 버튼, 일괄 숨김/삭제 바, 행별 수정/숨김/삭제/복구, `/news/new`·`/news/[id]`·`/news/templates*` 진입. 숨김·해제는 상태가 대상일 때만 그려진다(아래 "숨김 대상").
 - **주요 테이블** — `posts`(board='news' — `title`·`summary`·`content`·`content_format`·`category_key`·`is_published`·`published_at`·`is_pinned`·`is_hidden`·`deleted_at`·`view_count`·`author_id`·`author_name`·`edited_at`), `news_category_templates`(카테고리당 1행), `board_categories`(board='news' — 카테고리 라벨·순서).
 - **클라이언트 영향** — 태그 `news-list` 재검증 → 사용자 사이트 `/news`(`app/(public)/news/page.tsx` → `lib/data/news.ts` 의 `getNewsList`, `unstable_cache` 60초) 목록이 즉시 갱신. 상세 `/news/[id]` 는 `getNewsById()` 가 매 요청 세션 조회라 태그와 무관하게 바로 반영. 템플릿 저장·복원은 클라이언트에 영향 없음(관리자 전용 테이블).
-- **관련 파일** — 페이지 `admin/app/(admin)/news/**` · 컴포넌트 `admin/components/news/**`, `admin/components/news-templates/**`, `admin/components/editor/**` · 액션 `admin/lib/actions/{news-actions,news-template-actions}.ts`, `admin/components/editor/upload-action.ts` · 데이터 `admin/lib/data/{news,news-templates}.ts` · 검증 `admin/lib/validation/{news,news-templates}.ts` · 상수 `admin/lib/constants/{news,news-templates,field-limits,messages}.ts` · 정제 `admin/lib/sanitize/{post-html,video-embed,render-post-html}.ts` · 캐시 `admin/lib/revalidate.ts` · 마이그레이션 `20260908000300_boards_posts_comments`, `20260908001600_news_categories`, `20260908001700_admin_foundation`, `20260908001100_reports_and_author_edits`, `20260911000100_news_category_templates`, `20260911000500_news_pin_limit`.
+- **관련 파일** — 페이지 `admin/app/(admin)/news/**` · 컴포넌트 `admin/components/news/**`, `admin/components/news-templates/**`, `admin/components/editor/**` · 액션 `admin/lib/actions/{news-actions,news-template-actions}.ts`, `admin/components/editor/upload-action.ts` · 데이터 `admin/lib/data/{news,news-templates}.ts` · 검증 `admin/lib/validation/{news,news-templates,news-state-eligibility}.ts` · 상수 `admin/lib/constants/{news,news-templates,field-limits,messages}.ts` · 정제 `admin/lib/sanitize/{post-html,video-embed,render-post-html}.ts` · 캐시 `admin/lib/revalidate.ts` · 마이그레이션 `20260908000300_boards_posts_comments`, `20260908001600_news_categories`, `20260908001700_admin_foundation`, `20260908001100_reports_and_author_edits`, `20260911000100_news_category_templates`, `20260911000500_news_pin_limit`.
 
 ## 화면 목록
 | 파일 | 경로 | 설명 |
@@ -64,6 +64,12 @@
 | `draft` | 임시저장 | neutral | `invisible` | 비노출 | neutral |
 | `hidden` | 숨김 | warn | | | |
 | `deleted` | 삭제 | danger | | | |
+
+### 숨김 대상 (발행된 글만)
+- 숨김은 **독자에게 보이는 글을 내리는 조치**다. 그래서 `hide` 는 편집 상태 `published` 에만, `unhide` 는 `hidden` 에만 걸린다. 임시저장·예약 글은 애초에 보이지 않아 숨길 것이 없고, 숨기면 상태 뱃지만 바뀌어 "발행했는데 왜 안 보이나"를 뒤늦게 추적하게 만든다. 삭제·복구는 상태를 가리지 않는다(휴지통은 모든 상태를 받는다).
+- 규칙은 `isNewsIntentEligible(intent, status)` 한 곳에 있다(`admin/lib/validation/news-state-eligibility.ts`). 행 버튼(`newsHideIntent()` — 대상이 아니면 숨김·해제를 **둘 다 그리지 않는다**), 일괄 처리 바(고른 것 중 발행 건수가 0이면 `disabled` + "발행 N건" 표시), 서버 액션(`newsStateAction`)이 모두 이 함수를 쓴다.
+- 판정은 목록 뱃지와 같은 `deriveNewsStatus()` 다 — 화면에 "발행"으로 보이는 글이 곧 숨길 수 있는 글이다.
+- 서버가 마지막 방어선이다. 일괄 처리에서 일부만 대상이면 **대상만** 고치고 감사 로그도 그만큼만 남기며, 제외 건수를 토스트에 적는다. 전부 대상이 아니면 질의를 보내지 않고 `NEWS_HIDE_ONLY_PUBLISHED_MESSAGE`("발행된 글만 숨길 수 있습니다.") / `NEWS_UNHIDE_ONLY_HIDDEN_MESSAGE`("숨김 상태인 글만 해제할 수 있습니다.") 를 폼 오류로 돌려준다.
 
 ### 상단 고정 3개 한도
 - 상수 `NEWS_PIN_LIMIT = 3`, 문구 `NEWS_PIN_LIMIT_MESSAGE` = "상단 고정은 최대 3개까지 가능합니다. 다른 글의 고정을 해제한 뒤 다시 시도해 주세요."
