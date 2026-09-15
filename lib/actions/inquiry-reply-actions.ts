@@ -4,13 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { readField } from '@/lib/actions/form-state'
-import { getLatestInquiryWriteAt } from '@/lib/actions/inquiry-cooldown'
 import {
   claimFormUploads,
   readPendingUploads,
   UPLOAD_FORM_INVALID_MESSAGE,
 } from '@/lib/actions/inquiry-uploads'
-import { cooldownMessage, remainingCooldown } from '@/lib/actions/rate-limit'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import {
   INQUIRY_REPLIED_PARAM,
@@ -38,8 +36,12 @@ import type { InquiryAttachment } from '@/types/domain'
  *
  * 쓰기 경로는 `add_inquiry_user_reply()` 하나뿐이다. `inquiry_replies` 에는 사용자
  * INSERT 정책이 **없고**(마이그레이션 20260914000400), 소유·상태·횟수 검사를 RLS 로는
- * 깔끔히 쓸 수 없어 함수 안으로 모았다. 그래서 이 액션이 하는 일은 셋이다 —
- * 도배 차단, 첨부를 실제 오브젝트로 확정하기, 함수가 돌려준 코드를 문구로 옮기기.
+ * 깔끔히 쓸 수 없어 함수 안으로 모았다. 그래서 이 액션이 하는 일은 둘이다 —
+ * 첨부를 실제 오브젝트로 확정하기, 함수가 돌려준 코드를 문구로 옮기기.
+ *
+ * 30초 쿨다운은 두지 않는다(오너 결정 2026-09-15). 답장은 운영자 답변 하나당 1건이라
+ * (`INQUIRY_USER_REPLY_WINDOW` · RPC 의 `too_many`) 연타할 창 자체가 없고, 접수 쪽
+ * 창(`createInquiry`)에 답장 시각을 섞으면 "답장했더니 접수가 막히는" 경계만 생긴다.
  *
  * 문의 id 는 폼 필드가 아니라 bind 로 실어 받는다(필드로 두면 남의 문의 id 로 갈아
  * 끼운 POST 가 가능해진다 — RPC 가 거절하지만 시도 자체를 만들지 않는다).
@@ -184,14 +186,6 @@ export async function replyToInquiry(
   }
 
   const supabase = await createClient()
-  /* 접수와 답장이 한 창을 나눠 쓴다 — 둘 중 나중을 기준으로 잡지 않으면 접수 직후
-     답장(또는 그 반대)으로 30초 창을 우회할 수 있다. */
-  const waitSeconds = remainingCooldown(await getLatestInquiryWriteAt(supabase, user.id))
-
-  if (waitSeconds > 0) {
-    return { formError: cooldownMessage(waitSeconds) }
-  }
-
   const sent = await sendReply(supabase, user.id, inquiryId, parsed.input)
 
   if (!sent.ok) {
