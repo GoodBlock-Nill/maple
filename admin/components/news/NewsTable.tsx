@@ -2,6 +2,7 @@
 
 import { useActionState, useCallback, useMemo, useState, useTransition } from 'react'
 
+import { NewsBulkBar } from '@/components/news/NewsBulkBar'
 import { buildNewsColumns } from '@/components/news/news-columns'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
@@ -9,7 +10,7 @@ import { Table } from '@/components/ui/Table'
 import { useToast } from '@/components/ui/Toast'
 import { EMPTY_FORM_STATE, type FormState } from '@/lib/actions/form-state'
 import { newsStateAction } from '@/lib/actions/news-actions'
-import { isNewsIntentEligible } from '@/lib/validation/news-state-eligibility'
+import { countEligible } from '@/lib/validation/news-state-eligibility'
 
 import type { NewsListItem } from '@/lib/data/news'
 import type { SortState } from '@/lib/utils/table-query'
@@ -28,9 +29,9 @@ import type { SortState } from '@/lib/utils/table-query'
  * 선택 목록이 이미 컴포넌트 상태에 있어 FormData 를 직접 만들 수 있고, 그래야
  * 다이얼로그의 버튼이 표 밖에 있어도 선택이 그대로 실린다.
  *
- * "선택 숨김"은 발행된 글에만 걸린다(`isNewsIntentEligible`, 서버 액션과 같은 규칙).
- * 몇 건이 실제로 숨겨질지 버튼 옆에 적어 둔다 — 20건을 고르고 눌렀는데 3건만
- * 처리되는 것을 누른 **뒤에** 알게 되면 조치를 되짚어야 한다.
+ * 일괄 버튼 줄은 `NewsBulkBar` 로 떼어 냈다. 여기 남는 것은 선택 상태와 액션 호출
+ * 이고, 숨김·해제를 각각 몇 건에 걸 수 있는지는 `countEligible`(서버 액션과 같은
+ * 규칙)이 센 값 한 벌로 넘긴다.
  */
 
 type NewsTableProps = {
@@ -116,43 +117,18 @@ export function NewsTable({ rows, sort, sortHrefs, clientSiteUrl, canWrite }: Ne
     [allSelected, canWrite, clientSiteUrl, selected, toggle, toggleAll],
   )
 
-  const hasSelection = selected.length > 0
-
-  const hidableCount = useMemo(
-    () =>
-      rows.filter((row) => selected.includes(row.id) && isNewsIntentEligible('hide', row.status))
-        .length,
-    [rows, selected],
-  )
+  const counts = useMemo(() => countEligible(rows, selected), [rows, selected])
 
   return (
     <form action={formAction}>
       {canWrite && (
-        <div
-          aria-live="polite"
-          className="border-line bg-page/60 flex min-h-11 flex-wrap items-center gap-2 border-b px-4 py-2"
-        >
-          <span className="text-muted text-[13px]">{selected.length}건 선택</span>
-          <Button
-            type="submit"
-            name="intent"
-            value="hide"
-            variant="secondary"
-            size="sm"
-            disabled={hidableCount === 0 || isPending}
-          >
-            선택 숨김
-          </Button>
-          {hasSelection && <span className="text-muted text-[12px]">발행 {hidableCount}건</span>}
-          <Button
-            variant="danger"
-            size="sm"
-            disabled={!hasSelection || isPending || isDeleting}
-            onClick={() => setConfirmOpen(true)}
-          >
-            선택 삭제
-          </Button>
-        </div>
+        <NewsBulkBar
+          selectedCount={selected.length}
+          counts={counts}
+          isPending={isPending}
+          isDeleting={isDeleting}
+          onDeleteClick={() => setConfirmOpen(true)}
+        />
       )}
 
       <Table

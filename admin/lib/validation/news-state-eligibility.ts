@@ -55,6 +55,37 @@ export function newsHideIntent(status: NewsStatus): NewsHideIntent | null {
   return isNewsIntentEligible('unhide', status) ? 'unhide' : null
 }
 
+/** 일괄 처리 바가 세는 최소 표면. 목록 행 타입 전체를 끌어오지 않는다. */
+type NewsSelectableRow = {
+  id: string
+  status: NewsStatus
+}
+
+/** 고른 것 중 숨김·해제가 실제로 걸릴 건수. 두 버튼이 각자 이 값을 본다. */
+export type NewsHideCounts = Record<NewsHideIntent, number>
+
+/**
+ * 고른 행 중 숨김·해제 대상이 각각 몇 건인가.
+ *
+ * 선택을 한 번만 추려 두 수를 함께 낸다 — 두 수가 **같은 순간의 같은 목록**에서
+ * 나와야 "발행 N건 · 숨김 M건" 과 두 버튼의 활성 여부가 서로 어긋나지 않는다.
+ *
+ * 두 자격을 따로 세는 이유: 숨김과 해제가 겹치지 않는 것은 `ELIGIBLE_STATUSES` 의
+ * 현재 값이 그런 것일 뿐 규칙이 보장하는 성질이 아니다. 한쪽을 다른 쪽의 여집합으로
+ * 두면 규칙이 바뀌는 날 조용히 틀린 수가 찍힌다.
+ */
+export function countEligible(
+  rows: readonly NewsSelectableRow[],
+  selected: readonly string[],
+): NewsHideCounts {
+  const chosen = rows.filter((row) => selected.includes(row.id))
+
+  return {
+    hide: chosen.filter((row) => isNewsIntentEligible('hide', row.status)).length,
+    unhide: chosen.filter((row) => isNewsIntentEligible('unhide', row.status)).length,
+  }
+}
+
 /* 자격 미달 안내. 삭제·복구는 상태를 가리지 않아 고정 문구가 필요 없다. */
 const INELIGIBLE_MESSAGE: Partial<Record<NewsIntent, string>> = {
   hide: NEWS_HIDE_ONLY_PUBLISHED_MESSAGE,
