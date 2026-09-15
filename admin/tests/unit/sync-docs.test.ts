@@ -26,6 +26,9 @@ afterEach(async () => {
 describe('DOC_SOURCES', () => {
   it('should expose the screens guide under a login-free file name', () => {
     expect(DOC_SOURCES['screens.html']).toBe('../../docs/admin/SCREENS-GUIDE.html')
+    expect(DOC_SOURCES['inquiry-thread.html']).toBe(
+      '../../docs/reference/inquiry-thread-designer-guide.html',
+    )
   })
 
   it('should stay a frozen allowlist so callers cannot widen what is published', () => {

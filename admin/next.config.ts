@@ -34,7 +34,10 @@ const nextConfig: NextConfig = {
    * 파일시스템(pages · public) 검사 뒤(afterFiles)에 적용된다.
    */
   async rewrites() {
-    return [{ source: '/docs/screens', destination: '/docs/screens.html' }]
+    return [
+      { source: '/docs/screens', destination: '/docs/screens.html' },
+      { source: '/docs/inquiry-thread', destination: '/docs/inquiry-thread.html' },
+    ]
   },
   images: {
     remotePatterns:

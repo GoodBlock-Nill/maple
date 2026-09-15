@@ -20,6 +20,8 @@ import { join } from 'node:path'
  */
 export const DOC_SOURCES = Object.freeze({
   'screens.html': '../../docs/admin/SCREENS-GUIDE.html',
+  /* 디자인팀용 문의 답장 스레드 가이드(docs/reference). 상세 규칙은 inquiry-thread-spec.md 가 원본이다. */
+  'inquiry-thread.html': '../../docs/reference/inquiry-thread-designer-guide.html',
 })
 
 /** `public/docs` — 앱 루트(admin/) 기준 산출물 디렉터리. */

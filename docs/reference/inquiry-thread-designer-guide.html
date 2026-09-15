@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>문의 답장 스레드 디자인 가이드</title>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ink:#1c2130;--ink-2:#4b5468;--muted:#7b8497;--line:#dfe3ea;--line-2:#eef0f4;
+  --page:#f7f8fb;--surface:#ffffff;--sub:#f1f3f7;
+  --accent:#e8308a;--accent-soft:#fde7f1;--accent-ink:#b4145f;
+  --op:#f3f6fe;--op-line:#d9e2fb;--op-ink:#2f4a9c;
+  --me:#ffffff;--me-line:#cdd3db;
+  --ok:#1e9e6a;--ok-soft:#e3f6ee;--warn:#d9822b;--warn-soft:#fdf0e2;--no:#c93c3c;--no-soft:#fbe7e7;
+  --shadow:0 1px 2px rgba(28,33,48,.06),0 8px 24px -12px rgba(28,33,48,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#eef1f6;--ink-2:#c3c9d6;--muted:#8d95a8;--line:#2d3345;--line-2:#242a3a;
+    --page:#12151d;--surface:#1a1e29;--sub:#202532;
+    --accent:#ff5fa8;--accent-soft:#3a1b2b;--accent-ink:#ffa0cc;
+    --op:#1d2540;--op-line:#2f3d6b;--op-ink:#b7c6ff;
+    --me:#232838;--me-line:#3b4256;
+    --ok:#4fc78f;--ok-soft:#173327;--warn:#f0a45a;--warn-soft:#3a2914;--no:#f07373;--no-soft:#3a1d1d;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#eef1f6;--ink-2:#c3c9d6;--muted:#8d95a8;--line:#2d3345;--line-2:#242a3a;
+  --page:#12151d;--surface:#1a1e29;--sub:#202532;
+  --accent:#ff5fa8;--accent-soft:#3a1b2b;--accent-ink:#ffa0cc;
+  --op:#1d2540;--op-line:#2f3d6b;--op-ink:#b7c6ff;
+  --me:#232838;--me-line:#3b4256;
+  --ok:#4fc78f;--ok-soft:#173327;--warn:#f0a45a;--warn-soft:#3a2914;--no:#f07373;--no-soft:#3a1d1d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,monospace}
+.wrap{max-width:960px;margin:0 auto;padding:40px 24px 96px}
+@media (max-width:640px){.wrap{padding:24px 16px 72px}}
+a{color:var(--accent-ink)}
+h1,h2,h3{line-height:1.25;text-wrap:balance;margin:0}
+h1{font-size:34px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em;margin-top:64px;padding-top:24px;border-top:1px solid var(--line)}
+h2 .n{display:inline-block;min-width:32px;color:var(--accent);font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:15px;vertical-align:2px}
+h3{font-size:16px;font-weight:600;margin-top:28px}
+p{margin:12px 0;max-width:72ch}
+.lead{font-size:17px;color:var(--ink-2);max-width:66ch}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.meta span{font-size:12.5px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2)}
+.meta code{font-family:"IBM Plex Mono",monospace;font-size:12px}
+code{font-family:"IBM Plex Mono",monospace;font-size:.92em;background:var(--sub);padding:1px 5px;border-radius:4px}
+
+/* 카드 */
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.cards.four{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card .k{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.card .v{font-size:17px;font-weight:600;margin-top:6px;line-height:1.4}
+.card p{font-size:13.5px;color:var(--ink-2);margin:8px 0 0}
+
+/* 상태 pill */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+.pill.pending{background:var(--sub);color:var(--ink-2);border-color:var(--line)}
+.pill.progress{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+.pill.answered{background:var(--ok-soft);color:var(--ok)}
+.pill.closed{background:var(--sub);color:var(--muted);border-color:var(--line)}
+.pill.cancel{background:var(--no-soft);color:var(--no)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:6px}
+.tag.yes{background:var(--ok-soft);color:var(--ok)}
+.tag.no{background:var(--no-soft);color:var(--no)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+
+/* 상태 흐름 */
+.flow{display:flex;align-items:stretch;gap:0;margin-top:22px;overflow-x:auto;padding:4px 0 12px}
+.flow .node{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:150px;padding:16px 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.flow .node small{font-size:12px;color:var(--muted);text-align:center;line-height:1.4;max-width:140px}
+.flow .arrow{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;width:64px;color:var(--muted);font-size:11.5px;gap:4px;text-align:center}
+.flow .arrow svg{width:44px;height:16px;display:block}
+.flow .arrow.x svg{color:var(--no)}
+.side{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px 18px;font-size:13.5px;color:var(--ink-2)}
+.side .item{display:flex;gap:8px;align-items:flex-start}
+.side .dot{width:8px;height:8px;border-radius:50%;margin-top:8px;flex:0 0 auto}
+
+/* 대화 예시 */
+.thread{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px 24px;margin-top:22px;align-items:start}
+@media (max-width:760px){.thread{grid-template-columns:1fr}.thread .note{padding-left:14px;border-left:2px solid var(--line)}}
+.msg{border-radius:14px;padding:14px 18px;font-size:14px;line-height:1.6}
+.msg .head{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.msg .head b{color:var(--ink);font-weight:600}
+.msg .head i{width:1px;height:12px;background:var(--line);display:inline-block}
+.msg.op{background:var(--op);border:1px solid var(--op-line)}
+.msg.op .head b{color:var(--op-ink)}
+.msg.me{background:var(--me);border:1px solid var(--me-line)}
+.msg .att{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12px;color:var(--ink-2)}
+.msg.first{background:var(--surface);border:1px dashed var(--line)}
+.note{font-size:13px;color:var(--ink-2);padding-top:6px}
+.note b{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+.counter{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
+.counter i{width:10px;height:10px;border-radius:3px;background:var(--line);display:inline-block}
+.counter i.on{background:var(--accent)}
+.formbox{border:1px solid var(--line);border-radius:14px;padding:14px 18px;background:var(--surface)}
+.formbox .lab{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.formbox .ta{margin-top:6px;height:64px;border:1px solid var(--line);border-radius:10px;background:var(--page);padding:8px 12px;font-size:13px;color:var(--muted)}
+.formbox .row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 20px;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:14px}
+.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+.notice{display:flex;gap:8px;align-items:flex-start;padding:12px 16px;border-radius:14px;border:1px dashed var(--line);background:var(--sub);color:var(--muted);font-size:14px;font-weight:500}
+.notice.plain{border:0;background:transparent;padding:4px 0;color:var(--muted)}
+.gone{opacity:.45}
+
+/* 판정 순서 */
+.steps{margin-top:22px;display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 14px;position:relative;padding-bottom:18px}
+.step:not(:last-child)::before{content:"";position:absolute;left:21px;top:44px;bottom:0;width:2px;background:var(--line)}
+.step .num{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface);border:2px solid var(--line);font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--ink-2)}
+.step.final .num{background:var(--accent);border-color:var(--accent);color:#fff}
+.step .q{font-weight:600;padding-top:9px}
+.step .branch{margin-top:8px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:start;font-size:13.5px}
+.step .branch .tag{margin-top:2px}
+.step .branch .out{color:var(--ink-2)}
+.step .branch .out q{quotes:"“" "”";color:var(--ink)}
+
+/* 화면 상태 6장 */
+.screens{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:22px}
+.screen{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.screen .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+.screen .top b{font-size:14px}
+.screen .wire{padding:14px 16px;display:flex;flex-direction:column;gap:8px;background:var(--page);flex:1}
+.screen .wire .m{height:34px;border-radius:9px}
+.screen .wire .m.op{background:var(--op);border:1px solid var(--op-line)}
+.screen .wire .m.me{background:var(--me);border:1px solid var(--me-line)}
+.screen .wire .m.empty{height:48px;border:1px dashed var(--line);background:var(--sub);display:flex;align-items:center;padding:0 12px;font-size:12px;color:var(--muted)}
+.screen .wire .f{border:1px solid var(--accent);border-radius:9px;padding:8px 10px;font-size:12px;color:var(--accent-ink);background:var(--accent-soft);font-weight:600}
+.screen .wire .t{font-size:12px;color:var(--muted);padding:2px 0}
+.screen .desc{padding:12px 16px 14px;font-size:13px;color:var(--ink-2);border-top:1px solid var(--line-2)}
+
+/* 표 */
+.tbl{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:600;background:var(--sub)}
+tr:last-child td{border-bottom:0}
+td q{quotes:"“" "”"}
+.callout{margin-top:18px;padding:14px 18px;border-radius:12px;background:var(--accent-soft);border:1px solid transparent;font-size:14px;color:var(--ink)}
+.callout b{color:var(--accent-ink)}
+.faq{margin-top:20px;display:grid;gap:12px}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 18px}
+.faq summary{cursor:pointer;padding:14px 0;font-weight:600;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"Q";font-family:"IBM Plex Mono",monospace;color:var(--accent);margin-right:10px}
+.faq p{margin:0 0 16px;color:var(--ink-2);font-size:14px}
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){details[open] summary{transition:color .15s}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">글자월드 고객지원 · 디자인 가이드</div>
+  <h1>내 문의 내역 답장 스레드</h1>
+  <p class="lead">운영자가 답변한 문의에 회원이 <b>같은 접수번호 안에서</b> 답장을 이어 가는 기능입니다. 새 문의를 만들지 않고, 운영자가 "처리 중"으로 둔 동안에만 주고받습니다. 1:1 문의 · 버그제보 · 불법이용제보 세 접수 종류에 똑같이 적용됩니다.</p>
+  <div class="meta">
+    <span>기준일 2026-09-15</span>
+    <span>화면 <code>/support/inquiries/[id]</code></span>
+    <span>관련 관리자 화면 고객지원 › 홈페이지 문의</span>
+  </div>
+
+  <h2><span class="n">01</span>한 장 요약</h2>
+  <div class="cards">
+    <div class="card"><div class="k">누가</div><div class="v">문의를 쓴 본인만</div><p>로그인한 작성자만 답장할 수 있습니다. 운영자는 관리자 콘솔에서 답변합니다.</p></div>
+    <div class="card"><div class="k">언제</div><div class="v">"처리 중" + 운영자 답변 1건 이상</div><p>운영자가 먼저 답을 남기고 상태를 처리 중으로 두었을 때만 답장 폼이 열립니다.</p></div>
+    <div class="card"><div class="k">얼마나</div><div class="v">운영자 답변 하나당 답장 3건</div><p>본문 2,000자, 첨부는 형식에 관계없이 5개 · 합계 200MB. 연속 작성은 30초 간격입니다.</p></div>
+  </div>
+  <div class="callout"><b>핵심 한 줄.</b> 대화를 여는 것도 닫는 것도 운영자입니다. 회원은 열린 동안 답하고, "답변 완료"가 되면 다시 열 수 없습니다.</div>
+
+  <h2><span class="n">02</span>상태 흐름과 답장 가능 구간</h2>
+  <p>문의 상세 상단의 상태 pill 다섯 가지 중 답장 폼이 뜨는 것은 <b>처리 중</b> 하나뿐입니다.</p>
+  <div class="flow" role="img" aria-label="접수 대기에서 처리 중, 답변 완료, 종료로 이어지는 상태 흐름. 답장은 처리 중에서만 가능">
+    <div class="node"><span class="pill pending">접수 대기</span><span class="tag no">답장 ✕</span><small>회원이 접수한 직후. 이때만 수정·접수 취소 가능</small></div>
+    <div class="arrow"><svg viewBox="0 0 44 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h36M32 3l6 5-6 5"/></svg><span>운영자 답변</span></div>
+    <div class="node"><span class="pill progress">처리 중</span><span class="tag yes">답장 ✓</span><small>운영자가 "등록 후 상태 = 처리 중"으로 답변하면 열림</small></div>
+    <div class="arrow"><svg viewBox="0 0 44 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h36M32 3l6 5-6 5"/></svg><span>답변 완료로 등록</span></div>
+    <div class="node"><span class="pill answered">답변 완료</span><span class="tag no">답장 ✕</span><small>대화 닫힘. 처리 중으로 되돌리지 않음</small></div>
+    <div class="arrow"><svg viewBox="0 0 44 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h36M32 3l6 5-6 5"/></svg><span>운영자 종료</span></div>
+    <div class="node"><span class="pill closed">종료</span><span class="tag no">답장 ✕</span><small>운영자만 처리 중으로 다시 열 수 있음</small></div>
+  </div>
+  <div class="side">
+    <div class="item"><span class="dot" style="background:var(--no)"></span><span><span class="pill cancel" style="padding:2px 9px;font-size:12px">접수 취소</span>&nbsp; 회원이 접수 대기 중에 스스로 취소한 문의. 이후 어떤 답장도 불가하며 안내문도 따로 붙지 않습니다.</span></div>
+    <div class="item"><span class="dot" style="background:var(--accent)"></span><span>답장 창은 <b>운영자의 답변 폼</b>에서 정해집니다. "등록 후 상태" 기본값은 처리 중이고, 답변 완료는 운영자가 일부러 골라야 합니다.</span></div>
+    <div class="item"><span class="dot" style="background:var(--muted)"></span><span>회원이 답장을 보내도 상태는 바뀌지 않습니다. 처리 중 그대로이며, 관리자 목록에 "회원 답장" 뱃지만 켜집니다.</span></div>
+  </div>
+
+  <h2><span class="n">03</span>대화 한 편으로 보기</h2>
+  <p>실제 화면의 상자 톤 그대로입니다. 운영자 답변은 연한 파랑 상자, 내 답장은 흰 상자에 회색 테두리입니다. 오른쪽 메모는 그 순간 규칙이 어떻게 움직이는지를 적은 것입니다.</p>
+  <div class="thread">
+    <div class="msg first"><div class="head"><b>내 문의</b><i></i>09.14 09:40</div>로그인이 자꾸 풀립니다. 크롬에서 접속했고 오늘 아침부터 그렇습니다.<div class="att">📎 screen.png</div></div>
+    <div class="note"><b>접수 대기</b>스레드 자리에는 "운영자가 확인 중입니다" 안내만 있고 폼은 없습니다.</div>
+
+    <div class="msg op"><div class="head"><b>글자월드 운영팀</b><i></i>09.14 10:12</div>확인을 위해 로그인에 쓰신 브라우저 버전과 발생 시각을 이 문의에 답장으로 남겨 주세요.</div>
+    <div class="note"><b>처리 중으로 답변 등록</b>이 순간 답장 폼이 열립니다. 답장 카운터 <span class="counter"><i></i><i></i><i></i></span> 0 / 3</div>
+
+    <div class="msg me"><div class="head"><b>내 답변</b><i></i>09.14 10:30</div>크롬 128 입니다. 오전 9시쯤부터였습니다.</div>
+    <div class="note"><b>답장 1</b><span class="counter"><i class="on"></i><i></i><i></i></span> 1 / 3. 보낸 답장은 수정·삭제할 수 없습니다.</div>
+
+    <div class="msg me"><div class="head"><b>내 답변</b><i></i>09.14 10:31</div>영상도 첨부합니다.<div class="att">🎬 login.mp4</div></div>
+    <div class="note"><b>답장 2</b><span class="counter"><i class="on"></i><i class="on"></i><i></i></span> 2 / 3. 첫 답장 뒤 30초가 지나야 두 번째를 보낼 수 있습니다.</div>
+
+    <div class="msg op"><div class="head"><b>글자월드 운영팀</b><i></i>09.14 14:05</div>영상 확인했습니다. 임시 조치를 적용했으니 다시 시도해 보시고 결과를 알려 주세요.</div>
+    <div class="note"><b>운영자 재답변, 여전히 처리 중</b>카운터가 다시 <span class="counter"><i></i><i></i><i></i></span> 0 / 3 으로 돌아갑니다. 셈은 "마지막 운영자 답변 이후"만 합니다.</div>
+
+    <div class="msg me"><div class="head"><b>내 답변</b><i></i>09.14 14:20</div>이제 정상입니다. 감사합니다.</div>
+    <div class="note"><b>답장 1</b><span class="counter"><i class="on"></i><i></i><i></i></span> 1 / 3</div>
+
+    <div class="msg op"><div class="head"><b>글자월드 운영팀</b><i></i>09.14 14:40</div>해결되어 다행입니다. 같은 문제가 다시 생기면 새 문의로 접수해 주세요.</div>
+    <div class="note"><b>답변 완료로 등록</b>폼이 사라지고 아래 안내문이 남습니다. 이 문의는 다시 열리지 않습니다.</div>
+
+    <div class="notice plain">답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.</div>
+    <div class="note"></div>
+  </div>
+
+  <h2><span class="n">04</span>답장 폼이 보이는 조건, 판정 순서대로</h2>
+  <p>화면은 아래 순서로 묻고, 첫 번째 "아니오"에서 멈춰 그에 맞는 안내 한 줄을 보여 줍니다. 서버도 보낼 때 같은 순서로 다시 검사하므로 "폼은 보이는데 보내면 거절되는" 일은 없습니다.</p>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><div><div class="q">접수 취소된 문의인가?</div><div class="branch"><span class="tag no">예</span><span class="out">폼 없음. 안내문도 없음. 스레드 자리에 이미 <q>접수가 취소된 문의입니다.</q>가 서 있음</span></div></div></div>
+    <div class="step"><div class="num">2</div><div><div class="q">상태가 답변 완료 또는 종료인가?</div><div class="branch"><span class="tag no">예</span><span class="out"><q>답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.</q></span></div></div></div>
+    <div class="step"><div class="num">3</div><div><div class="q">상태가 접수 대기인가?</div><div class="branch"><span class="tag no">예</span><span class="out"><q>운영자 답변 후 답장할 수 있습니다.</q></span></div></div></div>
+    <div class="step"><div class="num">4</div><div><div class="q">처리 중인데 운영자 답변이 아직 없는가?</div><div class="branch"><span class="tag no">예</span><span class="out"><q>운영자 답변 후 답장할 수 있습니다.</q> (3번과 같은 문구)</span></div></div></div>
+    <div class="step"><div class="num">5</div><div><div class="q">마지막 운영자 답변 이후 내 답장이 이미 3건인가?</div><div class="branch"><span class="tag warn">예</span><span class="out"><q>운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.</q></span></div></div></div>
+    <div class="step final"><div class="num">✓</div><div><div class="q">모두 통과 → 스레드 아래에 답장 폼 표시</div><div class="branch"><span class="tag yes">보낼 때</span><span class="out">30초 안에 다시 쓰면 <q>너무 빠르게 작성하고 있습니다. N초 후에 다시 시도해 주세요.</q> 가 폼 위에 뜹니다(문의 접수와 답장을 합쳐 셉니다).</span></div></div></div>
+  </div>
+
+  <h2><span class="n">05</span>화면 상태 여섯 가지</h2>
+  <p>상세 페이지 아래쪽(스레드 영역 + 폼/안내)이 상태별로 어떻게 보이는지입니다. 접수 정보·첨부 등 위쪽 영역은 모두 동일합니다.</p>
+  <div class="screens">
+    <div class="screen"><div class="top"><b>A. 접수 대기</b><span class="pill pending">접수 대기</span></div><div class="wire"><div class="m empty">💬 운영자가 확인 중입니다. 답변이 등록되면 이곳에 표시됩니다.</div><div class="t">운영자 답변 후 답장할 수 있습니다.</div></div><div class="desc">폼 없음. 이 상태에서만 "수정"과 "접수 취소" 버튼이 있습니다(기존 규칙).</div></div>
+    <div class="screen"><div class="top"><b>B. 처리 중 · 답변 전</b><span class="pill progress">처리 중</span></div><div class="wire"><div class="m empty">💬 운영자가 처리 중입니다. 답변이 등록되면 이곳에 표시됩니다.</div><div class="t">운영자 답변 후 답장할 수 있습니다.</div></div><div class="desc">운영자가 상태만 처리 중으로 바꾸고 아직 답을 안 쓴 경우. 폼 없음.</div></div>
+    <div class="screen"><div class="top"><b>C. 처리 중 · 답장 가능</b><span class="pill progress">처리 중</span></div><div class="wire"><div class="m op"></div><div class="m me"></div><div class="f">답장 폼 · 답장 내용 + 첨부 + [답장 보내기]</div></div><div class="desc">기본 대화 상태. 운영자 답변 이후 내 답장이 3건 미만.</div></div>
+    <div class="screen"><div class="top"><b>D. 처리 중 · 3건 채움</b><span class="pill progress">처리 중</span></div><div class="wire"><div class="m op"></div><div class="m me"></div><div class="m me"></div><div class="m me"></div><div class="t">운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.</div></div><div class="desc">폼이 잠시 사라집니다. 운영자가 다시 답하면 C로 돌아갑니다.</div></div>
+    <div class="screen"><div class="top"><b>E. 답변 완료 / 종료</b><span class="pill answered">답변 완료</span></div><div class="wire"><div class="m op"></div><div class="m me"></div><div class="m op"></div><div class="t">답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.</div></div><div class="desc">대화 기록은 그대로 남고 폼만 없습니다. 답변 없이 종료된 경우 스레드 자리에 "운영자 검토 후 종료된 문의입니다. 추가 문의는 새 1:1 문의로 남겨 주세요."</div></div>
+    <div class="screen"><div class="top"><b>F. 접수 취소</b><span class="pill cancel">접수 취소</span></div><div class="wire"><div class="m empty">💬 접수가 취소된 문의입니다.</div></div><div class="desc">안내문을 따로 붙이지 않습니다. 같은 말을 두 번 하지 않기 위해서입니다.</div></div>
+  </div>
+
+  <h2><span class="n">06</span>답장 폼 스펙</h2>
+  <div class="formbox" style="margin-top:18px;max-width:560px">
+    <div class="lab">답장 내용</div>
+    <div class="ta">운영자가 요청한 내용을 남겨 주세요.</div>
+    <div class="row"><span class="mono" style="font-size:12px;color:var(--muted)">0 / 2,000</span><span class="mono" style="font-size:12px;color:var(--muted)">첨부 0 / 5 · 0 / 200MB</span></div>
+    <div class="row"><span class="btn ghost">파일 첨부</span><span class="btn">답장 보내기</span></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>항목</th><th>규칙</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>답장 내용</td><td>필수 · 1~2,000자</td><td>비우면 <q>답장 내용을 입력해 주세요.</q>, 넘치면 <q>답장은 2000자 이하로 입력해 주세요.</q></td></tr>
+      <tr><td>첨부</td><td>형식 무관 · 최대 5개 · 합계 200MB</td><td>접수 폼과 같은 첨부 컴포넌트. 이미지 썸네일 · 영상 · 파일 칩으로 각 메시지 아래에 표시</td></tr>
+      <tr><td>버튼</td><td><q>답장 보내기</q> → 진행 중 <q>보내는 중…</q></td><td>접수 폼의 제출 버튼과 같은 크기·스타일</td></tr>
+      <tr><td>성공</td><td>상세 페이지로 돌아오며 상단 배너 <q>답장을 보냈습니다.</q> 1회</td><td>새 답장이 스레드 맨 아래에 붙고 카운터가 1 늘어남</td></tr>
+      <tr><td>수정 · 삭제</td><td>보낸 답장은 수정·삭제 불가</td><td>접수 대기 상태의 문의 본문만 수정 가능(기존 규칙)</td></tr>
+      <tr><td>메시지 스타일</td><td>운영자 <code>#f3f6fe</code> 상자 · 머리줄 "글자월드 운영팀 | 일시"</td><td>내 답장은 흰 상자 · 테두리 <code>#cdd3db</code> · 머리줄 "내 답변 | 일시"</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2><span class="n">07</span>문구 사전</h2>
+  <p>화면에 나오는 모든 문장입니다. 디자인 시안에는 이 문장을 그대로 써 주세요.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>상황</th><th>문구</th><th>위치</th></tr></thead>
+    <tbody>
+      <tr><td>접수 대기 · 답변 없음</td><td><q>운영자가 확인 중입니다. 답변이 등록되면 이곳에 표시됩니다.</q></td><td>스레드 자리(점선 상자)</td></tr>
+      <tr><td>처리 중 · 답변 없음</td><td><q>운영자가 처리 중입니다. 답변이 등록되면 이곳에 표시됩니다.</q></td><td>스레드 자리(점선 상자)</td></tr>
+      <tr><td>종료 · 답변 없음</td><td><q>운영자 검토 후 종료된 문의입니다. 추가 문의는 새 1:1 문의로 남겨 주세요.</q></td><td>스레드 자리(점선 상자)</td></tr>
+      <tr><td>접수 취소</td><td><q>접수가 취소된 문의입니다.</q></td><td>스레드 자리(점선 상자)</td></tr>
+      <tr><td>답장 불가 · 답변 전</td><td><q>운영자 답변 후 답장할 수 있습니다.</q></td><td>스레드 아래 한 줄</td></tr>
+      <tr><td>답장 불가 · 완료/종료</td><td><q>답변이 완료된 문의입니다. 추가 문의는 새 문의로 접수해 주세요.</q></td><td>스레드 아래 한 줄</td></tr>
+      <tr><td>답장 불가 · 3건 채움</td><td><q>운영자 답변을 기다려 주세요. 답장은 운영자 답변 사이에 3건까지 보낼 수 있습니다.</q></td><td>스레드 아래 한 줄</td></tr>
+      <tr><td>보낸 직후</td><td><q>답장을 보냈습니다.</q></td><td>페이지 상단 배너</td></tr>
+      <tr><td>30초 안에 다시 보냄</td><td><q>너무 빠르게 작성하고 있습니다. N초 후에 다시 시도해 주세요.</q></td><td>폼 위 오류 줄</td></tr>
+      <tr><td>본문·첨부 규칙 위반</td><td><q>답장은 1~2000자, 첨부는 형식에 관계없이 최대 5개 · 총 200MB 까지 보낼 수 있습니다.</q></td><td>답장 내용 칸 아래</td></tr>
+      <tr><td>로그인 풀림</td><td><q>로그인 후 이용할 수 있습니다.</q></td><td>폼 위 오류 줄</td></tr>
+      <tr><td>취소된 문의에 보냄</td><td><q>접수가 취소된 문의에는 답장할 수 없습니다.</q></td><td>폼 위 오류 줄</td></tr>
+      <tr><td>기타 실패</td><td><q>답장을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.</q></td><td>폼 위 오류 줄</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2><span class="n">08</span>운영자 쪽에서 보이는 것</h2>
+  <p>클라이언트 규칙은 관리자 콘솔의 답변 폼과 짝을 이룹니다. 디자인 검토 때 함께 보면 흐름이 맞아떨어집니다.</p>
+  <div class="cards four">
+    <div class="card"><div class="k">답변 폼 · 등록 후 상태</div><div class="v">기본값 "처리 중"</div><p>선택지 옆 안내: "처리 중: 회원이 이 문의에 답장할 수 있습니다 · 답변 완료: 대화가 닫히며 다시 열 수 없습니다". 답변 완료는 일부러 골라야 합니다.</p></div>
+    <div class="card"><div class="k">목록 · 회원 상세</div><div class="v">"회원 답장" 뱃지</div><p>회원 답장이 오면 상태 뱃지 옆에 켜지고, 운영자가 다시 답하면 꺼집니다. 필터 "회원 답장 도착만"으로 모아 볼 수 있습니다.</p></div>
+    <div class="card"><div class="k">상세 스레드</div><div class="v">"회원 답장" 라벨 + 첨부</div><p>운영자 답변과 다른 배경으로 구분됩니다. 답변 수 집계는 운영자 답변만 셉니다.</p></div>
+    <div class="card"><div class="k">답변 템플릿</div><div class="v">추가 정보 요청은 "이 문의에 답장으로"</div><p>처리 완료 계열 템플릿만 "추가 문의는 새 문의로" 안내를 유지합니다.</p></div>
+  </div>
+
+  <h2><span class="n">09</span>왜 이렇게 정했나</h2>
+  <div class="faq">
+    <details open><summary>답변 완료된 문의를 왜 다시 열 수 없나요?</summary><p>"완료"의 뜻을 하나로 두기 위해서입니다. 완료 뒤에도 답장이 열려 있으면 운영자는 끝난 건을 계속 지켜봐야 하고, 회원은 어디까지 응답을 기대해도 되는지 알 수 없습니다. 이어지는 질문은 새 문의로 받고, 운영자는 처리 중일 때 충분히 주고받은 뒤 완료로 닫습니다.</p></details>
+    <details><summary>왜 운영자 답변 하나당 3건까지만인가요?</summary><p>회원이 한 번에 여러 개를 쏟아내면 운영자가 무엇에 답해야 할지 흐려집니다. 3건이면 "본문 + 첨부 + 보충" 정도는 담기고, 운영자가 다시 답하면 창이 새로 열리므로 대화 자체는 끊기지 않습니다.</p></details>
+    <details><summary>30초 간격은 어디에 적용되나요?</summary><p>문의 접수와 답장을 합쳐 계산합니다. 접수 직후 30초 안에는 답장을, 답장 직후 30초 안에는 다음 답장을 보낼 수 없습니다. 폼은 그대로 보이고 보낼 때 남은 초와 함께 안내가 뜹니다.</p></details>
+    <details><summary>접수 취소 상태에는 왜 안내문이 없나요?</summary><p>스레드 자리에 이미 "접수가 취소된 문의입니다."가 있어서, 그 아래에 "답장할 수 없습니다"를 또 쓰면 같은 말을 두 번 하게 됩니다. 취소는 회원이 스스로 한 결정이라 이유를 더 설명할 필요도 없습니다.</p></details>
+    <details><summary>회원이 답장하면 상태가 바뀌나요?</summary><p>바뀌지 않습니다. 처리 중 그대로이고, 관리자 목록에 "회원 답장" 뱃지가 켜져 운영자가 놓치지 않게 합니다. 상태 변경은 언제나 운영자가 답변을 등록하면서 정합니다.</p></details>
+  </div>
+
+  <div class="foot">근거 문서: <code>docs/reference/inquiry-thread-spec.md</code> · 화면 설명서 고객지원 › 홈페이지 문의 · 문구 출처 <code>lib/constants/inquiry-thread.ts</code>, <code>lib/constants/support.ts</code>. 규칙이 바뀌면 이 문서를 함께 갱신합니다.</div>
+</div>
+
+</body>
+</html>

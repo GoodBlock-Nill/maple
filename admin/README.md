@@ -255,7 +255,8 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
 
 메뉴별 화면·기능 설명서(`docs/admin/SCREENS-GUIDE.html`)를 **로그인 없이**
 `https://maple-admin.vercel.app/docs/screens`(로컬 `http://localhost:3100/docs/screens`)
-에서 연다. 기획·디자인처럼 콘솔 계정이 없는 사람에게 링크 하나로 넘기기 위해서다
+에서 연다. 같은 방식으로 문의 답장 스레드 디자인 가이드(`docs/reference/inquiry-thread-designer-guide.html`)를
+`https://maple-admin.vercel.app/docs/inquiry-thread` 에서 연다. 기획·디자인처럼 콘솔 계정이 없는 사람에게 링크 하나로 넘기기 위해서다
 (소유자 결정, 2026-09-15). 문서는 정적 HTML 이고 비밀값·운영 데이터를 담지 않는다.
 
 문서의 단일 출처는 `docs/admin/` 이다 — 관리자 앱 안에 사본을 **커밋하지 않는다**.
@@ -266,7 +267,7 @@ Supabase 설정에 따라 `?code=`(PKCE) · `?token_hash=` · `#access_token=` �
 | --------------------------- | ----------------------------------------------------------- |
 | `scripts/sync-docs-lib.mjs` | 허용 목록(`DOC_SOURCES`)과 복사 로직 — 단위 테스트 대상      |
 | `scripts/sync-docs.mjs`     | 실행 진입점. 경로를 스크립트 위치 기준으로 푼다              |
-| `next.config.ts`            | `/docs/screens` → `/docs/screens.html` rewrite (주소 가리기) |
+| `next.config.ts`            | `/docs/screens`·`/docs/inquiry-thread` → `.html` rewrite (주소 가리기) |
 | `proxy.ts`                  | `PUBLIC_PREFIXES` 에 `/docs` — 로그인 게이트 통과            |
 | `.gitignore`                | `/public/docs/` — 생성물이라 커밋하지 않는다                 |
 

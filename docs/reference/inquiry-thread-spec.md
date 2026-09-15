@@ -3,6 +3,8 @@
 운영팀 요청: 1:1 문의·버그제보·불법이용제보에서 **운영자가 답변한 건에 한해** 유저가 같은 접수번호 안에서 운영자 요청에 답할 수 있어야 한다(새 문의 생성 없이). 텍스트·이미지·영상 첨부 가능.
 오너 확정 규칙: **처리 중(in_progress) 상태에서만 유저 답장 가능. 답변 완료(answered)는 재개 불가.**
 
+> 디자이너용 시각 가이드: `docs/reference/inquiry-thread-designer-guide.html` (공개 URL https://maple-admin.vercel.app/docs/inquiry-thread). 규칙이 바뀌면 함께 갱신한다.
+
 ## 1. 규칙
 - 유저 답장 허용 조건(전부 만족): 본인 문의 · `cancelled_at is null` · `status = 'in_progress'` · 운영자 답변(`direction='outbound'`) 1건 이상 · 마지막 운영자 답변 이후 유저 답장 3건 미만 · 30초 쿨다운(기존 `remainingCooldown` 재사용).
 - 운영자 답변 폼의 기존 "다음 상태" 선택이 곧 모드다: **처리 중** = 대화 유지(유저 답장 열림), **답변 완료** = 스레드 닫힘. `answered → in_progress` 전이는 없다(기존 `INQUIRY_STATUS_TRANSITIONS` 그대로: answered → closed 만). `closed → in_progress`(운영자 재개)는 기존대로 둔다.
